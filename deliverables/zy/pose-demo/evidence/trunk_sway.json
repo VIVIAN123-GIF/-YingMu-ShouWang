@@ -1,0 +1,9 @@
+{
+  "evidence_type": "trunk_sway",
+  "source": "pose_demo_rule_stub",
+  "video": "fall-01-cam0.mp4",
+  "time_window_ms": [0, 2000],
+  "score": 0.41,
+  "status": "stub",
+  "note": "当前仅完成躯干关键点可提取，左右摆动幅度阈值仍待验证。"
+}

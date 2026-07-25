@@ -1,0 +1,9 @@
+{
+  "evidence_type": "gait_instability",
+  "source": "pose_demo_rule_stub",
+  "video": "adl-01-cam0-rgb",
+  "time_window_ms": [0, 2000],
+  "score": 0.27,
+  "status": "stub",
+  "note": "当前仅完成步态关键点序列输出，步长差异比和步速波动规则仍待实现。"
+}

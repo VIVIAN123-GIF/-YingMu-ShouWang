@@ -1,0 +1,9 @@
+{
+  "evidence_type": "rapid_rise",
+  "source": "pose_demo_rule_stub",
+  "video": "fall-01-cam0.mp4",
+  "time_window_ms": [0, 2000],
+  "score": 0.32,
+  "status": "stub",
+  "note": "当前仅完成姿态关键点提取，快速起身特征尚未正式建模。"
+}
