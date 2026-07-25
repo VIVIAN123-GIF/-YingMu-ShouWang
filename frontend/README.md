@@ -1,6 +1,6 @@
 # 萤目守望统一家属端
 
-基于 Vue 3、Element Plus 与 ECharts 的统一家属端。项目完整实现首页安全水位、事件详情、周报/核验，并为冻结方案中的其余一级页面提供低保真路由骨架。
+基于 Vue 3、Element Plus 与 ECharts 的统一家属端。项目完成九个一级入口，其中四个核心页面完成，其余为低保真骨架。
 
 ## 启动
 
@@ -15,6 +15,27 @@ npm run dev
 npm test
 npm run build
 ```
+
+## 端到端复现
+
+首次端到端测试因缺少 Playwright 录屏组件失败，需先安装 ffmpeg：
+
+```powershell
+npx playwright install ffmpeg
+npm run evidence
+```
+
+三轮复现是**固定 Mock 前端展示闭环，不代表真实算法和设备闭环**。复现材料输出到 `artifacts/evidence/run-1` 至 `run-3`，包括截图、WebM 录屏、脱敏审计日志和验收摘要。
+
+GitHub 的 `.gitignore` 排除了 `artifacts/`，因此原 PR 本身不包含这些证据。请至少将以下文件中的一份截图和一份录屏上传到飞书或会议材料，并在对应记录中保留摘要：
+
+- `01-home.png`
+- `02-timeline.png`
+- `04-event-trace.png`
+- `screen-recording.webm`
+- `summary.json`
+
+HTML 测试报告生成于 `artifacts/evidence/report`，同样不会随原 PR 提交。
 
 ## 数据模式
 
@@ -38,14 +59,25 @@ VITE_AUTHORIZED_CLIP_URL=
 
 每个事件和回放必须显示 `LIVE_DEVICE`、`RECORDED_REPLAY`、`PUBLIC_DATASET` 或 `MOCK`；模拟内容必须带“模拟实验回放”水印。
 
+## API 模式联调清单
+
+后续与冷雨彤统一使用 `VITE_DATA_MODE=api` 验证以下接口。每项需检查成功响应、统一数据契约、页面渲染、错误状态；家属反馈还需检查幂等回写。
+
+| 方法 | 接口 |
+|---|---|
+| GET | `/api/v1/events` |
+| GET | `/api/v1/events/{id}` |
+| GET | `/api/v1/reports/weekly` |
+| GET | `/api/v1/device/status` |
+| GET | `/api/v1/assets/{id}` |
+| POST | `/api/v1/events/{id}/feedback` |
+
+当前清单仅表示待联调范围，不代表真实 API 已验证通过。
+
+## 依赖审计说明
+
+本次 `npm ci` 报告 6 项高危开发依赖问题，生产依赖审计为 0。该问题当前不阻塞演示，后续依赖升级时统一处理；本次不临时升级依赖，也不隐藏审计结果。
+
 ## 授权视频
 
 将经过授权的视频放到 `public/media/authorized-fall-clip.mp4`，再将 `VITE_AUTHORIZED_CLIP_URL` 配置为 `/media/authorized-fall-clip.mp4`。视频文件默认不进入版本控制；未提供素材时页面会明确显示“待素材核验”。
-
-## 三次复现材料
-
-```powershell
-npm run evidence
-```
-
-命令会使用本机 Microsoft Edge 连续执行三轮固定闭环，在 `artifacts/evidence/run-1` 至 `run-3` 输出截图、WebM录屏、脱敏审计日志和验收摘要。HTML测试报告位于 `artifacts/evidence/report`。
