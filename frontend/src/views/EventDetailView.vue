@@ -8,7 +8,7 @@ import ChartPanel from '../components/common/ChartPanel.vue'
 import MediaPanel from '../components/common/MediaPanel.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
 import { getAsset, getEvent } from '../services/repository'
-import { domainLabel, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
+import { domainLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +22,14 @@ const selectedEvidence = ref(null)
 const selectedObservations = computed(() => {
   const ids = new Set(selectedEvidence.value?.observation_ids || [])
   return (event.value?.observations || []).filter((observation) => ids.has(observation.observation_id))
+})
+
+const displayEvidences = computed(() => {
+  const detailsById = new Map((event.value?.evidences || []).map((evidence) => [evidence.evidence_id, evidence]))
+  return (event.value?.evidence_summary || []).map((summary) => ({
+    ...summary,
+    ...(detailsById.get(summary.evidence_id) || {}),
+  }))
 })
 
 const riskChartOption = computed(() => ({
@@ -91,9 +99,9 @@ onMounted(load)
         <div class="event-primary-column">
           <article class="content-card">
             <div class="card-heading"><div><span class="section-kicker">Evidence</span><h2>为什么系统建议关注</h2></div><span>{{ event.evidence_summary.length }} 条证据</span></div>
-            <div v-if="event.evidence_summary.length" class="evidence-grid">
-              <article v-for="evidence in event.evidence_summary" :key="evidence.evidence_id" class="evidence-card">
-                <div class="evidence-top"><code>{{ evidence.evidence_type }}</code><span>{{ evidence.time_scale }}</span></div>
+            <div v-if="displayEvidences.length" class="evidence-grid">
+              <article v-for="evidence in displayEvidences" :key="evidence.evidence_id" class="evidence-card">
+                <div class="evidence-top"><code>{{ evidence.evidence_type }}</code><span>{{ evidence.time_scale || '摘要' }}</span></div>
                 <h3>{{ evidence.explanation }}</h3>
                 <div class="evidence-metrics">
                   <span><small>异常程度</small><b>{{ formatPercent(evidence.severity) }}</b></span>
@@ -101,12 +109,12 @@ onMounted(load)
                   <span><small>数据质量</small><b>{{ formatPercent(evidence.data_quality) }}</b></span>
                 </div>
                 <div class="evidence-trace-summary">
-                  <span>{{ evidence.observation_ids.length }} 条 Observation</span>
-                  <span>{{ evidence.asset_id }}</span>
-                  <span>{{ evidence.adapter_version }}</span>
+                  <span>{{ (evidence.observation_ids || []).length }} 条 Observation</span>
+                  <span>{{ formatAssetId(evidence.asset_id) }}</span>
+                  <span>{{ evidence.adapter_version || '暂无适配器详情' }}</span>
                 </div>
-                <SourceBadge :mode="evidence.source_mode" :simulated="evidence.simulated" />
-                <el-button class="trace-button" size="large" plain @click="openTrace(evidence)">查看原始观测</el-button>
+                <SourceBadge v-if="evidence.source_mode" :mode="evidence.source_mode" :simulated="evidence.simulated" />
+                <el-button v-if="evidence.observation_ids?.length" class="trace-button" size="large" plain @click="openTrace(evidence)">查看原始观测</el-button>
               </article>
             </div>
             <el-empty v-else description="该绿色事件没有异常 Evidence" />
@@ -169,7 +177,7 @@ onMounted(load)
             <div><dt>Evidence ID</dt><dd>{{ selectedEvidence.evidence_id }}</dd></div>
             <div><dt>风险方向</dt><dd>{{ domainLabel(selectedEvidence.risk_domain) }}</dd></div>
             <div><dt>生成时间</dt><dd>{{ formatDateTime(selectedEvidence.timestamp) }}</dd></div>
-            <div><dt>素材 ID</dt><dd>{{ selectedEvidence.asset_id }}</dd></div>
+            <div><dt>素材 ID</dt><dd>{{ formatAssetId(selectedEvidence.asset_id) }}</dd></div>
             <div><dt>适配器版本</dt><dd>{{ selectedEvidence.adapter_version }}</dd></div>
             <div><dt>个人基线</dt><dd>{{ selectedEvidence.baseline_value ?? '—' }}</dd></div>
             <div><dt>当前值</dt><dd>{{ selectedEvidence.current_value ?? '—' }}</dd></div>
@@ -182,7 +190,7 @@ onMounted(load)
             <p>{{ observation.feature_value }} {{ observation.unit || '' }} · {{ formatDateTime(observation.timestamp) }}</p>
             <dl class="detail-list compact-list">
               <div><dt>来源</dt><dd>{{ observation.source }}</dd></div>
-              <div><dt>素材</dt><dd>{{ observation.asset_id }}</dd></div>
+              <div><dt>素材</dt><dd>{{ formatAssetId(observation.asset_id) }}</dd></div>
               <div><dt>置信度</dt><dd>{{ formatPercent(observation.confidence) }}</dd></div>
               <div><dt>质量</dt><dd>{{ formatPercent(observation.data_quality) }}</dd></div>
             </dl>

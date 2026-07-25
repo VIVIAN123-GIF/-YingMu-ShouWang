@@ -7,7 +7,7 @@ import deviceMock from '../mocks/device.json'
 import assetsMock from '../mocks/assets.json'
 import observationsMock from '../mocks/observations.json'
 import { DATA_MODES } from '../domain/constants'
-import { validateDashboard, validateEventList, validateRiskEvent } from '../domain/validation'
+import { validateDashboard, validateEventList, validateEventViewModel } from '../domain/validation'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 const AUTHORIZED_CLIP_URL = import.meta.env.VITE_AUTHORIZED_CLIP_URL || ''
@@ -137,7 +137,7 @@ function listFrom(data) {
 }
 
 function observationsFor(event) {
-  const ids = new Set((event.evidence_summary || []).flatMap((evidence) => evidence.observation_ids || []))
+  const ids = new Set((event.evidences || []).flatMap((evidence) => evidence.observation_ids || []))
   return mocks.observations.filter((observation) => ids.has(observation.observation_id))
 }
 
@@ -195,7 +195,7 @@ export async function getEvent(eventId) {
   return resolveData('event.detail', async () => {
     const event = payload(await client.get(`/api/v1/events/${eventId}`))
     return event
-  }, () => hydrateMockEvent(mocks.events.find((event) => event.event_id === eventId) || mocks.events[0]), validateRiskEvent)
+  }, () => hydrateMockEvent(mocks.events.find((event) => event.event_id === eventId) || mocks.events[0]), validateEventViewModel)
 }
 
 export async function getWeeklyReport(residentId = 'resident-001') {

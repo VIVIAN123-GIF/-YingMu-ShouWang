@@ -17,6 +17,10 @@ export function formatRiskScore(value) {
   return Math.round(Number(value) * 100)
 }
 
+export function formatAssetId(value) {
+  return value || '暂无可追溯视频'
+}
+
 export function domainLabel(value) {
   return RISK_DOMAINS[value] || value || '未知方向'
 }

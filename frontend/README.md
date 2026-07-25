@@ -59,6 +59,14 @@ VITE_AUTHORIZED_CLIP_URL=
 
 每个事件和回放必须显示 `LIVE_DEVICE`、`RECORDED_REPLAY`、`PUBLIC_DATASET` 或 `MOCK`；模拟内容必须带“模拟实验回放”水印。
 
+### 四对象 v1.0 契约
+
+- `RiskEvent.evidence_summary` 只保留 `evidence_id`、`evidence_type`、`explanation` 三个摘要字段。
+- 完整 Evidence、Observation 和 InterventionResult 仅放在前端 ViewModel 的 `evidences`、`observations`、`interventions` 中，不作为 RiskEvent 核心字段回传。
+- Evidence 和 Observation 的 `asset_id` 必须存在，但允许为 `null`；页面显示“暂无可追溯视频”。
+- 前端会校验四对象的 `schema_version`、身份字段、版本字段、来源与模拟状态等冻结必填项。
+- 可复用样例位于 `contracts/v1/examples/four-objects.json`。
+
 ## API 模式联调清单
 
 后续与冷雨彤统一使用 `VITE_DATA_MODE=api` 验证以下接口。每项需检查成功响应、统一数据契约、页面渲染、错误状态；家属反馈还需检查幂等回写。

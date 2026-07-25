@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import MediaPanel from '../components/common/MediaPanel.vue'
+import { formatAssetId } from '../utils/format'
 
 describe('授权媒体降级', () => {
   it('没有授权文件时明确显示待核验且不伪装实时画面', () => {
@@ -15,5 +16,10 @@ describe('授权媒体降级', () => {
     expect(wrapper.text()).toContain('待素材核验')
     expect(wrapper.text()).toContain('不伪装为实时视频')
     expect(wrapper.find('video').exists()).toBe(false)
+  })
+
+  it('Evidence 或 Observation 没有 asset_id 时显示不可追溯提示', () => {
+    expect(formatAssetId(null)).toBe('暂无可追溯视频')
+    expect(formatAssetId('asset-001')).toBe('asset-001')
   })
 })
