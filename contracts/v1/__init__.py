@@ -5,7 +5,9 @@ from .models import (
     EvidenceSummary,
     InterventionResult,
     Observation,
+    Operator,
     RiskEvent,
+    TimeHorizon,
 )
 
 __all__ = [
@@ -13,6 +15,7 @@ __all__ = [
     "EvidenceSummary",
     "InterventionResult",
     "Observation",
+    "Operator",
     "RiskEvent",
+    "TimeHorizon",
 ]
-

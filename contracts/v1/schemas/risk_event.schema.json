@@ -68,6 +68,15 @@
       ],
       "title": "SourceMode",
       "type": "string"
+    },
+    "TimeHorizon": {
+      "enum": [
+        "TREND",
+        "TODAY",
+        "IMMINENT"
+      ],
+      "title": "TimeHorizon",
+      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -131,9 +140,7 @@
       "type": "array"
     },
     "time_horizon": {
-      "minLength": 1,
-      "title": "Time Horizon",
-      "type": "string"
+      "$ref": "#/$defs/TimeHorizon"
     },
     "recommended_action": {
       "minLength": 1,

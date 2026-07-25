@@ -1,2 +1,1 @@
 """Project contract tests."""
-

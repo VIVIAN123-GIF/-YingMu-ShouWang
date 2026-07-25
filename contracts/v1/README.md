@@ -6,7 +6,7 @@
 
 - `models.py`：Pydantic v2唯一代码来源，未知字段一律拒绝；
 - `schemas/`：由模型导出的JSON Schema，供前端和文档核对；
-- `examples/`：四对象样例及固定跌倒Mock序列；
+- `examples/`：四对象独立样例、跨端共用`four_objects.json`及固定跌倒Mock序列；
 - `engine.py`：只用于一期Mock联调的确定性状态机；
 - `rehearsal.py`：可复用的GREEN到RESOLVED演练流程。
 
@@ -34,3 +34,8 @@ python scripts/run_mock_sequence.py --runs 3
 
 字段变更需由张薇和冷雨彤共同批准，并同步更新模型、Schema、样例、测试和冻结记录。
 
+## 已冻结的跨端决定
+
+- Evidence核心对象不包含`asset_id`，素材通过`observation_ids → Observation.asset_id`追溯；
+- GREEN是引擎和Dashboard状态，不创建核心RiskEvent；RiskEvent必须至少关联一条Evidence；
+- 前端、后端和算法联调统一使用`examples/four_objects.json`，不得复制后自行扩展v1.0字段。

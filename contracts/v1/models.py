@@ -88,6 +88,18 @@ class TimeScale(str, Enum):
     LONG = "LONG"
 
 
+class TimeHorizon(str, Enum):
+    TREND = "TREND"
+    TODAY = "TODAY"
+    IMMINENT = "IMMINENT"
+
+
+class Operator(str, Enum):
+    SYSTEM = "system"
+    FAMILY = "family"
+    STAFF = "staff"
+
+
 class DeliveryStatus(str, Enum):
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
@@ -104,11 +116,11 @@ class Observation(ContractModel):
     feature_value: FeatureValue
     unit: str | None
     location: str | None
-    confidence: float
-    data_quality: float
+    confidence: StrictFloat
+    data_quality: StrictFloat
     source_mode: SourceMode
     asset_id: str | None
-    simulated: bool
+    simulated: StrictBool
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     _timestamp = field_validator("timestamp")(_aware_timestamp)
@@ -127,18 +139,18 @@ class Evidence(ContractModel):
     timestamp: datetime
     risk_domain: RiskDomain
     evidence_type: str = Field(min_length=1)
-    severity: float
-    confidence: float
-    data_quality: float
-    baseline_value: float | None
-    current_value: float | None
-    baseline_deviation: float | None
+    severity: StrictFloat
+    confidence: StrictFloat
+    data_quality: StrictFloat
+    baseline_value: StrictFloat | StrictInt | None
+    current_value: StrictFloat | StrictInt | None
+    baseline_deviation: StrictFloat | StrictInt | None
     time_scale: TimeScale
     location: str | None
     explanation: str = Field(min_length=1)
     adapter_version: str = Field(min_length=1)
     source_mode: SourceMode
-    simulated: bool
+    simulated: StrictBool
 
     _timestamp = field_validator("timestamp")(_aware_timestamp)
     _severity = field_validator("severity")(classmethod(lambda cls, value: _score(value)))
@@ -171,16 +183,16 @@ class RiskEvent(ContractModel):
     primary_domain: RiskDomain
     related_domains: list[RiskDomain]
     risk_level: RiskLevel
-    risk_score: float
+    risk_score: StrictFloat
     evidence_ids: list[str] = Field(min_length=1)
     evidence_summary: list[EvidenceSummary] = Field(min_length=1)
-    time_horizon: str = Field(min_length=1)
+    time_horizon: TimeHorizon
     recommended_action: str = Field(min_length=1)
     intervention_policy: str = Field(min_length=1)
     status: EventStatus
     ruleset_version: str = Field(min_length=1)
     source_mode: SourceMode
-    simulated: bool
+    simulated: StrictBool
 
     _created_at = field_validator("created_at")(_aware_timestamp)
     _updated_at = field_validator("updated_at")(_aware_timestamp)
@@ -198,12 +210,12 @@ class InterventionResult(ContractModel):
     delivery_status: DeliveryStatus
     resident_response: str | None
     family_feedback: str | None
-    risk_after: float | None
-    resolved: bool
+    risk_after: StrictFloat | None
+    resolved: StrictBool
     resolution_reason: str | None
-    operator: str = Field(min_length=1)
+    operator: Operator
     source_mode: SourceMode
-    simulated: bool
+    simulated: StrictBool
 
     _started_at = field_validator("started_at")(_aware_timestamp)
     _completed_at = field_validator("completed_at")(_aware_timestamp_optional)

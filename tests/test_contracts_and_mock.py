@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import unittest
+import json
 from copy import deepcopy
-from datetime import datetime
+from pathlib import Path
 
 from contracts.v1.engine import ConflictError, ContractError, MockRiskEngine, validate_contract
 from contracts.v1.mock_data import RESIDENT_ID, sequence
@@ -59,6 +60,68 @@ class ContractModelTests(unittest.TestCase):
         with self.assertRaises(ContractError) as caught:
             validate_contract(RiskEvent, payload)
         self.assertEqual(caught.exception.status_code, 422)
+
+    def test_string_score_is_422(self):
+        engine = MockRiskEngine()
+        engine.ingest_observation(self.data["observations"][0])
+        payload = deepcopy(self.data["evidence"][0])
+        payload["confidence"] = "0.95"
+        with self.assertRaises(ContractError) as caught:
+            engine.ingest_evidence(payload)
+        self.assertEqual(caught.exception.status_code, 422)
+
+    def test_string_boolean_is_422(self):
+        payload = deepcopy(self.data["observations"][0])
+        payload["simulated"] = "true"
+        with self.assertRaises(ContractError) as caught:
+            MockRiskEngine().ingest_observation(payload)
+        self.assertEqual(caught.exception.status_code, 422)
+
+    def test_invalid_time_horizon_is_422(self):
+        engine, _ = run_fixed_sequence()
+        payload = engine.snapshot()["events"][0]
+        payload["time_horizon"] = "SOON"
+        with self.assertRaises(ContractError) as caught:
+            validate_contract(RiskEvent, payload)
+        self.assertEqual(caught.exception.status_code, 422)
+
+    def test_invalid_operator_is_422(self):
+        engine, _ = run_fixed_sequence()
+        payload = engine.snapshot()["interventions"][0]
+        payload["operator"] = "agent"
+        with self.assertRaises(ContractError) as caught:
+            validate_contract(InterventionResult, payload)
+        self.assertEqual(caught.exception.status_code, 422)
+
+    def test_evidence_rejects_asset_id_extension(self):
+        engine = MockRiskEngine()
+        engine.ingest_observation(self.data["observations"][0])
+        payload = deepcopy(self.data["evidence"][0])
+        payload["asset_id"] = None
+        with self.assertRaises(ContractError) as caught:
+            engine.ingest_evidence(payload)
+        self.assertEqual(caught.exception.status_code, 422)
+
+    def test_green_state_is_not_an_empty_risk_event(self):
+        engine, _ = run_fixed_sequence()
+        payload = engine.snapshot()["events"][0]
+        payload["risk_level"] = "GREEN"
+        payload["evidence_ids"] = []
+        payload["evidence_summary"] = []
+        with self.assertRaises(ContractError) as caught:
+            validate_contract(RiskEvent, payload)
+        self.assertEqual(caught.exception.status_code, 422)
+
+    def test_combined_cross_client_example_uses_canonical_models(self):
+        path = Path("contracts/v1/examples/four_objects.json")
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        Observation.model_validate(payload["observation"])
+        Evidence.model_validate(payload["evidence"])
+        RiskEvent.model_validate(payload["risk_event"])
+        InterventionResult.model_validate(payload["intervention_result"])
+        self.assertNotIn("asset_id", payload["evidence"])
+        self.assertEqual(payload["risk_event"]["source_mode"], "MOCK")
+        self.assertTrue(payload["risk_event"]["simulated"])
 
 
 class EngineContractTests(unittest.TestCase):

@@ -9,6 +9,15 @@
       "title": "DeliveryStatus",
       "type": "string"
     },
+    "Operator": {
+      "enum": [
+        "system",
+        "family",
+        "staff"
+      ],
+      "title": "Operator",
+      "type": "string"
+    },
     "SourceMode": {
       "enum": [
         "LIVE_DEVICE",
@@ -116,9 +125,7 @@
       "title": "Resolution Reason"
     },
     "operator": {
-      "minLength": 1,
-      "title": "Operator",
-      "type": "string"
+      "$ref": "#/$defs/Operator"
     },
     "source_mode": {
       "$ref": "#/$defs/SourceMode"

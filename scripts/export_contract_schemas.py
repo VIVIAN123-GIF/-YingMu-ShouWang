@@ -44,10 +44,10 @@ def main() -> None:
     }
     for name, payload in examples.items():
         write_json(example_dir / f"{name}.json", payload)
+    write_json(example_dir / "four_objects.json", examples)
     write_json(example_dir / "mock_fall_sequence.json", {**data, "expected_steps": steps})
-    print(f"Exported {len(models)} schemas and {len(examples) + 1} example files")
+    print(f"Exported {len(models)} schemas and {len(examples) + 2} example files")
 
 
 if __name__ == "__main__":
     main()
-

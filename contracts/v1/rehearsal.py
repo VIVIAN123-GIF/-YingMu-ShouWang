@@ -49,4 +49,3 @@ def run_fixed_sequence() -> tuple[MockRiskEngine, list[dict]]:
     steps.append({"step": 6, "virtual_time": "2026-07-31T03:08:30+08:00", "status": "RESOLVED", "risk_after": result.risk_after, "resolved": result.resolved})
 
     return engine, steps
-

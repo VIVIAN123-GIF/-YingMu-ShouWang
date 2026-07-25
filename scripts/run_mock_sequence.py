@@ -16,13 +16,27 @@ if str(ROOT) not in sys.path:
 from contracts.v1.rehearsal import run_fixed_sequence  # noqa: E402
 
 
+DEFAULT_GENERATED_AT = "2026-07-25T16:50:37+08:00"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the deterministic fall Mock sequence")
     parser.add_argument("--runs", type=int, default=3, help="number of complete reproductions")
     parser.add_argument("--log", default="artifacts/7月25日Mock联调运行日志.json", help="UTF-8 JSON log path")
+    parser.add_argument(
+        "--generated-at",
+        default=DEFAULT_GENERATED_AT,
+        help="fixed ISO 8601 timestamp for a reproducible tracked log",
+    )
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs must be at least 1")
+    try:
+        generated_at = datetime.fromisoformat(args.generated_at.replace("Z", "+00:00"))
+    except ValueError:
+        parser.error("--generated-at must be an ISO 8601 timestamp")
+    if generated_at.utcoffset() is None:
+        parser.error("--generated-at must include a timezone")
 
     runs = []
     expected_snapshot = None
@@ -36,7 +50,7 @@ def main() -> None:
 
     payload = {
         "schema_version": "1.0",
-        "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "generated_at": args.generated_at,
         "simulated": True,
         "source_mode": "MOCK",
         "runs": runs,
@@ -51,4 +65,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

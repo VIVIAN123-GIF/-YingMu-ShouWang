@@ -73,4 +73,3 @@ def evidence():
 
 def sequence():
     return {"observations": deepcopy(observations()), "evidence": deepcopy(evidence())}
-
