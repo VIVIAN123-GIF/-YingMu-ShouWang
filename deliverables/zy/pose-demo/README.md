@@ -92,9 +92,21 @@ source_video, frame_idx, timestamp_ms, landmark_id, x, y, z, world_x, world_y, w
 
 - `samples/fall-01-cam0_landmarks_sample.csv`
 
+当前样例说明：
+
+- 共 `99` 行有效数据
+- 包含 `3` 个检测成功帧
+- 每个成功帧都覆盖 `0—32` 共 `33` 个 `landmark_id`
+
 ## Evidence 样例说明
 
-当前仓库还没有完整的跌倒前兆算法输出，`evidence/` 中的 JSON 仅为本阶段接口占位样例，不代表算法已经完成。
+当前仓库还没有完整的跌倒前兆算法输出，`evidence/` 中的 JSON 为 Freeze v1.0 字段完整的接口占位样例，不代表算法已经完成。
+
+当前样例文件：
+
+- `evidence/rapid_rise.json`
+- `evidence/trunk_sway.json`
+- `evidence/gait_instability.json`
 
 ## 当前边界
 

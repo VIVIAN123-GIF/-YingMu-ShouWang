@@ -1,9 +1,21 @@
 {
+  "schema_version": "1.0",
+  "evidence_id": "evi-fall-gait-instability-demo-001",
+  "observation_ids": ["obs-pose-demo-003"],
+  "resident_id": "resident-demo-001",
+  "timestamp": "2026-07-25T10:00:10+08:00",
+  "risk_domain": "FALL",
   "evidence_type": "gait_instability",
-  "source": "pose_demo_rule_stub",
-  "video": "adl-01-cam0-rgb",
-  "time_window_ms": [0, 2000],
-  "score": 0.27,
-  "status": "stub",
-  "note": "当前仅完成步态关键点序列输出，步长差异比和步速波动规则仍待实现。"
+  "severity": 0.27,
+  "confidence": 0.66,
+  "data_quality": 0.83,
+  "baseline_value": null,
+  "current_value": null,
+  "baseline_deviation": null,
+  "time_scale": "SHORT",
+  "location": null,
+  "explanation": "姿态关键点 Demo 生成的接口占位样例，步长差异比和步速波动规则仍待实现。",
+  "adapter_version": "pose-demo-stub-v1",
+  "source_mode": "PUBLIC_DATASET",
+  "simulated": true
 }
