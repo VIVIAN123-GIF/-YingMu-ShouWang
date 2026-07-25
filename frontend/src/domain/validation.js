@@ -133,7 +133,6 @@ export function validateEvidence(evidence, index = 0) {
   assertNullableString(assertRequired(evidence, 'location', label), `${label}.location`)
   assertString(assertRequired(evidence, 'explanation', label), `${label}.explanation`)
   assertString(assertRequired(evidence, 'adapter_version', label), `${label}.adapter_version`)
-  assertAssetId(evidence, label)
   assertSource(evidence, label)
   return evidence
 }
@@ -201,6 +200,7 @@ export function validateRiskEvent(event) {
       fail(`evidence_summary[${index}].evidence_id 不在 RiskEvent.evidence_ids 中`, `evidence_summary[${index}].evidence_id`)
     }
   })
+  assertSource(event, label)
   return event
 }
 

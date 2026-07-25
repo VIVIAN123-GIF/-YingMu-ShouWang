@@ -24,6 +24,21 @@ const selectedObservations = computed(() => {
   return (event.value?.observations || []).filter((observation) => ids.has(observation.observation_id))
 })
 
+function observationAssetIdFor(evidence, currentEvent = event.value) {
+  const ids = new Set(evidence?.observation_ids || [])
+  return (currentEvent?.observations || []).find((observation) => (
+    ids.has(observation.observation_id)
+    && typeof observation.asset_id === 'string'
+    && observation.asset_id.length > 0
+  ))?.asset_id || null
+}
+
+function firstEventAssetId(currentEvent) {
+  return (currentEvent?.evidences || [])
+    .map((evidence) => observationAssetIdFor(evidence, currentEvent))
+    .find(Boolean) || null
+}
+
 const displayEvidences = computed(() => {
   const detailsById = new Map((event.value?.evidences || []).map((evidence) => [evidence.evidence_id, evidence]))
   return (event.value?.evidence_summary || []).map((summary) => ({
@@ -55,7 +70,8 @@ async function load() {
   error.value = ''
   try {
     event.value = await getEvent(route.params.eventId || 'event-fall-100')
-    asset.value = event.value?.asset_id ? await getAsset(event.value.asset_id) : null
+    const assetId = firstEventAssetId(event.value)
+    asset.value = assetId ? await getAsset(assetId) : null
   } catch (err) {
     error.value = `无法读取事件：${err.message}`
   } finally {
@@ -110,7 +126,7 @@ onMounted(load)
                 </div>
                 <div class="evidence-trace-summary">
                   <span>{{ (evidence.observation_ids || []).length }} 条 Observation</span>
-                  <span>{{ formatAssetId(evidence.asset_id) }}</span>
+                  <span>{{ formatAssetId(observationAssetIdFor(evidence)) }}</span>
                   <span>{{ evidence.adapter_version || '暂无适配器详情' }}</span>
                 </div>
                 <SourceBadge v-if="evidence.source_mode" :mode="evidence.source_mode" :simulated="evidence.simulated" />
@@ -177,7 +193,7 @@ onMounted(load)
             <div><dt>Evidence ID</dt><dd>{{ selectedEvidence.evidence_id }}</dd></div>
             <div><dt>风险方向</dt><dd>{{ domainLabel(selectedEvidence.risk_domain) }}</dd></div>
             <div><dt>生成时间</dt><dd>{{ formatDateTime(selectedEvidence.timestamp) }}</dd></div>
-            <div><dt>素材 ID</dt><dd>{{ formatAssetId(selectedEvidence.asset_id) }}</dd></div>
+            <div><dt>素材 ID</dt><dd>{{ formatAssetId(observationAssetIdFor(selectedEvidence)) }}</dd></div>
             <div><dt>适配器版本</dt><dd>{{ selectedEvidence.adapter_version }}</dd></div>
             <div><dt>个人基线</dt><dd>{{ selectedEvidence.baseline_value ?? '—' }}</dd></div>
             <div><dt>当前值</dt><dd>{{ selectedEvidence.current_value ?? '—' }}</dd></div>

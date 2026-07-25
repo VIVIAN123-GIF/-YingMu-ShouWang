@@ -63,7 +63,7 @@ VITE_AUTHORIZED_CLIP_URL=
 
 - `RiskEvent.evidence_summary` 只保留 `evidence_id`、`evidence_type`、`explanation` 三个摘要字段。
 - 完整 Evidence、Observation 和 InterventionResult 仅放在前端 ViewModel 的 `evidences`、`observations`、`interventions` 中，不作为 RiskEvent 核心字段回传。
-- Evidence 和 Observation 的 `asset_id` 必须存在，但允许为 `null`；页面显示“暂无可追溯视频”。
+- Evidence 不直接保存 `asset_id`，素材通过 `observation_ids` 追溯到 Observation；Observation 的 `asset_id` 必须存在但允许为 `null`，页面显示“暂无可追溯视频”。
 - 前端会校验四对象的 `schema_version`、身份字段、版本字段、来源与模拟状态等冻结必填项。
 - 可复用样例位于 `contracts/v1/examples/four-objects.json`。
 

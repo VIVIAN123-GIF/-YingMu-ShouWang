@@ -58,7 +58,7 @@ for (let round = 1; round <= 3; round += 1) {
 
     await page.goto('/events/event-tool-failed')
     await expect(page.getByText('暂无可追溯视频').first()).toBeVisible()
-    checkpoints.push('asset_id=null显示暂无可追溯视频')
+    checkpoints.push('Observation.asset_id=null显示暂无可追溯视频')
 
     const logs = await page.evaluate(() => window.__YINGMU_AUDIT__?.export?.() || [])
     expect(logs.some((entry) => entry.ruleset_version === 'ruleset-v1.0')).toBeTruthy()

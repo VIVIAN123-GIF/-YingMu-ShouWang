@@ -36,7 +36,6 @@
     "location": "bedroom",
     "explanation": "起身速度明显快于个人基线",
     "adapter_version": "fall-adapter-v1",
-    "asset_id": null,
     "source_mode": "MOCK",
     "simulated": true
   },
@@ -62,7 +61,9 @@
     "recommended_action": "先坐稳，扶住身边固定物。",
     "intervention_policy": "fall-orange-gentle-v1",
     "status": "INTERVENING",
-    "ruleset_version": "ruleset-v1.0"
+    "ruleset_version": "ruleset-v1.0",
+    "source_mode": "MOCK",
+    "simulated": true
   },
   "intervention_result": {
     "schema_version": "1.0",

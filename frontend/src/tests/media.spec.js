@@ -18,7 +18,7 @@ describe('授权媒体降级', () => {
     expect(wrapper.find('video').exists()).toBe(false)
   })
 
-  it('Evidence 或 Observation 没有 asset_id 时显示不可追溯提示', () => {
+  it('Observation 没有 asset_id 时显示不可追溯提示', () => {
     expect(formatAssetId(null)).toBe('暂无可追溯视频')
     expect(formatAssetId('asset-001')).toBe('asset-001')
   })
