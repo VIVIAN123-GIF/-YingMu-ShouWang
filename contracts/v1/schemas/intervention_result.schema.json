@@ -1,0 +1,151 @@
+{
+  "$defs": {
+    "DeliveryStatus": {
+      "enum": [
+        "SUCCESS",
+        "FAILED",
+        "RETRYING"
+      ],
+      "title": "DeliveryStatus",
+      "type": "string"
+    },
+    "SourceMode": {
+      "enum": [
+        "LIVE_DEVICE",
+        "RECORDED_REPLAY",
+        "PUBLIC_DATASET",
+        "MOCK"
+      ],
+      "title": "SourceMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "result_id": {
+      "minLength": 1,
+      "title": "Result Id",
+      "type": "string"
+    },
+    "event_id": {
+      "minLength": 1,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Completed At"
+    },
+    "action_type": {
+      "minLength": 1,
+      "title": "Action Type",
+      "type": "string"
+    },
+    "tool_name": {
+      "minLength": 1,
+      "title": "Tool Name",
+      "type": "string"
+    },
+    "delivery_status": {
+      "$ref": "#/$defs/DeliveryStatus"
+    },
+    "resident_response": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Resident Response"
+    },
+    "family_feedback": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Family Feedback"
+    },
+    "risk_after": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Risk After"
+    },
+    "resolved": {
+      "title": "Resolved",
+      "type": "boolean"
+    },
+    "resolution_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Resolution Reason"
+    },
+    "operator": {
+      "minLength": 1,
+      "title": "Operator",
+      "type": "string"
+    },
+    "source_mode": {
+      "$ref": "#/$defs/SourceMode"
+    },
+    "simulated": {
+      "title": "Simulated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "result_id",
+    "event_id",
+    "started_at",
+    "completed_at",
+    "action_type",
+    "tool_name",
+    "delivery_status",
+    "resident_response",
+    "family_feedback",
+    "risk_after",
+    "resolved",
+    "resolution_reason",
+    "operator",
+    "source_mode",
+    "simulated"
+  ],
+  "title": "InterventionResult",
+  "type": "object"
+}
