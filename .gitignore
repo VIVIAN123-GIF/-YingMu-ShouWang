@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+workspace_draft/
+ys7_mock/
+docs/小组分工管理文档/
