@@ -1,0 +1,135 @@
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import PageHeader from '../components/common/PageHeader.vue'
+import RiskBadge from '../components/common/RiskBadge.vue'
+import SourceBadge from '../components/common/SourceBadge.vue'
+import ChartPanel from '../components/common/ChartPanel.vue'
+import { getWeeklyReport, submitFamilyFeedback } from '../services/repository'
+import { formatDateTime } from '../utils/format'
+
+const loading = ref(true)
+const submitting = ref(false)
+const error = ref('')
+const report = ref(null)
+const careChoice = ref('')
+const verifyChoice = ref('')
+
+const trendOption = computed(() => ({
+  color: ['#176b65', '#9fb8b0', '#dd8a3c'],
+  grid: { left: 48, right: 24, top: 48, bottom: 42 },
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['活动指数', '个人基线', '作息偏移'], top: 0, textStyle: { color: '#54635f', fontSize: 14 } },
+  xAxis: { type: 'category', data: report.value?.trend?.map((item) => item.date) || [], axisLabel: { color: '#64736f' } },
+  yAxis: [
+    { type: 'value', name: '活动指数', min: 0, max: 100, splitLine: { lineStyle: { color: '#edf3f1' } }, axisLabel: { color: '#64736f' } },
+    { type: 'value', name: '分钟', min: 0, max: 40, splitLine: { show: false }, axisLabel: { color: '#64736f' } },
+  ],
+  series: [
+    { name: '活动指数', type: 'line', smooth: true, symbolSize: 8, data: report.value?.trend?.map((item) => item.activity) || [], lineStyle: { width: 4 } },
+    { name: '个人基线', type: 'line', symbol: 'none', data: report.value?.trend?.map((item) => item.baseline) || [], lineStyle: { width: 2, type: 'dashed' } },
+    { name: '作息偏移', type: 'bar', yAxisIndex: 1, barWidth: 16, data: report.value?.trend?.map((item) => item.sleep_offset) || [], itemStyle: { borderRadius: [6, 6, 0, 0] } },
+  ],
+}))
+
+async function load() {
+  loading.value = true
+  try {
+    report.value = await getWeeklyReport()
+  } catch (err) {
+    error.value = `无法读取周报：${err.message}`
+  } finally {
+    loading.value = false
+  }
+}
+
+async function submit(kind) {
+  const value = kind === 'care' ? careChoice.value : verifyChoice.value
+  if (!value) {
+    ElMessage.warning('请先选择一项反馈')
+    return
+  }
+  submitting.value = true
+  try {
+    const eventId = kind === 'care' ? 'event-mental-week' : report.value.visitor_case.event_id
+    await submitFamilyFeedback(eventId, { feedback_type: kind, value, operator: 'family' })
+    if (kind === 'care') report.value.care.status = 'SUBMITTED'
+    else report.value.visitor_case.verification_status = 'SUBMITTED'
+    ElMessage.success('反馈已记录，将进入统一事件时间轴')
+  } catch (err) {
+    ElMessage.error(`提交失败：${err.message}`)
+  } finally {
+    submitting.value = false
+  }
+}
+
+onMounted(load)
+</script>
+
+<template>
+  <div v-loading="loading">
+    <PageHeader title="本周值得关注的变化" description="黄色趋势低打扰汇总给家属，不在老人侧即时报警。">
+      <SourceBadge v-if="report" :mode="report.source_mode" :simulated="report.simulated" />
+    </PageHeader>
+
+    <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
+
+    <template v-if="report">
+      <section class="weekly-summary">
+        <div><RiskBadge :level="report.risk_level" /><h2>{{ report.summary }}</h2><p>报告周期：{{ report.period }} · 生成于 {{ formatDateTime(report.generated_at) }}</p></div>
+        <div class="low-disturbance"><span>低打扰原则</span><strong>本周最多主动汇总一次</strong><p>趋势恶化时可以更新，但不会因单次变化制造焦虑。</p></div>
+      </section>
+
+      <section class="content-card weekly-chart-card">
+        <div class="card-heading"><div><span class="section-kicker">个人趋势</span><h2>活动与作息变化</h2></div><span class="non-diagnosis">行为趋势，不是医学诊断</span></div>
+        <ChartPanel :option="trendOption" height="350px" aria-label="最近七天活动趋势、个人基线和作息偏移图" />
+      </section>
+
+      <section class="weekly-columns">
+        <article class="content-card care-panel">
+          <div class="card-heading"><div><span class="section-kicker">家属关怀</span><h2>先看证据，再决定怎么联系</h2></div></div>
+          <div class="weekly-evidence-list">
+            <article v-for="item in report.evidence" :key="item.label">
+              <span class="evidence-number">{{ Math.round(item.confidence * 100) }}%</span>
+              <div><strong>{{ item.label }}</strong><p>{{ item.detail }}</p></div>
+            </article>
+          </div>
+          <div class="recommendation-box">
+            <strong>建议动作</strong>
+            <ol><li v-for="item in report.recommendations" :key="item">{{ item }}</li></ol>
+          </div>
+          <fieldset class="feedback-fieldset">
+            <legend>完成联系后，请选择反馈</legend>
+            <el-radio-group v-model="careChoice" class="stacked-radios">
+              <el-radio v-for="option in report.care.options" :key="option" :value="option" border>{{ option }}</el-radio>
+            </el-radio-group>
+          </fieldset>
+          <el-button type="primary" size="large" :loading="submitting" :disabled="report.care.status === 'SUBMITTED'" @click="submit('care')">
+            {{ report.care.status === 'SUBMITTED' ? '关怀反馈已记录' : '记录关怀反馈' }}
+          </el-button>
+        </article>
+
+        <article class="content-card visitor-panel">
+          <div class="card-heading"><div><span class="section-kicker">访客核验</span><h2>{{ report.visitor_case.visitor_label }}</h2></div><RiskBadge :level="report.visitor_case.risk_level" compact /></div>
+          <SourceBadge :mode="report.visitor_case.source_mode" :simulated="report.visitor_case.simulated" />
+          <div class="visitor-meta"><span><b>{{ report.visitor_case.duration_minutes }}</b> 分钟停留</span><span>{{ report.visitor_case.location }}</span><span>{{ formatDateTime(report.visitor_case.occurred_at) }}</span></div>
+          <div class="visitor-evidence">
+            <article v-for="item in report.visitor_case.evidence" :key="item.type">
+              <span></span><div><strong>{{ item.label }}</strong><p>{{ item.detail }}</p><code>{{ item.type }}</code></div>
+            </article>
+          </div>
+          <div class="gentle-action"><strong>建议</strong><p>{{ report.visitor_case.recommended_action }}</p></div>
+          <fieldset class="feedback-fieldset">
+            <legend>联系确认后，请选择核验结果</legend>
+            <el-radio-group v-model="verifyChoice" class="stacked-radios">
+              <el-radio v-for="option in report.visitor_case.verification_options" :key="option" :value="option" border>{{ option }}</el-radio>
+            </el-radio-group>
+          </fieldset>
+          <el-button type="primary" size="large" :loading="submitting" :disabled="report.visitor_case.verification_status === 'SUBMITTED'" @click="submit('verify')">
+            {{ report.visitor_case.verification_status === 'SUBMITTED' ? '身份核验已记录' : '提交身份核验' }}
+          </el-button>
+        </article>
+      </section>
+    </template>
+  </div>
+</template>
