@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from contracts.v1.engine import MockRiskEngine
 from contracts.v1.memory import BaselineStatus
@@ -145,6 +145,8 @@ class MemoryAndRulesetTests(unittest.TestCase):
             engine.ingest_observation(self.data["observations"][index])
             engine.ingest_evidence(self.data["evidence"][index])
         event = engine.evaluate(RESIDENT_ID)
+        if event is None:
+            self.fail("rapid_rise + trunk_sway should create a RiskEvent")
         self.assertEqual((event.risk_level.value, event.status.value, event.risk_score), ("ORANGE", "INTERVENING", 0.82))
         self.assertEqual(engine.traces[-1].matched_rule, "R-FALL-02")
 
@@ -162,6 +164,8 @@ class MemoryAndRulesetTests(unittest.TestCase):
             engine.ingest_observation(data["observations"][index])
             engine.ingest_evidence(data["evidence"][index])
         event = engine.evaluate(RESIDENT_ID)
+        if event is None:
+            self.fail("initial fall evidence should create a RiskEvent")
         engine.intervene(event.event_id)
         recovered = deepcopy(data["observations"][3])
         recovered["timestamp"] = "2026-07-31T03:07:29+08:00"
@@ -172,7 +176,10 @@ class MemoryAndRulesetTests(unittest.TestCase):
         recovery_evidence["observation_ids"] = [recovered["observation_id"]]
         engine.ingest_observation(recovered)
         engine.ingest_evidence(recovery_evidence)
-        self.assertEqual(engine.evaluate(RESIDENT_ID).status.value, "OBSERVING")
+        observing = engine.evaluate(RESIDENT_ID)
+        if observing is None:
+            self.fail("posture_recovered should keep the RiskEvent in OBSERVING")
+        self.assertEqual(observing.status.value, "OBSERVING")
         sway_obs = deepcopy(data["observations"][2])
         sway_obs["timestamp"] = "2026-07-31T03:07:40+08:00"
         sway_obs["observation_id"] = "obs-sway-r6"
@@ -183,6 +190,8 @@ class MemoryAndRulesetTests(unittest.TestCase):
         engine.ingest_observation(sway_obs)
         engine.ingest_evidence(sway_evidence)
         event = engine.evaluate(RESIDENT_ID)
+        if event is None:
+            self.fail("a hazard during observation should return the active RiskEvent")
         self.assertEqual(event.status.value, "INTERVENING")
         self.assertEqual(engine.traces[-1].matched_rule, "R-FALL-06")
         engine.intervene(event.event_id)
@@ -197,6 +206,8 @@ class MemoryAndRulesetTests(unittest.TestCase):
         engine.ingest_observation(third_obs)
         engine.ingest_evidence(third_evidence)
         escalated = engine.evaluate(RESIDENT_ID)
+        if escalated is None:
+            self.fail("a third hazard after two interventions should escalate")
         self.assertEqual((escalated.risk_level.value, escalated.status.value), ("RED", "ESCALATED"))
         self.assertEqual(engine.traces[-1].matched_rule, "R-FALL-07")
 
@@ -206,6 +217,8 @@ class MemoryAndRulesetTests(unittest.TestCase):
             engine.ingest_observation(self.data["observations"][index])
             engine.ingest_evidence(self.data["evidence"][index])
         event = engine.evaluate(RESIDENT_ID)
+        if event is None:
+            self.fail("initial fall evidence should create a RiskEvent")
         self.assertEqual(event.status, EventStatus.INTERVENING)
         obs = deepcopy(self.data["observations"][2])
         obs["observation_id"] = "obs-persistent"
@@ -219,6 +232,8 @@ class MemoryAndRulesetTests(unittest.TestCase):
         engine.ingest_observation(obs)
         engine.ingest_evidence(ev)
         escalated = engine.evaluate(RESIDENT_ID, self.now)
+        if escalated is None:
+            self.fail("persistent instability should escalate the active event")
         self.assertEqual((escalated.risk_level.value, escalated.status.value), ("RED", "ESCALATED"))
         self.assertEqual(engine.traces[-1].matched_rule, "R-FALL-07")
 
