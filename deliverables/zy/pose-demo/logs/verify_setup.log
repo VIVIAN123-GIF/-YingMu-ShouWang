@@ -1,0 +1,6 @@
+command: .\.venv\Scripts\python.exe deliverables/zy/pose-demo/scripts/verify_setup.py --model models/pose_landmarker_heavy.task
+python_version: 3.9.25
+numpy: 1.26.4
+opencv: 4.11.0
+mediapipe: 0.10.21
+PoseLandmarker initialization: OK
