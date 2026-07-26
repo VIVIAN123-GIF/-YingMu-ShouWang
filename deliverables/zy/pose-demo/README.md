@@ -7,6 +7,11 @@
 - MediaPipe 官方 Pose Landmarker Demo 已跑通
 - 可从视频或 RGB 图像序列中提取 33 个关键点
 - URFD 已完成下载和本地整理
+- 已完成步态特征提取 pipeline 首版，实现：
+  - `step_speed`
+  - `sway_frequency_hz`
+  - `step_length_asymmetry_ratio`
+- 已生成清洗后数据集与序列级特征数据集
 - Pre-VFall 尚未完成下载，不作为当前阶段阻塞项
 
 会议中应表述为：
@@ -22,6 +27,7 @@
 - `evidence/`：`rapid_rise`、`trunk_sway`、`gait_instability` 占位样例
 - `datasets.md`：URFD / Pre-VFall 下载地址、用途和当前状态
 - `failure_scenarios.md`：当前已知失败场景说明
+- `processed/`：清洗后逐帧数据、序列级特征表和构建摘要
 
 ## 当前真实可运行环境
 
@@ -76,6 +82,12 @@ PoseLandmarker initialization: OK
 .\.venv\Scripts\python.exe deliverables/zy/pose-demo/scripts/run_pose_demo.py --input data/raw/urfd/extracted/adl-01-cam0-rgb --model models/pose_landmarker_heavy.task --max-frames 60
 ```
 
+构建步态特征数据集：
+
+```powershell
+.\.venv\Scripts\python.exe deliverables/zy/pose-demo/scripts/build_gait_feature_dataset.py --model models/pose_landmarker_heavy.task --urfd-root data/raw/urfd --output-dir deliverables/zy/pose-demo/processed --camera-filter cam0 --frame-stride 2
+```
+
 ## 33 点输出说明
 
 关键点 CSV 字段固定为：
@@ -108,6 +120,50 @@ source_video, frame_idx, timestamp_ms, landmark_id, x, y, z, world_x, world_y, w
 - `evidence/trunk_sway.json`
 - `evidence/gait_instability.json`
 
+## 步态特征与清洗后数据集
+
+当前已交付：
+
+- `scripts/build_gait_feature_dataset.py`
+- `processed/urfd_pose_cleaned_frames.csv`
+- `processed/urfd_gait_features.csv`
+- `processed/build_summary.json`
+
+本次构建口径：
+
+- 数据源：`URFD`
+- 视角：仅 `cam0`
+- 抽帧：`frame_stride=2`
+- 标签：`fall / adl`
+
+逐帧清洗后数据字段包含：
+
+- `sequence_id`
+- `label`
+- `frame_number`
+- `timestamp_ms`
+- `pelvis_x / pelvis_y`
+- `shoulder_x / shoulder_y`
+- `trunk_angle_deg`
+- `ankle_gap`
+- `left_stride_extent / right_stride_extent`
+- `core_visibility_min / core_visibility_mean`
+- 平滑后的关键派生量
+
+序列级特征表当前包含：
+
+- `step_speed`
+- `sway_frequency_hz`
+- `step_length_asymmetry_ratio`
+- `valid_frame_ratio`
+- `mean_core_visibility`
+
+当前构建结果：
+
+- 序列数：`70`
+- 清洗后逐帧数据行数：`2813`
+- 标签分布：`30` 条 `fall`，`40` 条 `adl`
+
 ## 当前边界
 
 当前可以确认：
@@ -115,6 +171,8 @@ source_video, frame_idx, timestamp_ms, landmark_id, x, y, z, world_x, world_y, w
 - 姿态关键点提取可运行
 - 33 点 CSV 可导出
 - URFD 可作为当前阶段主数据源
+- 首版步态特征提取 pipeline 已可运行
+- 清洗后数据集和序列级特征表已生成
 
 当前尚未完成：
 
