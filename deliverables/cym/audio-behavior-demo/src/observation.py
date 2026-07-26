@@ -27,6 +27,7 @@ REQUIRED_FIELDS = {
     "asset_id",
     "simulated",
 }
+ALLOWED_FIELDS = REQUIRED_FIELDS | {"metadata"}
 
 
 class ObservationValidationError(ValueError):
@@ -84,6 +85,12 @@ def validate_observation(observation):
     if missing_fields:
         raise ObservationValidationError(
             f"Observation缺少必填字段：{', '.join(missing_fields)}"
+        )
+
+    unexpected_fields = sorted(observation.keys() - ALLOWED_FIELDS)
+    if unexpected_fields:
+        raise ObservationValidationError(
+            f"Observation包含未知字段：{', '.join(unexpected_fields)}"
         )
 
     if observation["schema_version"] != SCHEMA_VERSION:

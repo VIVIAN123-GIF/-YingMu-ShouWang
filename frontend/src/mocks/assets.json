@@ -1,0 +1,15 @@
+[
+  {
+    "asset_id": "asset-fall-authorized",
+    "title": "第100天凌晨授权事件片段",
+    "source_mode": "RECORDED_REPLAY",
+    "simulated": true,
+    "stream_url": null,
+    "fallback_url": null,
+    "fallback_kind": "AUTHORIZED_CLIP",
+    "available": false,
+    "verification_status": "PENDING_ASSET",
+    "captured_at": "2026-07-24T03:07:00+08:00",
+    "notice": "实时视频不可用，已定位到授权事件片段；当前演示包未附带视频文件。"
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "evi-fall-rapid-rise-demo-001",
+  "observation_ids": ["obs-pose-demo-001"],
+  "resident_id": "resident-demo-001",
+  "timestamp": "2026-07-25T10:00:00+08:00",
+  "risk_domain": "FALL",
+  "evidence_type": "rapid_rise",
+  "severity": 0.32,
+  "confidence": 0.70,
+  "data_quality": 0.85,
+  "baseline_value": null,
+  "current_value": null,
+  "baseline_deviation": null,
+  "time_scale": "SHORT",
+  "location": null,
+  "explanation": "姿态关键点 Demo 生成的接口占位样例，尚未完成正式快速起身规则。",
+  "adapter_version": "pose-demo-stub-v1",
+  "source_mode": "PUBLIC_DATASET",
+  "simulated": true
+}

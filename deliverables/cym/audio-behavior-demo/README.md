@@ -47,6 +47,7 @@
 ├─ tests/
 │  ├─ test_behavior.py
 │  ├─ test_evidence.py
+│  ├─ test_observation.py
 │  └─ test_whisper_demo.py
 ├─ samples/
 │  ├─ evidence_samples.json
@@ -108,7 +109,8 @@ winget install --id Gyan.FFmpeg -e
 python -m unittest discover -s .\tests -v
 ```
 
-预期：当前11项测试全部`OK`。
+预期：当前16项测试全部`OK`，其中Observation样例还会通过仓库
+`contracts.v1.models.Observation`官方模型校验。
 
 ### 5.2 生成本地MP4链路测试视频
 
