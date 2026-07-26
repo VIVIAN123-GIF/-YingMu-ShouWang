@@ -23,7 +23,7 @@
 - MOG2只分析未绘制的原始帧，人体框、文字和轨迹不会污染运动区域；
 - `camera_test.py`支持自动退出；
 - 三条Evidence由代码构造并进行Freeze v1.0校验；
-- 新增9项单元测试，覆盖Evidence错误和分析/绘制分离；
+- 7月25日新增9项单元测试，覆盖Evidence错误和分析/绘制分离；
 - Whisper新增`--check`，FFmpeg缺失时会给出明确提示；
 - 新增不含人物的MP4链路测试视频生成器；
 - 新增本地合成测试语音脚本，不提交私人录音。
@@ -38,6 +38,7 @@
 │  ├─ whisper_demo.py
 │  ├─ camera_test.py
 │  ├─ behavior_demo.py
+│  ├─ observation.py
 │  ├─ evidence.py
 │  └─ generate_evidence_samples.py
 ├─ scripts/
@@ -46,6 +47,7 @@
 ├─ tests/
 │  ├─ test_behavior.py
 │  ├─ test_evidence.py
+│  ├─ test_observation.py
 │  └─ test_whisper_demo.py
 ├─ samples/
 │  ├─ evidence_samples.json
@@ -107,7 +109,8 @@ winget install --id Gyan.FFmpeg -e
 python -m unittest discover -s .\tests -v
 ```
 
-预期：9项测试全部`OK`。
+预期：当前16项测试全部`OK`，其中Observation样例还会通过仓库
+`contracts.v1.models.Observation`官方模型校验。
 
 ### 5.2 生成本地MP4链路测试视频
 
@@ -127,6 +130,9 @@ python .\src\behavior_demo.py `
   --input .\output\smoke.mp4 `
   --headless `
   --summary-output .\output\behavior_summary.json `
+  --observation-output .\output\behavior_observations.json `
+  --resident-id resident-001 `
+  --asset-id asset-smoke-0001 `
   --simulated
 ```
 
@@ -155,6 +161,15 @@ python .\src\behavior_demo.py `
 ```
 
 预期：`frames_processed`为30，`stop_reason`为`max_frames`。
+
+### 5.5 自动输出Observation
+
+提供`--observation-output`后，程序会在一次运行结束时自动输出6条
+Freeze v1.0 Observation，包括最大人数、人员检出帧比例、主要活动等级、
+最大运动面积、轨迹点数和累计像素距离。
+
+当前`confidence`和`data_quality`仍是明确标记为
+`DEMO_UNCALIBRATED`的联调值，不代表正式准确率。Observation不输出最终风险等级。
 
 ## 6. 摄像头复现
 
@@ -190,10 +205,16 @@ Windows PowerShell可执行：
 python .\src\whisper_demo.py .\output\synthetic_test.wav `
   --model tiny `
   --language Chinese `
-  --output-dir .\output
+  --output-dir .\output `
+  --observation-output .\output\audio_observations.json `
+  --resident-id resident-001 `
+  --asset-id asset-synthetic-audio-0001 `
+  --simulated
 ```
 
 也可以换成经过授权的自备音频。输出JSON只记录输入文件名，不记录绝对路径。
+提供`--observation-output`后还会生成转写可用状态、转写文本、关键词命中数量和
+命中标签Observation。关键词命中只表示高风险交互特征，不直接判断诈骗。
 
 ## 8. Evidence自动生成与校验
 

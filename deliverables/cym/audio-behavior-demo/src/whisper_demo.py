@@ -5,7 +5,25 @@ import json
 import shutil
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
+from uuid import uuid4
+
+from observation import build_observation, validate_observation_collection
+
+
+FRAUD_PHRASE_GROUPS = {
+    "guaranteed_return": ("保证收益", "保證收益"),
+    "verification_code_like": ("验证码", "驗證碼", "验证马", "驗證馬"),
+    "immediate_transfer": (
+        "马上转账",
+        "馬上轉帳",
+        "马上完成转账",
+        "馬上完成轉帳",
+    ),
+    "safe_account": ("安全账户", "安全賬戶", "安全帳戶"),
+    "keep_secret_from_family": ("不要告诉家人", "不要告訴家人"),
+}
 
 
 def parse_args():
@@ -23,6 +41,42 @@ def parse_args():
         type=Path,
         default=Path("output"),
         help="转写文本和元数据输出目录",
+    )
+    parser.add_argument(
+        "--observation-output",
+        type=Path,
+        help="可选的Freeze v1.0 Observation JSON输出路径",
+    )
+    parser.add_argument(
+        "--resident-id",
+        default="resident-001",
+        help="Observation中的脱敏老人标识",
+    )
+    parser.add_argument(
+        "--location",
+        default=None,
+        help="可选区域标识，例如living_room",
+    )
+    parser.add_argument(
+        "--asset-id",
+        default=None,
+        help="可选脱敏素材标识，不得填写绝对路径或访问密钥",
+    )
+    parser.add_argument(
+        "--source-mode",
+        choices=(
+            "LIVE_DEVICE",
+            "RECORDED_REPLAY",
+            "PUBLIC_DATASET",
+            "MOCK",
+        ),
+        default="RECORDED_REPLAY",
+        help="输入来源，默认本地录音回放",
+    )
+    parser.add_argument(
+        "--simulated",
+        action="store_true",
+        help="将本次音频标记为模拟实验",
     )
     parser.add_argument(
         "--check",
@@ -56,6 +110,81 @@ def print_install_help(status):
         print("未找到FFmpeg。Whisper读取音频前必须安装FFmpeg。")
         print("Windows可尝试：winget install --id Gyan.FFmpeg -e")
         print("安装后请重新打开PowerShell，并运行：ffmpeg -version")
+
+
+def find_fraud_phrase_labels(transcript):
+    return [
+        label
+        for label, variants in FRAUD_PHRASE_GROUPS.items()
+        if any(variant in transcript for variant in variants)
+    ]
+
+
+def build_audio_observations(
+    transcript,
+    *,
+    resident_id,
+    model,
+    language,
+    source_mode="RECORDED_REPLAY",
+    location=None,
+    asset_id=None,
+    simulated=False,
+):
+    """把Whisper转写转换为直接观测，不在此处判断诈骗。"""
+    phrase_labels = find_fraud_phrase_labels(transcript)
+    timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
+    common = {
+        "resident_id": resident_id,
+        "timestamp": timestamp,
+        "source": "audio",
+        "location": location,
+        "confidence": 0.50,
+        "data_quality": 0.60,
+        "source_mode": source_mode,
+        "asset_id": asset_id,
+        "simulated": simulated,
+        "metadata": {
+            "adapter_version": "speech-adapter-v1",
+            "model": model,
+            "language": language,
+            "score_status": "DEMO_UNCALIBRATED",
+            "interpretation": "HIGH_RISK_INTERACTION_FEATURE_ONLY",
+        },
+    }
+
+    feature_specs = [
+        ("audio_transcript_available", bool(transcript), None),
+        ("fraud_keyword_match_count", len(phrase_labels), "count"),
+    ]
+    if transcript:
+        feature_specs.append(("audio_transcript", transcript, None))
+    if phrase_labels:
+        feature_specs.append(
+            ("fraud_keyword_labels", ",".join(phrase_labels), None)
+        )
+
+    observations = [
+        build_observation(
+            observation_id=f"obs-audio-{uuid4().hex}",
+            feature_name=feature_name,
+            feature_value=feature_value,
+            unit=unit,
+            **common,
+        )
+        for feature_name, feature_value, unit in feature_specs
+    ]
+    return validate_observation_collection(observations)
+
+
+def write_observations(path, observations):
+    output_path = path.expanduser().resolve()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(observations, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Observation输出：{output_path}")
 
 
 def main():
@@ -123,6 +252,18 @@ def main():
     print(f"Elapsed: {elapsed_seconds:.3f} seconds")
     print(f"Text output: {transcript_path}")
     print(f"Metadata output: {metadata_path}")
+    if args.observation_output:
+        observations = build_audio_observations(
+            transcript,
+            resident_id=args.resident_id,
+            model=args.model,
+            language=args.language,
+            source_mode=args.source_mode,
+            location=args.location,
+            asset_id=args.asset_id,
+            simulated=args.simulated,
+        )
+        write_observations(args.observation_output, observations)
     return 0
 
 
