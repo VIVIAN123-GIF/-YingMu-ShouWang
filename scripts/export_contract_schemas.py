@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from contracts.v1.mock_data import sequence  # noqa: E402
+from contracts.v1.mock_memory_data import safe_history  # noqa: E402
 from contracts.v1.models import Evidence, InterventionResult, Observation, RiskEvent  # noqa: E402
 from contracts.v1.rehearsal import run_fixed_sequence  # noqa: E402
 
@@ -46,7 +47,8 @@ def main() -> None:
         write_json(example_dir / f"{name}.json", payload)
     write_json(example_dir / "four_objects.json", examples)
     write_json(example_dir / "mock_fall_sequence.json", {**data, "expected_steps": steps})
-    print(f"Exported {len(models)} schemas and {len(examples) + 2} example files")
+    write_json(example_dir / "mock_memory_history.json", safe_history())
+    print(f"Exported {len(models)} schemas and {len(examples) + 3} example files")
 
 
 if __name__ == "__main__":

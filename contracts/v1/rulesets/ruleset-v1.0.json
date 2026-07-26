@@ -1,0 +1,41 @@
+{
+  "ruleset_version": "ruleset-v1.0",
+  "engineering_initials": true,
+  "windows": {
+    "short_seconds": 30,
+    "medium_hours": 24,
+    "long_days": 7
+  },
+  "thresholds": {
+    "data_quality": 0.7,
+    "confidence": 0.7,
+    "high_confidence": 0.8,
+    "stable_posture_seconds": 15,
+    "observation_seconds": 60,
+    "orange_score": 0.7,
+    "red_score": 0.9
+  },
+  "risk_weights": {
+    "severity": 0.45,
+    "confidence": 0.30,
+    "data_quality": 0.15,
+    "context": 0.10
+  },
+  "context_factors": {
+    "night": 0.25,
+    "low_light": 0.25,
+    "repeated_daily_abnormality": 0.20,
+    "yellow_state": 0.40,
+    "long_term_deviation": 0.20
+  },
+  "rules": [
+    {"id": "R-FALL-01", "name": "single rapid rise", "result": "GREEN_WAIT"},
+    {"id": "R-FALL-02", "name": "rapid rise plus trunk sway", "result": "ORANGE_INTERVENING"},
+    {"id": "R-FALL-03", "name": "low quality evidence", "result": "SYSTEM_NO_UPGRADE"},
+    {"id": "R-FALL-04", "name": "posture recovered", "result": "OBSERVING"},
+    {"id": "R-FALL-05", "name": "observation completed", "result": "RESOLVED"},
+    {"id": "R-FALL-06", "name": "hazard during observation", "result": "INTERVENING"},
+    {"id": "R-FALL-07", "name": "persistent hazard, no response, or hazard after two interventions", "result": "RED_ESCALATED"},
+    {"id": "R-SYSTEM-01", "name": "duplicate evidence", "result": "IDEMPOTENT"}
+  ]
+}
