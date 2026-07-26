@@ -3,9 +3,13 @@ import json
 import math
 import time
 from collections import Counter, deque
+from datetime import datetime
 from pathlib import Path
+from uuid import uuid4
 
 import cv2
+
+from observation import build_observation, validate_observation_collection
 
 
 FRAME_SIZE = (640, 480)
@@ -41,6 +45,26 @@ def parse_args():
         "--summary-output",
         type=Path,
         help="可选的脱敏JSON运行摘要路径",
+    )
+    parser.add_argument(
+        "--observation-output",
+        type=Path,
+        help="可选的Freeze v1.0 Observation JSON输出路径",
+    )
+    parser.add_argument(
+        "--resident-id",
+        default="resident-001",
+        help="Observation中的脱敏老人标识",
+    )
+    parser.add_argument(
+        "--location",
+        default=None,
+        help="可选区域标识，例如living_room",
+    )
+    parser.add_argument(
+        "--asset-id",
+        default=None,
+        help="可选脱敏素材标识，不得填写绝对路径或访问密钥",
     )
     parser.add_argument(
         "--simulated",
@@ -279,6 +303,76 @@ def write_summary(path, summary):
     print(f"运行摘要：{output_path}")
 
 
+def build_behavior_observations(
+    summary,
+    *,
+    resident_id,
+    location=None,
+    asset_id=None,
+):
+    """把一次行为Demo运行摘要转换为可校验的直接观测。"""
+    frame_count = summary["frames_processed"]
+    detected_ratio = (
+        summary["detected_frames"] / frame_count if frame_count else 0.0
+    )
+    activity_counts = summary["activity_counts"]
+    dominant_activity = (
+        max(activity_counts, key=activity_counts.get)
+        if activity_counts
+        else "UNKNOWN"
+    )
+
+    timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
+    common = {
+        "resident_id": resident_id,
+        "timestamp": timestamp,
+        "source": "tracking",
+        "location": location,
+        "confidence": 0.50,
+        "data_quality": 0.60 if frame_count else 0.0,
+        "source_mode": summary["source_mode"],
+        "asset_id": asset_id,
+        "simulated": summary["simulated"],
+        "metadata": {
+            "adapter_version": "behavior-adapter-v1",
+            "threshold_status": summary["threshold_status"],
+            "frames_processed": frame_count,
+            "score_status": "DEMO_UNCALIBRATED",
+        },
+    }
+
+    feature_specs = [
+        ("max_person_count", summary["max_person_count"], "count"),
+        ("person_detected_frame_ratio", round(detected_ratio, 4), "ratio"),
+        ("dominant_activity_level", dominant_activity, None),
+        ("max_motion_area", summary["max_motion_area"], "pixel"),
+        ("track_point_count", summary["track_points"], "count"),
+        ("travel_distance", summary["travel_distance_px"], "pixel"),
+    ]
+
+    observations = [
+        build_observation(
+            observation_id=f"obs-behavior-{uuid4().hex}",
+            feature_name=feature_name,
+            feature_value=feature_value,
+            unit=unit,
+            **common,
+        )
+        for feature_name, feature_value, unit in feature_specs
+    ]
+    return validate_observation_collection(observations)
+
+
+def write_observations(path, observations):
+    output_path = path.expanduser().resolve()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(observations, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Observation输出：{output_path}")
+
+
 def main():
     args = parse_args()
 
@@ -377,6 +471,14 @@ def main():
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     if args.summary_output:
         write_summary(args.summary_output, summary)
+    if args.observation_output:
+        observations = build_behavior_observations(
+            summary,
+            resident_id=args.resident_id,
+            location=args.location,
+            asset_id=args.asset_id,
+        )
+        write_observations(args.observation_output, observations)
 
     return 1 if stop_reason == "camera_read_failed" else 0
 
