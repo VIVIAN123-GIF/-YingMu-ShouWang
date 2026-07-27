@@ -18,13 +18,13 @@ class RiskEvent(Base):
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
     primary_domain = Column(RiskDomainEnum, nullable=False)
-    related_domains = Column(Text, nullable=False, comment="逗号分隔多领域")
-    risk_level = Column(RiskLevelEnum, nullable=False, default="GREEN")
+    related_domains = Column(Text, nullable=False, comment="JSON数组")
+    risk_level = Column(RiskLevelEnum, nullable=False)
     risk_score = Column(Float, nullable=False, comment="0~1综合风险分")
     evidence_ids = Column(
         Text,
         nullable=True,
-        comment="兼容字段：逗号分隔证据ID快照；建议以关系表为准",
+        comment="JSON数组格式的证据ID快照",
     )
     evidence_summary = Column(Text, nullable=False)
     time_horizon = Column(String(32), nullable=False, comment="TREND/TODAY/IMMINENT")
@@ -32,6 +32,8 @@ class RiskEvent(Base):
     intervention_policy = Column(String(128), nullable=False)
     status = Column(EventStatusEnum, nullable=False, default="OPEN")
     ruleset_version = Column(String(64), nullable=False, default="ruleset-v1.0")
+    source_mode = Column(String(32), nullable=False, default="MOCK")
+    simulated = Column(Boolean, nullable=False, default=True)
     create_time = Column(DateTime, default=datetime.datetime.now, nullable=False)
 
     evidences = relationship(

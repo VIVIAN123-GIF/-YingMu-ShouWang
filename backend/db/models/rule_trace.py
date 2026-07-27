@@ -1,0 +1,23 @@
+import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+
+from backend.db.database import Base
+
+
+class RuleTrace(Base):
+    __tablename__ = "rule_trace"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    trace_id = Column(String(128), unique=True, nullable=False, index=True)
+    event_id = Column(String(128), nullable=True, index=True)
+    resident_id = Column(String(128), nullable=False, index=True)
+    evidence_id = Column(String(128), nullable=True, index=True)
+    evaluated_at = Column(DateTime, nullable=False)
+    ruleset_version = Column(String(64), nullable=False, default="ruleset-v1.0")
+    matched_rule = Column(String(64), nullable=False)
+    previous_state = Column(String(16), nullable=False)
+    next_state = Column(String(16), nullable=False)
+    event_created = Column(Boolean, nullable=False, default=False)
+    error = Column(Text, nullable=True)
+    create_time = Column(DateTime, default=datetime.datetime.now, nullable=False)

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "observation_id": "obs-mock-rapid-rise-001",
+  "resident_id": "resident-mock-001",
+  "timestamp": "2026-07-31T03:07:01+08:00",
+  "source": "pose",
+  "feature_name": "rise_duration",
+  "feature_value": 1.2,
+  "unit": "second",
+  "location": "living_room",
+  "confidence": 0.92,
+  "data_quality": 0.88,
+  "source_mode": "MOCK",
+  "asset_id": "asset-mock-fall-001",
+  "simulated": true,
+  "metadata": {"model_version": "mock-v1"}
+}

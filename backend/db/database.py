@@ -2,10 +2,11 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 from typing import AsyncGenerator
+import os
 
 # 数据库文件路径
-DB_PATH = "ezviz_system.db"
-DB_URL = f"sqlite+aiosqlite:///{DB_PATH}"
+DB_PATH = os.getenv("YINGMU_DB_PATH", "ezviz_system.db")
+DB_URL = os.getenv("YINGMU_DB_URL", f"sqlite+aiosqlite:///{DB_PATH}")
 
 # 创建异步引擎
 engine = create_async_engine(
@@ -19,6 +20,7 @@ AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     autocommit=False,
     autoflush=False,
+    expire_on_commit=False,
     class_=AsyncSession
 )
 

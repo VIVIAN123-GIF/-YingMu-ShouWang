@@ -6,6 +6,7 @@ from .risk_event_evidence import RiskEventEvidence
 from .intervention_result import InterventionResult
 from .alarm import RiskAlarm
 from .system_weekly import SystemConfig, WeeklyStat
+from .rule_trace import RuleTrace
 
 __all__ = [
     "DeviceInfo",
@@ -17,4 +18,5 @@ __all__ = [
     "RiskAlarm",
     "SystemConfig",
     "WeeklyStat",
+    "RuleTrace",
 ]

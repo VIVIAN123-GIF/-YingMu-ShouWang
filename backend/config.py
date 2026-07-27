@@ -1,12 +1,25 @@
-# backend/config.py
-ENV = "prod"  # mock=本地模拟服务(暂未启用)，prod=正式萤石平台
+import os
+from dotenv import load_dotenv
 
-if ENV == "mock":
-    # 本地Mock服务地址，后续搭建mock服务再启用
-    BASE_URL = "http://127.0.0.1:8001/mock"
-else:
-    BASE_URL = "https://open.ys7.com/api/lapp"
+load_dotenv()
 
-API_TOKEN = f"{BASE_URL}/token/get"
-API_LIVE_ADDRESS = f"{BASE_URL}/live/address/get"
-API_VOICE_TALK = f"{BASE_URL}/voice/send"
+ENV_MODE = os.getenv("YINGMU_ENV", "mock").lower()
+if ENV_MODE not in {"mock", "live"}:
+    raise RuntimeError("YINGMU_ENV must be mock or live")
+
+EZVIZ_BASE_URL = "http://127.0.0.1:8001/mock" if ENV_MODE == "mock" else "https://open.ys7.com/api/lapp"
+EZVIZ_APP_KEY = os.getenv("EZVIZ_APP_KEY", "mock_default_key" if ENV_MODE == "mock" else "")
+EZVIZ_APP_SECRET = os.getenv("EZVIZ_APP_SECRET", "mock_default_secret" if ENV_MODE == "mock" else "")
+EZVIZ_ACCESS_TOKEN = os.getenv("EZVIZ_ACCESS_TOKEN", "")
+EZVIZ_ACCESS_TOKEN_EXPIRES_AT = os.getenv("EZVIZ_ACCESS_TOKEN_EXPIRES_AT", "")
+EZVIZ_DEVICE_SERIAL = os.getenv("EZVIZ_DEVICE_SERIAL", "")
+EZVIZ_CHANNEL_NO = int(os.getenv("EZVIZ_CHANNEL_NO", "1"))
+
+TOKEN_REFRESH_OFFSET = 60
+RULESET_VERSION = "ruleset-v1.0"
+SCHEMA_VERSION = "1.0"
+MIN_EVIDENCE_QUALITY = float(os.getenv("MIN_EVIDENCE_QUALITY", "0.60"))
+MIN_EVIDENCE_CONFIDENCE = float(os.getenv("MIN_EVIDENCE_CONFIDENCE", "0.60"))
+
+if ENV_MODE == "live" and (not EZVIZ_APP_KEY or not EZVIZ_APP_SECRET or not EZVIZ_DEVICE_SERIAL):
+    raise RuntimeError("live mode requires EZVIZ_APP_KEY, EZVIZ_APP_SECRET and EZVIZ_DEVICE_SERIAL")

@@ -31,8 +31,8 @@ class Evidence(Base):
     simulated = Column(Boolean, nullable=False)
     observation_ids = Column(
         Text,
-        nullable=True,
-        comment="兼容字段：逗号分隔观测ID快照；建议以关系表为准",
+        nullable=False,
+        comment="JSON数组格式的观测ID快照",
     )
     create_time = Column(DateTime, default=datetime.datetime.now, nullable=False)
 

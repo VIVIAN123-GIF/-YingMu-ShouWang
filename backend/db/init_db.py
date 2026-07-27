@@ -1,5 +1,5 @@
 import asyncio
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from backend.db.database import engine, Base, AsyncSessionLocal
 from backend.db.models import (
@@ -12,6 +12,7 @@ from backend.db.models import (
     RiskAlarm,
     SystemConfig,
     WeeklyStat,
+    RuleTrace,
 )
 
 
@@ -52,6 +53,11 @@ DEFAULT_CONFIGS = [
 async def init_tables() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        columns = {row[1] for row in (await conn.execute(text("PRAGMA table_info(risk_event)"))).all()}
+        if "source_mode" not in columns:
+            await conn.execute(text("ALTER TABLE risk_event ADD COLUMN source_mode VARCHAR(32) NOT NULL DEFAULT 'MOCK'"))
+        if "simulated" not in columns:
+            await conn.execute(text("ALTER TABLE risk_event ADD COLUMN simulated BOOLEAN NOT NULL DEFAULT 1"))
     print("✅ 所有数据表创建完成：设备/观测/证据/风险事件/干预/原始告警/配置/周报/事件证据关联表")
 
 

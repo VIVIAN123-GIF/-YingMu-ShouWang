@@ -28,7 +28,7 @@ class Observation(Base):
     device_sn = Column(
         String(100),
         ForeignKey("device_info.device_sn"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     create_time = Column(DateTime, default=datetime.datetime.now, nullable=False)

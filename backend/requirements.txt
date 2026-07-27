@@ -16,3 +16,6 @@ httpx>=0.26.0
 # 工具
 python-multipart>=0.0.6
 python-dotenv>=1.0.0
+
+# 自动化测试
+pytest>=8.0.0
