@@ -10,7 +10,7 @@ class BaselineMetric(BaseModel):
     mad: float | None
     sample_count: int
     distinct_days: int
-    status: Literal["INSUFFICIENT", "BUILDING", "STABLE"]
+    status: Literal["INSUFFICIENT", "PROVISIONAL", "STABLE"]
 
 
 class ResidentBaselineResponse(BaseModel):

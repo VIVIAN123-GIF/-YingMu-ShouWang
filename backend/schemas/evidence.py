@@ -38,6 +38,7 @@ class RiskEvaluationSummary(BaseModel):
     event_id: str | None
     matched_rule: str
     ruleset_version: str
+    system_evidence_id: str | None = None
 
 
 class EvidenceCreateResponse(BaseModel):

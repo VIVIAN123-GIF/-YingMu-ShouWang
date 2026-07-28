@@ -20,11 +20,19 @@ python -m uvicorn backend.main:app --reload
 python -m pytest tests/test_risk_api.py -q
 ```
 
-当前本地验证结果：`2 passed`。测试覆盖完整 GREEN→ORANGE 闭环、幂等和主要错误状态码。
+当前本地验证结果：后端API `6 passed`，原智能体契约与规则测试 `37 passed`。测试覆盖GREEN→ORANGE、0.70质量门控、SYSTEM质量Evidence、幂等、基线准入和主要错误状态码。
+
+生成四项真实HTTP请求、响应、RuleTrace和结构化日志：
+
+```powershell
+python scripts/run_backend_http_acceptance.py
+```
+
+结果保存在`deliverables/backend-2026-07-31/results/`，固定验收摘要中的`passed`必须为`true`。
 
 ## 固定请求顺序
 
-依次提交 `requests` 中的 01、02、03、04。第二条 Evidence 自动生成
+依次提交 `requests` 中的 01—07。第二条正常Evidence自动生成
 `event-mock-fall-001`，无需修改数据库。随后调用：
 
 ```text
@@ -48,3 +56,4 @@ python -m backend.db.init_db
 - 当前只有一台冻结方案指定的萤石 C6c，原任务中的“双路摄像头”已被冻结决策 D021 替代。
 - 实机请求结果必须使用轮换后的 AppSecret/AccessToken 重新生成；泄露在聊天图片中的凭证禁止继续使用。
 - `MockRiskEngine` 实现当前冻结的跌倒 P0 规则；若队长另有同名正式引擎文件，应以共同确认版本替换，接口层无需改名。
+- 摄像头虽然已到货、绑定且App画面可用，但开放平台凭证尚未配置，当前后端验收仍明确使用`source_mode=MOCK`。

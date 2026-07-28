@@ -1,0 +1,13 @@
+{
+  "device_id": "ezviz-c6c-001",
+  "name": "客厅萤石 C6c",
+  "online": true,
+  "source_mode": "MOCK",
+  "simulated": true,
+  "adapter": "mock-device-adapter-v1",
+  "last_seen": "2026-07-24T08:16:00+08:00",
+  "data_quality": 0.91,
+  "stream_status": "FALLBACK_READY",
+  "capabilities": ["snapshot", "recorded_clip", "device_status"],
+  "unverified_capabilities": ["voice", "push"]
+}

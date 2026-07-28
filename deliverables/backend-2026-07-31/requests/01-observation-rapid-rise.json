@@ -4,7 +4,7 @@
   "resident_id": "resident-mock-001",
   "timestamp": "2026-07-31T03:07:01+08:00",
   "source": "pose",
-  "feature_name": "rise_duration",
+  "feature_name": "sit_to_stand_duration",
   "feature_value": 1.2,
   "unit": "second",
   "location": "living_room",
