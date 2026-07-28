@@ -23,6 +23,8 @@ class InterventionResult(Base):
     resolved = Column(Boolean, nullable=False, default=False)
     resolution_reason = Column(Text, nullable=True)
     operator = Column(String(32), nullable=False, default="system")
+    source_mode = Column(String(32), nullable=False, default="MOCK")
+    simulated = Column(Boolean, nullable=False, default=True)
     create_time = Column(DateTime, default=datetime.datetime.now, nullable=False)
 
     event_rel = relationship("RiskEvent", back_populates="intervention_list")

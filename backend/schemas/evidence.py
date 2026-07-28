@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.schemas.common import RiskDomain, Score, SourceMode, TimezoneDatetime
 
@@ -26,6 +26,25 @@ class Evidence(BaseModel):
     adapter_version: str
     source_mode: SourceMode
     simulated: bool
+
+    @model_validator(mode="after")
+    def validate_frozen_evidence_type(self):
+        allowed = {
+            RiskDomain.FALL: {"rapid_rise", "slow_rise", "trunk_sway", "gait_instability",
+                              "relative_speed_change", "posture_recovered", "tracking_lost"},
+            RiskDomain.MENTAL: {"activity_range_decline", "room_transition_decline",
+                                "day_night_rhythm_change", "unusual_pacing", "mental_self_report",
+                                "family_concern", "voluntary_screening_concern",
+                                "family_contact_completed", "professional_support_suggested",
+                                "trend_recovered"},
+            RiskDomain.FRAUD: {"unauthorized_visitor", "unusual_dwell_time", "fraud_keyword",
+                               "identity_verified", "false_alarm_confirmed"},
+            RiskDomain.SYSTEM: {"audio_quality_low", "low_illumination", "high_risk_zone_entry",
+                                "obstacle_occupancy", "camera_occlusion", "stream_unavailable"},
+        }
+        if self.evidence_type not in allowed[self.risk_domain]:
+            raise ValueError("evidence_type is not frozen for the selected risk_domain")
+        return self
 
 
 class EvidenceCreate(Evidence):

@@ -20,6 +20,10 @@ python -m uvicorn backend.main:app --reload
 python -m pytest tests/test_risk_api.py -q
 ```
 
+当前测试还覆盖：冻结 Evidence 名称校验、事件列表与前端详情结构、干预结果、家属反馈幂等、授权资产、周报和带控制令牌的一键停止采集。
+
+完整的前端/算法兼容关系及实机阻塞项见 `interface-compatibility.md`。实机能力未验证前不得把 Mock 结果描述为真实萤石调用成功。
+
 当前本地验证结果：`2 passed`。测试覆盖完整 GREEN→ORANGE 闭环、幂等和主要错误状态码。
 
 ## 固定请求顺序

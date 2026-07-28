@@ -58,3 +58,15 @@ def event_dict(row: Any) -> dict[str, Any]:
             "recommended_action": row.recommended_action, "intervention_policy": row.intervention_policy,
             "status": row.status, "ruleset_version": row.ruleset_version,
             "source_mode": row.source_mode, "simulated": row.simulated}
+
+
+def intervention_dict(row: Any) -> dict[str, Any]:
+    return {"schema_version": row.schema_version, "result_id": row.result_id,
+            "event_id": row.event_id, "started_at": aware(row.started_at),
+            "completed_at": aware(row.completed_at) if row.completed_at else None,
+            "action_type": row.action_type, "tool_name": row.tool_name,
+            "delivery_status": row.delivery_status, "resident_response": row.resident_response,
+            "family_feedback": row.family_feedback, "risk_after": row.risk_after,
+            "resolved": row.resolved, "resolution_reason": row.resolution_reason,
+            "operator": row.operator, "source_mode": row.source_mode,
+            "simulated": row.simulated}

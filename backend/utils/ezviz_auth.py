@@ -1,3 +1,4 @@
+import asyncio
 import time
 from datetime import datetime
 import httpx
@@ -52,10 +53,12 @@ class EzvizAuth:
 
         # 缓存失效，重新请求全新Token
         token_result = await EzvizAuth._fetch_new_token()
-        expire_sec = token_result["expireTime"] / 1000
+        expire_value = token_result["expireTime"] / 1000
+        # 萤石与本地Mock均返回毫秒级绝对过期时间；兼容少数网关返回的有效秒数。
+        expire_ts = expire_value if expire_value > now_ts else now_ts + expire_value
         _TOKEN_STORE = {
             "token": token_result["accessToken"],
-            "expire_time": now_ts + expire_sec
+            "expire_time": expire_ts
         }
         logger.info("Token刷新完成，过期时间戳：%s", _TOKEN_STORE["expire_time"])
         return _TOKEN_STORE["token"]
@@ -151,4 +154,4 @@ class EzvizAuth:
                     raise err
                 sleep_sec = RETRY_INTERVALS[retry_count - 1]
                 logger.warning("接口 %s 请求失败，第%d次重试，等待%ds", path, retry_count, sleep_sec)
-                time.sleep(sleep_sec)
+                await asyncio.sleep(sleep_sec)
