@@ -1,0 +1,62 @@
+[
+  {
+    "event_id": null,
+    "resident_id": "resident-mock-001",
+    "evidence_id": "evi-mock-rapid-rise-001",
+    "evaluated_at": "2026-07-31T03:07:01",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-01",
+    "previous_state": "GREEN",
+    "next_state": "GREEN",
+    "event_created": false,
+    "error": null
+  },
+  {
+    "event_id": "event-mock-fall-001",
+    "resident_id": "resident-mock-001",
+    "evidence_id": "evi-mock-trunk-sway-001",
+    "evaluated_at": "2026-07-31T03:07:05",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-02",
+    "previous_state": "GREEN",
+    "next_state": "ORANGE",
+    "event_created": true,
+    "error": null
+  },
+  {
+    "event_id": null,
+    "resident_id": "resident-low-quality-001",
+    "evidence_id": "evi-low-quality-rapid-rise-001",
+    "evaluated_at": "2026-07-31T03:07:01",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-01",
+    "previous_state": "GREEN",
+    "next_state": "GREEN",
+    "event_created": false,
+    "error": null
+  },
+  {
+    "event_id": null,
+    "resident_id": "resident-low-quality-001",
+    "evidence_id": "evi-low-quality-trunk-sway-001",
+    "evaluated_at": "2026-07-31T03:07:05",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-03",
+    "previous_state": "GREEN",
+    "next_state": "GREEN",
+    "event_created": false,
+    "error": null
+  },
+  {
+    "event_id": "event-mock-fall-001",
+    "resident_id": "resident-mock-001",
+    "evidence_id": "evi-mock-trunk-sway-001",
+    "evaluated_at": "2026-07-31T03:07:05",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-SYSTEM-01",
+    "previous_state": "ORANGE",
+    "next_state": "ORANGE",
+    "event_created": false,
+    "error": null
+  }
+]

@@ -1,0 +1,135 @@
+{
+  "$defs": {
+    "SourceMode": {
+      "enum": [
+        "LIVE_DEVICE",
+        "RECORDED_REPLAY",
+        "PUBLIC_DATASET",
+        "MOCK"
+      ],
+      "title": "SourceMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "observation_id": {
+      "minLength": 1,
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "resident_id": {
+      "minLength": 1,
+      "title": "Resident Id",
+      "type": "string"
+    },
+    "timestamp": {
+      "format": "date-time",
+      "title": "Timestamp",
+      "type": "string"
+    },
+    "source": {
+      "minLength": 1,
+      "title": "Source",
+      "type": "string"
+    },
+    "feature_name": {
+      "minLength": 1,
+      "title": "Feature Name",
+      "type": "string"
+    },
+    "feature_value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        }
+      ],
+      "title": "Feature Value"
+    },
+    "unit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Unit"
+    },
+    "location": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Location"
+    },
+    "confidence": {
+      "title": "Confidence",
+      "type": "number"
+    },
+    "data_quality": {
+      "title": "Data Quality",
+      "type": "number"
+    },
+    "source_mode": {
+      "$ref": "#/$defs/SourceMode"
+    },
+    "asset_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Asset Id"
+    },
+    "simulated": {
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "observation_id",
+    "resident_id",
+    "timestamp",
+    "source",
+    "feature_name",
+    "feature_value",
+    "unit",
+    "location",
+    "confidence",
+    "data_quality",
+    "source_mode",
+    "asset_id",
+    "simulated"
+  ],
+  "title": "Observation",
+  "type": "object"
+}

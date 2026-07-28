@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-28T20:00:00+08:00",
+  "source_mode": "MOCK",
+  "simulated": true,
+  "tests": {
+    "rapid_rise_only": {
+      "risk_level": "GREEN",
+      "event_created": false,
+      "event_id": null,
+      "matched_rule": "R-FALL-01",
+      "ruleset_version": "ruleset-v1.0",
+      "system_evidence_id": null
+    },
+    "rapid_rise_plus_trunk_sway": {
+      "risk_level": "ORANGE",
+      "event_created": true,
+      "event_id": "event-mock-fall-001",
+      "matched_rule": "R-FALL-02",
+      "ruleset_version": "ruleset-v1.0",
+      "system_evidence_id": null
+    },
+    "low_quality_trunk_sway": {
+      "risk_level": "GREEN",
+      "event_created": false,
+      "event_id": null,
+      "matched_rule": "R-FALL-03",
+      "ruleset_version": "ruleset-v1.0",
+      "system_evidence_id": "sys-quality-evi-low-quality-trunk-sway-001"
+    },
+    "duplicate_evidence": {
+      "risk_level": "ORANGE",
+      "event_created": false,
+      "event_id": "event-mock-fall-001",
+      "matched_rule": "R-SYSTEM-01",
+      "ruleset_version": "ruleset-v1.0",
+      "system_evidence_id": null
+    }
+  },
+  "database": {
+    "event_count": 1,
+    "intervention_count": 0,
+    "quality_evidence": {
+      "evidence_id": "sys-quality-evi-low-quality-trunk-sway-001",
+      "risk_domain": "SYSTEM",
+      "evidence_type": "quality_gate_failed",
+      "data_quality": 0.69
+    }
+  },
+  "passed": true
+}
