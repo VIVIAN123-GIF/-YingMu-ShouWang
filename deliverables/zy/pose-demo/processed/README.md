@@ -13,6 +13,11 @@
 - `build_summary.json`
   本次构建的摘要信息，包括序列数、逐帧数据行数、标签分布和特征列。
 
+快速起身 Evidence 由上级目录脚本生成：
+
+- `../scripts/build_rapid_rise_evidence.py`
+  基于清洗后的逐帧姿态数据检测髋部中心快速上移窗口，并输出 `../evidence/rapid_rise.json`。
+
 ## 当前构建参数
 
 - 数据源：URFD
@@ -22,6 +27,15 @@
   - `step_speed`
   - `sway_frequency_hz`
   - `step_length_asymmetry_ratio`
+
+## 快速起身规则
+
+- 规则名：`rapid-rise-rule-v1`
+- 输入字段：`pelvis_y_smooth`、`timestamp_ms`、`core_visibility_mean`
+- 判定窗口：0.4s 到 1.5s
+- 最小上移量：0.05 个画面高度
+- 最小上移速度：0.12 个画面高度/秒
+- 默认起身时长基线：2.5s
 
 ## 当前结果摘要
 
