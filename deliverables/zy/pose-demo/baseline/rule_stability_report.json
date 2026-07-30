@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "checkpoint": "2026-08-14",
+  "status": "PASS",
+  "scope": "规则基线稳定；LSTM为P1对照任务",
+  "baseline_profile": "deliverables\\zy\\pose-demo\\baseline\\baseline_profile.json",
+  "baseline_profile_version": "gait-baseline-v1",
+  "source_dataset": "URFD cam0 ADL",
+  "quality_sample_counts": {
+    "adl": 12,
+    "fall": 14
+  },
+  "rule_parameters": {
+    "baseline_rise_duration_s": 2.5,
+    "slow_rise_duration_s": 3.5,
+    "baseline_speed": 0.081671,
+    "baseline_sway_deg": 8.0,
+    "baseline_sway_frequency_hz": 0.278033,
+    "baseline_asymmetry": 0.199149,
+    "tracking_lost_valid_frame_ratio": 0.65,
+    "posture_recovered_stable_angle_deg": 8.0,
+    "relative_speed_deviation_alert_ratio": 1.5,
+    "gait_instability_alert_ratio": 2.0
+  },
+  "evidence_batch": "deliverables\\zy\\pose-demo\\evidence\\fall_evidence_batch.json",
+  "evidence_types": [
+    "gait_instability",
+    "posture_recovered",
+    "rapid_rise",
+    "relative_speed_change",
+    "slow_rise",
+    "tracking_lost",
+    "trunk_sway"
+  ],
+  "checks": [
+    {
+      "name": "baseline_from_adl_sequences",
+      "status": "PASS",
+      "detail": "ADL基线样本数：12"
+    },
+    {
+      "name": "all_required_fall_evidence_types",
+      "status": "PASS",
+      "detail": "gait_instability, posture_recovered, rapid_rise, relative_speed_change, slow_rise, tracking_lost, trunk_sway"
+    },
+    {
+      "name": "data_quality_gate",
+      "status": "PASS",
+      "detail": "tracking_lost阈值 valid_frame_ratio < 0.65"
+    },
+    {
+      "name": "real_device_recalibration",
+      "status": "WARN",
+      "detail": "当前基线来自URFD公开数据，可用于演示联调；实机部署前需用同一机位ADL片段重新校准。"
+    }
+  ],
+  "lstm_status": {
+    "priority": "P1",
+    "status": "DEFERRED",
+    "reason": "冻结方案要求优先完成可解释特征和主闭环，LSTM不阻塞8月14验收。"
+  }
+}

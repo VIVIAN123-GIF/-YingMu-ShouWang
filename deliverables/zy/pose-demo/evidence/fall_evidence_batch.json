@@ -4,9 +4,9 @@
   "evidence": [
     {
       "schema_version": "1.0",
-      "evidence_id": "evi-fall-rapid-rise-rapid_rise-adl-14-cam0-rgb-187-205",
+      "evidence_id": "evi-fall-rapid-rise-adl-14-cam0-rgb-187-205",
       "observation_ids": [
-        "obs-rapid_rise-adl-14-cam0-rgb-187-205"
+        "obs-rapid-rise-adl-14-cam0-rgb-187-205"
       ],
       "resident_id": "resident-demo-001",
       "timestamp": "2026-08-07T03:07:01+08:00",
@@ -58,15 +58,15 @@
       "timestamp": "2026-08-07T03:07:08+08:00",
       "risk_domain": "FALL",
       "evidence_type": "gait_instability",
-      "severity": 0.278,
-      "confidence": 0.725,
+      "severity": 0.203,
+      "confidence": 0.704,
       "data_quality": 0.925,
-      "baseline_value": 0.18,
+      "baseline_value": 0.199,
       "current_value": 0.28,
-      "baseline_deviation": 0.556,
+      "baseline_deviation": 0.407,
       "time_scale": "SHORT",
       "location": "bedroom",
-      "explanation": "步长差异比为0.280，高于0.180个人基线。",
+      "explanation": "步长差异比为0.280，高于0.199个人基线。",
       "adapter_version": "fall-evidence-rule-v1",
       "source_mode": "PUBLIC_DATASET",
       "simulated": true
@@ -81,24 +81,24 @@
       "timestamp": "2026-08-07T03:07:10+08:00",
       "risk_domain": "FALL",
       "evidence_type": "relative_speed_change",
-      "severity": 0.549,
-      "confidence": 0.8,
+      "severity": 0.578,
+      "confidence": 0.808,
       "data_quality": 0.925,
-      "baseline_value": 0.084,
+      "baseline_value": 0.082,
       "current_value": 0.152,
-      "baseline_deviation": 0.824,
+      "baseline_deviation": 0.866,
       "time_scale": "SHORT",
       "location": "bedroom",
-      "explanation": "相对步速为0.152画面单位/秒，高于0.084个人基线。",
+      "explanation": "相对步速为0.152画面单位/秒，高于0.082个人基线。",
       "adapter_version": "fall-evidence-rule-v1",
       "source_mode": "PUBLIC_DATASET",
       "simulated": true
     },
     {
       "schema_version": "1.0",
-      "evidence_id": "evi-fall-slow-rise-slow_rise-adl-14-cam0-rgb-183-229",
+      "evidence_id": "evi-fall-slow-rise-adl-14-cam0-rgb-183-229",
       "observation_ids": [
-        "obs-slow_rise-adl-14-cam0-rgb-183-229"
+        "obs-slow-rise-adl-14-cam0-rgb-183-229"
       ],
       "resident_id": "resident-demo-001",
       "timestamp": "2026-08-07T03:07:14+08:00",

@@ -13,12 +13,13 @@
   - `step_length_asymmetry_ratio`
 - 已补充快速起身 `rapid_rise` 正式规则首版，可从清洗后的姿态帧生成 Freeze v1.0 Evidence
 - 已补充 8月4/8月7 交付：数据质量、`tracking_lost`、7类跌倒 Evidence 样例和黄金半分钟联调包
+- 已补充 8月14 交付：规则基线 profile、稳定性报告和本地 Evidence 适配器入口
 - 已生成清洗后数据集与序列级特征数据集
 - Pre-VFall 尚未完成下载，不作为当前阶段阻塞项
 
 会议中应表述为：
 
-> MediaPipe 官方姿态 Demo 已跑通，可以提取 33 个关键点；起身、摇晃、相对步速、数据质量和 tracking_lost 已具备可复现产物；8月7 黄金半分钟联调包已可提交给智能体 `/api/v1/evidence`。
+> MediaPipe 官方姿态 Demo 已跑通，可以提取 33 个关键点；起身、摇晃、相对步速、数据质量和 tracking_lost 已具备可复现产物；8月14 规则基线已稳定到 `baseline_profile.json`，黄金半分钟联调包可提交给智能体 `/api/v1/evidence`。
 
 ## 目录说明
 
@@ -26,8 +27,9 @@
 - `scripts/`：姿态估计相关脚本
 - `samples/`：33 点关键点 CSV 样例
 - `logs/`：脱敏运行日志
+- `baseline/`：8月14 规则基线 profile 和稳定性报告
 - `evidence/`：Freeze v1.0 跌倒 Evidence 样例和批量包
-- `integration/`：8月7 黄金半分钟联调包
+- `integration/`：黄金半分钟联调包
 - `datasets.md`：URFD / Pre-VFall 下载地址、用途和当前状态
 - `failure_scenarios.md`：当前已知失败场景说明
 - `processed/`：清洗后逐帧数据、序列级特征表和构建摘要
@@ -103,6 +105,20 @@ PoseLandmarker initialization: OK
 .\.venv\Scripts\python.exe deliverables/zy/pose-demo/scripts/build_fall_evidence_package.py
 ```
 
+构建 8月14 规则基线和稳定性报告：
+
+```powershell
+.\.venv\Scripts\python.exe deliverables/zy/pose-demo/scripts/build_gait_baseline_profile.py
+.\.venv\Scripts\python.exe deliverables/zy/pose-demo/scripts/build_fall_evidence_package.py
+.\.venv\Scripts\python.exe deliverables/zy/pose-demo/scripts/build_rule_stability_report.py
+```
+
+本地 Evidence 适配器输出：
+
+```powershell
+.\.venv\Scripts\python.exe deliverables/zy/pose-demo/scripts/run_fall_evidence_adapter.py --sequence-id adl-14-cam0-rgb
+```
+
 验证 Freeze v1.0 Evidence 字段：
 
 ```powershell
@@ -153,8 +169,13 @@ source_video, frame_idx, timestamp_ms, landmark_id, x, y, z, world_x, world_y, w
 
 - `scripts/build_gait_feature_dataset.py`
 - `scripts/build_rapid_rise_evidence.py`
+- `scripts/build_gait_baseline_profile.py`
 - `scripts/build_fall_evidence_package.py`
+- `scripts/build_rule_stability_report.py`
+- `scripts/run_fall_evidence_adapter.py`
 - `scripts/validate_evidence_schema.py`
+- `baseline/baseline_profile.json`
+- `baseline/rule_stability_report.json`
 - `processed/urfd_pose_cleaned_frames.csv`
 - `processed/urfd_gait_features.csv`
 - `processed/build_summary.json`
@@ -206,6 +227,14 @@ source_video, frame_idx, timestamp_ms, landmark_id, x, y, z, world_x, world_y, w
 - `posture_recovered`
 - `tracking_lost`
 
+8月14 规则基线当前包含：
+
+- `baseline_speed`：高质量 ADL 序列相对步速中位数
+- `baseline_asymmetry`：高质量 ADL 序列步长差异比中位数
+- `baseline_sway_frequency_hz`：高质量 ADL 序列摇摆频率中位数
+- `tracking_lost_valid_frame_ratio`：有效帧比例门控阈值
+- `rule_stability_report.json`：基线样本、规则参数、Evidence 类型和 LSTM P1 状态
+
 当前构建结果：
 
 - 序列数：`70`
@@ -223,10 +252,12 @@ source_video, frame_idx, timestamp_ms, landmark_id, x, y, z, world_x, world_y, w
 - `rapid_rise` 正式规则首版已可运行
 - 数据质量与 `tracking_lost` 已输出
 - 黄金半分钟联调包已生成，可按时间线 POST 到 `/api/v1/evidence`
+- 规则基线 profile 已生成，Evidence 脚本默认读取 profile 参数
+- 本地 Evidence 适配器已可按序列输出 Freeze v1.0 JSON
 - 清洗后数据集和序列级特征表已生成
 
 当前尚未完成：
 
 - 低照度、遮挡、出画条件下的稳定性验证
 - Pre-VFall 的完整下载和实测
-- LSTM 对照模型仍为 P1，不影响 8月7 冻结验收
+- LSTM 对照模型仍为 P1，不影响 8月14 冻结验收
