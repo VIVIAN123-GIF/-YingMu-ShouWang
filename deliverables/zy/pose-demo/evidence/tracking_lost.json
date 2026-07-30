@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "evi-fall-tracking-lost-fall-10-cam0-rgb",
+  "observation_ids": [
+    "obs-tracking-lost-fall-10-cam0-rgb"
+  ],
+  "resident_id": "resident-demo-001",
+  "timestamp": "2026-08-07T03:07:18+08:00",
+  "risk_domain": "FALL",
+  "evidence_type": "tracking_lost",
+  "severity": 1.0,
+  "confidence": 1.0,
+  "data_quality": 0.0,
+  "baseline_value": 0.65,
+  "current_value": 0.0,
+  "baseline_deviation": -0.65,
+  "time_scale": "SHORT",
+  "location": "bedroom",
+  "explanation": "有效姿态帧比例为0.000，低于0.65数据质量阈值。",
+  "adapter_version": "fall-evidence-rule-v1",
+  "source_mode": "PUBLIC_DATASET",
+  "simulated": true
+}

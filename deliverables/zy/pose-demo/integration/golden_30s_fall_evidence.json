@@ -1,0 +1,160 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "golden-30s-fall-demo-001",
+  "scenario_name": "第100天黄金半分钟跌倒前兆联调包",
+  "resident_id": "resident-demo-001",
+  "source_mode": "PUBLIC_DATASET",
+  "simulated": true,
+  "asset_id": "adl-14-cam0-rgb",
+  "post_endpoint": "/api/v1/evidence",
+  "expected_agent_behavior": {
+    "risk_domain": "FALL",
+    "expected_risk_level": "ORANGE",
+    "expected_time_horizon": "IMMINENT",
+    "recovery_signal": "posture_recovered"
+  },
+  "timeline": [
+    {
+      "second": 1,
+      "evidence_type": "rapid_rise",
+      "action": "POST /api/v1/evidence"
+    },
+    {
+      "second": 6,
+      "evidence_type": "trunk_sway",
+      "action": "POST /api/v1/evidence"
+    },
+    {
+      "second": 8,
+      "evidence_type": "gait_instability",
+      "action": "POST /api/v1/evidence"
+    },
+    {
+      "second": 10,
+      "evidence_type": "relative_speed_change",
+      "action": "POST /api/v1/evidence"
+    },
+    {
+      "second": 28,
+      "evidence_type": "posture_recovered",
+      "action": "POST /api/v1/evidence"
+    }
+  ],
+  "evidence": [
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-fall-rapid-rise-rapid_rise-adl-14-cam0-rgb-187-205",
+      "observation_ids": [
+        "obs-rapid_rise-adl-14-cam0-rgb-187-205"
+      ],
+      "resident_id": "resident-demo-001",
+      "timestamp": "2026-08-07T03:07:01+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "rapid_rise",
+      "severity": 0.831,
+      "confidence": 0.817,
+      "data_quality": 0.854,
+      "baseline_value": 2.5,
+      "current_value": 0.594,
+      "baseline_deviation": -0.762,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "髋部中心在0.594s内上移0.190个画面高度，快于2.5s起身基线。",
+      "adapter_version": "fall-evidence-rule-v1",
+      "source_mode": "PUBLIC_DATASET",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-fall-trunk-sway-adl-14-cam0-rgb",
+      "observation_ids": [
+        "obs-trunk-sway-adl-14-cam0-rgb"
+      ],
+      "resident_id": "resident-demo-001",
+      "timestamp": "2026-08-07T03:07:06+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "trunk_sway",
+      "severity": 0.633,
+      "confidence": 0.823,
+      "data_quality": 0.925,
+      "baseline_value": 8.0,
+      "current_value": 18.122,
+      "baseline_deviation": 1.265,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "躯干角度最大摆动为18.12度，高于8.0度基线阈值。",
+      "adapter_version": "fall-evidence-rule-v1",
+      "source_mode": "PUBLIC_DATASET",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-fall-gait-instability-adl-14-cam0-rgb",
+      "observation_ids": [
+        "obs-gait-instability-adl-14-cam0-rgb"
+      ],
+      "resident_id": "resident-demo-001",
+      "timestamp": "2026-08-07T03:07:08+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "gait_instability",
+      "severity": 0.278,
+      "confidence": 0.725,
+      "data_quality": 0.925,
+      "baseline_value": 0.18,
+      "current_value": 0.28,
+      "baseline_deviation": 0.556,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "步长差异比为0.280，高于0.180个人基线。",
+      "adapter_version": "fall-evidence-rule-v1",
+      "source_mode": "PUBLIC_DATASET",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-fall-relative-speed-change-relative-speed-adl-14-cam0-rgb",
+      "observation_ids": [
+        "obs-relative-speed-adl-14-cam0-rgb"
+      ],
+      "resident_id": "resident-demo-001",
+      "timestamp": "2026-08-07T03:07:10+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "relative_speed_change",
+      "severity": 0.549,
+      "confidence": 0.8,
+      "data_quality": 0.925,
+      "baseline_value": 0.084,
+      "current_value": 0.152,
+      "baseline_deviation": 0.824,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "相对步速为0.152画面单位/秒，高于0.084个人基线。",
+      "adapter_version": "fall-evidence-rule-v1",
+      "source_mode": "PUBLIC_DATASET",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-fall-posture-recovered-adl-14-cam0-rgb",
+      "observation_ids": [
+        "obs-posture-recovered-adl-14-cam0-rgb"
+      ],
+      "resident_id": "resident-demo-001",
+      "timestamp": "2026-08-07T03:07:28+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "posture_recovered",
+      "severity": 0.548,
+      "confidence": 0.87,
+      "data_quality": 0.956,
+      "baseline_value": 8.0,
+      "current_value": 3.613,
+      "baseline_deviation": -0.548,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "干预后观察窗内躯干最大偏角3.61度，姿态回到稳定范围。",
+      "adapter_version": "fall-evidence-rule-v1",
+      "source_mode": "PUBLIC_DATASET",
+      "simulated": true
+    }
+  ]
+}
