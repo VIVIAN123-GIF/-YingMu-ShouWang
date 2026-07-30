@@ -113,13 +113,29 @@ async def validate_snapshot() -> dict[str, Any]:
         elapsed_ms = round((time.perf_counter() - started) * 1000)
         code = business_code(body)
         data = body.get("data") if isinstance(body, dict) else None
-        image_url = data.get("url") if isinstance(data, dict) else None
+        # 萤石抓图返回在不同版本中可能为 picUrl 或 url；两者都是短期授权地址。
+        image_url = (data.get("picUrl") or data.get("url")) if isinstance(data, dict) else None
         valid_image = isinstance(image_url, str) and urlparse(image_url).scheme in {"http", "https"}
-        success = http_status == 200 and code == "200" and valid_image
+        authorized = False
+        image_http_status = None
+        if valid_image:
+            # 只验证短期授权地址的响应头与首个数据块，不写入图片或 URL。
+            async with httpx.AsyncClient(timeout=12.0, follow_redirects=True) as client:
+                async with client.stream("GET", image_url) as image_response:
+                    image_http_status = image_response.status_code
+                    content_type = image_response.headers.get("content-type", "").lower()
+                    first_chunk = await anext(image_response.aiter_bytes(), b"")
+                    authorized = (
+                        200 <= image_http_status < 300
+                        and content_type.startswith("image/")
+                        and bool(first_chunk)
+                    )
+        success = http_status == 200 and code == "200" and valid_image and authorized
         record.update({"result": "SUCCESS" if success else "FAILED", "http_status": http_status,
                        "business_code": code, "latency_ms": elapsed_ms,
                        "valid_image_obtained": valid_image,
-                       "authorization_status": "PENDING_HUMAN_CONFIRMATION",
+                       "image_http_status": image_http_status,
+                       "authorization_status": "AUTHORIZED" if authorized else "NOT_CONFIRMED",
                        "image_url_stored": False,
                        "source_mode": "LIVE_DEVICE" if success else "MOCK",
                        "failure_reason": None if success else "SNAPSHOT_NOT_CONFIRMED"})

@@ -1,0 +1,21 @@
+{
+  "status_code": 200,
+  "body": {
+    "schema_version": "1.0",
+    "result_id": "result-0cbe9433928c452f92b08ba90e4e8fdd",
+    "event_id": "event-mock-fall-001",
+    "started_at": "2026-07-30T14:47:00.693463+08:00",
+    "completed_at": "2026-07-30T14:47:00.693463+08:00",
+    "action_type": "voice",
+    "tool_name": "mock_voice",
+    "delivery_status": "SUCCESS",
+    "resident_response": null,
+    "family_feedback": null,
+    "risk_after": null,
+    "resolved": false,
+    "resolution_reason": "Declared Mock fallback",
+    "operator": "system",
+    "source_mode": "MOCK",
+    "simulated": true
+  }
+}

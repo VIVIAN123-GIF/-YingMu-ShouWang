@@ -1,0 +1,24 @@
+{
+  "risk_levels": [
+    "GREEN",
+    "ORANGE",
+    "ORANGE",
+    "GREEN"
+  ],
+  "statuses": [
+    "INTERVENING",
+    "INTERVENING",
+    "OBSERVING",
+    "RESOLVED"
+  ],
+  "rules": [
+    "R-FALL-01",
+    "R-FALL-02",
+    "R-FALL-04",
+    "R-FALL-05"
+  ],
+  "tool_name": "mock_voice",
+  "delivery_status": "SUCCESS",
+  "resolved": true,
+  "risk_after": 0.24
+}

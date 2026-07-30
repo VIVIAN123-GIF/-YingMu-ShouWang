@@ -1,5 +1,9 @@
 import asyncio
+import hashlib
+import hmac
+import json
 import os
+import time
 from pathlib import Path
 
 from sqlalchemy import func, select
@@ -9,11 +13,14 @@ TEST_DB = Path("test_risk_api.db")
 os.environ["YINGMU_DB_PATH"] = str(TEST_DB)
 os.environ["YINGMU_ENV"] = "mock"
 os.environ["YINGMU_CONTROL_TOKEN"] = "test-control-token"
+os.environ["EZVIZ_WEBHOOK_SECRET"] = "test-webhook-secret"
+os.environ["MIN_EVIDENCE_QUALITY"] = "0.7"
+os.environ["MIN_EVIDENCE_CONFIDENCE"] = "0.8"
 
 from fastapi.testclient import TestClient
 
 from backend.db.database import AsyncSessionLocal, engine
-from backend.db.models import Evidence, InterventionResult, RiskEvent, RuleTrace
+from backend.db.models import DeviceInfo, Evidence, InterventionResult, RiskAlarm, RiskEvent, RuleTrace
 from backend.main import app
 from contracts.v1.mock_memory_data import safe_history
 
@@ -106,6 +113,46 @@ def post_pair(
     observation_response = client.post("/api/v1/observations", json=observation_payload)
     evidence_response = client.post("/api/v1/evidence", json=evidence_payload)
     return observation_response, evidence_response, evidence_payload
+
+
+def start_orange_event(client: TestClient, resident_id: str, prefix: str) -> str:
+    post_pair(client, resident_id, f"{prefix}-rapid", "rapid_rise", "2026-07-31T03:07:01+08:00")
+    _, response, _ = post_pair(client, resident_id, f"{prefix}-sway", "trunk_sway", "2026-07-31T03:07:05+08:00")
+    assert response.status_code == 201
+    assert response.json()["evaluation"]["matched_rule"] == "R-FALL-02"
+    return response.json()["evaluation"]["event_id"]
+
+
+def post_recovery(
+    client: TestClient,
+    resident_id: str,
+    prefix: str,
+    *,
+    current_value: float = 15.0,
+    data_quality: float = 0.90,
+    confidence: float = 0.94,
+    timestamp: str = "2026-07-31T03:07:29+08:00",
+):
+    observation_payload = observation(
+        resident_id, f"obs-{prefix}", "stable_posture_duration", current_value, timestamp,
+        data_quality=data_quality,
+    )
+    observation_payload["confidence"] = confidence
+    evidence_payload = evidence(
+        resident_id, f"evi-{prefix}", observation_payload["observation_id"], "posture_recovered", timestamp,
+        data_quality=data_quality,
+    )
+    evidence_payload.update({
+        "severity": 0.12,
+        "confidence": confidence,
+        "current_value": current_value,
+        "baseline_value": None,
+        "baseline_deviation": None,
+        "explanation": "stable posture recovered",
+    })
+    assert client.post("/api/v1/observations", json=observation_payload).status_code == 201
+    response = client.post("/api/v1/evidence", json=evidence_payload)
+    return response, evidence_payload
 
 
 async def resident_counts(resident_id: str):
@@ -342,6 +389,7 @@ def test_event_list_intervention_result_feedback_and_contract_validation():
         assert intervention.json()["delivery_status"] == "SUCCESS"
         assert intervention.json()["source_mode"] == "MOCK"
         assert intervention.json()["simulated"] is True
+        assert client.get(f"/api/v1/events/{event_id}").json()["status"] == "INTERVENING"
 
         feedback_payload = {"feedback_id": "result-family-feedback-001",
                             "feedback_type": "care", "value": "contacted", "operator": "family"}
@@ -349,13 +397,112 @@ def test_event_list_intervention_result_feedback_and_contract_validation():
         assert feedback.status_code == 201
         repeated = client.post(f"/api/v1/events/{event_id}/feedback", json=feedback_payload)
         assert repeated.status_code == 200
-        assert client.get(f"/api/v1/events/{event_id}").json()["status"] == "OBSERVING"
+        assert client.get(f"/api/v1/events/{event_id}").json()["status"] == "INTERVENING"
 
         wrong_name = evidence("resident-mock-001", "evi-invalid-name",
                               "obs-mock-rapid-rise-001", "fall_score",
                               "2026-07-31T03:07:01+08:00")
         invalid = client.post("/api/v1/evidence", json=wrong_name)
         assert invalid.status_code == 422
+
+
+def test_recovery_requires_usable_evidence_and_fifteen_stable_seconds():
+    with TestClient(app) as client:
+        low_quality_event = start_orange_event(client, "resident-recovery-low-quality", "recovery-low-quality")
+        low_quality, _ = post_recovery(
+            client, "resident-recovery-low-quality", "recovery-low-quality", data_quality=0.69,
+        )
+        assert low_quality.status_code == 201
+        assert low_quality.json()["evaluation"]["matched_rule"] == "R-FALL-03"
+        assert client.get(f"/api/v1/events/{low_quality_event}").json()["status"] == "INTERVENING"
+
+        short_event = start_orange_event(client, "resident-recovery-too-short", "recovery-too-short")
+        short, _ = post_recovery(
+            client, "resident-recovery-too-short", "recovery-too-short", current_value=14.9,
+        )
+        assert short.status_code == 201
+        assert short.json()["evaluation"]["matched_rule"] == "R-FALL-02"
+        assert client.get(f"/api/v1/events/{short_event}").json()["status"] == "INTERVENING"
+
+
+def test_recovery_observation_resolves_and_updates_successful_intervention():
+    resident_id = "resident-recovery-success"
+    with TestClient(app) as client:
+        event_id = start_orange_event(client, resident_id, "recovery-success")
+        intervention = client.post(f"/api/v1/events/{event_id}/intervene")
+        assert intervention.status_code == 200
+        recovered, recovered_payload = post_recovery(client, resident_id, "recovery-success")
+        assert recovered.status_code == 201
+        assert recovered.json()["evaluation"]["matched_rule"] == "R-FALL-04"
+        observing = client.get(f"/api/v1/events/{event_id}").json()
+        assert observing["status"] == "OBSERVING"
+        assert recovered_payload["evidence_id"] in observing["evidence_ids"]
+
+        before_window = client.post("/api/v1/risk/evaluate", json={
+            "resident_id": resident_id, "evaluated_at": "2026-07-31T03:08:28+08:00",
+        })
+        assert before_window.status_code == 200
+        assert before_window.json()["matched_rule"] == "R-FALL-02"
+        assert before_window.json()["risk_level"] == "ORANGE"
+
+        resolved = client.post("/api/v1/risk/evaluate", json={
+            "resident_id": resident_id, "evaluated_at": "2026-07-31T03:08:29+08:00",
+        })
+        assert resolved.status_code == 200
+        assert resolved.json()["matched_rule"] == "R-FALL-05"
+        assert resolved.json()["risk_level"] == "GREEN"
+        detail = client.get(f"/api/v1/events/{event_id}").json()
+        assert detail["status"] == "RESOLVED"
+        assert len(detail["interventions"]) == 1
+        assert detail["interventions"][0]["resolved"] is True
+        assert detail["interventions"][0]["risk_after"] == 0.24
+        transition = [item for item in detail["rule_traces"] if item["matched_rule"] == "R-FALL-05"][-1]
+        assert transition["previous_status"] == "OBSERVING"
+        assert transition["next_status"] == "RESOLVED"
+
+
+def test_observing_danger_restarts_intervention_and_duplicate_recovery_is_idempotent():
+    resident_id = "resident-recovery-danger"
+    with TestClient(app) as client:
+        event_id = start_orange_event(client, resident_id, "recovery-danger")
+        assert client.post(f"/api/v1/events/{event_id}/intervene").status_code == 200
+        recovered, recovered_payload = post_recovery(client, resident_id, "recovery-danger")
+        assert recovered.json()["evaluation"]["matched_rule"] == "R-FALL-04"
+        repeated = client.post("/api/v1/evidence", json=recovered_payload)
+        assert repeated.status_code == 200
+        assert repeated.json()["idempotent"] is True
+        assert client.get(f"/api/v1/events/{event_id}").json()["status"] == "OBSERVING"
+
+        _, danger, _ = post_pair(
+            client, resident_id, "recovery-danger-new-sway", "trunk_sway", "2026-07-31T03:07:35+08:00",
+        )
+        assert danger.status_code == 201
+        assert danger.json()["evaluation"]["matched_rule"] == "R-FALL-06"
+        detail = client.get(f"/api/v1/events/{event_id}").json()
+        assert detail["status"] == "INTERVENING"
+        transition = [item for item in detail["rule_traces"] if item["matched_rule"] == "R-FALL-06"][-1]
+        assert transition["previous_status"] == "OBSERVING"
+        assert transition["next_status"] == "INTERVENING"
+        late = client.post("/api/v1/risk/evaluate", json={
+            "resident_id": resident_id, "evaluated_at": "2026-07-31T03:09:00+08:00",
+        })
+        assert late.json()["risk_level"] == "ORANGE"
+        assert client.get(f"/api/v1/events/{event_id}").json()["status"] == "INTERVENING"
+
+
+def test_external_result_cannot_mark_event_resolved():
+    with TestClient(app) as client:
+        event_id = start_orange_event(client, "resident-result-forbidden", "result-forbidden")
+        response = client.post(f"/api/v1/events/{event_id}/results", json={
+            "schema_version": "1.0", "result_id": "result-forbidden", "event_id": event_id,
+            "started_at": "2026-07-31T03:07:06+08:00", "completed_at": "2026-07-31T03:07:06+08:00",
+            "action_type": "voice", "tool_name": "mock_voice", "delivery_status": "SUCCESS",
+            "resident_response": "stable", "family_feedback": None, "risk_after": 0.24,
+            "resolved": True, "resolution_reason": "external bypass", "operator": "system",
+            "source_mode": "MOCK", "simulated": True,
+        })
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "RESULT_RESOLUTION_FORBIDDEN"
 
 
 def test_frontend_assets_weekly_and_authorized_stop_contracts():
@@ -384,6 +531,78 @@ def test_frontend_assets_weekly_and_authorized_stop_contracts():
                               headers={"X-Control-Token": "test-control-token"})
         assert stopped.status_code == 200
         assert stopped.json()["collection_active"] is False
+
+
+def test_ezviz_alarm_webhook_verifies_signature_redacts_and_is_idempotent():
+    device_serial = "test-ezviz-alarm-device"
+
+    async def register_device():
+        async with AsyncSessionLocal() as db:
+            db.add(DeviceInfo(
+                resident_id="resident-ezviz-alarm",
+                device_sn=device_serial,
+                channel_no=1,
+                device_name="test-ezviz-device",
+                adapter_mode="MOCK",
+            ))
+            await db.commit()
+
+    async def persisted_alarm():
+        async with AsyncSessionLocal() as db:
+            rows = (await db.execute(select(RiskAlarm).where(
+                RiskAlarm.alarm_msg_id == "alarm-real-contract-001"
+            ))).scalars().all()
+            return len(rows), rows[0].raw_callback_json
+
+    envelope = {
+        "header": {
+            "type": "ys.alarm",
+            "deviceId": device_serial,
+            "channelNo": 1,
+            "messageId": "message-real-contract-001",
+            "messageTime": int(time.time() * 1000),
+        },
+        "body": {
+            "alarmId": "alarm-real-contract-001",
+            "alarmTime": "2026-07-30T20:00:00",
+            "alarmType": "alarmMove",
+            "checksum": "device-password-must-not-persist",
+            "pictureList": [{"id": "picture-id-only", "url": "https://private.example/image"}],
+        },
+    }
+    raw_body = json.dumps(envelope, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    timestamp = str(int(time.time() * 1000))
+    signature = hmac.new(
+        b"test-webhook-secret", raw_body + timestamp.encode("utf-8"), hashlib.sha1
+    ).hexdigest()
+
+    with TestClient(app) as client:
+        asyncio.run(register_device())
+        headers = {
+            "content-type": "application/json",
+            "t": timestamp,
+            "signature": signature,
+            "message_type": "ys.alarm",
+        }
+        response = client.post("/api/v1/webhooks/ezviz", content=raw_body, headers=headers)
+        assert response.status_code == 200
+        assert response.json() == {"messageId": "message-real-contract-001"}
+        repeated = client.post("/api/v1/webhooks/ezviz", content=raw_body, headers=headers)
+        assert repeated.status_code == 200
+        assert repeated.json() == {"messageId": "message-real-contract-001"}
+        count, saved = asyncio.run(persisted_alarm())
+        assert count == 1
+        assert "device-password-must-not-persist" not in saved
+        assert "https://private.example/image" not in saved
+        assert '\"checksum\":\"***\"' in saved
+        assert '\"url\":\"***\"' in saved
+
+        invalid = client.post(
+            "/api/v1/webhooks/ezviz", content=raw_body,
+            headers={**headers, "signature": "incorrect"},
+        )
+        assert invalid.status_code == 401
+        assert invalid.json()["error"]["code"] == "EZVIZ_WEBHOOK_SIGNATURE_INVALID"
 
 
 def test_all_frozen_routes_are_exposed_without_unfrozen_stream_route():

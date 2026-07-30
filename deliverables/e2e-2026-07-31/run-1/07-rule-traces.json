@@ -1,0 +1,62 @@
+[
+  {
+    "trace_id": "trace-d779b15c060f42f2ab1558788e7d62a1",
+    "event_id": null,
+    "resident_id": "resident-mock-001",
+    "evidence_id": "evi-mock-rapid-rise-001",
+    "evaluated_at": "2026-07-31T03:07:01+08:00",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-01",
+    "previous_state": "GREEN",
+    "next_state": "GREEN",
+    "previous_status": null,
+    "next_status": null,
+    "event_created": false,
+    "error": null
+  },
+  {
+    "trace_id": "trace-e5aa154328e94af896412d49ab885e85",
+    "event_id": "event-mock-fall-001",
+    "resident_id": "resident-mock-001",
+    "evidence_id": "evi-mock-trunk-sway-001",
+    "evaluated_at": "2026-07-31T03:07:05+08:00",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-02",
+    "previous_state": "GREEN",
+    "next_state": "ORANGE",
+    "previous_status": null,
+    "next_status": "INTERVENING",
+    "event_created": true,
+    "error": null
+  },
+  {
+    "trace_id": "trace-e5ece74d3ad34f84a2d64169f9213ff7",
+    "event_id": "event-mock-fall-001",
+    "resident_id": "resident-mock-001",
+    "evidence_id": "evi-mock-posture-recovered-001",
+    "evaluated_at": "2026-07-31T03:07:29+08:00",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-04",
+    "previous_state": "ORANGE",
+    "next_state": "ORANGE",
+    "previous_status": "INTERVENING",
+    "next_status": "OBSERVING",
+    "event_created": false,
+    "error": null
+  },
+  {
+    "trace_id": "trace-bbef7aa189a64892a8ca02f58e3611f1",
+    "event_id": "event-mock-fall-001",
+    "resident_id": "resident-mock-001",
+    "evidence_id": null,
+    "evaluated_at": "2026-07-31T03:08:30+08:00",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-05",
+    "previous_state": "ORANGE",
+    "next_state": "GREEN",
+    "previous_status": "OBSERVING",
+    "next_status": "RESOLVED",
+    "event_created": false,
+    "error": null
+  }
+]
