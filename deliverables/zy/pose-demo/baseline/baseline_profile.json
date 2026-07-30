@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "profile_version": "gait-baseline-v1",
+  "built_at": "2026-07-30T17:20:24+08:00",
+  "resident_id": "resident-demo-001",
+  "source_mode": "PUBLIC_DATASET",
+  "source_dataset": "URFD cam0 ADL",
+  "sample_policy": {
+    "label": "adl",
+    "min_valid_frame_ratio": 0.65,
+    "sequence_count": 12
+  },
+  "metrics": {
+    "step_speed": {
+      "count": 12,
+      "median": 0.081671,
+      "mad": 0.011946,
+      "p10": 0.039865,
+      "p25": 0.047634,
+      "p75": 0.08591,
+      "p90": 0.096373,
+      "iqr": 0.038276
+    },
+    "sway_frequency_hz": {
+      "count": 12,
+      "median": 0.278033,
+      "mad": 0.081288,
+      "p10": 0.189601,
+      "p25": 0.199382,
+      "p75": 0.325659,
+      "p90": 0.472255,
+      "iqr": 0.126277
+    },
+    "step_length_asymmetry_ratio": {
+      "count": 12,
+      "median": 0.199149,
+      "mad": 0.068457,
+      "p10": 0.077643,
+      "p25": 0.142,
+      "p75": 0.258215,
+      "p90": 0.324972,
+      "iqr": 0.116215
+    },
+    "mean_core_visibility": {
+      "count": 12,
+      "median": 0.965272,
+      "mad": 0.019665,
+      "p10": 0.942957,
+      "p25": 0.946431,
+      "p75": 0.977124,
+      "p90": 0.992503,
+      "iqr": 0.030693
+    },
+    "valid_frame_ratio": {
+      "count": 12,
+      "median": 0.872222,
+      "mad": 0.127778,
+      "p10": 0.695429,
+      "p25": 0.718571,
+      "p75": 1.0,
+      "p90": 1.0,
+      "iqr": 0.281429
+    }
+  },
+  "rule_parameters": {
+    "baseline_rise_duration_s": 2.5,
+    "slow_rise_duration_s": 3.5,
+    "baseline_speed": 0.081671,
+    "baseline_sway_deg": 8.0,
+    "baseline_sway_frequency_hz": 0.278033,
+    "baseline_asymmetry": 0.199149,
+    "tracking_lost_valid_frame_ratio": 0.65,
+    "posture_recovered_stable_angle_deg": 8.0,
+    "relative_speed_deviation_alert_ratio": 1.5,
+    "gait_instability_alert_ratio": 2.0
+  },
+  "stability": {
+    "status": "RULE_BASELINE_STABLE_FOR_DEMO",
+    "reason": "基线来自高质量 ADL 序列中位数和分位数，避免单个公开数据片段直接决定阈值。",
+    "requires_real_device_recalibration": true
+  }
+}

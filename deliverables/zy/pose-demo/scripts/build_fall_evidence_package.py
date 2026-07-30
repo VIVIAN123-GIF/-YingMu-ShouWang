@@ -59,6 +59,24 @@ def write_json(path: Path, payload: object) -> None:
         handle.write("\n")
 
 
+def load_baseline_profile(path: Path) -> dict[str, object]:
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+    if not isinstance(payload, dict):
+        raise SystemExit(f"Invalid baseline profile: {path}")
+    return payload
+
+
+def profile_rule_value(profile: dict[str, object], key: str, fallback: float) -> float:
+    params = profile.get("rule_parameters", {})
+    if not isinstance(params, dict):
+        return fallback
+    value = params.get(key, fallback)
+    return float(value)
+
+
 def group_rows(rows: Iterable[dict[str, str]]) -> dict[str, list[dict[str, str]]]:
     grouped: dict[str, list[dict[str, str]]] = {}
     for row in rows:
@@ -161,6 +179,7 @@ def build_rise_evidence(
     simulated: bool,
     location: Optional[str],
 ) -> dict[str, object]:
+    evidence_slug = evidence_type.replace("_", "-")
     duration = window.duration_s
     deviation = (duration - baseline_duration_s) / max(baseline_duration_s, 1e-6)
     if evidence_type == "rapid_rise":
@@ -174,7 +193,7 @@ def build_rise_evidence(
         explanation = f"起身窗口持续{duration:.3f}s，慢于{baseline_duration_s:.1f}s起身基线。"
     return base_evidence(
         evidence_type=evidence_type,
-        observation_id=f"obs-{evidence_type}-{window.sequence_id}-{window.start_frame}-{window.end_frame}",
+        observation_id=f"obs-{evidence_slug}-{window.sequence_id}-{window.start_frame}-{window.end_frame}",
         resident_id=resident_id,
         timestamp=timestamp,
         severity=severity,
@@ -396,6 +415,7 @@ def main() -> None:
     parser.add_argument("--features-csv", default="deliverables/zy/pose-demo/processed/urfd_gait_features.csv")
     parser.add_argument("--evidence-dir", default="deliverables/zy/pose-demo/evidence")
     parser.add_argument("--integration-dir", default="deliverables/zy/pose-demo/integration")
+    parser.add_argument("--baseline-profile", default="deliverables/zy/pose-demo/baseline/baseline_profile.json")
     parser.add_argument("--sequence-id", default="", help="Optional sequence id for the golden 30s package.")
     parser.add_argument("--resident-id", default="resident-demo-001")
     parser.add_argument("--source-mode", default="PUBLIC_DATASET")
@@ -409,6 +429,11 @@ def main() -> None:
 
     frame_rows = read_csv(Path(args.frames_csv))
     feature_rows = read_csv(Path(args.features_csv))
+    baseline_profile = load_baseline_profile(Path(args.baseline_profile))
+    baseline_rise_duration_s = profile_rule_value(baseline_profile, "baseline_rise_duration_s", args.baseline_rise_duration_s)
+    baseline_sway_deg = profile_rule_value(baseline_profile, "baseline_sway_deg", args.baseline_sway_deg)
+    baseline_asymmetry = profile_rule_value(baseline_profile, "baseline_asymmetry", args.baseline_asymmetry)
+    min_valid_frame_ratio = profile_rule_value(baseline_profile, "tracking_lost_valid_frame_ratio", args.min_valid_frame_ratio)
     grouped_frames = group_rows(frame_rows)
     sequence_id, rows, feature_row = choose_rows(grouped_frames, feature_rows, args.sequence_id)
     base_time = datetime(2026, 8, 7, 3, 7, 0, tzinfo=timezone(timedelta(hours=8)))
@@ -418,19 +443,23 @@ def main() -> None:
         raise SystemExit(f"No rapid rise window found for {sequence_id}.")
     slow_window = find_upward_window(sequence_id, rows, 1.5, 3.5, 0.04) or rapid_window
 
-    baseline_speed = median(float(row["step_speed"]) for row in feature_rows if row["label"] == "adl")
+    baseline_speed = profile_rule_value(
+        baseline_profile,
+        "baseline_speed",
+        median(float(row["step_speed"]) for row in feature_rows if row["label"] == "adl"),
+    )
     all_valid_ratios = sorted(feature_rows, key=lambda row: float(row["valid_frame_ratio"]))
     tracking_row = all_valid_ratios[0]
     tracking_sequence = tracking_row["sequence_id"]
 
     evidence_items = [
-        build_rise_evidence("rapid_rise", rapid_window, timestamp_at(base_time, 1), args.baseline_rise_duration_s, args.resident_id, args.source_mode, args.simulated, args.location),
-        build_trunk_sway_evidence(rows, sequence_id, timestamp_at(base_time, 6), args.resident_id, args.source_mode, args.simulated, args.location, args.baseline_sway_deg),
-        build_gait_instability_evidence(feature_row, timestamp_at(base_time, 8), args.resident_id, args.source_mode, args.simulated, args.location, args.baseline_asymmetry),
+        build_rise_evidence("rapid_rise", rapid_window, timestamp_at(base_time, 1), baseline_rise_duration_s, args.resident_id, args.source_mode, args.simulated, args.location),
+        build_trunk_sway_evidence(rows, sequence_id, timestamp_at(base_time, 6), args.resident_id, args.source_mode, args.simulated, args.location, baseline_sway_deg),
+        build_gait_instability_evidence(feature_row, timestamp_at(base_time, 8), args.resident_id, args.source_mode, args.simulated, args.location, baseline_asymmetry),
         build_relative_speed_evidence(feature_row, timestamp_at(base_time, 10), args.resident_id, args.source_mode, args.simulated, args.location, baseline_speed),
-        build_rise_evidence("slow_rise", slow_window, timestamp_at(base_time, 14), args.baseline_rise_duration_s, args.resident_id, args.source_mode, args.simulated, args.location),
-        build_tracking_lost_evidence(tracking_row, timestamp_at(base_time, 18), args.resident_id, args.source_mode, args.simulated, args.location, args.min_valid_frame_ratio),
-        build_posture_recovered_evidence(rows, sequence_id, timestamp_at(base_time, 28), args.resident_id, args.source_mode, args.simulated, args.location, args.baseline_sway_deg),
+        build_rise_evidence("slow_rise", slow_window, timestamp_at(base_time, 14), baseline_rise_duration_s, args.resident_id, args.source_mode, args.simulated, args.location),
+        build_tracking_lost_evidence(tracking_row, timestamp_at(base_time, 18), args.resident_id, args.source_mode, args.simulated, args.location, min_valid_frame_ratio),
+        build_posture_recovered_evidence(rows, sequence_id, timestamp_at(base_time, 28), args.resident_id, args.source_mode, args.simulated, args.location, baseline_sway_deg),
     ]
 
     output_dir = Path(args.evidence_dir)
@@ -446,6 +475,7 @@ def main() -> None:
         "source_mode": args.source_mode,
         "simulated": args.simulated,
         "asset_id": sequence_id,
+        "baseline_profile": str(Path(args.baseline_profile)),
         "post_endpoint": "/api/v1/evidence",
         "expected_agent_behavior": {
             "risk_domain": "FALL",
