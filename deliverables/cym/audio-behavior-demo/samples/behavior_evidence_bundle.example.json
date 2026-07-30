@@ -1,0 +1,208 @@
+{
+  "schema_version": "1.0",
+  "source_mode": "MOCK",
+  "simulated": true,
+  "threshold_status": "DEMO_UNCALIBRATED",
+  "observations": [
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-activity-baseline-20260730-demo-0001",
+      "resident_id": "resident-001",
+      "timestamp": "2026-07-30T16:00:00+08:00",
+      "source": "behavior_statistics",
+      "feature_name": "baseline_visited_region_count",
+      "feature_value": 4,
+      "unit": "count",
+      "location": "living_room",
+      "confidence": 0.78,
+      "data_quality": 0.8,
+      "source_mode": "MOCK",
+      "asset_id": null,
+      "simulated": true,
+      "metadata": {
+        "adapter_version": "behavior-adapter-v1.1",
+        "threshold_status": "DEMO_UNCALIBRATED",
+        "purpose": "interface_rehearsal"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-activity-current-20260730-demo-0001",
+      "resident_id": "resident-001",
+      "timestamp": "2026-07-30T16:00:00+08:00",
+      "source": "behavior_statistics",
+      "feature_name": "current_visited_region_count",
+      "feature_value": 2,
+      "unit": "count",
+      "location": "living_room",
+      "confidence": 0.78,
+      "data_quality": 0.8,
+      "source_mode": "MOCK",
+      "asset_id": null,
+      "simulated": true,
+      "metadata": {
+        "adapter_version": "behavior-adapter-v1.1",
+        "threshold_status": "DEMO_UNCALIBRATED",
+        "purpose": "interface_rehearsal"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-visitor-count-20260730-demo-0001",
+      "resident_id": "resident-001",
+      "timestamp": "2026-07-30T16:00:00+08:00",
+      "source": "mock_authorization",
+      "feature_name": "visitor_person_count",
+      "feature_value": 1,
+      "unit": "count",
+      "location": "living_room",
+      "confidence": 0.78,
+      "data_quality": 0.8,
+      "source_mode": "MOCK",
+      "asset_id": null,
+      "simulated": true,
+      "metadata": {
+        "adapter_version": "behavior-adapter-v1.1",
+        "threshold_status": "DEMO_UNCALIBRATED",
+        "purpose": "interface_rehearsal"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-visitor-authorized-20260730-demo-0001",
+      "resident_id": "resident-001",
+      "timestamp": "2026-07-30T16:00:00+08:00",
+      "source": "mock_authorization",
+      "feature_name": "visitor_authorization_matched",
+      "feature_value": false,
+      "unit": null,
+      "location": "living_room",
+      "confidence": 0.78,
+      "data_quality": 0.8,
+      "source_mode": "MOCK",
+      "asset_id": null,
+      "simulated": true,
+      "metadata": {
+        "adapter_version": "behavior-adapter-v1.1",
+        "threshold_status": "DEMO_UNCALIBRATED",
+        "purpose": "interface_rehearsal"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-dwell-observed-20260730-demo-0001",
+      "resident_id": "resident-001",
+      "timestamp": "2026-07-30T16:00:00+08:00",
+      "source": "mock_dwell_statistics",
+      "feature_name": "visitor_dwell_seconds",
+      "feature_value": 300,
+      "unit": "second",
+      "location": "doorway",
+      "confidence": 0.78,
+      "data_quality": 0.8,
+      "source_mode": "MOCK",
+      "asset_id": null,
+      "simulated": true,
+      "metadata": {
+        "adapter_version": "behavior-adapter-v1.1",
+        "threshold_status": "DEMO_UNCALIBRATED",
+        "purpose": "interface_rehearsal"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-dwell-threshold-20260730-demo-0001",
+      "resident_id": "resident-001",
+      "timestamp": "2026-07-30T16:00:00+08:00",
+      "source": "mock_dwell_statistics",
+      "feature_name": "demo_dwell_threshold_seconds",
+      "feature_value": 120,
+      "unit": "second",
+      "location": "doorway",
+      "confidence": 0.78,
+      "data_quality": 0.8,
+      "source_mode": "MOCK",
+      "asset_id": null,
+      "simulated": true,
+      "metadata": {
+        "adapter_version": "behavior-adapter-v1.1",
+        "threshold_status": "DEMO_UNCALIBRATED",
+        "purpose": "interface_rehearsal"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-activity-range-20260730-demo-0001",
+      "observation_ids": [
+        "obs-activity-baseline-20260730-demo-0001",
+        "obs-activity-current-20260730-demo-0001"
+      ],
+      "resident_id": "resident-001",
+      "timestamp": "2026-07-30T16:00:00+08:00",
+      "risk_domain": "MENTAL",
+      "evidence_type": "activity_range_decline",
+      "severity": 0.5,
+      "confidence": 0.78,
+      "data_quality": 0.8,
+      "baseline_value": 4.0,
+      "current_value": 2.0,
+      "baseline_deviation": -2.0,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "模拟多日统计显示访问区域数低于个人基线；仅表示活动范围变化，需结合外出、生病和家属反馈复核，不作心理诊断",
+      "adapter_version": "behavior-adapter-v1.1",
+      "source_mode": "MOCK",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-unauthorized-visitor-20260730-demo-0001",
+      "observation_ids": [
+        "obs-visitor-count-20260730-demo-0001",
+        "obs-visitor-authorized-20260730-demo-0001"
+      ],
+      "resident_id": "resident-001",
+      "timestamp": "2026-07-30T16:00:00+08:00",
+      "risk_domain": "FRAUD",
+      "evidence_type": "unauthorized_visitor",
+      "severity": 0.55,
+      "confidence": 0.74,
+      "data_quality": 0.8,
+      "baseline_value": null,
+      "current_value": 1.0,
+      "baseline_deviation": null,
+      "time_scale": "SHORT",
+      "location": "living_room",
+      "explanation": "MOCK授权信息未匹配，身份仍未确认；仅建议家属进行身份核验，不表示系统识别出诈骗人员",
+      "adapter_version": "behavior-adapter-v1.1",
+      "source_mode": "MOCK",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-unusual-dwell-20260730-demo-0001",
+      "observation_ids": [
+        "obs-dwell-observed-20260730-demo-0001",
+        "obs-dwell-threshold-20260730-demo-0001"
+      ],
+      "resident_id": "resident-001",
+      "timestamp": "2026-07-30T16:00:00+08:00",
+      "risk_domain": "FRAUD",
+      "evidence_type": "unusual_dwell_time",
+      "severity": 1.0,
+      "confidence": 0.7,
+      "data_quality": 0.78,
+      "baseline_value": 120.0,
+      "current_value": 300.0,
+      "baseline_deviation": 180.0,
+      "time_scale": "SHORT",
+      "location": "doorway",
+      "explanation": "MOCK访客停留时间超过未标定的Demo阈值；该结果只提示需要核验的交互特征，不能据此判断诈骗",
+      "adapter_version": "behavior-adapter-v1.1",
+      "source_mode": "MOCK",
+      "simulated": true
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "frame_size": [640, 480],
+  "regions": [
+    {
+      "id": "doorway",
+      "label": "Doorway",
+      "polygon": [[0, 0], [180, 0], [180, 480], [0, 480]]
+    },
+    {
+      "id": "living_room",
+      "label": "Living room",
+      "polygon": [[180, 0], [500, 0], [500, 480], [180, 480]]
+    },
+    {
+      "id": "corridor",
+      "label": "Corridor",
+      "polygon": [[500, 0], [640, 0], [640, 480], [500, 480]]
+    }
+  ]
+}

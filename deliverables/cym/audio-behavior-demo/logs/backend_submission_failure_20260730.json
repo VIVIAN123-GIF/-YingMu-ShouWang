@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "timestamp": "2026-07-30T16:52:00+08:00",
+  "base_url": "http://127.0.0.1:8765",
+  "dry_run": false,
+  "success": false,
+  "results": [
+    {
+      "type": "observation",
+      "id": "obs-activity-baseline-20260730-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "failed",
+      "error": "无法连接后端：目标计算机积极拒绝，无法连接。"
+    }
+  ],
+  "note": "后端停止时的预期降级样例；客户端停止后续Evidence提交并返回非零退出码"
+}
