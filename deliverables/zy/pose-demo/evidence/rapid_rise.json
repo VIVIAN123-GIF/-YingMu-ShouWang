@@ -1,23 +1,23 @@
 {
   "schema_version": "1.0",
-  "evidence_id": "evi-fall-rapid-rise-adl-14-cam0-rgb-187-205",
+  "evidence_id": "evi-fall-rapid-rise-rapid_rise-adl-14-cam0-rgb-187-205",
   "observation_ids": [
-    "obs-rapid-rise-adl-14-cam0-rgb-187-205"
+    "obs-rapid_rise-adl-14-cam0-rgb-187-205"
   ],
   "resident_id": "resident-demo-001",
-  "timestamp": "2026-07-29T20:44:24+08:00",
+  "timestamp": "2026-08-07T03:07:01+08:00",
   "risk_domain": "FALL",
   "evidence_type": "rapid_rise",
-  "severity": 0.83,
+  "severity": 0.831,
   "confidence": 0.817,
   "data_quality": 0.854,
   "baseline_value": 2.5,
   "current_value": 0.594,
   "baseline_deviation": -0.762,
   "time_scale": "SHORT",
-  "location": null,
-  "explanation": "检测到髋部中心在0.594s内快速上移0.190个画面高度，起身时长短于2.5s基线。",
-  "adapter_version": "rapid-rise-rule-v1",
+  "location": "bedroom",
+  "explanation": "髋部中心在0.594s内上移0.190个画面高度，快于2.5s起身基线。",
+  "adapter_version": "fall-evidence-rule-v1",
   "source_mode": "PUBLIC_DATASET",
   "simulated": true
 }

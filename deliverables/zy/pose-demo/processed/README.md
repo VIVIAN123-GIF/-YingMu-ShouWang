@@ -17,6 +17,8 @@
 
 - `../scripts/build_rapid_rise_evidence.py`
   基于清洗后的逐帧姿态数据检测髋部中心快速上移窗口，并输出 `../evidence/rapid_rise.json`。
+- `../scripts/build_fall_evidence_package.py`
+  基于逐帧姿态数据和序列级特征表生成 7 类跌倒 Evidence、数据质量证据和黄金半分钟联调包。
 
 ## 当前构建参数
 
@@ -36,6 +38,13 @@
 - 最小上移量：0.05 个画面高度
 - 最小上移速度：0.12 个画面高度/秒
 - 默认起身时长基线：2.5s
+
+## 数据质量与联调
+
+- `valid_frame_ratio` 用于判断姿态跟踪有效帧比例
+- `mean_core_visibility` 用于 Evidence 的 `data_quality`
+- 当 `valid_frame_ratio` 低于默认阈值 0.65 时生成 `tracking_lost`
+- `../integration/golden_30s_fall_evidence.json` 可用于 8月7 与智能体接口联调
 
 ## 当前结果摘要
 
