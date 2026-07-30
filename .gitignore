@@ -216,3 +216,21 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+workspace_draft/
+ys7_mock/
+docs/小组分工管理文档/
+
+# ====================== 本项目新增自定义规则 ======================
+# SQLite数据库文件（本地运行生成，禁止提交仓库）
+*.db
+*.db-journal
+ezviz_system.db
+
+# VSCode本地编辑器配置（个人路径配置，不要提交）
+.vscode/
+
+# 项目临时目录、导出文件
+*.tmp
+*.temp

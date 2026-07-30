@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "observation_id": "obs-low-quality-trunk-sway-001",
+  "resident_id": "resident-low-quality-001",
+  "timestamp": "2026-07-31T03:07:05+08:00",
+  "source": "pose",
+  "feature_name": "trunk_sway_angle",
+  "feature_value": 18.0,
+  "unit": "degree",
+  "location": "living_room",
+  "confidence": 0.92,
+  "data_quality": 0.69,
+  "source_mode": "MOCK",
+  "asset_id": "asset-mock-low-quality-001",
+  "simulated": true,
+  "metadata": {"model_version": "mock-v1"}
+}

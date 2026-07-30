@@ -1,0 +1,38 @@
+{
+  "status_code": 201,
+  "body": {
+    "evidence": {
+      "schema_version": "1.0",
+      "evidence_id": "evi-low-quality-trunk-sway-001",
+      "observation_ids": [
+        "obs-low-quality-trunk-sway-001"
+      ],
+      "resident_id": "resident-low-quality-001",
+      "timestamp": "2026-07-31T03:07:05+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "trunk_sway",
+      "severity": 0.78,
+      "confidence": 0.92,
+      "data_quality": 0.69,
+      "baseline_value": 5.0,
+      "current_value": 18.0,
+      "baseline_deviation": 2.8,
+      "time_scale": "SHORT",
+      "location": "living_room",
+      "explanation": "模拟低质量躯干摇晃证据，用于验证质量门控",
+      "adapter_version": "fall-adapter-v1",
+      "source_mode": "MOCK",
+      "simulated": true
+    },
+    "saved": true,
+    "idempotent": false,
+    "evaluation": {
+      "risk_level": "GREEN",
+      "event_created": false,
+      "event_id": null,
+      "matched_rule": "R-FALL-03",
+      "ruleset_version": "ruleset-v1.0",
+      "system_evidence_id": "sys-quality-evi-low-quality-trunk-sway-001"
+    }
+  }
+}

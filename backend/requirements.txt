@@ -1,0 +1,21 @@
+# Web框架
+fastapi>=0.110.0
+uvicorn[standard]>=0.24.0
+
+# 异步数据库
+sqlalchemy[asyncio]>=2.0.0
+aiosqlite>=0.19.0
+
+# 数据模型校验
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# HTTP请求（后续对接萤石平台必备）
+httpx>=0.26.0
+
+# 工具
+python-multipart>=0.0.6
+python-dotenv>=1.0.0
+
+# 自动化测试
+pytest>=8.0.0
