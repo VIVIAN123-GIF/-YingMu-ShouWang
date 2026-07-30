@@ -20,3 +20,6 @@ __all__ = [
     "WeeklyStat",
     "RuleTrace",
 ]
+from .asset import Asset
+
+__all__.append("Asset")

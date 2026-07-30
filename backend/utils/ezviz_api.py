@@ -49,11 +49,11 @@ class EzvizAPI:
         """
         获取设备直播播放地址
         protocol: 1 ezopen / 2 hls / 3 rtmp / 4 flv / 5 lhls
-        quality: 1流畅 / 2高清
+        quality: 1高清（主码流）/ 2流畅（子码流）
         expire_time: 链接有效期，单位秒
         """
         return await EzvizAuth.request(
-            path="/live/address/get",
+            path="/v2/live/address/get",
             body={
                 "deviceSerial": device_serial,
                 "channelNo": channel_no,

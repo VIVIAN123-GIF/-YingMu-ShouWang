@@ -20,7 +20,11 @@ python -m uvicorn backend.main:app --reload
 python -m pytest tests/test_risk_api.py -q
 ```
 
-当前本地验证结果：后端API `6 passed`，原智能体契约与规则测试 `37 passed`。测试覆盖GREEN→ORANGE、0.70质量门控、SYSTEM质量Evidence、幂等、基线准入和主要错误状态码。
+当前测试还覆盖：冻结 Evidence 名称校验、事件列表与前端详情结构、干预结果、家属反馈幂等、授权资产、周报和带控制令牌的一键停止采集。
+
+完整的前端/算法兼容关系及实机阻塞项见 `interface-compatibility.md`。实机能力未验证前不得把 Mock 结果描述为真实萤石调用成功。
+
+当前本地验证结果：后端 API `9 passed`，智能体契约与规则测试 `37 passed`，合计 `46 passed`。测试覆盖 GREEN→ORANGE、0.70 质量门控、SYSTEM 质量 Evidence、幂等、基线准入、资产、干预、反馈、周报、授权停止采集和主要错误状态码。
 
 生成四项真实HTTP请求、响应、RuleTrace和结构化日志：
 

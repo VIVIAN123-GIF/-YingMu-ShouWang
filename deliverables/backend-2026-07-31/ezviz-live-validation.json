@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "EZVIZ_LIVE_ACCEPTANCE",
+  "generated_at": "2026-07-28T15:10:16.129+08:00",
+  "device_alias": "device-a44c5c0e83",
+  "contains_credentials": false,
+  "contains_permanent_public_url": false,
+  "stages": [
+    {
+      "stage": "device_status",
+      "executed": true,
+      "requested_at": "2026-07-28T15:10:16.129+08:00",
+      "device_alias": "device-a44c5c0e83",
+      "result": "SUCCESS",
+      "http_status": 200,
+      "business_code": "200",
+      "latency_ms": 11642,
+      "online": false,
+      "source_mode": "LIVE_DEVICE",
+      "failure_reason": null
+    },
+    {
+      "stage": "device_snapshot",
+      "executed": true,
+      "requested_at": "2026-07-28T15:10:27.770+08:00",
+      "device_alias": "device-a44c5c0e83",
+      "result": "FAILED",
+      "http_status": 200,
+      "business_code": "20007",
+      "latency_ms": 3609,
+      "valid_image_obtained": false,
+      "authorization_status": "PENDING_HUMAN_CONFIRMATION",
+      "image_url_stored": false,
+      "source_mode": "MOCK",
+      "failure_reason": "SNAPSHOT_NOT_CONFIRMED"
+    },
+    {
+      "stage": "temporary_playback_address",
+      "executed": false,
+      "result": "SKIPPED",
+      "reason": "SNAPSHOT_NOT_SUCCESSFUL",
+      "source_mode": "MOCK"
+    }
+  ],
+  "overall_result": "INCOMPLETE"
+}

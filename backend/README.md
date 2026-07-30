@@ -1,93 +1,49 @@
-# backend/README.md
-## 项目后端模块｜YingMu-ShouWang 幕目守望后端
-基于 FastAPI + SQLAlchemy 2.0 异步架构，SQLite异步存储，面向老人居家风险监测预警系统。
+# 幕目守望后端
 
-## 目录结构
-```
+后端采用 FastAPI、SQLAlchemy 2.0 异步 ORM 与 SQLite，负责统一 Observation、Evidence、风险事件、干预结果、设备状态、授权资产和周报数据。
+
+## 目录
+
+```text
 backend/
-├── api/                 # 接口路由层，存放所有业务接口Router
-├── db/                  # 数据库ORM模块（单独内置README）
-│   ├── database.py      # 数据库异步引擎、会话、Base父类、依赖
-│   ├── init_db.py       # 一键建表 & 初始化系统默认配置
-│   ├── crud/            # 通用数据表增删改查封装
-│   └── models/          # 所有数据表ORM实体模型
-├── service/             # 业务服务层，复杂业务逻辑、状态机、算法调度
-├── utils/               # 通用工具函数
-│   ├── config.py        # 全局配置读取
-│   └── link_replace.py  # 链接、地址处理工具
-├── main.py              # FastAPI项目入口，挂载路由、启动服务
-└── requirements.txt     # Python依赖清单
+├── api/          # FastAPI 路由与异常处理
+├── db/           # 数据库引擎、模型与初始化
+├── schemas/      # 请求与响应契约
+├── service/      # 业务逻辑、风险规则、设备适配器
+├── utils/        # 萤石鉴权与平台客户端
+├── config.py     # 环境变量与运行配置
+└── main.py       # 应用入口
 ```
 
-## 环境部署
-### 1. 安装依赖
+## 启动
+
+在仓库根目录执行：
+
 ```powershell
-pip install -r requirements.txt
+python -m pip install -r backend/requirements.txt
+python -m backend.db.init_db
+python -m uvicorn backend.main:app --reload
 ```
-核心依赖：
-- fastapi
-- uvicorn
-- sqlalchemy[asyncio]
-- aiosqlite
-- pydantic
 
-### 2. 数据库初始化（首次启动前必须执行）
-项目根目录执行：
+- Swagger：<http://127.0.0.1:8000/docs>
+- 健康检查：<http://127.0.0.1:8000/health>
+
+真实萤石凭证只可放在本地 `.env`，不得提交或写入日志。Mock 模式不需要真实凭证。
+
+## 分层约定
+
+- `api`：参数校验、响应状态码和调用 service；不直接编写业务判断。
+- `service`：风险评估、事件状态、设备适配和数据聚合；通过异步 SQLAlchemy 会话读写模型。
+- `db`：数据库连接、ORM 模型和初始化迁移；不承载业务规则。
+- `schemas`：冻结接口的 Pydantic 契约。
+
+调用链为：`HTTP 请求 → api → service → SQLAlchemy models → SQLite`。
+
+## 验证
+
 ```powershell
-$env:PYTHONPATH="$PWD"; python backend/db/init_db.py
+python -m pytest tests/test_risk_api.py -q
+python scripts/validate_database.py
 ```
-执行成功后生成 `ezviz_system.db` 数据库文件。
 
-### 3. 启动后端服务
-```powershell
-uvicorn backend.main:app --reload
-```
-启动成功后访问文档：
-- Swagger文档：http://127.0.0.1:8000/docs
-- ReDoc文档：http://127.0.0.1:8000/redoc
-
-## 分层架构规范（严格遵循）
-1. **api 接口层**
-只负责：请求参数校验、响应封装、调用service；
-禁止直接写数据库操作，不存放复杂业务逻辑。
-
-2. **service 业务层**
-存放核心业务逻辑：风险状态机、干预流程、数据聚合、周报统计；
-调用 `db.crud` 操作数据库。
-
-3. **db 数据层**
-models：数据表定义
-crud：通用增删改查
-只做数据读写，不包含业务判断。
-
-4. **utils 工具层**
-配置、字符串处理、时间工具、json工具等通用函数。
-
-## 模块调用链路
-> HTTP请求 → api路由 → service业务逻辑 → crud → models（数据库）
-
-## 数据库相关说明
-- 使用异步SQLAlchemy2.0 + aiosqlite，全程异步，适配FastAPI；
-- 所有数据表、初始化脚本位于 `backend/db/`，内部自带独立README；
-- 多对多关联采用独立中间表，规范风险事件与证据关联关系。
-
-## 已知事项
-1. VSCode编辑器sqlalchemy黄色导入警告为Pylance+Miniconda索引bug，**不影响运行，可以忽略**；
-2. db模块存在一份【后续按需优化清单】，当前代码可正常开发，出现对应业务问题再迭代优化；
-3. `backend/db/README.md` 包含数据表结构、CRUD使用示例、初始化命令。
-
-## 开发注意事项
-1. 新增数据表：在 `db/models/` 创建模型，在 `models/__init__.py` 导出；
-2. 新增接口：api文件夹新建路由，在main.py注册；
-3. 复杂逻辑不要写在api内，迁移至service；
-4. 数据库操作统一使用crud封装，禁止到处手写重复ORM语句；
-5. 所有接口优先使用异步async函数。
-
-## 待建设模块（后续开发）
-- 鉴权中间件
-- 日志统一封装
-- 定时任务（周报统计、过期数据清理）
-- 萤石平台对接service
-- 视频流调度模块
-
-如果你想要，我可以同步帮你生成一份标准 `requirements.txt` 内容一并补齐。
+真实设备验收使用 `python scripts/validate_ezviz_live.py`。该脚本遵循“状态 → 抓图 → 临时播放地址”的顺序，并只保存脱敏结果。

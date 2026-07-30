@@ -58,6 +58,14 @@ async def init_tables() -> None:
             await conn.execute(text("ALTER TABLE risk_event ADD COLUMN source_mode VARCHAR(32) NOT NULL DEFAULT 'MOCK'"))
         if "simulated" not in columns:
             await conn.execute(text("ALTER TABLE risk_event ADD COLUMN simulated BOOLEAN NOT NULL DEFAULT 1"))
+        intervention_columns = {row[1] for row in (await conn.execute(
+            text("PRAGMA table_info(intervention_result)"))).all()}
+        if "source_mode" not in intervention_columns:
+            await conn.execute(text(
+                "ALTER TABLE intervention_result ADD COLUMN source_mode VARCHAR(32) NOT NULL DEFAULT 'MOCK'"))
+        if "simulated" not in intervention_columns:
+            await conn.execute(text(
+                "ALTER TABLE intervention_result ADD COLUMN simulated BOOLEAN NOT NULL DEFAULT 1"))
     print("所有数据表创建完成：设备/观测/证据/风险事件/干预/原始告警/配置/周报/事件证据关联表")
 
 
