@@ -1,0 +1,1170 @@
+[
+  {
+    "sequence": 1,
+    "status": 201,
+    "body": {
+      "observation": {
+        "schema_version": "1.0",
+        "observation_id": "obs-api-2-rapid-rise",
+        "resident_id": "resident-frontend-api",
+        "timestamp": "2026-07-31T03:17:01+08:00",
+        "source": "pose",
+        "feature_name": "sit_to_stand_duration",
+        "feature_value": 1.2,
+        "unit": "second",
+        "location": "living_room",
+        "confidence": 0.92,
+        "data_quality": 0.88,
+        "source_mode": "MOCK",
+        "asset_id": "asset-api-2",
+        "simulated": true,
+        "metadata": {
+          "acceptance_round": 2
+        }
+      },
+      "saved": true,
+      "idempotent": false
+    }
+  },
+  {
+    "sequence": 2,
+    "status": 201,
+    "body": {
+      "evidence": {
+        "schema_version": "1.0",
+        "evidence_id": "evi-api-2-rapid-rise",
+        "observation_ids": [
+          "obs-api-2-rapid-rise"
+        ],
+        "resident_id": "resident-frontend-api",
+        "timestamp": "2026-07-31T03:17:01+08:00",
+        "risk_domain": "FALL",
+        "evidence_type": "rapid_rise",
+        "severity": 0.78,
+        "confidence": 0.92,
+        "data_quality": 0.88,
+        "baseline_value": 3.5,
+        "current_value": 1.2,
+        "baseline_deviation": -2.3,
+        "time_scale": "SHORT",
+        "location": "living_room",
+        "explanation": "起身速度明显快于个人基线",
+        "adapter_version": "frontend-api-acceptance-v1",
+        "source_mode": "MOCK",
+        "simulated": true
+      },
+      "saved": true,
+      "idempotent": false,
+      "evaluation": {
+        "risk_level": "GREEN",
+        "event_created": false,
+        "event_id": null,
+        "matched_rule": "R-FALL-01",
+        "ruleset_version": "ruleset-v1.0",
+        "system_evidence_id": null
+      }
+    }
+  },
+  {
+    "sequence": 3,
+    "status": 201,
+    "body": {
+      "observation": {
+        "schema_version": "1.0",
+        "observation_id": "obs-api-2-trunk-sway",
+        "resident_id": "resident-frontend-api",
+        "timestamp": "2026-07-31T03:17:05+08:00",
+        "source": "pose",
+        "feature_name": "trunk_sway_angle",
+        "feature_value": 18,
+        "unit": "degree",
+        "location": "living_room",
+        "confidence": 0.92,
+        "data_quality": 0.88,
+        "source_mode": "MOCK",
+        "asset_id": "asset-api-2",
+        "simulated": true,
+        "metadata": {
+          "acceptance_round": 2
+        }
+      },
+      "saved": true,
+      "idempotent": false
+    }
+  },
+  {
+    "sequence": 4,
+    "status": 201,
+    "body": {
+      "evidence": {
+        "schema_version": "1.0",
+        "evidence_id": "evi-api-2-trunk-sway",
+        "observation_ids": [
+          "obs-api-2-trunk-sway"
+        ],
+        "resident_id": "resident-frontend-api",
+        "timestamp": "2026-07-31T03:17:05+08:00",
+        "risk_domain": "FALL",
+        "evidence_type": "trunk_sway",
+        "severity": 0.82,
+        "confidence": 0.92,
+        "data_quality": 0.88,
+        "baseline_value": 6.2,
+        "current_value": 18,
+        "baseline_deviation": 2.8,
+        "time_scale": "SHORT",
+        "location": "living_room",
+        "explanation": "快速起身后出现明显躯干摇晃",
+        "adapter_version": "frontend-api-acceptance-v1",
+        "source_mode": "MOCK",
+        "simulated": true
+      },
+      "saved": true,
+      "idempotent": false,
+      "evaluation": {
+        "risk_level": "ORANGE",
+        "event_created": true,
+        "event_id": "event-d9dce5b4e46b4c52",
+        "matched_rule": "R-FALL-02",
+        "ruleset_version": "ruleset-v1.0",
+        "system_evidence_id": null
+      }
+    }
+  },
+  {
+    "sequence": 5,
+    "status": 200,
+    "body": {
+      "schema_version": "1.0",
+      "event_id": "event-d9dce5b4e46b4c52",
+      "resident_id": "resident-frontend-api",
+      "created_at": "2026-07-31T03:17:05+08:00",
+      "updated_at": "2026-07-31T03:17:05+08:00",
+      "primary_domain": "FALL",
+      "related_domains": [],
+      "risk_level": "ORANGE",
+      "risk_score": 0.82,
+      "evidence_ids": [
+        "evi-api-2-rapid-rise",
+        "evi-api-2-trunk-sway"
+      ],
+      "evidence_summary": [
+        {
+          "evidence_id": "evi-api-2-rapid-rise",
+          "evidence_type": "rapid_rise",
+          "explanation": "起身速度明显快于个人基线"
+        },
+        {
+          "evidence_id": "evi-api-2-trunk-sway",
+          "evidence_type": "trunk_sway",
+          "explanation": "快速起身后出现明显躯干摇晃"
+        }
+      ],
+      "time_horizon": "IMMINENT",
+      "recommended_action": "先坐稳，扶住固定物，再慢慢起身",
+      "intervention_policy": "fall-orange-gentle-v1",
+      "status": "INTERVENING",
+      "ruleset_version": "ruleset-v1.0",
+      "source_mode": "MOCK",
+      "simulated": true,
+      "evidences": [
+        {
+          "schema_version": "1.0",
+          "evidence_id": "evi-api-2-rapid-rise",
+          "observation_ids": [
+            "obs-api-2-rapid-rise"
+          ],
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:01+08:00",
+          "risk_domain": "FALL",
+          "evidence_type": "rapid_rise",
+          "severity": 0.78,
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "baseline_value": 3.5,
+          "current_value": 1.2,
+          "baseline_deviation": -2.3,
+          "time_scale": "SHORT",
+          "location": "living_room",
+          "explanation": "起身速度明显快于个人基线",
+          "adapter_version": "frontend-api-acceptance-v1",
+          "source_mode": "MOCK",
+          "simulated": true
+        },
+        {
+          "schema_version": "1.0",
+          "evidence_id": "evi-api-2-trunk-sway",
+          "observation_ids": [
+            "obs-api-2-trunk-sway"
+          ],
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:05+08:00",
+          "risk_domain": "FALL",
+          "evidence_type": "trunk_sway",
+          "severity": 0.82,
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "baseline_value": 6.2,
+          "current_value": 18,
+          "baseline_deviation": 2.8,
+          "time_scale": "SHORT",
+          "location": "living_room",
+          "explanation": "快速起身后出现明显躯干摇晃",
+          "adapter_version": "frontend-api-acceptance-v1",
+          "source_mode": "MOCK",
+          "simulated": true
+        }
+      ],
+      "observations": [
+        {
+          "schema_version": "1.0",
+          "observation_id": "obs-api-2-rapid-rise",
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:01+08:00",
+          "source": "pose",
+          "feature_name": "sit_to_stand_duration",
+          "feature_value": 1.2,
+          "unit": "second",
+          "location": "living_room",
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "source_mode": "MOCK",
+          "asset_id": "asset-api-2",
+          "simulated": true,
+          "metadata": {
+            "acceptance_round": 2
+          }
+        },
+        {
+          "schema_version": "1.0",
+          "observation_id": "obs-api-2-trunk-sway",
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:05+08:00",
+          "source": "pose",
+          "feature_name": "trunk_sway_angle",
+          "feature_value": 18,
+          "unit": "degree",
+          "location": "living_room",
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "source_mode": "MOCK",
+          "asset_id": "asset-api-2",
+          "simulated": true,
+          "metadata": {
+            "acceptance_round": 2
+          }
+        }
+      ],
+      "rule_traces": [
+        {
+          "trace_id": "trace-d6ed5efe278e4c69b356222b65861efa",
+          "event_id": null,
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-1-rapid-rise",
+          "evaluated_at": "2026-07-31T03:07:01+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-01",
+          "previous_state": "GREEN",
+          "next_state": "GREEN",
+          "previous_status": null,
+          "next_status": null,
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-e60ed0fd5aea4c39904b5237344560c6",
+          "event_id": "event-b1d541903d80422a",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-1-trunk-sway",
+          "evaluated_at": "2026-07-31T03:07:05+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-02",
+          "previous_state": "GREEN",
+          "next_state": "ORANGE",
+          "previous_status": null,
+          "next_status": "INTERVENING",
+          "event_created": true,
+          "error": null
+        },
+        {
+          "trace_id": "trace-af414314826344a0b158b072ff7effa9",
+          "event_id": "event-b1d541903d80422a",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-1-posture-recovered",
+          "evaluated_at": "2026-07-31T03:07:29+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-04",
+          "previous_state": "ORANGE",
+          "next_state": "ORANGE",
+          "previous_status": "INTERVENING",
+          "next_status": "OBSERVING",
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-5d0b315123104e838c225756021cf054",
+          "event_id": "event-b1d541903d80422a",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": null,
+          "evaluated_at": "2026-07-31T03:08:30+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-05",
+          "previous_state": "ORANGE",
+          "next_state": "GREEN",
+          "previous_status": "OBSERVING",
+          "next_status": "RESOLVED",
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-a966c46b86674df3ada3e79cefb9f9d7",
+          "event_id": null,
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-2-rapid-rise",
+          "evaluated_at": "2026-07-31T03:17:01+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-01",
+          "previous_state": "GREEN",
+          "next_state": "GREEN",
+          "previous_status": null,
+          "next_status": null,
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-25054a96da5f48998f0d03d8529b3e20",
+          "event_id": "event-d9dce5b4e46b4c52",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-2-trunk-sway",
+          "evaluated_at": "2026-07-31T03:17:05+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-02",
+          "previous_state": "GREEN",
+          "next_state": "ORANGE",
+          "previous_status": null,
+          "next_status": "INTERVENING",
+          "event_created": true,
+          "error": null
+        }
+      ],
+      "interventions": []
+    }
+  },
+  {
+    "sequence": 6,
+    "status": 200,
+    "body": {
+      "schema_version": "1.0",
+      "result_id": "result-ff1f7060c9994c378b51fa4317ca1ce9",
+      "event_id": "event-d9dce5b4e46b4c52",
+      "started_at": "2026-07-30T18:30:56.353412+08:00",
+      "completed_at": "2026-07-30T18:30:56.353412+08:00",
+      "action_type": "voice",
+      "tool_name": "mock_voice",
+      "delivery_status": "SUCCESS",
+      "resident_response": null,
+      "family_feedback": null,
+      "risk_after": null,
+      "resolved": false,
+      "resolution_reason": "Declared Mock fallback",
+      "operator": "system",
+      "source_mode": "MOCK",
+      "simulated": true
+    }
+  },
+  {
+    "sequence": 7,
+    "status": 201,
+    "body": {
+      "observation": {
+        "schema_version": "1.0",
+        "observation_id": "obs-api-2-posture-recovered",
+        "resident_id": "resident-frontend-api",
+        "timestamp": "2026-07-31T03:17:29+08:00",
+        "source": "pose",
+        "feature_name": "stable_posture_duration",
+        "feature_value": 15,
+        "unit": "second",
+        "location": "living_room",
+        "confidence": 0.92,
+        "data_quality": 0.88,
+        "source_mode": "MOCK",
+        "asset_id": "asset-api-2",
+        "simulated": true,
+        "metadata": {
+          "acceptance_round": 2
+        }
+      },
+      "saved": true,
+      "idempotent": false
+    }
+  },
+  {
+    "sequence": 8,
+    "status": 201,
+    "body": {
+      "evidence": {
+        "schema_version": "1.0",
+        "evidence_id": "evi-api-2-posture-recovered",
+        "observation_ids": [
+          "obs-api-2-posture-recovered"
+        ],
+        "resident_id": "resident-frontend-api",
+        "timestamp": "2026-07-31T03:17:29+08:00",
+        "risk_domain": "FALL",
+        "evidence_type": "posture_recovered",
+        "severity": 0.1,
+        "confidence": 0.92,
+        "data_quality": 0.88,
+        "baseline_value": null,
+        "current_value": 15,
+        "baseline_deviation": null,
+        "time_scale": "SHORT",
+        "location": "living_room",
+        "explanation": "老人已重新坐稳并保持稳定姿态15秒",
+        "adapter_version": "frontend-api-acceptance-v1",
+        "source_mode": "MOCK",
+        "simulated": true
+      },
+      "saved": true,
+      "idempotent": false,
+      "evaluation": {
+        "risk_level": "ORANGE",
+        "event_created": false,
+        "event_id": "event-d9dce5b4e46b4c52",
+        "matched_rule": "R-FALL-04",
+        "ruleset_version": "ruleset-v1.0",
+        "system_evidence_id": null
+      }
+    }
+  },
+  {
+    "sequence": 9,
+    "status": 200,
+    "body": {
+      "schema_version": "1.0",
+      "event_id": "event-d9dce5b4e46b4c52",
+      "resident_id": "resident-frontend-api",
+      "created_at": "2026-07-31T03:17:05+08:00",
+      "updated_at": "2026-07-31T03:17:29+08:00",
+      "primary_domain": "FALL",
+      "related_domains": [],
+      "risk_level": "ORANGE",
+      "risk_score": 0.82,
+      "evidence_ids": [
+        "evi-api-2-rapid-rise",
+        "evi-api-2-trunk-sway",
+        "evi-api-2-posture-recovered"
+      ],
+      "evidence_summary": [
+        {
+          "evidence_id": "evi-api-2-rapid-rise",
+          "evidence_type": "rapid_rise",
+          "explanation": "起身速度明显快于个人基线"
+        },
+        {
+          "evidence_id": "evi-api-2-trunk-sway",
+          "evidence_type": "trunk_sway",
+          "explanation": "快速起身后出现明显躯干摇晃"
+        },
+        {
+          "evidence_id": "evi-api-2-posture-recovered",
+          "evidence_type": "posture_recovered",
+          "explanation": "老人已重新坐稳并保持稳定姿态15秒"
+        }
+      ],
+      "time_horizon": "IMMINENT",
+      "recommended_action": "先坐稳，扶住固定物，再慢慢起身",
+      "intervention_policy": "fall-orange-gentle-v1",
+      "status": "OBSERVING",
+      "ruleset_version": "ruleset-v1.0",
+      "source_mode": "MOCK",
+      "simulated": true,
+      "evidences": [
+        {
+          "schema_version": "1.0",
+          "evidence_id": "evi-api-2-posture-recovered",
+          "observation_ids": [
+            "obs-api-2-posture-recovered"
+          ],
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:29+08:00",
+          "risk_domain": "FALL",
+          "evidence_type": "posture_recovered",
+          "severity": 0.1,
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "baseline_value": null,
+          "current_value": 15,
+          "baseline_deviation": null,
+          "time_scale": "SHORT",
+          "location": "living_room",
+          "explanation": "老人已重新坐稳并保持稳定姿态15秒",
+          "adapter_version": "frontend-api-acceptance-v1",
+          "source_mode": "MOCK",
+          "simulated": true
+        },
+        {
+          "schema_version": "1.0",
+          "evidence_id": "evi-api-2-rapid-rise",
+          "observation_ids": [
+            "obs-api-2-rapid-rise"
+          ],
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:01+08:00",
+          "risk_domain": "FALL",
+          "evidence_type": "rapid_rise",
+          "severity": 0.78,
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "baseline_value": 3.5,
+          "current_value": 1.2,
+          "baseline_deviation": -2.3,
+          "time_scale": "SHORT",
+          "location": "living_room",
+          "explanation": "起身速度明显快于个人基线",
+          "adapter_version": "frontend-api-acceptance-v1",
+          "source_mode": "MOCK",
+          "simulated": true
+        },
+        {
+          "schema_version": "1.0",
+          "evidence_id": "evi-api-2-trunk-sway",
+          "observation_ids": [
+            "obs-api-2-trunk-sway"
+          ],
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:05+08:00",
+          "risk_domain": "FALL",
+          "evidence_type": "trunk_sway",
+          "severity": 0.82,
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "baseline_value": 6.2,
+          "current_value": 18,
+          "baseline_deviation": 2.8,
+          "time_scale": "SHORT",
+          "location": "living_room",
+          "explanation": "快速起身后出现明显躯干摇晃",
+          "adapter_version": "frontend-api-acceptance-v1",
+          "source_mode": "MOCK",
+          "simulated": true
+        }
+      ],
+      "observations": [
+        {
+          "schema_version": "1.0",
+          "observation_id": "obs-api-2-posture-recovered",
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:29+08:00",
+          "source": "pose",
+          "feature_name": "stable_posture_duration",
+          "feature_value": 15,
+          "unit": "second",
+          "location": "living_room",
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "source_mode": "MOCK",
+          "asset_id": "asset-api-2",
+          "simulated": true,
+          "metadata": {
+            "acceptance_round": 2
+          }
+        },
+        {
+          "schema_version": "1.0",
+          "observation_id": "obs-api-2-rapid-rise",
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:01+08:00",
+          "source": "pose",
+          "feature_name": "sit_to_stand_duration",
+          "feature_value": 1.2,
+          "unit": "second",
+          "location": "living_room",
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "source_mode": "MOCK",
+          "asset_id": "asset-api-2",
+          "simulated": true,
+          "metadata": {
+            "acceptance_round": 2
+          }
+        },
+        {
+          "schema_version": "1.0",
+          "observation_id": "obs-api-2-trunk-sway",
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:05+08:00",
+          "source": "pose",
+          "feature_name": "trunk_sway_angle",
+          "feature_value": 18,
+          "unit": "degree",
+          "location": "living_room",
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "source_mode": "MOCK",
+          "asset_id": "asset-api-2",
+          "simulated": true,
+          "metadata": {
+            "acceptance_round": 2
+          }
+        }
+      ],
+      "rule_traces": [
+        {
+          "trace_id": "trace-d6ed5efe278e4c69b356222b65861efa",
+          "event_id": null,
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-1-rapid-rise",
+          "evaluated_at": "2026-07-31T03:07:01+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-01",
+          "previous_state": "GREEN",
+          "next_state": "GREEN",
+          "previous_status": null,
+          "next_status": null,
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-e60ed0fd5aea4c39904b5237344560c6",
+          "event_id": "event-b1d541903d80422a",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-1-trunk-sway",
+          "evaluated_at": "2026-07-31T03:07:05+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-02",
+          "previous_state": "GREEN",
+          "next_state": "ORANGE",
+          "previous_status": null,
+          "next_status": "INTERVENING",
+          "event_created": true,
+          "error": null
+        },
+        {
+          "trace_id": "trace-af414314826344a0b158b072ff7effa9",
+          "event_id": "event-b1d541903d80422a",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-1-posture-recovered",
+          "evaluated_at": "2026-07-31T03:07:29+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-04",
+          "previous_state": "ORANGE",
+          "next_state": "ORANGE",
+          "previous_status": "INTERVENING",
+          "next_status": "OBSERVING",
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-5d0b315123104e838c225756021cf054",
+          "event_id": "event-b1d541903d80422a",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": null,
+          "evaluated_at": "2026-07-31T03:08:30+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-05",
+          "previous_state": "ORANGE",
+          "next_state": "GREEN",
+          "previous_status": "OBSERVING",
+          "next_status": "RESOLVED",
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-a966c46b86674df3ada3e79cefb9f9d7",
+          "event_id": null,
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-2-rapid-rise",
+          "evaluated_at": "2026-07-31T03:17:01+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-01",
+          "previous_state": "GREEN",
+          "next_state": "GREEN",
+          "previous_status": null,
+          "next_status": null,
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-25054a96da5f48998f0d03d8529b3e20",
+          "event_id": "event-d9dce5b4e46b4c52",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-2-trunk-sway",
+          "evaluated_at": "2026-07-31T03:17:05+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-02",
+          "previous_state": "GREEN",
+          "next_state": "ORANGE",
+          "previous_status": null,
+          "next_status": "INTERVENING",
+          "event_created": true,
+          "error": null
+        },
+        {
+          "trace_id": "trace-22712a4475b54e2ebb7160031737f744",
+          "event_id": "event-d9dce5b4e46b4c52",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-2-posture-recovered",
+          "evaluated_at": "2026-07-31T03:17:29+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-04",
+          "previous_state": "ORANGE",
+          "next_state": "ORANGE",
+          "previous_status": "INTERVENING",
+          "next_status": "OBSERVING",
+          "event_created": false,
+          "error": null
+        }
+      ],
+      "interventions": [
+        {
+          "schema_version": "1.0",
+          "result_id": "result-ff1f7060c9994c378b51fa4317ca1ce9",
+          "event_id": "event-d9dce5b4e46b4c52",
+          "started_at": "2026-07-30T18:30:56.353412+08:00",
+          "completed_at": "2026-07-30T18:30:56.353412+08:00",
+          "action_type": "voice",
+          "tool_name": "mock_voice",
+          "delivery_status": "SUCCESS",
+          "resident_response": null,
+          "family_feedback": null,
+          "risk_after": null,
+          "resolved": false,
+          "resolution_reason": "Declared Mock fallback",
+          "operator": "system",
+          "source_mode": "MOCK",
+          "simulated": true
+        }
+      ]
+    }
+  },
+  {
+    "sequence": 10,
+    "status": 200,
+    "body": {
+      "risk_level": "GREEN",
+      "event_created": false,
+      "event": {
+        "schema_version": "1.0",
+        "event_id": "event-d9dce5b4e46b4c52",
+        "resident_id": "resident-frontend-api",
+        "created_at": "2026-07-31T03:17:05+08:00",
+        "updated_at": "2026-07-31T03:18:30+08:00",
+        "primary_domain": "FALL",
+        "related_domains": [],
+        "risk_level": "ORANGE",
+        "risk_score": 0.82,
+        "evidence_ids": [
+          "evi-api-2-rapid-rise",
+          "evi-api-2-trunk-sway",
+          "evi-api-2-posture-recovered"
+        ],
+        "evidence_summary": [
+          {
+            "evidence_id": "evi-api-2-rapid-rise",
+            "evidence_type": "rapid_rise",
+            "explanation": "起身速度明显快于个人基线"
+          },
+          {
+            "evidence_id": "evi-api-2-trunk-sway",
+            "evidence_type": "trunk_sway",
+            "explanation": "快速起身后出现明显躯干摇晃"
+          },
+          {
+            "evidence_id": "evi-api-2-posture-recovered",
+            "evidence_type": "posture_recovered",
+            "explanation": "老人已重新坐稳并保持稳定姿态15秒"
+          }
+        ],
+        "time_horizon": "IMMINENT",
+        "recommended_action": "先坐稳，扶住固定物，再慢慢起身",
+        "intervention_policy": "fall-orange-gentle-v1",
+        "status": "RESOLVED",
+        "ruleset_version": "ruleset-v1.0",
+        "source_mode": "MOCK",
+        "simulated": true
+      },
+      "matched_rule": "R-FALL-05",
+      "ruleset_version": "ruleset-v1.0"
+    }
+  },
+  {
+    "sequence": 11,
+    "status": 201,
+    "body": {
+      "schema_version": "1.0",
+      "result_id": "feedback-api-2",
+      "event_id": "event-d9dce5b4e46b4c52",
+      "started_at": "2026-07-30T18:30:58.177562+08:00",
+      "completed_at": "2026-07-30T18:30:58.177562+08:00",
+      "action_type": "family_feedback",
+      "tool_name": "family_feedback",
+      "delivery_status": "SUCCESS",
+      "resident_response": null,
+      "family_feedback": "已联系，近期一切正常",
+      "risk_after": null,
+      "resolved": false,
+      "resolution_reason": null,
+      "operator": "family",
+      "source_mode": "MOCK",
+      "simulated": true
+    }
+  },
+  {
+    "sequence": 12,
+    "status": 200,
+    "body": {
+      "schema_version": "1.0",
+      "result_id": "feedback-api-2",
+      "event_id": "event-d9dce5b4e46b4c52",
+      "started_at": "2026-07-30T18:30:58.177562+08:00",
+      "completed_at": "2026-07-30T18:30:58.177562+08:00",
+      "action_type": "family_feedback",
+      "tool_name": "family_feedback",
+      "delivery_status": "SUCCESS",
+      "resident_response": null,
+      "family_feedback": "已联系，近期一切正常",
+      "risk_after": null,
+      "resolved": false,
+      "resolution_reason": null,
+      "operator": "family",
+      "source_mode": "MOCK",
+      "simulated": true
+    }
+  },
+  {
+    "sequence": 13,
+    "status": 200,
+    "body": {
+      "schema_version": "1.0",
+      "event_id": "event-d9dce5b4e46b4c52",
+      "resident_id": "resident-frontend-api",
+      "created_at": "2026-07-31T03:17:05+08:00",
+      "updated_at": "2026-07-31T03:18:30+08:00",
+      "primary_domain": "FALL",
+      "related_domains": [],
+      "risk_level": "ORANGE",
+      "risk_score": 0.82,
+      "evidence_ids": [
+        "evi-api-2-rapid-rise",
+        "evi-api-2-trunk-sway",
+        "evi-api-2-posture-recovered"
+      ],
+      "evidence_summary": [
+        {
+          "evidence_id": "evi-api-2-rapid-rise",
+          "evidence_type": "rapid_rise",
+          "explanation": "起身速度明显快于个人基线"
+        },
+        {
+          "evidence_id": "evi-api-2-trunk-sway",
+          "evidence_type": "trunk_sway",
+          "explanation": "快速起身后出现明显躯干摇晃"
+        },
+        {
+          "evidence_id": "evi-api-2-posture-recovered",
+          "evidence_type": "posture_recovered",
+          "explanation": "老人已重新坐稳并保持稳定姿态15秒"
+        }
+      ],
+      "time_horizon": "IMMINENT",
+      "recommended_action": "先坐稳，扶住固定物，再慢慢起身",
+      "intervention_policy": "fall-orange-gentle-v1",
+      "status": "RESOLVED",
+      "ruleset_version": "ruleset-v1.0",
+      "source_mode": "MOCK",
+      "simulated": true,
+      "evidences": [
+        {
+          "schema_version": "1.0",
+          "evidence_id": "evi-api-2-posture-recovered",
+          "observation_ids": [
+            "obs-api-2-posture-recovered"
+          ],
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:29+08:00",
+          "risk_domain": "FALL",
+          "evidence_type": "posture_recovered",
+          "severity": 0.1,
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "baseline_value": null,
+          "current_value": 15,
+          "baseline_deviation": null,
+          "time_scale": "SHORT",
+          "location": "living_room",
+          "explanation": "老人已重新坐稳并保持稳定姿态15秒",
+          "adapter_version": "frontend-api-acceptance-v1",
+          "source_mode": "MOCK",
+          "simulated": true
+        },
+        {
+          "schema_version": "1.0",
+          "evidence_id": "evi-api-2-rapid-rise",
+          "observation_ids": [
+            "obs-api-2-rapid-rise"
+          ],
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:01+08:00",
+          "risk_domain": "FALL",
+          "evidence_type": "rapid_rise",
+          "severity": 0.78,
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "baseline_value": 3.5,
+          "current_value": 1.2,
+          "baseline_deviation": -2.3,
+          "time_scale": "SHORT",
+          "location": "living_room",
+          "explanation": "起身速度明显快于个人基线",
+          "adapter_version": "frontend-api-acceptance-v1",
+          "source_mode": "MOCK",
+          "simulated": true
+        },
+        {
+          "schema_version": "1.0",
+          "evidence_id": "evi-api-2-trunk-sway",
+          "observation_ids": [
+            "obs-api-2-trunk-sway"
+          ],
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:05+08:00",
+          "risk_domain": "FALL",
+          "evidence_type": "trunk_sway",
+          "severity": 0.82,
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "baseline_value": 6.2,
+          "current_value": 18,
+          "baseline_deviation": 2.8,
+          "time_scale": "SHORT",
+          "location": "living_room",
+          "explanation": "快速起身后出现明显躯干摇晃",
+          "adapter_version": "frontend-api-acceptance-v1",
+          "source_mode": "MOCK",
+          "simulated": true
+        }
+      ],
+      "observations": [
+        {
+          "schema_version": "1.0",
+          "observation_id": "obs-api-2-posture-recovered",
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:29+08:00",
+          "source": "pose",
+          "feature_name": "stable_posture_duration",
+          "feature_value": 15,
+          "unit": "second",
+          "location": "living_room",
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "source_mode": "MOCK",
+          "asset_id": "asset-api-2",
+          "simulated": true,
+          "metadata": {
+            "acceptance_round": 2
+          }
+        },
+        {
+          "schema_version": "1.0",
+          "observation_id": "obs-api-2-rapid-rise",
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:01+08:00",
+          "source": "pose",
+          "feature_name": "sit_to_stand_duration",
+          "feature_value": 1.2,
+          "unit": "second",
+          "location": "living_room",
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "source_mode": "MOCK",
+          "asset_id": "asset-api-2",
+          "simulated": true,
+          "metadata": {
+            "acceptance_round": 2
+          }
+        },
+        {
+          "schema_version": "1.0",
+          "observation_id": "obs-api-2-trunk-sway",
+          "resident_id": "resident-frontend-api",
+          "timestamp": "2026-07-31T03:17:05+08:00",
+          "source": "pose",
+          "feature_name": "trunk_sway_angle",
+          "feature_value": 18,
+          "unit": "degree",
+          "location": "living_room",
+          "confidence": 0.92,
+          "data_quality": 0.88,
+          "source_mode": "MOCK",
+          "asset_id": "asset-api-2",
+          "simulated": true,
+          "metadata": {
+            "acceptance_round": 2
+          }
+        }
+      ],
+      "rule_traces": [
+        {
+          "trace_id": "trace-d6ed5efe278e4c69b356222b65861efa",
+          "event_id": null,
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-1-rapid-rise",
+          "evaluated_at": "2026-07-31T03:07:01+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-01",
+          "previous_state": "GREEN",
+          "next_state": "GREEN",
+          "previous_status": null,
+          "next_status": null,
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-e60ed0fd5aea4c39904b5237344560c6",
+          "event_id": "event-b1d541903d80422a",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-1-trunk-sway",
+          "evaluated_at": "2026-07-31T03:07:05+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-02",
+          "previous_state": "GREEN",
+          "next_state": "ORANGE",
+          "previous_status": null,
+          "next_status": "INTERVENING",
+          "event_created": true,
+          "error": null
+        },
+        {
+          "trace_id": "trace-af414314826344a0b158b072ff7effa9",
+          "event_id": "event-b1d541903d80422a",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-1-posture-recovered",
+          "evaluated_at": "2026-07-31T03:07:29+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-04",
+          "previous_state": "ORANGE",
+          "next_state": "ORANGE",
+          "previous_status": "INTERVENING",
+          "next_status": "OBSERVING",
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-5d0b315123104e838c225756021cf054",
+          "event_id": "event-b1d541903d80422a",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": null,
+          "evaluated_at": "2026-07-31T03:08:30+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-05",
+          "previous_state": "ORANGE",
+          "next_state": "GREEN",
+          "previous_status": "OBSERVING",
+          "next_status": "RESOLVED",
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-a966c46b86674df3ada3e79cefb9f9d7",
+          "event_id": null,
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-2-rapid-rise",
+          "evaluated_at": "2026-07-31T03:17:01+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-01",
+          "previous_state": "GREEN",
+          "next_state": "GREEN",
+          "previous_status": null,
+          "next_status": null,
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-25054a96da5f48998f0d03d8529b3e20",
+          "event_id": "event-d9dce5b4e46b4c52",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-2-trunk-sway",
+          "evaluated_at": "2026-07-31T03:17:05+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-02",
+          "previous_state": "GREEN",
+          "next_state": "ORANGE",
+          "previous_status": null,
+          "next_status": "INTERVENING",
+          "event_created": true,
+          "error": null
+        },
+        {
+          "trace_id": "trace-22712a4475b54e2ebb7160031737f744",
+          "event_id": "event-d9dce5b4e46b4c52",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": "evi-api-2-posture-recovered",
+          "evaluated_at": "2026-07-31T03:17:29+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-04",
+          "previous_state": "ORANGE",
+          "next_state": "ORANGE",
+          "previous_status": "INTERVENING",
+          "next_status": "OBSERVING",
+          "event_created": false,
+          "error": null
+        },
+        {
+          "trace_id": "trace-184e9ceaff5c45359446aac05acd5911",
+          "event_id": "event-d9dce5b4e46b4c52",
+          "resident_id": "resident-frontend-api",
+          "evidence_id": null,
+          "evaluated_at": "2026-07-31T03:18:30+08:00",
+          "ruleset_version": "ruleset-v1.0",
+          "matched_rule": "R-FALL-05",
+          "previous_state": "ORANGE",
+          "next_state": "GREEN",
+          "previous_status": "OBSERVING",
+          "next_status": "RESOLVED",
+          "event_created": false,
+          "error": null
+        }
+      ],
+      "interventions": [
+        {
+          "schema_version": "1.0",
+          "result_id": "result-ff1f7060c9994c378b51fa4317ca1ce9",
+          "event_id": "event-d9dce5b4e46b4c52",
+          "started_at": "2026-07-30T18:30:56.353412+08:00",
+          "completed_at": "2026-07-31T03:18:30+08:00",
+          "action_type": "voice",
+          "tool_name": "mock_voice",
+          "delivery_status": "SUCCESS",
+          "resident_response": "stable",
+          "family_feedback": null,
+          "risk_after": 0.24,
+          "resolved": true,
+          "resolution_reason": "姿态恢复且60秒观察期内无新风险证据",
+          "operator": "system",
+          "source_mode": "MOCK",
+          "simulated": true
+        },
+        {
+          "schema_version": "1.0",
+          "result_id": "feedback-api-2",
+          "event_id": "event-d9dce5b4e46b4c52",
+          "started_at": "2026-07-30T18:30:58.177562+08:00",
+          "completed_at": "2026-07-30T18:30:58.177562+08:00",
+          "action_type": "family_feedback",
+          "tool_name": "family_feedback",
+          "delivery_status": "SUCCESS",
+          "resident_response": null,
+          "family_feedback": "已联系，近期一切正常",
+          "risk_after": null,
+          "resolved": false,
+          "resolution_reason": null,
+          "operator": "family",
+          "source_mode": "MOCK",
+          "simulated": true
+        }
+      ]
+    }
+  }
+]

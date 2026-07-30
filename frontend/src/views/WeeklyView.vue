@@ -6,7 +6,7 @@ import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { getWeeklyReport, submitFamilyFeedback } from '../services/repository'
-import { formatDateTime } from '../utils/format'
+import { formatDateTime, formatPercent } from '../utils/format'
 
 const loading = ref(true)
 const submitting = ref(false)
@@ -51,7 +51,11 @@ async function submit(kind) {
   }
   submitting.value = true
   try {
-    const eventId = kind === 'care' ? 'event-mental-week' : report.value.visitor_case.event_id
+    const eventId = kind === 'care' ? 'event-mental-week' : report.value.visitor_case?.event_id
+    if (!eventId) {
+      ElMessage.warning('当前 API 未返回可关联的事件，无法提交反馈')
+      return
+    }
     await submitFamilyFeedback(eventId, { feedback_type: kind, value, operator: 'family' })
     if (kind === 'care') report.value.care.status = 'SUBMITTED'
     else report.value.visitor_case.verification_status = 'SUBMITTED'
@@ -82,18 +86,20 @@ onMounted(load)
 
       <section class="content-card weekly-chart-card">
         <div class="card-heading"><div><span class="section-kicker">个人趋势</span><h2>活动与作息变化</h2></div><span class="non-diagnosis">行为趋势，不是医学诊断</span></div>
-        <ChartPanel :option="trendOption" height="350px" aria-label="最近七天活动趋势、个人基线和作息偏移图" />
+        <ChartPanel v-if="report.trend.length" :option="trendOption" height="350px" aria-label="最近七天活动趋势、个人基线和作息偏移图" />
+        <el-empty v-else description="当前 API 未提供周报趋势序列" />
       </section>
 
       <section class="weekly-columns">
         <article class="content-card care-panel">
           <div class="card-heading"><div><span class="section-kicker">家属关怀</span><h2>先看证据，再决定怎么联系</h2></div></div>
-          <div class="weekly-evidence-list">
+          <div v-if="report.evidence.length" class="weekly-evidence-list">
             <article v-for="item in report.evidence" :key="item.label">
-              <span class="evidence-number">{{ Math.round(item.confidence * 100) }}%</span>
+              <span class="evidence-number">{{ formatPercent(item.confidence) }}</span>
               <div><strong>{{ item.label }}</strong><p>{{ item.detail }}</p></div>
             </article>
           </div>
+          <el-empty v-else description="本周暂无可展示的趋势 Evidence" />
           <div class="recommendation-box">
             <strong>建议动作</strong>
             <ol><li v-for="item in report.recommendations" :key="item">{{ item }}</li></ol>
@@ -103,13 +109,14 @@ onMounted(load)
             <el-radio-group v-model="careChoice" class="stacked-radios">
               <el-radio v-for="option in report.care.options" :key="option" :value="option" border>{{ option }}</el-radio>
             </el-radio-group>
+            <el-alert v-if="!report.care.options.length" title="当前 API 未提供关怀选项" type="info" :closable="false" />
           </fieldset>
-          <el-button type="primary" size="large" :loading="submitting" :disabled="report.care.status === 'SUBMITTED'" @click="submit('care')">
+          <el-button type="primary" size="large" :loading="submitting" :disabled="report.care.status === 'SUBMITTED' || !report.care.options.length" @click="submit('care')">
             {{ report.care.status === 'SUBMITTED' ? '关怀反馈已记录' : '记录关怀反馈' }}
           </el-button>
         </article>
 
-        <article class="content-card visitor-panel">
+        <article v-if="report.visitor_case" class="content-card visitor-panel">
           <div class="card-heading"><div><span class="section-kicker">访客核验</span><h2>{{ report.visitor_case.visitor_label }}</h2></div><RiskBadge :level="report.visitor_case.risk_level" compact /></div>
           <SourceBadge :mode="report.visitor_case.source_mode" :simulated="report.visitor_case.simulated" />
           <div class="visitor-meta"><span><b>{{ report.visitor_case.duration_minutes }}</b> 分钟停留</span><span>{{ report.visitor_case.location }}</span><span>{{ formatDateTime(report.visitor_case.occurred_at) }}</span></div>
@@ -128,6 +135,10 @@ onMounted(load)
           <el-button type="primary" size="large" :loading="submitting" :disabled="report.visitor_case.verification_status === 'SUBMITTED'" @click="submit('verify')">
             {{ report.visitor_case.verification_status === 'SUBMITTED' ? '身份核验已记录' : '提交身份核验' }}
           </el-button>
+        </article>
+        <article v-else class="content-card visitor-panel api-empty-state">
+          <div class="card-heading"><div><span class="section-kicker">访客核验</span><h2>暂无访客事件</h2></div></div>
+          <el-empty description="当前 API 未返回 visitor_case，不使用 Mock 访客数据填充" />
         </article>
       </section>
     </template>

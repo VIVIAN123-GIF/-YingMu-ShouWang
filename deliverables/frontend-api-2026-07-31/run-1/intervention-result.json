@@ -1,0 +1,38 @@
+[
+  {
+    "schema_version": "1.0",
+    "result_id": "result-242cbf0f5ad1411899f7b2b807c2f444",
+    "event_id": "event-b1d541903d80422a",
+    "started_at": "2026-07-30T18:30:49.949317+08:00",
+    "completed_at": "2026-07-31T03:08:30+08:00",
+    "action_type": "voice",
+    "tool_name": "mock_voice",
+    "delivery_status": "SUCCESS",
+    "resident_response": "stable",
+    "family_feedback": null,
+    "risk_after": 0.24,
+    "resolved": true,
+    "resolution_reason": "姿态恢复且60秒观察期内无新风险证据",
+    "operator": "system",
+    "source_mode": "MOCK",
+    "simulated": true
+  },
+  {
+    "schema_version": "1.0",
+    "result_id": "feedback-api-1",
+    "event_id": "event-b1d541903d80422a",
+    "started_at": "2026-07-30T18:30:51.295508+08:00",
+    "completed_at": "2026-07-30T18:30:51.295508+08:00",
+    "action_type": "family_feedback",
+    "tool_name": "family_feedback",
+    "delivery_status": "SUCCESS",
+    "resident_response": null,
+    "family_feedback": "已联系，近期一切正常",
+    "risk_after": null,
+    "resolved": false,
+    "resolution_reason": null,
+    "operator": "family",
+    "source_mode": "MOCK",
+    "simulated": true
+  }
+]

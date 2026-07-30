@@ -39,17 +39,20 @@ HTML 测试报告生成于 `artifacts/evidence/report`，同样不会随原 PR �
 
 ## 数据模式
 
-复制 `.env.example` 为 `.env.local` 可配置：
+复制 `frontend/.env.example` 为 `frontend/.env.local` 可配置：
 
 ```text
 VITE_API_BASE_URL=http://127.0.0.1:8000
 VITE_DATA_MODE=auto
+VITE_RESIDENT_ID=resident-001
 VITE_AUTHORIZED_CLIP_URL=
 ```
 
 - `auto`：优先请求 FastAPI；网络不可达、404/501 或服务端错误时切换固定 JSON。
 - `api`：只读取 FastAPI，错误直接显示。
 - `mock`：固定使用内置演示数据。
+
+`VITE_RESIDENT_ID` 用于统一首页、事件、周报和基线查询的居民标识；API 验收脚本会覆盖为隔离的验收居民。
 
 页面右上角可在运行时切换模式。演示数据覆盖绿色日常、黄色心理趋势、橙色跌倒干预与回落、诈骗核验和工具失败。
 
@@ -67,9 +70,15 @@ VITE_AUTHORIZED_CLIP_URL=
 - 前端会校验四对象的 `schema_version`、身份字段、版本字段、来源与模拟状态等冻结必填项。
 - 可复用样例位于 `contracts/v1/examples/four-objects.json`。
 
-## API 模式联调清单
+## API 模式联调与三轮验收
 
-后续与冷雨彤统一使用 `VITE_DATA_MODE=api` 验证以下接口。每项需检查成功响应、统一数据契约、页面渲染、错误状态；家属反馈还需检查幂等回写。
+使用隔离 SQLite 和 FastAPI Mock 工具运行真实 HTTP 前端验收：
+
+```powershell
+npm run evidence:api
+```
+
+脚本使用 `8010` 端口启动临时后端、用 `VITE_DATA_MODE=api` 启动前端，连续三轮验证以下接口。仓库证据位于 `deliverables/frontend-api-2026-07-31`；完整 WebM 和飞书上传包生成于 `frontend/artifacts/api-evidence`。
 
 | 方法 | 接口 |
 |---|---|
@@ -80,7 +89,11 @@ VITE_AUTHORIZED_CLIP_URL=
 | GET | `/api/v1/assets/{id}` |
 | POST | `/api/v1/events/{id}/feedback` |
 
-当前清单仅表示待联调范围，不代表真实 API 已验证通过。
+截至 2026-07-30，三轮均已验证页面无需刷新即可自动同步 `INTERVENING → OBSERVING → RESOLVED`，并完成 Evidence/Observation 追溯、InterventionResult 同步和反馈幂等 `201 → 200`。每轮仓库材料包含完整脱敏请求/响应、事件快照、RuleTrace、状态迁移、工具结果、审计日志和关键截图；这里的 `data_mode=api` 只表示前端真实调用 FastAPI，Evidence 与工具仍标记为 `source_mode=MOCK`、`simulated=true`，不宣称真实设备闭环。
+
+## 个人基线与活动热力图
+
+`/baseline` 展示后端中位数、MAD、样本数、有效天数和基线状态。固定 Mock 数据额外提供“日期 × 时段”近七日活动热力图，并显示“模拟实验回放”。当前后端未提供活动时序接口，因此 API 模式只展示真实基线统计和明确空状态，不使用 Mock 趋势补位。
 
 ## 依赖审计说明
 
