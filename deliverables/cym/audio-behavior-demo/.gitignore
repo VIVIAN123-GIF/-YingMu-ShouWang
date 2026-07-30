@@ -1,0 +1,26 @@
+# Local Python environment and caches
+.venv/
+__pycache__/
+*.py[cod]
+
+# Generated output
+output/
+
+# Model weights and large binaries
+*.pt
+*.pth
+*.bin
+*.ckpt
+*.onnx
+
+# Audio/video test material must be shared through an authorized channel
+*.m4a
+*.wav
+*.mp3
+*.mp4
+*.avi
+*.mov
+
+# Secrets and local configuration
+.env
+*.secret

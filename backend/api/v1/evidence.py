@@ -17,4 +17,5 @@ async def post_evidence(payload: EvidenceCreate, request: Request, response: Res
                            "event_created": evaluation["event_created"],
                            "event_id": evaluation["event"]["event_id"] if evaluation["event"] else None,
                            "matched_rule": evaluation["matched_rule"],
-                           "ruleset_version": evaluation["ruleset_version"]}}
+                           "ruleset_version": evaluation["ruleset_version"],
+                           "system_evidence_id": evaluation.get("system_evidence_id")}}

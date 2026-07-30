@@ -19,7 +19,7 @@ async def lifespan(_: FastAPI):
     await init_default_config()
     yield
 
-app = FastAPI(title="荧幕守望风险服务", version="1.0", lifespan=lifespan)
+app = FastAPI(title="萤目守望风险服务", version="1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 app.add_exception_handler(ServiceError, service_error_handler)

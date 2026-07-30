@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
 
+from contracts.v1.ruleset import load_ruleset
+
 load_dotenv()
 
 ENV_MODE = os.getenv("YINGMU_ENV", "mock").lower()
@@ -18,10 +20,15 @@ EZVIZ_VOICE_VERIFIED = os.getenv("EZVIZ_VOICE_VERIFIED", "false").lower() == "tr
 CONTROL_TOKEN = os.getenv("YINGMU_CONTROL_TOKEN", "")
 
 TOKEN_REFRESH_OFFSET = 60
-RULESET_VERSION = "ruleset-v1.0"
+_RULESET = load_ruleset()
+RULESET_VERSION = _RULESET.version
 SCHEMA_VERSION = "1.0"
-MIN_EVIDENCE_QUALITY = float(os.getenv("MIN_EVIDENCE_QUALITY", "0.60"))
-MIN_EVIDENCE_CONFIDENCE = float(os.getenv("MIN_EVIDENCE_CONFIDENCE", "0.60"))
+MIN_EVIDENCE_QUALITY = float(
+    os.getenv("MIN_EVIDENCE_QUALITY", str(_RULESET.thresholds["data_quality"]))
+)
+MIN_EVIDENCE_CONFIDENCE = float(
+    os.getenv("MIN_EVIDENCE_CONFIDENCE", str(_RULESET.thresholds["confidence"]))
+)
 
 if ENV_MODE == "live" and (not EZVIZ_APP_KEY or not EZVIZ_APP_SECRET or not EZVIZ_DEVICE_SERIAL):
     raise RuntimeError("live mode requires EZVIZ_APP_KEY, EZVIZ_APP_SECRET and EZVIZ_DEVICE_SERIAL")

@@ -31,12 +31,15 @@ class Evidence(BaseModel):
     def validate_frozen_evidence_type(self):
         allowed = {
             RiskDomain.FALL: {"rapid_rise", "slow_rise", "trunk_sway", "gait_instability",
-                              "relative_speed_change", "posture_recovered", "tracking_lost"},
+                              "relative_speed_change", "posture_recovered", "tracking_lost",
+                              "normal_baseline_sample", "rise_duration_baseline_sample",
+                              "trunk_sway_baseline_sample", "gait_stability_baseline_sample"},
             RiskDomain.MENTAL: {"activity_range_decline", "room_transition_decline",
                                 "day_night_rhythm_change", "unusual_pacing", "mental_self_report",
                                 "family_concern", "voluntary_screening_concern",
                                 "family_contact_completed", "professional_support_suggested",
-                                "trend_recovered"},
+                                "trend_recovered", "activity_range_baseline_sample",
+                                "circadian_baseline_sample"},
             RiskDomain.FRAUD: {"unauthorized_visitor", "unusual_dwell_time", "fraud_keyword",
                                "identity_verified", "false_alarm_confirmed"},
             RiskDomain.SYSTEM: {"audio_quality_low", "low_illumination", "high_risk_zone_entry",
@@ -57,6 +60,7 @@ class RiskEvaluationSummary(BaseModel):
     event_id: str | None
     matched_rule: str
     ruleset_version: str
+    system_evidence_id: str | None = None
 
 
 class EvidenceCreateResponse(BaseModel):

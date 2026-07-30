@@ -66,7 +66,7 @@ async def init_tables() -> None:
         if "simulated" not in intervention_columns:
             await conn.execute(text(
                 "ALTER TABLE intervention_result ADD COLUMN simulated BOOLEAN NOT NULL DEFAULT 1"))
-    print("Database tables initialized successfully.")
+    print("所有数据表创建完成：设备/观测/证据/风险事件/干预/原始告警/配置/周报/事件证据关联表")
 
 
 async def init_default_config() -> None:
@@ -79,7 +79,7 @@ async def init_default_config() -> None:
             db.add_all(to_insert)
             await db.commit()
 
-    print("Default ruleset configuration initialized successfully.")
+    print("规范配套默认阈值配置写入成功（已自动跳过重复项）")
 
 
 if __name__ == "__main__":
