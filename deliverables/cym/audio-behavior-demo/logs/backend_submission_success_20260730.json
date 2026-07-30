@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "timestamp": "2026-07-30T16:55:46+08:00",
+  "base_url": "http://127.0.0.1:8766",
+  "dry_run": false,
+  "success": true,
+  "results": [
+    {
+      "type": "observation",
+      "id": "obs-activity-baseline-20260730-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "observation",
+      "id": "obs-activity-current-20260730-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "observation",
+      "id": "obs-visitor-count-20260730-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "observation",
+      "id": "obs-visitor-authorized-20260730-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "observation",
+      "id": "obs-dwell-observed-20260730-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "observation",
+      "id": "obs-dwell-threshold-20260730-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "evidence",
+      "id": "evi-activity-range-20260730-demo-0001",
+      "endpoint": "/api/v1/evidence",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "evidence",
+      "id": "evi-unauthorized-visitor-20260730-demo-0001",
+      "endpoint": "/api/v1/evidence",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "evidence",
+      "id": "evi-unusual-dwell-20260730-demo-0001",
+      "endpoint": "/api/v1/evidence",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    }
+  ]
+}
