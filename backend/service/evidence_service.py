@@ -23,6 +23,8 @@ def _log_evaluation(payload: EvidenceCreate, request_id: str, result: dict) -> N
         "matched_rule": result["matched_rule"],
         "previous_state": result["previous_state"],
         "next_state": result["next_state"],
+        "previous_status": result.get("previous_status"),
+        "next_status": result.get("next_status"),
         "event_id": result["event"]["event_id"] if result["event"] else None,
         "error": None,
     })

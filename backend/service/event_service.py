@@ -34,14 +34,14 @@ async def create_intervention_result(db: AsyncSession, event_id: str,
         if intervention_dict(existing) != payload.model_dump():
             raise ServiceError(409, "RESULT_ID_CONFLICT", "result_id exists with different content")
         return intervention_dict(existing), True
+    if payload.resolved:
+        raise ServiceError(
+            409,
+            "RESULT_RESOLUTION_FORBIDDEN",
+            "resolved may only be set by the recovery state machine",
+        )
     row = InterventionResult(**payload.model_dump())
     db.add(row)
-    if payload.resolved:
-        event.status = "RESOLVED"
-        event.updated_at = payload.completed_at or payload.started_at
-    elif payload.delivery_status == "SUCCESS":
-        event.status = "OBSERVING"
-        event.updated_at = payload.completed_at or payload.started_at
     await db.commit()
     await db.refresh(row)
     return intervention_dict(row), False
@@ -114,6 +114,7 @@ async def event_detail(db: AsyncSession, event_id: str):
                    "evidence_id": r.evidence_id, "evaluated_at": aware(r.evaluated_at).isoformat(),
                    "ruleset_version": r.ruleset_version, "matched_rule": r.matched_rule,
                    "previous_state": r.previous_state, "next_state": r.next_state,
+                   "previous_status": r.previous_status, "next_status": r.next_status,
                    "event_created": r.event_created, "error": r.error} for r in traces]
     intervention_data = [intervention_dict(row) for row in interventions]
     return {**event_dict(event), "evidences": [evidence_dict(r) for r in evidences],

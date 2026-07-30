@@ -18,6 +18,8 @@ class RuleTrace(Base):
     matched_rule = Column(String(64), nullable=False)
     previous_state = Column(String(16), nullable=False)
     next_state = Column(String(16), nullable=False)
+    previous_status = Column(String(16), nullable=True)
+    next_status = Column(String(16), nullable=True)
     event_created = Column(Boolean, nullable=False, default=False)
     error = Column(Text, nullable=True)
     create_time = Column(DateTime, default=datetime.datetime.now, nullable=False)
