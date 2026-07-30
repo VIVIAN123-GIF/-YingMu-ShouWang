@@ -1,0 +1,15 @@
+{
+  "sequence_count": 70,
+  "frame_row_count": 2813,
+  "feature_columns": [
+    "step_speed",
+    "sway_frequency_hz",
+    "step_length_asymmetry_ratio",
+    "valid_frame_ratio",
+    "mean_core_visibility"
+  ],
+  "label_counts": {
+    "fall": 30,
+    "adl": 40
+  }
+}
