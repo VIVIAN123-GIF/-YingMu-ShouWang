@@ -6,11 +6,16 @@ import weeklyMock from '../mocks/weekly.json'
 import deviceMock from '../mocks/device.json'
 import assetsMock from '../mocks/assets.json'
 import observationsMock from '../mocks/observations.json'
+import baselineMock from '../mocks/baseline.json'
 import { DATA_MODES } from '../domain/constants'
 import { validateDashboard, validateEventList, validateEventViewModel } from '../domain/validation'
+import {
+  normalizeBaseline, normalizeDashboard, normalizeDevice, normalizeEvent, normalizeWeeklyReport,
+} from './viewModel'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 const AUTHORIZED_CLIP_URL = import.meta.env.VITE_AUTHORIZED_CLIP_URL || ''
+const RESIDENT_ID = import.meta.env.VITE_RESIDENT_ID || 'resident-001'
 const configuredMode = import.meta.env.VITE_DATA_MODE || 'auto'
 const initialMode = sessionStorage.getItem('yingmu-data-mode') || configuredMode
 
@@ -27,6 +32,7 @@ const mocks = {
   device: structuredClone(deviceMock),
   assets: structuredClone(assetsMock),
   observations: structuredClone(observationsMock),
+  baseline: structuredClone(baselineMock),
 }
 
 const feedbackCache = new Map()
@@ -156,65 +162,50 @@ function withAuthorizedClip(asset) {
   }
 }
 
-export async function getDashboard(residentId = 'resident-001') {
+export async function getDashboard(residentId = RESIDENT_ID) {
   return resolveData('dashboard.read', async () => {
     const [eventsResponse, deviceResponse, baselineResponse] = await Promise.all([
       client.get('/api/v1/events', { params: { resident_id: residentId } }),
       client.get('/api/v1/device/status'),
       client.get(`/api/v1/residents/${residentId}/baseline`),
     ])
-    const events = listFrom(payload(eventsResponse))
+    const events = validateEventList(listFrom(payload(eventsResponse)))
     const baseline = payload(baselineResponse)
-    const latest = events[0]
-    return {
-      resident: baseline?.resident || mocks.dashboard.resident,
-      current_risk: latest ? {
-        risk_level: latest.risk_level,
-        risk_score: latest.risk_score,
-        status: latest.status,
-        summary: latest.evidence_summary?.[0]?.explanation || latest.title,
-        recommended_action: latest.recommended_action,
-        updated_at: latest.updated_at,
-      } : mocks.dashboard.current_risk,
-      today: baseline?.today || mocks.dashboard.today,
-      device: payload(deviceResponse),
-      risk_trend: baseline?.risk_trend || mocks.dashboard.risk_trend,
-      recent_events: events,
-    }
+    return normalizeDashboard({ events, device: payload(deviceResponse), baseline, residentId })
   }, () => mocks.dashboard, validateDashboard)
 }
 
-export async function getEvents(residentId = 'resident-001') {
+export async function getEvents(residentId = RESIDENT_ID) {
   return resolveData('events.list', async () => {
     const response = await client.get('/api/v1/events', { params: { resident_id: residentId } })
-    return listFrom(payload(response))
-  }, () => mocks.events, validateEventList)
+    return validateEventList(listFrom(payload(response))).map(normalizeEvent)
+  }, () => mocks.events.map(normalizeEvent), validateEventList)
 }
 
 export async function getEvent(eventId) {
   return resolveData('event.detail', async () => {
     const event = payload(await client.get(`/api/v1/events/${eventId}`))
-    return event
-  }, () => hydrateMockEvent(mocks.events.find((event) => event.event_id === eventId) || mocks.events[0]), validateEventViewModel)
+    validateEventViewModel(event)
+    return normalizeEvent(event)
+  }, () => normalizeEvent(hydrateMockEvent(mocks.events.find((event) => event.event_id === eventId) || mocks.events[0])), validateEventViewModel)
 }
 
-export async function getWeeklyReport(residentId = 'resident-001') {
-  return resolveData('weekly.read', async () => payload(await client.get('/api/v1/reports/weekly', {
-    params: { resident_id: residentId },
-  })), () => mocks.weekly)
+export async function getWeeklyReport(residentId = RESIDENT_ID) {
+  return resolveData('weekly.read', async () => normalizeWeeklyReport(
+    payload(await client.get('/api/v1/reports/weekly', { params: { resident_id: residentId } })),
+  ), () => normalizeWeeklyReport(mocks.weekly))
 }
 
-export async function getBaseline(residentId = 'resident-001') {
-  return resolveData('baseline.read', async () => payload(await client.get(`/api/v1/residents/${residentId}/baseline`)), () => ({
-    resident_id: residentId,
-    source_mode: 'MOCK',
-    simulated: true,
-    trend: mocks.weekly.trend,
-  }))
+export async function getBaseline(residentId = RESIDENT_ID) {
+  return resolveData('baseline.read', async () => normalizeBaseline(
+    payload(await client.get(`/api/v1/residents/${residentId}/baseline`)),
+  ), () => normalizeBaseline(mocks.baseline))
 }
 
 export async function getDeviceStatus() {
-  return resolveData('device.status', async () => payload(await client.get('/api/v1/device/status')), () => mocks.device)
+  return resolveData('device.status', async () => normalizeDevice(
+    payload(await client.get('/api/v1/device/status')),
+  ), () => normalizeDevice(mocks.device))
 }
 
 export async function getSnapshot() {
@@ -275,4 +266,4 @@ export async function submitFamilyFeedback(eventId, feedback) {
   return structuredClone(result)
 }
 
-export { shouldFallback, stableFeedbackId }
+export { RESIDENT_ID, shouldFallback, stableFeedbackId }

@@ -1,0 +1,176 @@
+import { flushPromises, mount } from '@vue/test-utils'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const { getAssetMock, getEventMock, runtimeMock } = vi.hoisted(() => ({
+  getAssetMock: vi.fn(),
+  getEventMock: vi.fn(),
+  runtimeMock: { mode: 'api' },
+}))
+
+vi.mock('../services/repository', () => ({
+  getAsset: getAssetMock,
+  getEvent: getEventMock,
+  runtime: runtimeMock,
+}))
+
+import EventDetailView from '../views/EventDetailView.vue'
+
+function apiEvent(status, { eventId = 'event-poll-1', assetId = 'asset-poll-1' } = {}) {
+  const timeByStatus = {
+    INTERVENING: '2026-07-31T03:07:05+08:00',
+    OBSERVING: '2026-07-31T03:07:29+08:00',
+    RESOLVED: '2026-07-31T03:08:30+08:00',
+  }
+  return {
+    event_id: eventId,
+    resident_id: 'resident-api',
+    title: '快速起身后出现明显躯干摇晃',
+    primary_domain: 'FALL',
+    risk_level: status === 'RESOLVED' ? 'GREEN' : 'ORANGE',
+    risk_score: status === 'RESOLVED' ? 0.24 : 0.82,
+    status,
+    ruleset_version: 'ruleset-v1.0',
+    created_at: '2026-07-31T03:07:05+08:00',
+    updated_at: timeByStatus[status],
+    recommended_action: '请先坐稳',
+    source_mode: 'MOCK',
+    simulated: true,
+    evidence_summary: [{ evidence_id: 'evi-1', evidence_type: 'rapid_rise', explanation: '快速起身' }],
+    evidences: [{
+      evidence_id: 'evi-1', observation_ids: ['obs-1'], evidence_type: 'rapid_rise', explanation: '快速起身',
+      severity: 0.8, confidence: 0.9, data_quality: 0.9, source_mode: 'MOCK', simulated: true,
+    }],
+    observations: [{ observation_id: 'obs-1', asset_id: assetId, feature_name: 'rise_duration' }],
+    interventions: [],
+    rule_traces: [{
+      event_id: eventId, evaluated_at: timeByStatus[status], matched_rule: 'R-FALL-01',
+      previous_status: status === 'INTERVENING' ? 'OPEN' : 'INTERVENING', next_status: status,
+    }],
+    timeline: [],
+    risk_history: [],
+  }
+}
+
+async function mountView(path = '/events/event-poll-1') {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/events/:eventId', component: EventDetailView }],
+  })
+  await router.push(path)
+  await router.isReady()
+  const wrapper = mount(EventDetailView, {
+    global: {
+      plugins: [router],
+      directives: { loading: () => {} },
+      stubs: {
+        PageHeader: { template: '<header><slot /></header>' },
+        RiskBadge: { template: '<span />' },
+        SourceBadge: { template: '<span />' },
+        ChartPanel: { template: '<div />' },
+        MediaPanel: { template: '<div />' },
+        'el-alert': { props: ['title'], template: '<div class="alert-stub">{{ title }}</div>' },
+        'el-button': { template: '<button><slot /></button>' },
+        'el-drawer': { template: '<div><slot /></div>' },
+        'el-empty': { props: ['description'], template: '<div>{{ description }}</div>' },
+        'el-tag': { template: '<span><slot /></span>' },
+        'el-timeline': { template: '<div><slot /></div>' },
+        'el-timeline-item': { template: '<div><slot /></div>' },
+      },
+    },
+  })
+  await flushPromises()
+  return { router, wrapper }
+}
+
+describe('事件详情 API 自动同步', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    runtimeMock.mode = 'api'
+    getEventMock.mockReset()
+    getAssetMock.mockReset()
+    getAssetMock.mockRejectedValue(Object.assign(new Error('not found'), { response: { status: 404 } }))
+  })
+
+  afterEach(() => vi.useRealTimers())
+
+  it('自动显示干预、观察和回落，并在终态停止且不重复请求404素材', async () => {
+    getEventMock
+      .mockResolvedValueOnce(apiEvent('INTERVENING'))
+      .mockResolvedValueOnce(apiEvent('OBSERVING'))
+      .mockResolvedValueOnce(apiEvent('RESOLVED'))
+    const { wrapper } = await mountView()
+
+    expect(wrapper.text()).toContain('正在干预')
+    expect(wrapper.get('[data-testid="event-sync-status"]').text()).toBe('自动同步中')
+    await vi.advanceTimersByTimeAsync(1500)
+    await flushPromises()
+    expect(wrapper.text()).toContain('观察期')
+    await vi.advanceTimersByTimeAsync(1500)
+    await flushPromises()
+    expect(wrapper.text()).toContain('已回落')
+    expect(wrapper.get('[data-testid="event-sync-status"]').text()).toBe('同步已完成')
+
+    await vi.advanceTimersByTimeAsync(6000)
+    expect(getEventMock).toHaveBeenCalledTimes(3)
+    expect(getAssetMock).toHaveBeenCalledTimes(1)
+    wrapper.unmount()
+  })
+
+  it('后台请求失败时保留有效内容并在下一轮恢复', async () => {
+    getEventMock
+      .mockResolvedValueOnce(apiEvent('INTERVENING'))
+      .mockRejectedValueOnce(new Error('temporary network error'))
+      .mockResolvedValueOnce(apiEvent('RESOLVED'))
+    const { wrapper } = await mountView()
+
+    await vi.advanceTimersByTimeAsync(1500)
+    await flushPromises()
+    expect(wrapper.text()).toContain('正在干预')
+    expect(wrapper.text()).toContain('自动同步暂时失败，将继续重试')
+    expect(wrapper.get('[data-testid="event-sync-status"]').text()).toBe('同步重试中')
+
+    await vi.advanceTimersByTimeAsync(1500)
+    await flushPromises()
+    expect(wrapper.text()).toContain('已回落')
+    expect(wrapper.text()).not.toContain('自动同步暂时失败')
+    wrapper.unmount()
+  })
+
+  it('等待当前请求结束后才安排下一轮，不产生重叠请求', async () => {
+    let resolvePending
+    const pending = new Promise((resolve) => { resolvePending = resolve })
+    getEventMock
+      .mockResolvedValueOnce(apiEvent('INTERVENING'))
+      .mockReturnValueOnce(pending)
+      .mockResolvedValueOnce(apiEvent('RESOLVED'))
+    const { wrapper } = await mountView()
+
+    await vi.advanceTimersByTimeAsync(1500)
+    await vi.advanceTimersByTimeAsync(6000)
+    expect(getEventMock).toHaveBeenCalledTimes(2)
+
+    resolvePending(apiEvent('OBSERVING'))
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1500)
+    await flushPromises()
+    expect(getEventMock).toHaveBeenCalledTimes(3)
+    wrapper.unmount()
+  })
+
+  it('切换事件会忽略旧会话，组件卸载后清除轮询', async () => {
+    getEventMock
+      .mockResolvedValueOnce(apiEvent('INTERVENING'))
+      .mockResolvedValueOnce(apiEvent('RESOLVED', { eventId: 'event-poll-2', assetId: null }))
+    const { router, wrapper } = await mountView()
+
+    await router.push('/events/event-poll-2')
+    await flushPromises()
+    expect(wrapper.text()).toContain('event-poll-2')
+    expect(getEventMock).toHaveBeenCalledTimes(2)
+
+    wrapper.unmount()
+    await vi.advanceTimersByTimeAsync(6000)
+    expect(getEventMock).toHaveBeenCalledTimes(2)
+  })
+})

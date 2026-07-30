@@ -1,0 +1,62 @@
+[
+  {
+    "trace_id": "trace-d01e364bfe62433f887abc3ece13ff3b",
+    "event_id": null,
+    "resident_id": "resident-frontend-api",
+    "evidence_id": "evi-api-3-rapid-rise",
+    "evaluated_at": "2026-07-31T03:27:01+08:00",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-01",
+    "previous_state": "GREEN",
+    "next_state": "GREEN",
+    "previous_status": null,
+    "next_status": null,
+    "event_created": false,
+    "error": null
+  },
+  {
+    "trace_id": "trace-56510886c57548bd9ec772c98318f419",
+    "event_id": "event-ed83ee8753864a80",
+    "resident_id": "resident-frontend-api",
+    "evidence_id": "evi-api-3-trunk-sway",
+    "evaluated_at": "2026-07-31T03:27:05+08:00",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-02",
+    "previous_state": "GREEN",
+    "next_state": "ORANGE",
+    "previous_status": null,
+    "next_status": "INTERVENING",
+    "event_created": true,
+    "error": null
+  },
+  {
+    "trace_id": "trace-372487807e414bf0a06ab80b9ff94f7d",
+    "event_id": "event-ed83ee8753864a80",
+    "resident_id": "resident-frontend-api",
+    "evidence_id": "evi-api-3-posture-recovered",
+    "evaluated_at": "2026-07-31T03:27:29+08:00",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-04",
+    "previous_state": "ORANGE",
+    "next_state": "ORANGE",
+    "previous_status": "INTERVENING",
+    "next_status": "OBSERVING",
+    "event_created": false,
+    "error": null
+  },
+  {
+    "trace_id": "trace-494ef22339e942358343efa9dce2b777",
+    "event_id": "event-ed83ee8753864a80",
+    "resident_id": "resident-frontend-api",
+    "evidence_id": null,
+    "evaluated_at": "2026-07-31T03:28:30+08:00",
+    "ruleset_version": "ruleset-v1.0",
+    "matched_rule": "R-FALL-05",
+    "previous_state": "ORANGE",
+    "next_state": "GREEN",
+    "previous_status": "OBSERVING",
+    "next_status": "RESOLVED",
+    "event_created": false,
+    "error": null
+  }
+]
