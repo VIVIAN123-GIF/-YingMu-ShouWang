@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "test_kind": "EZVIZ_LIVE_ACCEPTANCE",
-  "generated_at": "2026-07-30T19:54:58.746+08:00",
-  "run_index": 3,
+  "generated_at": "2026-07-30T19:54:16.384+08:00",
+  "run_index": 1,
   "token_acquisition_mode": "APP_SECRET",
   "device_alias": "device-a44c5c0e83",
   "contains_credentials": false,
@@ -11,14 +11,14 @@
     {
       "stage": "device_status",
       "executed": true,
-      "requested_at": "2026-07-30T19:54:58.746+08:00",
+      "requested_at": "2026-07-30T19:54:16.384+08:00",
       "device_alias": "device-a44c5c0e83",
       "result": "SUCCESS",
       "api_call_succeeded": true,
       "http_status": 200,
       "business_code": "200",
       "business_message": "Operation succeeded",
-      "latency_ms": 1906,
+      "latency_ms": 3377,
       "online": true,
       "source_mode": "LIVE_DEVICE",
       "failure_reason": null
@@ -26,13 +26,13 @@
     {
       "stage": "device_snapshot",
       "executed": true,
-      "requested_at": "2026-07-30T19:55:00.652+08:00",
+      "requested_at": "2026-07-30T19:54:19.761+08:00",
       "device_alias": "device-a44c5c0e83",
       "result": "SUCCESS",
       "http_status": 200,
       "business_code": "200",
       "business_message": "操作成功!",
-      "latency_ms": 3611,
+      "latency_ms": 6523,
       "valid_image_obtained": true,
       "image_http_status": 200,
       "authorization_status": "AUTHORIZED",
@@ -43,18 +43,28 @@
     {
       "stage": "temporary_playback_address",
       "executed": true,
-      "requested_at": "2026-07-30T19:55:07.469+08:00",
+      "requested_at": "2026-07-30T19:54:27.763+08:00",
       "device_alias": "device-a44c5c0e83",
-      "result": "FAILED",
-      "http_status": null,
-      "business_code": null,
-      "business_message": null,
-      "latency_ms": 12368,
-      "temporary_address_obtained": false,
+      "result": "SUCCESS",
+      "requested_protocol": "hls",
+      "fallback_attempted": true,
+      "selected_protocol": "ezopen",
+      "hls_attempt": {
+        "protocol": "hls",
+        "http_status": 200,
+        "business_code": "60019",
+        "business_message": "加密已开启",
+        "latency_ms": 7073
+      },
+      "http_status": 200,
+      "business_code": "200",
+      "business_message": "操作成功",
+      "latency_ms": 11861,
+      "temporary_address_obtained": true,
       "temporary_address_stored": false,
-      "source_mode": "MOCK",
-      "failure_reason": "REQUEST_TIMEOUT"
+      "source_mode": "LIVE_DEVICE",
+      "failure_reason": null
     }
   ],
-  "overall_result": "INCOMPLETE"
+  "overall_result": "SUCCESS"
 }
