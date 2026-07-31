@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "test_kind": "EZVIZ_LIVE_ACCEPTANCE",
-  "generated_at": "2026-07-30T19:54:58.746+08:00",
-  "run_index": 3,
+  "generated_at": "2026-07-30T19:50:30.727+08:00",
+  "run_index": 1,
   "token_acquisition_mode": "APP_SECRET",
   "device_alias": "device-a44c5c0e83",
   "contains_credentials": false,
@@ -11,14 +11,14 @@
     {
       "stage": "device_status",
       "executed": true,
-      "requested_at": "2026-07-30T19:54:58.746+08:00",
+      "requested_at": "2026-07-30T19:50:30.727+08:00",
       "device_alias": "device-a44c5c0e83",
       "result": "SUCCESS",
       "api_call_succeeded": true,
       "http_status": 200,
       "business_code": "200",
       "business_message": "Operation succeeded",
-      "latency_ms": 1906,
+      "latency_ms": 10126,
       "online": true,
       "source_mode": "LIVE_DEVICE",
       "failure_reason": null
@@ -26,13 +26,13 @@
     {
       "stage": "device_snapshot",
       "executed": true,
-      "requested_at": "2026-07-30T19:55:00.652+08:00",
+      "requested_at": "2026-07-30T19:50:40.853+08:00",
       "device_alias": "device-a44c5c0e83",
       "result": "SUCCESS",
       "http_status": 200,
       "business_code": "200",
       "business_message": "操作成功!",
-      "latency_ms": 3611,
+      "latency_ms": 5771,
       "valid_image_obtained": true,
       "image_http_status": 200,
       "authorization_status": "AUTHORIZED",
@@ -43,17 +43,17 @@
     {
       "stage": "temporary_playback_address",
       "executed": true,
-      "requested_at": "2026-07-30T19:55:07.469+08:00",
+      "requested_at": "2026-07-30T19:51:05.460+08:00",
       "device_alias": "device-a44c5c0e83",
       "result": "FAILED",
-      "http_status": null,
-      "business_code": null,
-      "business_message": null,
-      "latency_ms": 12368,
+      "http_status": 200,
+      "business_code": "60019",
+      "business_message": "加密已开启",
+      "latency_ms": 9050,
       "temporary_address_obtained": false,
       "temporary_address_stored": false,
       "source_mode": "MOCK",
-      "failure_reason": "REQUEST_TIMEOUT"
+      "failure_reason": "EZVIZ_BUSINESS_ERROR_60019"
     }
   ],
   "overall_result": "INCOMPLETE"
