@@ -345,27 +345,103 @@ def build_posture_recovered_evidence(
     location: Optional[str],
     stable_angle_deg: float,
 ) -> dict[str, object]:
-    tail = rows[-min(8, len(rows)) :]
+    tail = []
+    for row in reversed(rows):
+        angle = abs(float(row["trunk_angle_deg_smooth"]))
+        quality = float(row["core_visibility_mean"])
+        if angle > stable_angle_deg or quality < 0.70:
+            break
+        tail.append(row)
+    tail.reverse()
     tail_angles = [abs(float(row["trunk_angle_deg_smooth"])) for row in tail]
-    current = max(tail_angles) if tail_angles else 0.0
+    stable_angle = max(tail_angles) if tail_angles else 0.0
+    stable_duration = (
+        (int(tail[-1]["timestamp_ms"]) - int(tail[0]["timestamp_ms"])) / 1000.0
+        if len(tail) >= 2 else 0.0
+    )
     data_quality = mean(float(row["core_visibility_mean"]) for row in tail) if tail else 0.0
-    severity = clamp(1.0 - current / max(stable_angle_deg, 1e-6))
-    return base_evidence(
+    result = base_evidence(
         evidence_type="posture_recovered",
         observation_id=f"obs-posture-recovered-{sequence_id}",
         resident_id=resident_id,
         timestamp=timestamp,
-        severity=severity,
-        confidence=data_quality * (0.80 + 0.20 * severity),
+        severity=0.0,
+        confidence=data_quality,
         data_quality=data_quality,
-        baseline_value=stable_angle_deg,
-        current_value=current,
-        baseline_deviation=(current - stable_angle_deg) / max(stable_angle_deg, 1e-6),
-        explanation=f"干预后观察窗内躯干最大偏角{current:.2f}度，姿态回到稳定范围。",
+        baseline_value=15.0,
+        current_value=stable_duration,
+        baseline_deviation=(stable_duration - 15.0) / 15.0,
+        explanation=(
+            f"干预后躯干最大偏角{stable_angle:.2f}度，连续稳定{stable_duration:.3f}秒，"
+            f"恢复阈值为15秒。"
+        ),
         source_mode=source_mode,
         simulated=simulated,
         location=location,
     )
+    result["observation_ids"].append(f"obs-stable-trunk-angle-{sequence_id}")
+    return result
+
+
+def stable_tail_angle(rows: list[dict[str, str]], stable_angle_deg: float) -> float:
+    tail = []
+    for row in reversed(rows):
+        angle = abs(float(row["trunk_angle_deg_smooth"]))
+        if angle > stable_angle_deg or float(row["core_visibility_mean"]) < 0.70:
+            break
+        tail.append(angle)
+    return max(tail, default=0.0)
+
+
+def build_observations(
+    evidence_items: list[dict[str, object]],
+    *,
+    resident_id: str,
+    asset_id: str,
+    source_mode: str,
+    simulated: bool,
+    location: Optional[str],
+    camera_position_id: Optional[str],
+    stable_angle: float,
+) -> list[dict[str, object]]:
+    feature_map = {
+        "rapid_rise": ("sit_to_stand_duration", "second"),
+        "slow_rise": ("sit_to_stand_duration", "second"),
+        "trunk_sway": ("trunk_sway_angle", "degree"),
+        "gait_instability": ("step_length_asymmetry_ratio", "ratio"),
+        "relative_speed_change": ("relative_gait_speed", "frame_height_per_second"),
+        "tracking_lost": ("valid_frame_ratio", "ratio"),
+        "posture_recovered": ("stable_posture_duration", "second"),
+    }
+    observations = []
+    for evidence in evidence_items:
+        feature_name, unit = feature_map[evidence["evidence_type"]]
+        observations.append({
+            "schema_version": "1.0",
+            "observation_id": evidence["observation_ids"][0],
+            "resident_id": resident_id,
+            "timestamp": evidence["timestamp"],
+            "source": "pose",
+            "feature_name": feature_name,
+            "feature_value": evidence["current_value"] if evidence["current_value"] is not None else 0.0,
+            "unit": unit,
+            "location": location,
+            "confidence": evidence["confidence"],
+            "data_quality": evidence["data_quality"],
+            "source_mode": source_mode,
+            "asset_id": asset_id,
+            "simulated": simulated,
+            "metadata": {"model_version": ADAPTER_VERSION, "camera_position_id": camera_position_id},
+        })
+        if evidence["evidence_type"] == "posture_recovered":
+            observations.append({
+                **observations[-1],
+                "observation_id": evidence["observation_ids"][1],
+                "feature_name": "stable_trunk_angle_deg",
+                "feature_value": round(stable_angle, 3),
+                "unit": "degree",
+            })
+    return observations
 
 
 def choose_rows(
@@ -421,6 +497,13 @@ def main() -> None:
     parser.add_argument("--source-mode", default="PUBLIC_DATASET")
     parser.add_argument("--simulated", action="store_true", default=True)
     parser.add_argument("--location", default="bedroom")
+    parser.add_argument("--asset-id", default="")
+    parser.add_argument("--device-ref", default="")
+    parser.add_argument("--device-model", default="")
+    parser.add_argument("--camera-position-id", default="")
+    parser.add_argument("--authorization-status", choices=["PENDING", "AUTHORIZED", "REVOKED"], default="PENDING")
+    parser.add_argument("--authorization-record-id", default="")
+    parser.add_argument("--retention-until", default="")
     parser.add_argument("--baseline-rise-duration-s", type=float, default=2.5)
     parser.add_argument("--baseline-sway-deg", type=float, default=8.0)
     parser.add_argument("--baseline-asymmetry", type=float, default=0.18)
@@ -436,6 +519,7 @@ def main() -> None:
     min_valid_frame_ratio = profile_rule_value(baseline_profile, "tracking_lost_valid_frame_ratio", args.min_valid_frame_ratio)
     grouped_frames = group_rows(frame_rows)
     sequence_id, rows, feature_row = choose_rows(grouped_frames, feature_rows, args.sequence_id)
+    asset_id = args.asset_id or sequence_id
     base_time = datetime(2026, 8, 7, 3, 7, 0, tzinfo=timezone(timedelta(hours=8)))
 
     rapid_window = find_upward_window(sequence_id, rows, 0.4, 1.5, 0.05)
@@ -461,22 +545,96 @@ def main() -> None:
         build_tracking_lost_evidence(tracking_row, timestamp_at(base_time, 18), args.resident_id, args.source_mode, args.simulated, args.location, min_valid_frame_ratio),
         build_posture_recovered_evidence(rows, sequence_id, timestamp_at(base_time, 28), args.resident_id, args.source_mode, args.simulated, args.location, baseline_sway_deg),
     ]
+    observations = build_observations(
+        evidence_items,
+        resident_id=args.resident_id,
+        asset_id=asset_id,
+        source_mode=args.source_mode,
+        simulated=args.simulated,
+        location=args.location,
+        camera_position_id=args.camera_position_id or None,
+        stable_angle=stable_tail_angle(rows, baseline_sway_deg),
+    )
 
     output_dir = Path(args.evidence_dir)
     integration_dir = Path(args.integration_dir)
     write_individual_evidence(output_dir, evidence_items)
     write_json(output_dir / "fall_evidence_batch.json", {"schema_version": "1.0", "adapter_version": ADAPTER_VERSION, "evidence": evidence_items})
 
+    recovery_evidence = next(item for item in evidence_items if item["evidence_type"] == "posture_recovered")
+    retention_valid = False
+    if args.retention_until:
+        try:
+            retention_deadline = datetime.fromisoformat(args.retention_until.replace("Z", "+00:00"))
+            retention_valid = bool(
+                retention_deadline.tzinfo is not None
+                and retention_deadline >= max(base_time, datetime.now(timezone.utc))
+            )
+        except ValueError:
+            retention_valid = False
+    readiness_checks = {
+        "recorded_replay": args.source_mode == "RECORDED_REPLAY",
+        "authorized_c6c": bool(
+            args.device_model == "EZVIZ_C6C"
+            and args.device_ref
+            and args.camera_position_id
+            and args.authorization_status == "AUTHORIZED"
+            and args.authorization_record_id
+        ),
+        "authorization_not_expired": retention_valid,
+        "quality_gate": all(
+            float(item["confidence"]) >= 0.70 and float(item["data_quality"]) >= 0.70
+            for item in evidence_items
+            if item["evidence_type"] in {
+                "rapid_rise", "trunk_sway", "gait_instability",
+                "relative_speed_change", "posture_recovered",
+            }
+        ),
+        "recovery_reaches_15_seconds": float(recovery_evidence["current_value"]) >= 15.0,
+    }
+    ready_for_c6c = bool(
+        all(readiness_checks.values())
+    )
+    asset = {
+        "asset_id": asset_id,
+        "title": "授权C6c跌倒前兆实验片段" if ready_for_c6c else "待C6c授权素材替换的开发输入",
+        "source_mode": args.source_mode,
+        "simulated": args.simulated,
+        "stream_url": None,
+        "fallback_url": None,
+        "fallback_kind": "AUTHORIZED_CLIP" if ready_for_c6c else "PENDING_ASSET",
+        "available": ready_for_c6c,
+        "verification_status": "VERIFIED" if ready_for_c6c else "PENDING_ASSET",
+        "captured_at": base_time.isoformat(timespec="seconds"),
+        "notice": "视频和永久地址不进入Git；通过脱敏资产记录追溯。" if ready_for_c6c else "公开数据仅用于开发回归，不能验收为C6c黄金包。",
+        "device_ref": args.device_ref or None,
+        "device_model": args.device_model or None,
+        "camera_position_id": args.camera_position_id or None,
+        "authorization_status": args.authorization_status,
+        "authorization_record_id": args.authorization_record_id or None,
+        "retention_until": args.retention_until or None,
+    }
+    golden_evidence = [
+        item for item in evidence_items
+        if item["evidence_type"] in {"rapid_rise", "trunk_sway", "gait_instability", "relative_speed_change", "posture_recovered"}
+    ]
+    golden_observation_ids = {item for evidence in golden_evidence for item in evidence["observation_ids"]}
+    golden_observations = [item for item in observations if item["observation_id"] in golden_observation_ids]
     golden_package = {
         "schema_version": "1.0",
         "scenario_id": "golden-30s-fall-demo-001",
-        "scenario_name": "第100天黄金半分钟跌倒前兆联调包",
+        "scenario_name": "公开数据模拟：第100天黄金半分钟跌倒前兆联调包",
         "resident_id": args.resident_id,
         "source_mode": args.source_mode,
         "simulated": args.simulated,
-        "asset_id": sequence_id,
+        "acceptance_status": "READY" if ready_for_c6c else "PENDING_ASSET",
+        "eligible_for_real_acceptance": ready_for_c6c,
+        "readiness_checks": readiness_checks,
+        "asset_id": asset_id,
+        "asset": asset,
+        "observations": golden_observations,
         "baseline_profile": str(Path(args.baseline_profile)),
-        "post_endpoint": "/api/v1/evidence",
+        "post_endpoints": ["/api/v1/assets", "/api/v1/observations", "/api/v1/evidence"],
         "expected_agent_behavior": {
             "risk_domain": "FALL",
             "expected_risk_level": "ORANGE",
@@ -484,15 +642,11 @@ def main() -> None:
             "recovery_signal": "posture_recovered",
         },
         "timeline": [
-            {"second": 1, "evidence_type": "rapid_rise", "action": "POST /api/v1/evidence"},
-            {"second": 6, "evidence_type": "trunk_sway", "action": "POST /api/v1/evidence"},
-            {"second": 8, "evidence_type": "gait_instability", "action": "POST /api/v1/evidence"},
-            {"second": 10, "evidence_type": "relative_speed_change", "action": "POST /api/v1/evidence"},
-            {"second": 28, "evidence_type": "posture_recovered", "action": "POST /api/v1/evidence"},
+            {"order": 0, "action": "POST /api/v1/assets", "id": asset_id},
+            *[{"order": index + 1, "action": "POST /api/v1/observations", "id": item["observation_id"]} for index, item in enumerate(golden_observations)],
+            *[{"order": len(golden_observations) + index + 1, "action": "POST /api/v1/evidence", "id": item["evidence_id"]} for index, item in enumerate(golden_evidence)],
         ],
-        "evidence": [
-            item for item in evidence_items if item["evidence_type"] in {"rapid_rise", "trunk_sway", "gait_instability", "relative_speed_change", "posture_recovered"}
-        ],
+        "evidence": golden_evidence,
     }
     write_json(integration_dir / "golden_30s_fall_evidence.json", golden_package)
 

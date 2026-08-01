@@ -91,6 +91,37 @@ const riskChartOption = computed(() => ({
   }],
 }))
 
+const displayRuleTraces = computed(() => event.value?.rule_traces || [])
+
+function contextText(trace) {
+  const entries = Object.entries(trace?.context_snapshot?.contributions || {}).filter(([, value]) => Number(value) > 0)
+  return entries.length ? entries.map(([key, value]) => `${key} +${value}`).join(' · ') : '无附加上下文'
+}
+
+function traceScore(trace) {
+  const value = trace?.score_components?.final_score
+  return typeof value === 'number' ? formatRiskScore(value) : '未生成事件分数'
+}
+
+function qualityText(trace) {
+  const items = trace?.quality_snapshot?.evidences || []
+  if (!items.length) return '无证据质量快照'
+  return items.map((item) => (
+    `${item.evidence_type}: 质量${item.data_quality} / 置信${item.confidence} / ${item.usable ? '通过' : '拦截'}`
+  )).join('；')
+}
+
+function baselineStatusText(trace) {
+  const status = trace?.baseline_snapshot?.overall_status || 'INSUFFICIENT'
+  return { PROVISIONAL: '初步基线', INSUFFICIENT: '样本不足', STABLE: '工程稳定基线（非医学）' }[status] || status
+}
+
+function scoreComponentsText(trace) {
+  const score = trace?.score_components || {}
+  if (typeof score.final_score !== 'number') return '本次规则不生成事件分数'
+  return `严重度${score.severity}、置信度${score.confidence}、质量${score.data_quality}、上下文${score.context}`
+}
+
 function openTrace(evidence) {
   selectedEvidence.value = evidence
   traceOpen.value = true
@@ -256,6 +287,26 @@ onBeforeUnmount(stopEventSession)
               </article>
             </div>
             <el-empty v-else description="该绿色事件没有异常 Evidence" />
+          </article>
+
+          <article v-if="displayRuleTraces.length" class="content-card" data-testid="rule-trace-panel">
+            <div class="card-heading"><div><span class="section-kicker">RuleTrace</span><h2>后端实际规则判断</h2></div><span>{{ displayRuleTraces.length }} 次评估</span></div>
+            <div class="tool-results">
+              <article v-for="trace in displayRuleTraces" :key="trace.trace_id">
+                <el-tag effect="dark">{{ trace.matched_rule }}</el-tag>
+                <h3>{{ trace.reason || '后端未返回规则解释' }}</h3>
+                <dl class="detail-list">
+                  <div><dt>状态迁移</dt><dd>{{ trace.previous_status || trace.previous_state }} → {{ trace.next_status || trace.next_state }}</dd></div>
+                  <div><dt>实际评分</dt><dd>{{ traceScore(trace) }}</dd></div>
+                  <div><dt>评分分量</dt><dd>{{ scoreComponentsText(trace) }}</dd></div>
+                  <div><dt>质量门槛</dt><dd>{{ trace.thresholds?.data_quality ?? '—' }}</dd></div>
+                  <div><dt>逐条质量</dt><dd>{{ qualityText(trace) }}</dd></div>
+                  <div><dt>基线状态</dt><dd>{{ baselineStatusText(trace) }}</dd></div>
+                  <div><dt>上下文</dt><dd>{{ contextText(trace) }}</dd></div>
+                  <div><dt>查询窗口</dt><dd>短时 {{ trace.queried_windows?.short_seconds ?? '—' }}秒 · 中期 {{ trace.queried_windows?.medium_hours ?? '—' }}小时 · 长期 {{ trace.queried_windows?.long_days ?? '—' }}天</dd></div>
+                </dl>
+              </article>
+            </div>
           </article>
 
           <article class="content-card">

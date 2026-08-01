@@ -59,6 +59,6 @@ describe('API ViewModel 适配', () => {
     } })
     expect(baseline.metrics[0]).toMatchObject({ label: '起身时长', unit: '秒' })
     expect(baseline.metrics[1]).toMatchObject({ label: 'custom_metric', unit: '' })
-    expect(baseline.baseline_progress).toEqual({ observed_days: 3, target_days: 7 })
+    expect(baseline.baseline_progress).toEqual({ observed_days: 3, provisional_target_days: 3, stable_target_days: 7 })
   })
 })

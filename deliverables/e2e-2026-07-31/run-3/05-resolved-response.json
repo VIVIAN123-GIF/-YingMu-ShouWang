@@ -12,7 +12,7 @@
       "primary_domain": "FALL",
       "related_domains": [],
       "risk_level": "ORANGE",
-      "risk_score": 0.82,
+      "risk_score": 0.78,
       "evidence_ids": [
         "evi-mock-rapid-rise-001",
         "evi-mock-trunk-sway-001",
@@ -32,7 +32,7 @@
         {
           "evidence_id": "evi-mock-posture-recovered-001",
           "evidence_type": "posture_recovered",
-          "explanation": "老人已重新坐稳并保持稳定姿态15秒"
+          "explanation": "躯干最大偏角3.6度，连续稳定15秒，达到15秒恢复阈值"
         }
       ],
       "time_horizon": "IMMINENT",

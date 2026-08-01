@@ -12,7 +12,12 @@ def asset_dict(row: Asset):
             "simulated": row.simulated, "stream_url": row.stream_url,
             "fallback_url": row.fallback_url, "fallback_kind": row.fallback_kind,
             "available": row.available, "verification_status": row.verification_status,
-            "captured_at": aware(row.captured_at), "notice": row.notice}
+            "captured_at": aware(row.captured_at), "notice": row.notice,
+            "device_ref": row.device_ref, "device_model": row.device_model,
+            "camera_position_id": row.camera_position_id,
+            "authorization_status": row.authorization_status,
+            "authorization_record_id": row.authorization_record_id,
+            "retention_until": aware(row.retention_until) if row.retention_until else None}
 
 
 async def get_asset(db: AsyncSession, asset_id: str):

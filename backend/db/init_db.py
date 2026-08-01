@@ -75,6 +75,21 @@ async def init_tables() -> None:
             await conn.execute(text("ALTER TABLE rule_trace ADD COLUMN previous_status VARCHAR(16)"))
         if "next_status" not in trace_columns:
             await conn.execute(text("ALTER TABLE rule_trace ADD COLUMN next_status VARCHAR(16)"))
+        if "trace_payload" not in trace_columns:
+            await conn.execute(text("ALTER TABLE rule_trace ADD COLUMN trace_payload TEXT"))
+        asset_columns = {row[1] for row in (await conn.execute(
+            text("PRAGMA table_info(asset)"))).all()}
+        asset_migrations = {
+            "device_ref": "VARCHAR(128)",
+            "device_model": "VARCHAR(64)",
+            "camera_position_id": "VARCHAR(128)",
+            "authorization_status": "VARCHAR(32) NOT NULL DEFAULT 'PENDING'",
+            "authorization_record_id": "VARCHAR(128)",
+            "retention_until": "DATETIME",
+        }
+        for column, definition in asset_migrations.items():
+            if column not in asset_columns:
+                await conn.execute(text(f"ALTER TABLE asset ADD COLUMN {column} {definition}"))
     print("所有数据表创建完成：设备/观测/证据/风险事件/干预/原始告警/配置/周报/事件证据关联表")
 
 

@@ -12,7 +12,7 @@ const baseline = ref(null)
 
 const progressPercent = computed(() => {
   const observed = baseline.value?.baseline_progress?.observed_days || 0
-  const target = baseline.value?.baseline_progress?.target_days || 7
+  const target = baseline.value?.baseline_progress?.provisional_target_days || 3
   return Math.min(100, Math.round((observed / target) * 100))
 })
 
@@ -44,7 +44,7 @@ const heatmapOption = computed(() => ({
 }))
 
 function statusLabel(status) {
-  return { STABLE: '稳定基线', PROVISIONAL: '暂定基线', INSUFFICIENT: '样本不足' }[status] || status
+  return { STABLE: '工程稳定基线（非医学）', PROVISIONAL: '初步基线', INSUFFICIENT: '样本不足' }[status] || status
 }
 
 function statusType(status) {
@@ -73,7 +73,7 @@ onMounted(load)
 
 <template>
   <div v-loading="loading" data-testid="baseline-view">
-    <PageHeader title="个人基线与活动趋势" description="系统学习的是本人平常安全的状态，不使用统一人群阈值替代个人基线。">
+    <PageHeader title="个人基线与活动趋势" description="仅使用本人、同一台C6c、同一机位的安全样本；当前结果不是医学基线，也不是100天真实监测。">
       <SourceBadge v-if="baseline" :mode="baseline.source_mode" :simulated="baseline.simulated" :show-description="true" />
     </PageHeader>
 
@@ -83,8 +83,8 @@ onMounted(load)
       <section class="baseline-overview content-card">
         <div>
           <span class="section-kicker">基线建立进度</span>
-          <h2>{{ baseline.baseline_progress.observed_days }} / {{ baseline.baseline_progress.target_days }} 个有效日</h2>
-          <p>已有 {{ stableCount }} 项指标达到稳定状态 · 更新于 {{ formatDateTime(baseline.as_of) }}</p>
+          <h2>{{ baseline.baseline_progress.observed_days }} / {{ baseline.baseline_progress.provisional_target_days }} 个初步有效日</h2>
+          <p>{{ statusLabel(baseline.overall_status) }} · {{ stableCount }} 项工程稳定指标 · 更新于 {{ formatDateTime(baseline.as_of) }}</p>
         </div>
         <el-progress type="dashboard" :percentage="progressPercent" :stroke-width="12" color="#176b65">
           <template #default="{ percentage }"><strong>{{ percentage }}%</strong><span>有效进度</span></template>
@@ -93,6 +93,8 @@ onMounted(load)
           <div><dt>居民</dt><dd>{{ baseline.resident_id }}</dd></div>
           <div><dt>规则版本</dt><dd>{{ baseline.ruleset_version }}</dd></div>
           <div><dt>数据来源</dt><dd>{{ baseline.source_mode }}</dd></div>
+          <div><dt>设备</dt><dd>{{ baseline.provenance?.device_model || '待授权C6c样本' }}</dd></div>
+          <div><dt>固定机位</dt><dd>{{ baseline.provenance?.camera_position_id || '样本不足' }}</dd></div>
         </dl>
       </section>
 
@@ -124,8 +126,10 @@ onMounted(load)
       </section>
 
       <el-alert
-        title="基线防污染：只有绿色正常时段且质量达标的样本可以进入基线；预警事件、遮挡和低质量数据不会自动写入。"
-        type="success"
+        :title="baseline.overall_status === 'INSUFFICIENT'
+          ? '样本不足：需要同一居民、同一台授权C6c、同一机位覆盖3个不同日期，当前不会展示为已建立基线。'
+          : '初步基线：仅用于工程比较；危险、ORANGE、遮挡和低质量样本均不写入。'"
+        :type="baseline.overall_status === 'INSUFFICIENT' ? 'info' : 'success'"
         show-icon
         :closable="false"
       />

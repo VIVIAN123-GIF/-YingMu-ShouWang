@@ -2,21 +2,22 @@
   "schema_version": "1.0",
   "evidence_id": "evi-mock-posture-recovered-001",
   "observation_ids": [
-    "obs-mock-posture-recovered-001"
+    "obs-mock-posture-recovered-001",
+    "obs-mock-stable-trunk-angle-001"
   ],
   "resident_id": "resident-mock-001",
   "timestamp": "2026-07-31T03:07:29+08:00",
   "risk_domain": "FALL",
   "evidence_type": "posture_recovered",
-  "severity": 0.12,
+  "severity": 0.0,
   "confidence": 0.94,
   "data_quality": 0.9,
-  "baseline_value": null,
+  "baseline_value": 15.0,
   "current_value": 15.0,
-  "baseline_deviation": null,
+  "baseline_deviation": 0.0,
   "time_scale": "SHORT",
   "location": "living_room",
-  "explanation": "老人已重新坐稳并保持稳定姿态15秒",
+  "explanation": "躯干最大偏角3.6度，连续稳定15秒，达到15秒恢复阈值",
   "adapter_version": "fall-adapter-v1",
   "source_mode": "MOCK",
   "simulated": true

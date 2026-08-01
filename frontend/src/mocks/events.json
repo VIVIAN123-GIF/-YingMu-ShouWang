@@ -12,6 +12,7 @@
     ],
     "risk_level": "ORANGE",
     "risk_score": 0.82,
+    "risk_score_provenance": "ruleset-v1.0模拟场景计算结果，不是固定后端返回值",
     "evidence_ids": [
       "evi-rapid-rise-live",
       "evi-trunk-sway-live"
@@ -149,6 +150,7 @@
     ],
     "risk_level": "ORANGE",
     "risk_score": 0.84,
+    "risk_score_provenance": "ruleset-v1.0模拟场景计算结果，不是实时监测值",
     "evidence_ids": [
       "evi-rapid-rise",
       "evi-trunk-sway",
@@ -174,7 +176,7 @@
       {
         "evidence_id": "evi-recovered",
         "evidence_type": "posture_recovered",
-        "explanation": "老人已重新坐稳，连续15秒未出现新的高风险姿态"
+        "explanation": "最大稳定躯干角度3.6度，连续稳定15秒，达到15秒恢复阈值"
       }
     ],
     "time_horizon": "IMMINENT",
@@ -340,17 +342,18 @@
         "timestamp": "2026-07-24T03:07:29+08:00",
         "risk_domain": "FALL",
         "observation_ids": [
-          "obs-posture-recovered"
+          "obs-posture-recovered",
+          "obs-stable-trunk-angle"
         ],
         "evidence_type": "posture_recovered",
-        "explanation": "老人已重新坐稳，连续15秒未出现新的高风险姿态",
-        "severity": 0.12,
+        "explanation": "最大稳定躯干角度3.6度，连续稳定15秒，达到15秒恢复阈值",
+        "severity": 0,
         "confidence": 0.94,
         "data_quality": 0.9,
         "time_scale": "SHORT",
-        "baseline_value": null,
+        "baseline_value": 15,
         "current_value": 15,
-        "baseline_deviation": null,
+        "baseline_deviation": 0,
         "adapter_version": "fall-adapter-v1",
         "source_mode": "MOCK",
         "simulated": true,
