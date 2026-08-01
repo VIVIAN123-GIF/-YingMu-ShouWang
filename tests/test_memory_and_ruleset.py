@@ -34,6 +34,8 @@ class MemoryAndRulesetTests(unittest.TestCase):
             engine.ingest_evidence(evidence)
         for index in (1, 2, 3):
             engine.ingest_observation(self.data["observations"][index])
+            if index == 3:
+                engine.ingest_observation(self.data["observations"][4])
             engine.ingest_evidence(self.data["evidence"][index])
         snapshot = engine.memory.snapshot(RESIDENT_ID, datetime.fromisoformat("2026-07-31T03:07:30+08:00"))
         self.assertEqual(snapshot["short"]["window_seconds"], 30)
@@ -170,11 +172,15 @@ class MemoryAndRulesetTests(unittest.TestCase):
         recovered = deepcopy(data["observations"][3])
         recovered["timestamp"] = "2026-07-31T03:07:29+08:00"
         recovered["observation_id"] = "obs-recovery-r6"
+        angle = deepcopy(data["observations"][4])
+        angle["timestamp"] = recovered["timestamp"]
+        angle["observation_id"] = "obs-recovery-r6-angle"
         recovery_evidence = deepcopy(data["evidence"][3])
         recovery_evidence["timestamp"] = recovered["timestamp"]
         recovery_evidence["evidence_id"] = "evi-recovery-r6"
-        recovery_evidence["observation_ids"] = [recovered["observation_id"]]
+        recovery_evidence["observation_ids"] = [recovered["observation_id"], angle["observation_id"]]
         engine.ingest_observation(recovered)
+        engine.ingest_observation(angle)
         engine.ingest_evidence(recovery_evidence)
         observing = engine.evaluate(RESIDENT_ID)
         if observing is None:

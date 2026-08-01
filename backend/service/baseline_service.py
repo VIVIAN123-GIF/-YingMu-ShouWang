@@ -1,15 +1,29 @@
 import statistics
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config import RULESET_VERSION
-from backend.db.models import Evidence, Observation, RiskEvent
+from backend.db.models import Asset, Evidence, Observation, RiskEvent
 from backend.service.serialization import aware, loads
 from contracts.v1.memory import MemoryStore
 from contracts.v1.ruleset import load_ruleset
+
+
+EXPECTED_METRICS = ("rise_duration", "relative_gait_speed", "stable_trunk_angle_deg")
+STATUS_ORDER = {"INSUFFICIENT": 0, "PROVISIONAL": 1, "STABLE": 2}
+
+
+@dataclass(frozen=True)
+class Candidate:
+    evidence: Evidence
+    observation: Observation
+    asset: Asset
+    metric: str
+    value: float
 
 
 class BaselineStore:
@@ -26,6 +40,19 @@ class BaselineStore:
             return True
         return timestamp <= updated_at
 
+    @staticmethod
+    def _provenance_key(candidate: Candidate) -> tuple[str, str]:
+        return candidate.asset.device_ref, candidate.asset.camera_position_id
+
+    @staticmethod
+    def _rank_cohort(items: list[Candidate]) -> tuple:
+        days = defaultdict(set)
+        for item in items:
+            days[item.metric].add(aware(item.evidence.timestamp).date())
+        counts = [len(days[metric]) for metric in EXPECTED_METRICS]
+        newest = max(aware(item.evidence.timestamp) for item in items)
+        return (sum(count >= 3 for count in counts), min(counts), sum(counts), len(items), newest)
+
     async def baseline(self, db: AsyncSession, resident_id: str, as_of):
         cutoff = as_of - timedelta(days=self.ruleset.windows["long_days"])
         evidences = (await db.execute(
@@ -37,6 +64,8 @@ class BaselineStore:
                 Evidence.evidence_type.in_(MemoryStore.SAFE_BASELINE_TYPES),
                 Evidence.confidence >= self.ruleset.thresholds["confidence"],
                 Evidence.data_quality >= self.ruleset.thresholds["data_quality"],
+                Evidence.source_mode == "RECORDED_REPLAY",
+                Evidence.simulated.is_(True),
             )
             .order_by(Evidence.timestamp)
         )).scalars().all()
@@ -48,10 +77,10 @@ class BaselineStore:
         observations = (await db.execute(
             select(Observation).where(Observation.observation_id.in_(observation_ids))
         )).scalars().all() if observation_ids else []
-        observation_by_id = {
-            observation.observation_id: observation
-            for observation in observations
-        }
+        observation_by_id = {item.observation_id: item for item in observations}
+        asset_ids = {item.asset_id for item in observations if item.asset_id}
+        assets = (await db.execute(select(Asset).where(Asset.asset_id.in_(asset_ids)))).scalars().all() if asset_ids else []
+        asset_by_id = {item.asset_id: item for item in assets}
         events = (await db.execute(
             select(RiskEvent).where(
                 RiskEvent.resident_id == resident_id,
@@ -59,45 +88,61 @@ class BaselineStore:
             )
         )).scalars().all()
 
-        values = defaultdict(list)
-        days = defaultdict(set)
-        accepted = []
+        candidates: list[Candidate] = []
         for evidence in evidences:
             timestamp = aware(evidence.timestamp)
             if any(self._event_blocks_sample(event, timestamp) for event in events):
                 continue
             linked = [
-                observation_by_id[observation_id]
-                for observation_id in loads(evidence.observation_ids, [])
-                if observation_id in observation_by_id
+                observation_by_id[item]
+                for item in loads(evidence.observation_ids, [])
+                if item in observation_by_id
             ]
-            observation = next(
-                (
-                    item for item in linked
-                    if item.feature_name in MemoryStore.METRIC_BY_FEATURE
-                    and item.feature_name not in MemoryStore.QUALITY_FLAGS
-                    and item.data_quality >= self.ruleset.thresholds["data_quality"]
-                ),
-                None,
-            )
-            if observation is None or evidence.current_value is None:
+            mapped = [item for item in linked if item.feature_name in MemoryStore.METRIC_BY_FEATURE]
+            if len(mapped) != 1 or evidence.current_value is None:
                 continue
+            observation = mapped[0]
             metric = MemoryStore.METRIC_BY_FEATURE[observation.feature_name]
-            values[metric].append(float(evidence.current_value))
-            days[metric].add(timestamp.date())
-            accepted.append(evidence)
+            if metric not in EXPECTED_METRICS or observation.data_quality < self.ruleset.thresholds["data_quality"]:
+                continue
+            asset = asset_by_id.get(observation.asset_id)
+            if not asset or not asset.device_ref or not asset.camera_position_id:
+                continue
+            if (
+                asset.device_model != "EZVIZ_C6C"
+                or asset.authorization_status != "AUTHORIZED"
+                or not asset.authorization_record_id
+                or not asset.retention_until
+                or asset.source_mode != "RECORDED_REPLAY"
+                or not asset.simulated
+                or aware(asset.retention_until) < as_of
+            ):
+                continue
+            candidates.append(Candidate(evidence, observation, asset, metric, float(evidence.current_value)))
+
+        cohorts = defaultdict(list)
+        for candidate in candidates:
+            cohorts[self._provenance_key(candidate)].append(candidate)
+        selected = max(cohorts.values(), key=self._rank_cohort) if cohorts else []
+
+        values = defaultdict(list)
+        days = defaultdict(set)
+        for candidate in selected:
+            values[candidate.metric].append(candidate.value)
+            days[candidate.metric].add(aware(candidate.evidence.timestamp).date())
 
         result = {}
-        for metric, samples in values.items():
-            center = statistics.median(samples)
-            mad = statistics.median(abs(value - center) for value in samples)
+        for metric in EXPECTED_METRICS:
+            samples = values[metric]
             distinct_days = len(days[metric])
-            if distinct_days >= self.ruleset.windows["long_days"]:
-                status = "STABLE"
-            elif distinct_days >= 3:
-                status = "PROVISIONAL"
+            if samples:
+                center = statistics.median(samples)
+                mad = statistics.median(abs(value - center) for value in samples)
             else:
-                status = "INSUFFICIENT"
+                center = mad = None
+            status = "STABLE" if distinct_days >= self.ruleset.windows["long_days"] else (
+                "PROVISIONAL" if distinct_days >= 3 else "INSUFFICIENT"
+            )
             result[metric] = {
                 "median": center,
                 "mad": mad,
@@ -106,15 +151,30 @@ class BaselineStore:
                 "status": status,
             }
 
-        source_mode = accepted[-1].source_mode if accepted else "MOCK"
-        simulated = all(item.simulated for item in accepted) if accepted else True
+        overall_status = min((item["status"] for item in result.values()), key=STATUS_ORDER.get)
+        observed_days = min(item["distinct_days"] for item in result.values())
+        provenance = None
+        if selected:
+            asset = selected[0].asset
+            provenance = {
+                "device_ref": asset.device_ref,
+                "device_model": asset.device_model,
+                "camera_position_id": asset.camera_position_id,
+            }
         return {
             "resident_id": resident_id,
             "as_of": as_of,
             "ruleset_version": RULESET_VERSION,
             "baselines": result,
-            "source_mode": source_mode,
-            "simulated": simulated,
+            "overall_status": overall_status,
+            "baseline_progress": {
+                "observed_days": observed_days,
+                "provisional_target_days": 3,
+                "stable_target_days": self.ruleset.windows["long_days"],
+            },
+            "provenance": provenance,
+            "source_mode": "RECORDED_REPLAY",
+            "simulated": True,
         }
 
 

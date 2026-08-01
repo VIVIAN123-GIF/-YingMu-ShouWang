@@ -106,13 +106,13 @@
   {
     "sequence": 5,
     "method": "GET",
-    "path": "/api/v1/events/event-b1d541903d80422a",
+    "path": "/api/v1/events/event-fab9bfe341ed4bef",
     "body": null
   },
   {
     "sequence": 6,
     "method": "POST",
-    "path": "/api/v1/events/event-b1d541903d80422a/intervene",
+    "path": "/api/v1/events/event-fab9bfe341ed4bef/intervene",
     "body": {}
   },
   {
@@ -142,39 +142,64 @@
   {
     "sequence": 8,
     "method": "POST",
+    "path": "/api/v1/observations",
+    "body": {
+      "schema_version": "1.0",
+      "observation_id": "obs-api-1-posture-recovered-angle",
+      "resident_id": "resident-frontend-api",
+      "timestamp": "2026-07-31T03:07:29+08:00",
+      "source": "pose",
+      "feature_name": "stable_trunk_angle_deg",
+      "feature_value": 3.6,
+      "unit": "degree",
+      "location": "living_room",
+      "confidence": 0.92,
+      "data_quality": 0.88,
+      "source_mode": "MOCK",
+      "asset_id": "asset-api-1",
+      "simulated": true,
+      "metadata": {
+        "acceptance_round": 1
+      }
+    }
+  },
+  {
+    "sequence": 9,
+    "method": "POST",
     "path": "/api/v1/evidence",
     "body": {
       "schema_version": "1.0",
       "evidence_id": "evi-api-1-posture-recovered",
       "observation_ids": [
-        "obs-api-1-posture-recovered"
+        "obs-api-1-posture-recovered",
+        "obs-api-1-posture-recovered-angle"
       ],
       "resident_id": "resident-frontend-api",
       "timestamp": "2026-07-31T03:07:29+08:00",
       "risk_domain": "FALL",
       "evidence_type": "posture_recovered",
-      "severity": 0.1,
+      "severity": 0,
       "confidence": 0.92,
       "data_quality": 0.88,
-      "baseline_value": null,
+      "baseline_value": 15,
       "current_value": 15,
-      "baseline_deviation": null,
+      "baseline_deviation": 0,
       "time_scale": "SHORT",
       "location": "living_room",
-      "explanation": "老人已重新坐稳并保持稳定姿态15秒",
+      "explanation": "最大稳定躯干角度3.6度，连续稳定15秒，达到15秒恢复阈值",
       "adapter_version": "frontend-api-acceptance-v1",
       "source_mode": "MOCK",
       "simulated": true
     }
   },
   {
-    "sequence": 9,
+    "sequence": 10,
     "method": "GET",
-    "path": "/api/v1/events/event-b1d541903d80422a",
+    "path": "/api/v1/events/event-fab9bfe341ed4bef",
     "body": null
   },
   {
-    "sequence": 10,
+    "sequence": 11,
     "method": "POST",
     "path": "/api/v1/risk/evaluate",
     "body": {
@@ -183,20 +208,9 @@
     }
   },
   {
-    "sequence": 11,
-    "method": "POST",
-    "path": "/api/v1/events/event-b1d541903d80422a/feedback",
-    "body": {
-      "feedback_id": "feedback-api-1",
-      "feedback_type": "care",
-      "value": "已联系，近期一切正常",
-      "operator": "family"
-    }
-  },
-  {
     "sequence": 12,
     "method": "POST",
-    "path": "/api/v1/events/event-b1d541903d80422a/feedback",
+    "path": "/api/v1/events/event-fab9bfe341ed4bef/feedback",
     "body": {
       "feedback_id": "feedback-api-1",
       "feedback_type": "care",
@@ -206,8 +220,19 @@
   },
   {
     "sequence": 13,
+    "method": "POST",
+    "path": "/api/v1/events/event-fab9bfe341ed4bef/feedback",
+    "body": {
+      "feedback_id": "feedback-api-1",
+      "feedback_type": "care",
+      "value": "已联系，近期一切正常",
+      "operator": "family"
+    }
+  },
+  {
+    "sequence": 14,
     "method": "GET",
-    "path": "/api/v1/events/event-b1d541903d80422a",
+    "path": "/api/v1/events/event-fab9bfe341ed4bef",
     "body": null
   }
 ]

@@ -7,18 +7,18 @@
   "videos": [
     {
       "path": "frontend/artifacts/api-evidence/run-1/screen-recording.webm",
-      "bytes": 305723,
-      "sha256": "5ca195f2370c8df95202c3699644e55e0c91f4414e117687110b4cc88c25744e"
+      "bytes": 443150,
+      "sha256": "9f7ff067eb9a3469c1439479fe71214ada6e84bcdd447c6d18d954e28cc61d9a"
     },
     {
       "path": "frontend/artifacts/api-evidence/run-2/screen-recording.webm",
-      "bytes": 452606,
-      "sha256": "29f78c40200ae4bce4db421e0a1229100909c15610f0d166e3784a7fa39d14fd"
+      "bytes": 532885,
+      "sha256": "637a47ee6419cf3185c04bb9311805f616ada84dc5cf8ca6323b82fba7dc89c1"
     },
     {
       "path": "frontend/artifacts/api-evidence/run-3/screen-recording.webm",
-      "bytes": 400755,
-      "sha256": "dad931d1b59a896971447dd6eee302d0129ac1d8f369ba40e633edb952053c25"
+      "bytes": 515251,
+      "sha256": "28f46ba0737ae7ae421374d3a5606b52a1599c7e1fcfa95cd0fd8963d3017504"
     }
   ]
 }

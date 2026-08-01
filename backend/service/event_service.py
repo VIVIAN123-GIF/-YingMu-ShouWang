@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import Evidence, InterventionResult, Observation, RiskEvent, RuleTrace
@@ -106,11 +106,18 @@ async def event_detail(db: AsyncSession, event_id: str):
     observation_ids = sorted({oid for row in evidences for oid in loads(row.observation_ids, [])})
     observations = (await db.execute(select(Observation).where(
         Observation.observation_id.in_(observation_ids)))).scalars().all()
-    traces = (await db.execute(select(RuleTrace).where(RuleTrace.resident_id == event.resident_id)
-                               .order_by(RuleTrace.evaluated_at))).scalars().all()
+    trace_scope = or_(
+        RuleTrace.event_id == event_id,
+        RuleTrace.evidence_id.in_(evidence_ids),
+    )
+    traces = (await db.execute(
+        select(RuleTrace)
+        .where(RuleTrace.resident_id == event.resident_id, trace_scope)
+        .order_by(RuleTrace.evaluated_at)
+    )).scalars().all()
     interventions = (await db.execute(select(InterventionResult).where(
         InterventionResult.event_id == event_id))).scalars().all()
-    trace_data = [{"trace_id": r.trace_id, "event_id": r.event_id, "resident_id": r.resident_id,
+    trace_data = [loads(r.trace_payload, None) or {"trace_id": r.trace_id, "event_id": r.event_id, "resident_id": r.resident_id,
                    "evidence_id": r.evidence_id, "evaluated_at": aware(r.evaluated_at).isoformat(),
                    "ruleset_version": r.ruleset_version, "matched_rule": r.matched_rule,
                    "previous_state": r.previous_state, "next_state": r.next_state,

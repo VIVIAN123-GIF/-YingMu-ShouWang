@@ -1,0 +1,11 @@
+{
+  "resident_id": "resident-anonymous-placeholder",
+  "device_ref": "device-ref-placeholder",
+  "device_model": "EZVIZ_C6C",
+  "camera_position_id": "fixed-position-placeholder",
+  "authorization_status": "PENDING",
+  "authorization_record_id": null,
+  "retention_until": null,
+  "adapter_version": "baseline-adapter-v1",
+  "recordings": []
+}

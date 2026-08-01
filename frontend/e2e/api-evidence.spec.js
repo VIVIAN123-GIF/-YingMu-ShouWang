@@ -32,11 +32,11 @@ function observation(round, kind, seconds, featureName, featureValue, unit) {
   }
 }
 
-function evidence(round, kind, seconds, type, severity, currentValue, explanation) {
+function evidence(round, kind, seconds, type, severity, currentValue, explanation, observationIds = null) {
   return {
     schema_version: '1.0',
     evidence_id: `evi-api-${round}-${kind}`,
-    observation_ids: [`obs-api-${round}-${kind}`],
+    observation_ids: observationIds || [`obs-api-${round}-${kind}`],
     resident_id: RESIDENT_ID,
     timestamp: stamp(round, seconds),
     risk_domain: 'FALL',
@@ -44,9 +44,9 @@ function evidence(round, kind, seconds, type, severity, currentValue, explanatio
     severity,
     confidence: 0.92,
     data_quality: 0.88,
-    baseline_value: type === 'rapid_rise' ? 3.5 : (type === 'trunk_sway' ? 6.2 : null),
+    baseline_value: type === 'rapid_rise' ? 3.5 : (type === 'trunk_sway' ? 6.2 : (type === 'posture_recovered' ? 15 : null)),
     current_value: currentValue,
-    baseline_deviation: type === 'rapid_rise' ? -2.3 : (type === 'trunk_sway' ? 2.8 : null),
+    baseline_deviation: type === 'rapid_rise' ? -2.3 : (type === 'trunk_sway' ? 2.8 : (type === 'posture_recovered' ? 0 : null)),
     time_scale: 'SHORT',
     location: 'living_room',
     explanation,
@@ -151,7 +151,17 @@ for (let round = 1; round <= 3; round += 1) {
     const intervention = await checkedPost(request, `/api/v1/events/${eventId}/intervene`, {}, exchanges)
     expect(intervention.body.delivery_status).toBe('SUCCESS')
     await checkedPost(request, '/api/v1/observations', observation(round, 'posture-recovered', 29, 'stable_posture_duration', 15, 'second'), exchanges)
-    await checkedPost(request, '/api/v1/evidence', evidence(round, 'posture-recovered', 29, 'posture_recovered', 0.1, 15, '老人已重新坐稳并保持稳定姿态15秒'), exchanges)
+    await checkedPost(request, '/api/v1/observations', observation(round, 'posture-recovered-angle', 29, 'stable_trunk_angle_deg', 3.6, 'degree'), exchanges)
+    await checkedPost(request, '/api/v1/evidence', evidence(
+      round,
+      'posture-recovered',
+      29,
+      'posture_recovered',
+      0,
+      15,
+      '最大稳定躯干角度3.6度，连续稳定15秒，达到15秒恢复阈值',
+      [`obs-api-${round}-posture-recovered`, `obs-api-${round}-posture-recovered-angle`],
+    ), exchanges)
     const observingSnapshot = await checkedGet(request, `/api/v1/events/${eventId}`, exchanges)
     expect(observingSnapshot.event_id).toBe(eventId)
     expect(observingSnapshot.status).toBe('OBSERVING')

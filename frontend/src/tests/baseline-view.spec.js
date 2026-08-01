@@ -29,15 +29,14 @@ function mountView() {
 describe('个人基线页面', () => {
   beforeEach(() => getBaselineMock.mockReset())
 
-  it('Mock 模式展示三种基线状态、趋势和模拟热力图', async () => {
+  it('素材到位前明确展示样本不足且不伪造趋势', async () => {
     getBaselineMock.mockResolvedValue(normalizeBaseline(structuredClone(baselineMock)))
     const wrapper = mountView()
     await flushPromises()
-    expect(wrapper.text()).toContain('稳定基线')
-    expect(wrapper.text()).toContain('暂定基线')
     expect(wrapper.text()).toContain('样本不足')
-    expect(wrapper.text()).toContain('模拟实验回放')
-    expect(wrapper.findAll('.chart-stub')).toHaveLength(2)
+    expect(wrapper.text()).toContain('待授权C6c样本')
+    expect(wrapper.text()).not.toContain('模拟实验回放')
+    expect(wrapper.findAll('.chart-stub')).toHaveLength(0)
   })
 
   it('API 没有时序数据时展示诚实空状态', async () => {

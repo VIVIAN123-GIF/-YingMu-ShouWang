@@ -9,6 +9,8 @@ const METRIC_META = Object.freeze({
   rise_duration: { label: '起身时长', unit: '秒' },
   trunk_sway: { label: '躯干摇晃', unit: '度' },
   gait_stability: { label: '步态稳定性', unit: '' },
+  relative_gait_speed: { label: '相对步速', unit: '画面高度/秒' },
+  stable_trunk_angle_deg: { label: '稳定躯干角度', unit: '度' },
   activity_range: { label: '活动范围', unit: '个区域' },
   circadian: { label: '作息中点', unit: '时' },
 })
@@ -149,7 +151,16 @@ export function normalizeBaseline(baseline = {}) {
     metrics,
     trend: asArray(baseline.trend),
     activity_heatmap: baseline.activity_heatmap || null,
-    baseline_progress: baseline.baseline_progress || { observed_days: observedDays, target_days: 7 },
+    overall_status: baseline.overall_status || (metrics.length
+      ? metrics.reduce((status, metric) => {
+        const order = { INSUFFICIENT: 0, PROVISIONAL: 1, STABLE: 2 }
+        return order[metric.status] < order[status] ? metric.status : status
+      }, 'STABLE')
+      : 'INSUFFICIENT'),
+    baseline_progress: baseline.baseline_progress || {
+      observed_days: observedDays, provisional_target_days: 3, stable_target_days: 7,
+    },
+    provenance: baseline.provenance || null,
   }
 }
 
