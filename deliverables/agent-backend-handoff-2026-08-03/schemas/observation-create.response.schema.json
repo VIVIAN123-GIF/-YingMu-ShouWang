@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yingmu.local/schemas/v1/observation-create.response.schema.json",
+  "title": "ObservationCreateResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["observation", "saved", "idempotent"],
+  "properties": {
+    "observation": {
+      "$ref": "../../../contracts/v1/schemas/observation.schema.json"
+    },
+    "saved": {"type": "boolean"},
+    "idempotent": {"type": "boolean"}
+  }
+}
