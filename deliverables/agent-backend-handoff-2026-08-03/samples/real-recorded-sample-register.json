@@ -1,0 +1,70 @@
+{
+  "register_version": "1.0",
+  "registered_at": "2026-08-03T14:28:11+08:00",
+  "privacy": "Video files and absolute local paths are retained outside Git.",
+  "resident_id": "resident-sim-team-001",
+  "device_ref": "device-ref-c6c-001",
+  "device_model": "EZVIZ_C6C",
+  "camera_position_id": "camera-position-c6c-pos01",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "authorization_status": "AUTHORIZED",
+  "authorization_record_id": "auth-ref-team-member-20260802-001",
+  "retention_until": "2026-08-31T23:59:59+08:00",
+  "actor_type": "healthy_adult_team_member",
+  "samples": [
+    {
+      "take_id": "take-c6c-pos01-20260802-141141-golden-01",
+      "asset_id": "asset-c6c-pos01-20260802-141141-golden-01",
+      "captured_at": "2026-08-02T14:11:41+08:00",
+      "duration_seconds": 75.800,
+      "sample_role": "staged_abnormal_and_recovery",
+      "adapter_status": "PENDING_ADAPTER",
+      "visual_annotation": {
+        "rapid_rise_start": "00:10.000",
+        "trunk_sway_start": "00:11.500",
+        "stable_start": "00:28.000",
+        "stable_15s_reached": "00:43.000",
+        "observation_60s_completed": false
+      },
+      "conditional_expected_result": "If adapter quality/confidence gates pass, the clip can validate GREEN to ORANGE/INTERVENING and then OBSERVING, but it cannot validate RESOLVED because the 60-second post-recovery observation is incomplete.",
+      "sha256": "4F2B6614531E1C16D74DFAC6895C98D9AB9544BA4F0C5B4C2E453BEDA811E762"
+    },
+    {
+      "take_id": "take-c6c-pos01-20260802-141635-rapid-only-01",
+      "asset_id": "asset-c6c-pos01-20260802-141635-rapid-only-01",
+      "captured_at": "2026-08-02T14:16:35+08:00",
+      "duration_seconds": 19.133,
+      "sample_role": "rapid_rise_only_control",
+      "adapter_status": "PENDING_ADAPTER",
+      "visual_annotation": {
+        "rapid_rise_start": "00:14.500",
+        "trunk_sway_start": null,
+        "stable_start": "00:16.000",
+        "stable_15s_reached": null,
+        "observation_60s_completed": false
+      },
+      "conditional_expected_result": "If rapid_rise is usable and no independent trunk_sway is emitted, expected R-FALL-01, GREEN, and no RiskEvent.",
+      "sha256": "BD120CC0C55ADA85F1D371AD10C740991DC3B9EC199A19ED409A6537D327B6E2"
+    },
+    {
+      "take_id": "take-c6c-pos01-20260802-141708-under15-01",
+      "asset_id": "asset-c6c-pos01-20260802-141708-under15-01",
+      "captured_at": "2026-08-02T14:17:08+08:00",
+      "duration_seconds": 20.533,
+      "sample_role": "recovery_under_15_seconds_control",
+      "adapter_status": "PENDING_ADAPTER",
+      "visual_annotation": {
+        "rapid_rise_start": null,
+        "trunk_sway_start": "00:00.000",
+        "trunk_sway_onset_note": "The action is already visible in the first frame; its true onset precedes this clip.",
+        "stable_start": "00:09.000",
+        "visual_stable_duration_seconds": 11.533,
+        "stable_15s_reached": null,
+        "observation_60s_completed": false
+      },
+      "conditional_expected_result": "When evaluated against an existing ORANGE/INTERVENING event, measured stable duration must remain below 15 seconds and the event must remain INTERVENING.",
+      "sha256": "F82C69CF1E904F36BD908812E61F5CA234070D2ABEC65CE1A7BFAD5525918ACD"
+    }
+  ]
+}
