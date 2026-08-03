@@ -26,7 +26,8 @@
     "tool_name": "mock_voice",
     "delivery_status": "SUCCESS",
     "resolved": true,
-    "risk_after": 0.24
+    "risk_after": 0.24,
+    "trace_payload_exact_match": true
   },
   "consistent": true,
   "passed": true

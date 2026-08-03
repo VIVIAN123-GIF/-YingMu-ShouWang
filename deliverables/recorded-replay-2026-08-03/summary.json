@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-03T20:31:00+08:00",
+  "adapter_version": "c6c-recorded-replay-v1",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "authorized_c6c_media_processed": true,
+  "contains_local_paths": false,
+  "contains_media": false,
+  "real_resolved_claimed": false,
+  "baseline_status": "INSUFFICIENT",
+  "records": [
+    {
+      "take_id": "take-c6c-pos01-20260802-141141-golden-01",
+      "fps": 14.999934,
+      "duration_s": 75.733,
+      "pose_frames": 1137,
+      "valid_frame_ratio": 1.0,
+      "mean_core_visibility": 0.761,
+      "rapid_rise": {"duration_s": 0.4, "confidence": 0.788, "data_quality": 0.788},
+      "trunk_sway": {"angle_deg": 22.077, "confidence": 0.754, "data_quality": 0.754},
+      "posture_recovered": {"duration_s": 49.466, "stable_trunk_angle_deg": 7.878, "confidence": 0.746, "data_quality": 0.746},
+      "acceptance_status": "PENDING_ASSET",
+      "partial_acceptance_stage": "CONFIDENCE_BLOCKED",
+      "http_rules": ["R-FALL-01", "R-FALL-01", "NO_MATCH"],
+      "event_created": false,
+      "reason": "组合证据均达到0.70，但没有任一条置信度达到冻结阈值0.80；同时缺少恢复后60秒观察。"
+    },
+    {
+      "take_id": "take-c6c-pos01-20260802-141635-rapid-only-01",
+      "fps": 15.0,
+      "duration_s": 19.067,
+      "pose_frames": 287,
+      "valid_frame_ratio": 1.0,
+      "mean_core_visibility": 0.798,
+      "rapid_rise": {"duration_s": 0.4, "confidence": 0.759, "data_quality": 0.759},
+      "emitted_evidence_types": ["rapid_rise"],
+      "http_rule": "R-FALL-01",
+      "risk_level": "GREEN",
+      "event_created": false
+    },
+    {
+      "take_id": "take-c6c-pos01-20260802-141708-under15-01",
+      "fps": 15.0,
+      "duration_s": 20.467,
+      "pose_frames": 308,
+      "valid_frame_ratio": 1.0,
+      "mean_core_visibility": 0.746,
+      "trunk_sway": {"angle_deg": 15.964, "confidence": 0.76, "data_quality": 0.76},
+      "posture_recovered": {"duration_s": 7.534, "stable_trunk_angle_deg": 7.436, "confidence": 0.781, "data_quality": 0.781},
+      "emitted_evidence_types": ["trunk_sway", "posture_recovered"],
+      "http_rules": ["NO_MATCH", "NO_MATCH"],
+      "recovery_triggered_r_fall_04": false
+    }
+  ],
+  "acceptance": {
+    "python_tests": "88 passed",
+    "mock_http_runs": 3,
+    "mock_http_consistent": true,
+    "frontend_unit_tests": "36 passed",
+    "frontend_production_build": "passed",
+    "frontend_mock_browser_runs": 3,
+    "frontend_api_browser_runs": 3,
+    "recorded_replay_http": "passed",
+    "idempotency": "passed"
+  }
+}
+

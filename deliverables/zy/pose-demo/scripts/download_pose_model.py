@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import pathlib
-import ssl
 import urllib.request
 
 
@@ -23,8 +22,9 @@ def sha256_file(path: pathlib.Path) -> str:
 
 def download_file(url: str, destination: pathlib.Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    context = ssl._create_unverified_context()
-    with urllib.request.urlopen(url, context=context) as response, destination.open("wb") as handle:
+    request = urllib.request.Request(url, headers={"User-Agent": "YingMu-ShouWang/1.0"})
+    # urllib uses the platform trust store and verifies TLS certificates by default.
+    with urllib.request.urlopen(request, timeout=60) as response, destination.open("wb") as handle:
         while True:
             chunk = response.read(1024 * 1024)
             if not chunk:

@@ -84,7 +84,7 @@
       "red_score": 0.9,
       "stable_posture_seconds": 15
     },
-    "trace_id": "trace-e543da1fab23483d9b13eaa79fa7ad81"
+    "trace_id": "trace-ade6aadd2fac4f38a3d7683898484595"
   },
   {
     "baseline_snapshot": {
@@ -127,7 +127,7 @@
     "error": null,
     "evaluated_at": "2026-07-31T03:07:05+08:00",
     "event_created": true,
-    "event_id": "event-fab9bfe341ed4bef",
+    "event_id": "event-49668deaf7504323",
     "evidence_id": "evi-api-1-trunk-sway",
     "matched_rule": "R-FALL-02",
     "next_state": "ORANGE",
@@ -191,7 +191,7 @@
       "red_score": 0.9,
       "stable_posture_seconds": 15
     },
-    "trace_id": "trace-a997645a8480484badfea853bef7ee5b"
+    "trace_id": "trace-f0be56b55ae1401b9a9aae912ea90836"
   },
   {
     "baseline_snapshot": {
@@ -234,7 +234,7 @@
     "error": null,
     "evaluated_at": "2026-07-31T03:07:29+08:00",
     "event_created": false,
-    "event_id": "event-fab9bfe341ed4bef",
+    "event_id": "event-49668deaf7504323",
     "evidence_id": "evi-api-1-posture-recovered",
     "matched_rule": "R-FALL-04",
     "next_state": "ORANGE",
@@ -290,7 +290,7 @@
       "red_score": 0.9,
       "stable_posture_seconds": 15
     },
-    "trace_id": "trace-8ea11fe4668f4cf082eb20379ee0683b"
+    "trace_id": "trace-f6201469a8c047b09d81b03f8fe27429"
   },
   {
     "baseline_snapshot": {
@@ -333,7 +333,7 @@
     "error": null,
     "evaluated_at": "2026-07-31T03:08:30+08:00",
     "event_created": false,
-    "event_id": "event-fab9bfe341ed4bef",
+    "event_id": "event-49668deaf7504323",
     "evidence_id": null,
     "matched_rule": "R-FALL-05",
     "next_state": "GREEN",
@@ -367,6 +367,6 @@
       "red_score": 0.9,
       "stable_posture_seconds": 15
     },
-    "trace_id": "trace-25f334813dda49aaaf73aa1a3bf0d2eb"
+    "trace_id": "trace-ffee9e64b4ec403986fa4540a5db509c"
   }
 ]
