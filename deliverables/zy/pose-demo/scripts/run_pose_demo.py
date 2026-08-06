@@ -61,7 +61,9 @@ def iter_frames(input_path: pathlib.Path, fps_hint: float) -> tuple[list[FramePa
 
 
 def build_landmarker(model_path: pathlib.Path) -> vision.PoseLandmarker:
-    base_options = python.BaseOptions(model_asset_path=str(model_path))
+    # Use an in-memory model asset: MediaPipe may fail to open a model by path
+    # when this repository is under a non-ASCII Windows directory.
+    base_options = python.BaseOptions(model_asset_buffer=model_path.read_bytes())
     options = vision.PoseLandmarkerOptions(
         base_options=base_options,
         running_mode=vision.RunningMode.VIDEO,

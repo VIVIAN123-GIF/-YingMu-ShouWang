@@ -275,7 +275,7 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-23d5cd7c30354c68976ed6289a13d058"
+        "trace_id": "trace-d5a33ea1351140549a575d70ee07cee0"
       },
       {
         "baseline_snapshot": {
@@ -382,7 +382,7 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-94fe422684274cf1b820ad6d06ed71b6"
+        "trace_id": "trace-ffd336e0e5ab428880997e2169e4d78e"
       },
       {
         "baseline_snapshot": {
@@ -481,7 +481,7 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-745635a059e24862a47bad7e4571497c"
+        "trace_id": "trace-4c905d0a7b5145bcbfba13d9e8ae3a4a"
       },
       {
         "baseline_snapshot": {
@@ -558,15 +558,15 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-2f8eeaa1f9b544c4804c1f9ae8f6bbd5"
+        "trace_id": "trace-81532f2188a7415dad1784a20ae1dbf8"
       }
     ],
     "interventions": [
       {
         "schema_version": "1.0",
-        "result_id": "result-b2ec03f60ea04aff90d67e62ac0833a6",
+        "result_id": "result-bfb94971ac8e47b8ba14f15d621b903f",
         "event_id": "event-mock-fall-001",
-        "started_at": "2026-08-03T20:35:16.333651+08:00",
+        "started_at": "2026-08-06T14:08:45.246534+08:00",
         "completed_at": "2026-07-31T03:08:30+08:00",
         "action_type": "voice",
         "tool_name": "mock_voice",

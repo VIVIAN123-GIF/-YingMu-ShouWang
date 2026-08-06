@@ -84,7 +84,7 @@
       "red_score": 0.9,
       "stable_posture_seconds": 15
     },
-    "trace_id": "trace-611068f45223496ba6d5917597cffd33"
+    "trace_id": "trace-39841475b0da41b0aa6f58ecf5d95602"
   },
   {
     "baseline_snapshot": {
@@ -191,7 +191,7 @@
       "red_score": 0.9,
       "stable_posture_seconds": 15
     },
-    "trace_id": "trace-3f2f3de4dd8541d8a8036a4f6f995041"
+    "trace_id": "trace-ec94bd31727b4c1ca088166ad9c63888"
   },
   {
     "baseline_snapshot": {
@@ -290,7 +290,7 @@
       "red_score": 0.9,
       "stable_posture_seconds": 15
     },
-    "trace_id": "trace-51813814b9e1407391b4396c907e3fdf"
+    "trace_id": "trace-98f0ffee65714a4dbec8ebf4de8a35c8"
   },
   {
     "baseline_snapshot": {
@@ -367,6 +367,6 @@
       "red_score": 0.9,
       "stable_posture_seconds": 15
     },
-    "trace_id": "trace-4bae3b6b6c59456da7669e8d1b8d3799"
+    "trace_id": "trace-2cb44f430fd44af5b380a4c9bf8f329e"
   }
 ]

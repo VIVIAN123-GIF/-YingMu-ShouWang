@@ -36,7 +36,9 @@ class SequencePaths:
 
 
 def build_landmarker(model_path: pathlib.Path) -> vision.PoseLandmarker:
-    base_options = python.BaseOptions(model_asset_path=str(model_path))
+    # Match the C6c replay adapter and avoid native-path encoding failures on
+    # Windows workspaces with non-ASCII directory names.
+    base_options = python.BaseOptions(model_asset_buffer=model_path.read_bytes())
     options = vision.PoseLandmarkerOptions(
         base_options=base_options,
         running_mode=vision.RunningMode.VIDEO,
