@@ -3,9 +3,9 @@
 | 项目 | 内容 |
 |---|---|
 | 负责人 | 常易铭 |
-| 更新日期 | 2026年7月30日 |
+| 更新日期 | 2026年8月6日 |
 | 分支 | `feature/cym/audio-behavior-demo` |
-| 当前状态 | 7月31日前代码交付完成；区域实景效果和正式阈值仍待统一素材验证 |
+| 当前状态 | 已完成多日趋势与昼夜节律Mock接入；实景长期数据和正式阈值仍待统一素材验证 |
 
 ## 1. 项目边界
 
@@ -40,11 +40,13 @@
 │  ├─ behavior_demo.py
 │  ├─ regions.py
 │  ├─ behavior_evidence.py
+│  ├─ trend_analysis.py
 │  ├─ observation.py
 │  ├─ evidence.py
 │  ├─ generate_evidence_samples.py
 │  ├─ generate_behavior_evidence.py
-│  └─ submit_to_backend.py
+│  ├─ submit_to_backend.py
+│  └─ generate_trend_samples.py
 ├─ scripts/
 │  ├─ generate_test_video.py
 │  └─ generate_test_audio.ps1
@@ -53,6 +55,7 @@
 │  ├─ test_regions.py
 │  ├─ test_behavior_evidence.py
 │  ├─ test_backend_submission.py
+│  ├─ test_trend_analysis.py
 │  ├─ test_evidence.py
 │  ├─ test_observation.py
 │  └─ test_whisper_demo.py
@@ -61,17 +64,21 @@
 │  ├─ regions.example.json
 │  ├─ mock_behavior_statistics.json
 │  ├─ behavior_evidence_bundle.example.json
+│  ├─ mock_daily_activity.json
+│  ├─ trend_evidence_bundle.example.json
 │  ├─ test_scam_script.txt
 │  └─ test_scam_transcript.txt
 ├─ logs/
 │  ├─ behavior_test_20260724.md
 │  ├─ whisper_test_20260725.json
-│  └─ reproduction_fix_20260725.md
+│  ├─ reproduction_fix_20260725.md
+│  └─ trend_backend_submission_20260806.json
 └─ docs/
    ├─ 常易铭-7月24日调研交付.md
    ├─ 脱敏测试素材说明.md
    ├─ 降级规则.md
-   └─ 7月31日前任务拆分.md
+   ├─ 7月31日前任务拆分.md
+   └─ 8月7日前趋势交付.md
 ```
 
 原始录音、人物视频、Whisper模型、`.venv`、`output`和缓存不进入Git。
@@ -119,7 +126,7 @@ winget install --id Gyan.FFmpeg -e
 python -m unittest discover -s .\tests -v
 ```
 
-预期：当前26项测试全部`OK`，其中Observation样例还会通过仓库
+预期：当前29项测试全部`OK`，其中Observation样例还会通过仓库
 `contracts.v1.models.Observation`官方模型校验。
 
 ### 5.2 生成本地MP4链路测试视频
@@ -293,6 +300,24 @@ python .\src\generate_behavior_evidence.py `
 `unusual_dwell_time`。它们都引用联调包内真实存在的Observation ID，且整个包统一为
 `source_mode: MOCK`、`simulated: true`。访客结果只表达“授权信息未匹配，建议家属核验身份”；停留结果使用`DEMO_UNCALIBRATED`阈值，二者均不构成诈骗判断。
 
+### 8.2 8月5日多日趋势与昼夜节律
+
+趋势适配器以“前N日为个人基线、最后一日为当前日”的日汇总JSON为输入，采用冻结方案规定的滚动中位数和MAD，输出活动范围、房间转换、昼夜节律的Observation及可解释Evidence：
+
+```powershell
+python .\src\generate_trend_samples.py `
+  --input .\samples\mock_daily_activity.json `
+  --output .\output\trend_evidence_bundle.json
+```
+
+当历史日少于3天时标记`INSUFFICIENT`，3至6天标记`PROVISIONAL`，均只输出Observation；达到7个历史日后才标记`STABLE`并允许生成长期Evidence。示例包含7个历史日加1个当前日，会输出：
+
+- `activity_range_decline`；
+- `room_transition_decline`；
+- `day_night_rhythm_change`。
+
+该功能只提示长期活动或作息变化，不作心理疾病诊断。多日数据和阈值当前均为明确标记的`MOCK`/`DEMO_UNCALIBRATED`接口样例。完整验收见`docs/8月7日前趋势交付.md`。
+
 ## 9. FastAPI Mock接口提交
 
 在仓库根目录启动后端：
@@ -322,6 +347,8 @@ python .\src\submit_to_backend.py `
 ```
 
 客户端固定先提交Observation，再提交Evidence；某项失败后停止后续提交并返回非零退出码。日志只记录ID、接口、HTTP状态和幂等状态，不保存后端计算的最终风险等级。7月30日本机联调9项均返回HTTP 201，见`logs/backend_submission_success_20260730.json`；服务未启动的降级格式见对应failure日志。
+
+8月6日趋势联调样例同样完成6条Observation和3条Evidence入库，全部返回HTTP 201，见`logs/trend_backend_submission_20260806.json`。
 
 ## 10. 行为摘要隐私边界
 

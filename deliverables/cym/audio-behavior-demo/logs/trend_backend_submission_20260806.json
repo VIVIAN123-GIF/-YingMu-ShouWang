@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "timestamp": "2026-08-06T19:33:04+08:00",
+  "base_url": "http://127.0.0.1:8768",
+  "dry_run": false,
+  "success": true,
+  "results": [
+    {
+      "type": "observation",
+      "id": "obs-trend-activity_range-baseline-20260805-trend-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "observation",
+      "id": "obs-trend-activity_range-current-20260805-trend-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "observation",
+      "id": "obs-trend-room_transition-baseline-20260805-trend-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "observation",
+      "id": "obs-trend-room_transition-current-20260805-trend-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "observation",
+      "id": "obs-trend-day_night_rhythm-baseline-20260805-trend-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "observation",
+      "id": "obs-trend-day_night_rhythm-current-20260805-trend-demo-0001",
+      "endpoint": "/api/v1/observations",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "evidence",
+      "id": "evi-trend-activity_range_decline-20260805-trend-demo-0001",
+      "endpoint": "/api/v1/evidence",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "evidence",
+      "id": "evi-trend-room_transition_decline-20260805-trend-demo-0001",
+      "endpoint": "/api/v1/evidence",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    },
+    {
+      "type": "evidence",
+      "id": "evi-trend-day_night_rhythm_change-20260805-trend-demo-0001",
+      "endpoint": "/api/v1/evidence",
+      "status": "submitted",
+      "http_status": 201,
+      "saved": true,
+      "idempotent": false
+    }
+  ]
+}
