@@ -81,6 +81,7 @@ def run_once(run_number: int, app, engine, base) -> dict:
         sway_observation = load_request("03-observation-trunk-sway.json")
         sway_evidence = load_request("04-evidence-trunk-sway.json")
         recovered_observation = load_request("08-observation-posture-recovered.json")
+        recovered_angle_observation = load_request("08b-observation-stable-trunk-angle.json")
         recovered_evidence = load_request("09-evidence-posture-recovered.json")
         completed_evaluation = load_request("10-evaluate-observation-complete.json")
 
@@ -98,6 +99,7 @@ def run_once(run_number: int, app, engine, base) -> dict:
             intervening = {"status_code": intervening_response.status_code, "body": intervening_response.json()}
 
             checked_post(client, "/api/v1/observations", recovered_observation, f"e2e-{run_number}-05")
+            checked_post(client, "/api/v1/observations", recovered_angle_observation, f"e2e-{run_number}-05b")
             observing = checked_post(client, "/api/v1/evidence", recovered_evidence, f"e2e-{run_number}-06")
             observing_detail_response = client.get(f"/api/v1/events/{event_id}")
             observing_detail_response.raise_for_status()
@@ -135,6 +137,13 @@ def run_once(run_number: int, app, engine, base) -> dict:
             "delivery_status": intervention["body"]["delivery_status"],
             "resolved": final_detail["body"]["interventions"][0]["resolved"],
             "risk_after": final_detail["body"]["interventions"][0]["risk_after"],
+            "trace_payload_exact_match": all(
+                next(
+                    (logged for logged in collector.items if logged.get("trace_id") == trace.get("trace_id")),
+                    None,
+                ) == trace
+                for trace in final_detail["body"]["rule_traces"]
+            ),
         }
         expected = {
             "risk_levels": ["GREEN", "ORANGE", "ORANGE", "GREEN"],
@@ -144,6 +153,7 @@ def run_once(run_number: int, app, engine, base) -> dict:
             "delivery_status": "SUCCESS",
             "resolved": True,
             "risk_after": 0.24,
+            "trace_payload_exact_match": True,
         }
         if semantic != expected:
             raise RuntimeError(f"run {run_number} semantic mismatch: {semantic}")

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "observation_id": "obs-mock-stable-trunk-angle-001",
+  "resident_id": "resident-mock-001",
+  "timestamp": "2026-07-31T03:07:29+08:00",
+  "source": "pose",
+  "feature_name": "stable_trunk_angle_deg",
+  "feature_value": 3.6,
+  "unit": "degree",
+  "location": "living_room",
+  "confidence": 0.94,
+  "data_quality": 0.9,
+  "source_mode": "MOCK",
+  "asset_id": "asset-mock-fall-001",
+  "simulated": true,
+  "metadata": {"model_version": "mock-v1"}
+}

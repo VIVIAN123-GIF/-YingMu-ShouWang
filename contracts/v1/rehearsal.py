@@ -13,7 +13,7 @@ def run_fixed_sequence() -> tuple[MockRiskEngine, list[dict]]:
     engine = MockRiskEngine()
     steps: list[dict] = []
 
-    normal_observation, rapid_observation, sway_observation, recovered_observation = data["observations"]
+    normal_observation, rapid_observation, sway_observation, recovered_observation, angle_observation = data["observations"]
     normal_evidence, rapid_evidence, sway_evidence, recovered_evidence = data["evidence"]
 
     engine.ingest_observation(normal_observation)
@@ -38,6 +38,7 @@ def run_fixed_sequence() -> tuple[MockRiskEngine, list[dict]]:
     steps.append({"step": 4, "action": "mock_voice", "delivery_status": result.delivery_status.value, "resolved": result.resolved, "tool_calls": engine.tool_call_count})
 
     engine.ingest_observation(recovered_observation)
+    engine.ingest_observation(angle_observation)
     engine.ingest_evidence(recovered_evidence)
     event = engine.evaluate(RESIDENT_ID)
     assert event is not None and event.status.value == "OBSERVING"

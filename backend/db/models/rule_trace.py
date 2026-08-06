@@ -22,4 +22,5 @@ class RuleTrace(Base):
     next_status = Column(String(16), nullable=True)
     event_created = Column(Boolean, nullable=False, default=False)
     error = Column(Text, nullable=True)
+    trace_payload = Column(Text, nullable=True, comment="完整规则输入、上下文、评分和解释JSON")
     create_time = Column(DateTime, default=datetime.datetime.now, nullable=False)

@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "round": 3,
+  "completed_at": "2026-08-03T12:31:06.148Z",
+  "result": "PASS",
+  "data_mode": "api",
+  "active_source": "api",
+  "source_mode": "MOCK",
+  "simulated": true,
+  "real_device_claimed": false,
+  "resident_id": "resident-frontend-api",
+  "event_id": "event-45c0b2b6aa654a4e",
+  "event_id_consistent": true,
+  "automatic_refresh": true,
+  "page_reload_used": false,
+  "statuses": [
+    "INTERVENING",
+    "OBSERVING",
+    "RESOLVED"
+  ],
+  "ruleset_version": "ruleset-v1.0",
+  "feedback_statuses": [
+    201,
+    200
+  ],
+  "repository_screenshots": [
+    "01-intervening.png",
+    "02-observing.png",
+    "03-resolved-trace.png"
+  ],
+  "local_video": "frontend/artifacts/api-evidence/run-3/screen-recording.webm"
+}

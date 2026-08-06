@@ -6,23 +6,25 @@ import json
 import math
 import pathlib
 from dataclasses import dataclass
-from typing import Iterable
 
 import cv2
 import mediapipe as mp
 import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from scipy.signal import find_peaks, savgol_filter
+from scipy.signal import find_peaks
 
-
-LEFT_SHOULDER = 11
-RIGHT_SHOULDER = 12
-LEFT_HIP = 23
-RIGHT_HIP = 24
-LEFT_ANKLE = 27
-RIGHT_ANKLE = 28
-CORE_IDS = [LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP, LEFT_ANKLE, RIGHT_ANKLE]
+from recorded_replay_adapter import (
+    CORE_IDS,
+    LEFT_ANKLE,
+    LEFT_HIP,
+    LEFT_SHOULDER,
+    RIGHT_ANKLE,
+    RIGHT_HIP,
+    RIGHT_SHOULDER,
+    safe_mean,
+    smooth as smooth_series,
+)
 
 
 @dataclass
@@ -91,20 +93,6 @@ def load_timestamps(metadata_csv: pathlib.Path) -> dict[int, int]:
 
 def parse_frame_number(image_path: pathlib.Path) -> int:
     return int(image_path.stem.split("-")[-1])
-
-
-def smooth_series(values: list[float]) -> list[float]:
-    if len(values) < 5:
-        return values
-    window = min(len(values) if len(values) % 2 == 1 else len(values) - 1, 9)
-    if window < 5:
-        return values
-    return savgol_filter(np.asarray(values, dtype=np.float64), window_length=window, polyorder=2).tolist()
-
-
-def safe_mean(values: Iterable[float]) -> float:
-    values = list(values)
-    return float(np.mean(values)) if values else 0.0
 
 
 def dominant_frequency_hz(signal_values: list[float], timestamps_ms: list[int]) -> float:

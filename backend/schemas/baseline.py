@@ -13,10 +13,25 @@ class BaselineMetric(BaseModel):
     status: Literal["INSUFFICIENT", "PROVISIONAL", "STABLE"]
 
 
+class BaselineProgress(BaseModel):
+    observed_days: int
+    provisional_target_days: int = 3
+    stable_target_days: int = 7
+
+
+class BaselineProvenance(BaseModel):
+    device_ref: str
+    device_model: str
+    camera_position_id: str
+
+
 class ResidentBaselineResponse(BaseModel):
     resident_id: str
     as_of: TimezoneDatetime
     ruleset_version: str
     baselines: dict[str, BaselineMetric]
+    overall_status: Literal["INSUFFICIENT", "PROVISIONAL", "STABLE"]
+    baseline_progress: BaselineProgress
+    provenance: BaselineProvenance | None
     source_mode: SourceMode
     simulated: bool

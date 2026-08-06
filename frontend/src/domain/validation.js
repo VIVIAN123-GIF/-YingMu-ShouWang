@@ -234,7 +234,7 @@ export function validateEventList(events) {
 }
 
 export function validateDashboard(dashboard) {
-  assertRiskScore(dashboard?.current_risk?.risk_score, 'current_risk.risk_score')
+  if (dashboard?.current_risk) assertRiskScore(dashboard.current_risk.risk_score, 'current_risk.risk_score')
   assertSource(dashboard?.device, 'device')
   ;(dashboard?.risk_trend || []).forEach((point, index) => assertRiskScore(point.score, `risk_trend[${index}].score`))
   ;(dashboard?.recent_events || []).forEach((event, index) => {

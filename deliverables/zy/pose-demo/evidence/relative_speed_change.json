@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "evi-fall-relative-speed-change-relative-speed-adl-14-cam0-rgb",
+  "observation_ids": [
+    "obs-relative-speed-adl-14-cam0-rgb"
+  ],
+  "resident_id": "resident-demo-001",
+  "timestamp": "2026-08-07T03:07:10+08:00",
+  "risk_domain": "FALL",
+  "evidence_type": "relative_speed_change",
+  "severity": 0.578,
+  "confidence": 0.808,
+  "data_quality": 0.925,
+  "baseline_value": 0.082,
+  "current_value": 0.152,
+  "baseline_deviation": 0.866,
+  "time_scale": "SHORT",
+  "location": "bedroom",
+  "explanation": "相对步速为0.152画面单位/秒，高于0.082个人基线。",
+  "adapter_version": "fall-evidence-rule-v1",
+  "source_mode": "PUBLIC_DATASET",
+  "simulated": true
+}

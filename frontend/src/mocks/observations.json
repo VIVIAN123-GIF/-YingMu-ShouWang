@@ -77,6 +77,25 @@
   },
   {
     "schema_version": "1.0",
+    "observation_id": "obs-stable-trunk-angle",
+    "resident_id": "resident-001",
+    "timestamp": "2026-07-24T03:07:29+08:00",
+    "source": "pose",
+    "feature_name": "stable_trunk_angle_deg",
+    "feature_value": 3.6,
+    "unit": "degree",
+    "location": "bedroom",
+    "confidence": 0.94,
+    "data_quality": 0.9,
+    "source_mode": "MOCK",
+    "asset_id": "asset-fall-authorized",
+    "simulated": true,
+    "metadata": {
+      "model_version": "mediapipe-v1"
+    }
+  },
+  {
+    "schema_version": "1.0",
     "observation_id": "obs-activity",
     "resident_id": "resident-001",
     "timestamp": "2026-07-23T19:25:00+08:00",

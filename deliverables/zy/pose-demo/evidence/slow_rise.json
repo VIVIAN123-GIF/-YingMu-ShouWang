@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "evi-fall-slow-rise-adl-14-cam0-rgb-183-229",
+  "observation_ids": [
+    "obs-slow-rise-adl-14-cam0-rgb-183-229"
+  ],
+  "resident_id": "resident-demo-001",
+  "timestamp": "2026-08-07T03:07:14+08:00",
+  "risk_domain": "FALL",
+  "evidence_type": "slow_rise",
+  "severity": 0.0,
+  "confidence": 0.64,
+  "data_quality": 0.854,
+  "baseline_value": 2.5,
+  "current_value": 1.518,
+  "baseline_deviation": -0.393,
+  "time_scale": "SHORT",
+  "location": "bedroom",
+  "explanation": "起身窗口持续1.518s，慢于2.5s起身基线。",
+  "adapter_version": "fall-evidence-rule-v1",
+  "source_mode": "PUBLIC_DATASET",
+  "simulated": true
+}

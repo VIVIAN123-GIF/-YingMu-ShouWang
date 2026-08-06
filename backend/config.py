@@ -16,6 +16,7 @@ EZVIZ_ACCESS_TOKEN = os.getenv("EZVIZ_ACCESS_TOKEN", "")
 EZVIZ_ACCESS_TOKEN_EXPIRES_AT = os.getenv("EZVIZ_ACCESS_TOKEN_EXPIRES_AT", "")
 EZVIZ_DEVICE_SERIAL = os.getenv("EZVIZ_DEVICE_SERIAL", "")
 EZVIZ_CHANNEL_NO = int(os.getenv("EZVIZ_CHANNEL_NO", "1"))
+EZVIZ_DEVICE_VERIFY_CODE = os.getenv("EZVIZ_DEVICE_VERIFY_CODE", "")
 EZVIZ_VOICE_VERIFIED = os.getenv("EZVIZ_VOICE_VERIFIED", "false").lower() == "true"
 EZVIZ_RESIDENT_ID = os.getenv("EZVIZ_RESIDENT_ID", "")
 EZVIZ_WEBHOOK_SECRET = os.getenv("EZVIZ_WEBHOOK_SECRET", "")
@@ -26,12 +27,10 @@ TOKEN_REFRESH_OFFSET = 60
 _RULESET = load_ruleset()
 RULESET_VERSION = _RULESET.version
 SCHEMA_VERSION = "1.0"
-MIN_EVIDENCE_QUALITY = float(
-    os.getenv("MIN_EVIDENCE_QUALITY", str(_RULESET.thresholds["data_quality"]))
-)
-MIN_EVIDENCE_CONFIDENCE = float(
-    os.getenv("MIN_EVIDENCE_CONFIDENCE", str(_RULESET.thresholds["confidence"]))
-)
+# Risk thresholds have one source of truth: ruleset-v1.0.json. Environment
+# overrides previously let FastAPI and the agent assign different meanings.
+MIN_EVIDENCE_QUALITY = _RULESET.thresholds["data_quality"]
+MIN_EVIDENCE_CONFIDENCE = _RULESET.thresholds["confidence"]
 
 if ENV_MODE == "live" and (not EZVIZ_APP_KEY or not EZVIZ_APP_SECRET or not EZVIZ_DEVICE_SERIAL):
     raise RuntimeError("live mode requires EZVIZ_APP_KEY, EZVIZ_APP_SECRET and EZVIZ_DEVICE_SERIAL")
