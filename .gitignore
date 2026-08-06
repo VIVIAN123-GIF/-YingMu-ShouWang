@@ -233,3 +233,15 @@ ezviz_system.db
 # 项目临时目录、导出文件
 *.tmp
 *.temp
+
+# Local pose/video processing artifacts. Raw/annotated media, model binaries,
+# manifests containing absolute paths, and private outputs must never enter Git.
+/models/*.task
+/outputs/
+/data/private/
+*.local.json
+*.mp4
+*.mov
+*.avi
+*.webm
+*.wav

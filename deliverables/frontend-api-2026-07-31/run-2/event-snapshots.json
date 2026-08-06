@@ -1,7 +1,7 @@
 [
   {
     "schema_version": "1.0",
-    "event_id": "event-963294aefa894c44",
+    "event_id": "event-4d826022b4f64279",
     "resident_id": "resident-frontend-api",
     "created_at": "2026-07-31T03:17:05+08:00",
     "updated_at": "2026-07-31T03:17:05+08:00",
@@ -206,7 +206,7 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-0427e32e2dd141849030374bf038b6fc"
+        "trace_id": "trace-bc056ce8efeb46e8a290502b89d701a9"
       },
       {
         "baseline_snapshot": {
@@ -249,7 +249,7 @@
         "error": null,
         "evaluated_at": "2026-07-31T03:17:05+08:00",
         "event_created": true,
-        "event_id": "event-963294aefa894c44",
+        "event_id": "event-4d826022b4f64279",
         "evidence_id": "evi-api-2-trunk-sway",
         "matched_rule": "R-FALL-02",
         "next_state": "ORANGE",
@@ -313,14 +313,14 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-765d84bfe2b34ec0a573971d0b3e8fab"
+        "trace_id": "trace-00ef64aa94d24085a05015ead649ce5d"
       }
     ],
     "interventions": []
   },
   {
     "schema_version": "1.0",
-    "event_id": "event-963294aefa894c44",
+    "event_id": "event-4d826022b4f64279",
     "resident_id": "resident-frontend-api",
     "created_at": "2026-07-31T03:17:05+08:00",
     "updated_at": "2026-07-31T03:17:29+08:00",
@@ -593,7 +593,7 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-0427e32e2dd141849030374bf038b6fc"
+        "trace_id": "trace-bc056ce8efeb46e8a290502b89d701a9"
       },
       {
         "baseline_snapshot": {
@@ -636,7 +636,7 @@
         "error": null,
         "evaluated_at": "2026-07-31T03:17:05+08:00",
         "event_created": true,
-        "event_id": "event-963294aefa894c44",
+        "event_id": "event-4d826022b4f64279",
         "evidence_id": "evi-api-2-trunk-sway",
         "matched_rule": "R-FALL-02",
         "next_state": "ORANGE",
@@ -700,7 +700,7 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-765d84bfe2b34ec0a573971d0b3e8fab"
+        "trace_id": "trace-00ef64aa94d24085a05015ead649ce5d"
       },
       {
         "baseline_snapshot": {
@@ -743,7 +743,7 @@
         "error": null,
         "evaluated_at": "2026-07-31T03:17:29+08:00",
         "event_created": false,
-        "event_id": "event-963294aefa894c44",
+        "event_id": "event-4d826022b4f64279",
         "evidence_id": "evi-api-2-posture-recovered",
         "matched_rule": "R-FALL-04",
         "next_state": "ORANGE",
@@ -799,16 +799,16 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-78d1028df3594400ab1b8f53eced1e3d"
+        "trace_id": "trace-ba853a66b466489199e17eb508a9c47b"
       }
     ],
     "interventions": [
       {
         "schema_version": "1.0",
-        "result_id": "result-3f2e54f024c24416b137ce1f09b19795",
-        "event_id": "event-963294aefa894c44",
-        "started_at": "2026-08-01T22:21:13.835797+08:00",
-        "completed_at": "2026-08-01T22:21:13.835797+08:00",
+        "result_id": "result-ada460e6b5d64b99a5e8e24a8356c36e",
+        "event_id": "event-4d826022b4f64279",
+        "started_at": "2026-08-03T20:30:51.547237+08:00",
+        "completed_at": "2026-08-03T20:30:51.547237+08:00",
         "action_type": "voice",
         "tool_name": "mock_voice",
         "delivery_status": "SUCCESS",
@@ -825,7 +825,7 @@
   },
   {
     "schema_version": "1.0",
-    "event_id": "event-963294aefa894c44",
+    "event_id": "event-4d826022b4f64279",
     "resident_id": "resident-frontend-api",
     "created_at": "2026-07-31T03:17:05+08:00",
     "updated_at": "2026-07-31T03:18:30+08:00",
@@ -1098,7 +1098,7 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-0427e32e2dd141849030374bf038b6fc"
+        "trace_id": "trace-bc056ce8efeb46e8a290502b89d701a9"
       },
       {
         "baseline_snapshot": {
@@ -1141,7 +1141,7 @@
         "error": null,
         "evaluated_at": "2026-07-31T03:17:05+08:00",
         "event_created": true,
-        "event_id": "event-963294aefa894c44",
+        "event_id": "event-4d826022b4f64279",
         "evidence_id": "evi-api-2-trunk-sway",
         "matched_rule": "R-FALL-02",
         "next_state": "ORANGE",
@@ -1205,7 +1205,7 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-765d84bfe2b34ec0a573971d0b3e8fab"
+        "trace_id": "trace-00ef64aa94d24085a05015ead649ce5d"
       },
       {
         "baseline_snapshot": {
@@ -1248,7 +1248,7 @@
         "error": null,
         "evaluated_at": "2026-07-31T03:17:29+08:00",
         "event_created": false,
-        "event_id": "event-963294aefa894c44",
+        "event_id": "event-4d826022b4f64279",
         "evidence_id": "evi-api-2-posture-recovered",
         "matched_rule": "R-FALL-04",
         "next_state": "ORANGE",
@@ -1304,7 +1304,7 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-78d1028df3594400ab1b8f53eced1e3d"
+        "trace_id": "trace-ba853a66b466489199e17eb508a9c47b"
       },
       {
         "baseline_snapshot": {
@@ -1347,7 +1347,7 @@
         "error": null,
         "evaluated_at": "2026-07-31T03:18:30+08:00",
         "event_created": false,
-        "event_id": "event-963294aefa894c44",
+        "event_id": "event-4d826022b4f64279",
         "evidence_id": null,
         "matched_rule": "R-FALL-05",
         "next_state": "GREEN",
@@ -1381,15 +1381,15 @@
           "red_score": 0.9,
           "stable_posture_seconds": 15
         },
-        "trace_id": "trace-22bcaa95d86e4a17af01cf87840e3207"
+        "trace_id": "trace-2c56ea38a85d4658ba713e06ec2dc6d9"
       }
     ],
     "interventions": [
       {
         "schema_version": "1.0",
-        "result_id": "result-3f2e54f024c24416b137ce1f09b19795",
-        "event_id": "event-963294aefa894c44",
-        "started_at": "2026-08-01T22:21:13.835797+08:00",
+        "result_id": "result-ada460e6b5d64b99a5e8e24a8356c36e",
+        "event_id": "event-4d826022b4f64279",
+        "started_at": "2026-08-03T20:30:51.547237+08:00",
         "completed_at": "2026-07-31T03:18:30+08:00",
         "action_type": "voice",
         "tool_name": "mock_voice",
@@ -1406,9 +1406,9 @@
       {
         "schema_version": "1.0",
         "result_id": "feedback-api-2",
-        "event_id": "event-963294aefa894c44",
-        "started_at": "2026-08-01T22:21:15.393787+08:00",
-        "completed_at": "2026-08-01T22:21:15.393787+08:00",
+        "event_id": "event-4d826022b4f64279",
+        "started_at": "2026-08-03T20:30:53.148447+08:00",
+        "completed_at": "2026-08-03T20:30:53.148447+08:00",
         "action_type": "family_feedback",
         "tool_name": "family_feedback",
         "delivery_status": "SUCCESS",

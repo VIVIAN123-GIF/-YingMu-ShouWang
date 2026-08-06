@@ -137,6 +137,13 @@ def run_once(run_number: int, app, engine, base) -> dict:
             "delivery_status": intervention["body"]["delivery_status"],
             "resolved": final_detail["body"]["interventions"][0]["resolved"],
             "risk_after": final_detail["body"]["interventions"][0]["risk_after"],
+            "trace_payload_exact_match": all(
+                next(
+                    (logged for logged in collector.items if logged.get("trace_id") == trace.get("trace_id")),
+                    None,
+                ) == trace
+                for trace in final_detail["body"]["rule_traces"]
+            ),
         }
         expected = {
             "risk_levels": ["GREEN", "ORANGE", "ORANGE", "GREEN"],
@@ -146,6 +153,7 @@ def run_once(run_number: int, app, engine, base) -> dict:
             "delivery_status": "SUCCESS",
             "resolved": True,
             "risk_after": 0.24,
+            "trace_payload_exact_match": True,
         }
         if semantic != expected:
             raise RuntimeError(f"run {run_number} semantic mismatch: {semantic}")
