@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "round": 1,
-  "completed_at": "2026-08-03T12:30:48.780Z",
+  "completed_at": "2026-08-06T14:46:08.218Z",
   "result": "PASS",
   "data_mode": "api",
   "active_source": "api",
@@ -9,7 +9,7 @@
   "simulated": true,
   "real_device_claimed": false,
   "resident_id": "resident-frontend-api",
-  "event_id": "event-49668deaf7504323",
+  "event_id": "event-7373c0e873084c1d",
   "event_id_consistent": true,
   "automatic_refresh": true,
   "page_reload_used": false,

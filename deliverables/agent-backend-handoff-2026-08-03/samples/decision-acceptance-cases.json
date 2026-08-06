@@ -66,7 +66,8 @@
         "alert_record_created": true,
         "recommended_action": "先坐稳，扶住固定物，再慢慢起身",
         "intervention_policy": "fall-orange-gentle-v1",
-        "risk_score": 0.82
+        "risk_score": 0.82,
+        "risk_score_provenance": "示例输入计算结果，不是固定值；不同严重度、质量或上下文应产生不同分数。"
       }
     },
     {

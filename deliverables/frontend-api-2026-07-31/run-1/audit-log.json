@@ -1,6 +1,6 @@
 [
   {
-    "timestamp": "2026-08-03T12:30:41.426Z",
+    "timestamp": "2026-08-06T14:46:00.815Z",
     "operation": "events.list",
     "status": "SUCCESS",
     "mode": "api",
@@ -10,17 +10,17 @@
     "detail": "fastapi"
   },
   {
-    "timestamp": "2026-08-03T12:30:42.332Z",
+    "timestamp": "2026-08-06T14:46:02.199Z",
     "operation": "event.detail",
     "status": "SUCCESS",
     "mode": "api",
     "active_source": "api",
-    "event_id": "event-49668deaf7504323",
+    "event_id": "event-7373c0e873084c1d",
     "ruleset_version": "ruleset-v1.0",
     "detail": "fastapi"
   },
   {
-    "timestamp": "2026-08-03T12:30:42.438Z",
+    "timestamp": "2026-08-06T14:46:02.283Z",
     "operation": "asset.read",
     "status": "FAILED",
     "mode": "api",
@@ -30,27 +30,27 @@
     "detail": "Request failed with status code 404"
   },
   {
-    "timestamp": "2026-08-03T12:30:43.963Z",
+    "timestamp": "2026-08-06T14:46:03.816Z",
     "operation": "event.detail",
     "status": "SUCCESS",
     "mode": "api",
     "active_source": "api",
-    "event_id": "event-49668deaf7504323",
+    "event_id": "event-7373c0e873084c1d",
     "ruleset_version": "ruleset-v1.0",
     "detail": "fastapi"
   },
   {
-    "timestamp": "2026-08-03T12:30:45.504Z",
+    "timestamp": "2026-08-06T14:46:05.345Z",
     "operation": "event.detail",
     "status": "SUCCESS",
     "mode": "api",
     "active_source": "api",
-    "event_id": "event-49668deaf7504323",
+    "event_id": "event-7373c0e873084c1d",
     "ruleset_version": "ruleset-v1.0",
     "detail": "fastapi"
   },
   {
-    "timestamp": "2026-08-03T12:30:47.198Z",
+    "timestamp": "2026-08-06T14:46:07.009Z",
     "operation": "dashboard.read",
     "status": "SUCCESS",
     "mode": "api",
@@ -60,7 +60,7 @@
     "detail": "fastapi"
   },
   {
-    "timestamp": "2026-08-03T12:30:47.880Z",
+    "timestamp": "2026-08-06T14:46:07.557Z",
     "operation": "weekly.read",
     "status": "SUCCESS",
     "mode": "api",
@@ -70,7 +70,7 @@
     "detail": "fastapi"
   },
   {
-    "timestamp": "2026-08-03T12:30:48.659Z",
+    "timestamp": "2026-08-06T14:46:08.129Z",
     "operation": "baseline.read",
     "status": "SUCCESS",
     "mode": "api",

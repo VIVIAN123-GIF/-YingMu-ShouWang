@@ -124,7 +124,7 @@
       "evaluation": {
         "risk_level": "ORANGE",
         "event_created": true,
-        "event_id": "event-4d826022b4f64279",
+        "event_id": "event-3b8fefd2d6d84074",
         "matched_rule": "R-FALL-02",
         "ruleset_version": "ruleset-v1.0",
         "system_evidence_id": null
@@ -136,7 +136,7 @@
     "status": 200,
     "body": {
       "schema_version": "1.0",
-      "event_id": "event-4d826022b4f64279",
+      "event_id": "event-3b8fefd2d6d84074",
       "resident_id": "resident-frontend-api",
       "created_at": "2026-07-31T03:17:05+08:00",
       "updated_at": "2026-07-31T03:17:05+08:00",
@@ -341,7 +341,7 @@
             "red_score": 0.9,
             "stable_posture_seconds": 15
           },
-          "trace_id": "trace-bc056ce8efeb46e8a290502b89d701a9"
+          "trace_id": "trace-de8c4b2515ff4367a3c5815867cc1b57"
         },
         {
           "baseline_snapshot": {
@@ -384,7 +384,7 @@
           "error": null,
           "evaluated_at": "2026-07-31T03:17:05+08:00",
           "event_created": true,
-          "event_id": "event-4d826022b4f64279",
+          "event_id": "event-3b8fefd2d6d84074",
           "evidence_id": "evi-api-2-trunk-sway",
           "matched_rule": "R-FALL-02",
           "next_state": "ORANGE",
@@ -448,7 +448,7 @@
             "red_score": 0.9,
             "stable_posture_seconds": 15
           },
-          "trace_id": "trace-00ef64aa94d24085a05015ead649ce5d"
+          "trace_id": "trace-e86688c4e68945a39e4d781b153eef77"
         }
       ],
       "interventions": []
@@ -459,10 +459,10 @@
     "status": 200,
     "body": {
       "schema_version": "1.0",
-      "result_id": "result-ada460e6b5d64b99a5e8e24a8356c36e",
-      "event_id": "event-4d826022b4f64279",
-      "started_at": "2026-08-03T20:30:51.547237+08:00",
-      "completed_at": "2026-08-03T20:30:51.547237+08:00",
+      "result_id": "result-b7ecb7df5b734059bb0f8a03501b5d70",
+      "event_id": "event-3b8fefd2d6d84074",
+      "started_at": "2026-08-06T22:46:11.027744+08:00",
+      "completed_at": "2026-08-06T22:46:11.027744+08:00",
       "action_type": "voice",
       "tool_name": "mock_voice",
       "delivery_status": "SUCCESS",
@@ -563,7 +563,7 @@
       "evaluation": {
         "risk_level": "ORANGE",
         "event_created": false,
-        "event_id": "event-4d826022b4f64279",
+        "event_id": "event-3b8fefd2d6d84074",
         "matched_rule": "R-FALL-04",
         "ruleset_version": "ruleset-v1.0",
         "system_evidence_id": null
@@ -575,7 +575,7 @@
     "status": 200,
     "body": {
       "schema_version": "1.0",
-      "event_id": "event-4d826022b4f64279",
+      "event_id": "event-3b8fefd2d6d84074",
       "resident_id": "resident-frontend-api",
       "created_at": "2026-07-31T03:17:05+08:00",
       "updated_at": "2026-07-31T03:17:29+08:00",
@@ -848,7 +848,7 @@
             "red_score": 0.9,
             "stable_posture_seconds": 15
           },
-          "trace_id": "trace-bc056ce8efeb46e8a290502b89d701a9"
+          "trace_id": "trace-de8c4b2515ff4367a3c5815867cc1b57"
         },
         {
           "baseline_snapshot": {
@@ -891,7 +891,7 @@
           "error": null,
           "evaluated_at": "2026-07-31T03:17:05+08:00",
           "event_created": true,
-          "event_id": "event-4d826022b4f64279",
+          "event_id": "event-3b8fefd2d6d84074",
           "evidence_id": "evi-api-2-trunk-sway",
           "matched_rule": "R-FALL-02",
           "next_state": "ORANGE",
@@ -955,7 +955,7 @@
             "red_score": 0.9,
             "stable_posture_seconds": 15
           },
-          "trace_id": "trace-00ef64aa94d24085a05015ead649ce5d"
+          "trace_id": "trace-e86688c4e68945a39e4d781b153eef77"
         },
         {
           "baseline_snapshot": {
@@ -998,7 +998,7 @@
           "error": null,
           "evaluated_at": "2026-07-31T03:17:29+08:00",
           "event_created": false,
-          "event_id": "event-4d826022b4f64279",
+          "event_id": "event-3b8fefd2d6d84074",
           "evidence_id": "evi-api-2-posture-recovered",
           "matched_rule": "R-FALL-04",
           "next_state": "ORANGE",
@@ -1054,16 +1054,16 @@
             "red_score": 0.9,
             "stable_posture_seconds": 15
           },
-          "trace_id": "trace-ba853a66b466489199e17eb508a9c47b"
+          "trace_id": "trace-58b85fcbef01404e8c613adf7ff5aab4"
         }
       ],
       "interventions": [
         {
           "schema_version": "1.0",
-          "result_id": "result-ada460e6b5d64b99a5e8e24a8356c36e",
-          "event_id": "event-4d826022b4f64279",
-          "started_at": "2026-08-03T20:30:51.547237+08:00",
-          "completed_at": "2026-08-03T20:30:51.547237+08:00",
+          "result_id": "result-b7ecb7df5b734059bb0f8a03501b5d70",
+          "event_id": "event-3b8fefd2d6d84074",
+          "started_at": "2026-08-06T22:46:11.027744+08:00",
+          "completed_at": "2026-08-06T22:46:11.027744+08:00",
           "action_type": "voice",
           "tool_name": "mock_voice",
           "delivery_status": "SUCCESS",
@@ -1087,7 +1087,7 @@
       "event_created": false,
       "event": {
         "schema_version": "1.0",
-        "event_id": "event-4d826022b4f64279",
+        "event_id": "event-3b8fefd2d6d84074",
         "resident_id": "resident-frontend-api",
         "created_at": "2026-07-31T03:17:05+08:00",
         "updated_at": "2026-07-31T03:18:30+08:00",
@@ -1135,9 +1135,9 @@
     "body": {
       "schema_version": "1.0",
       "result_id": "feedback-api-2",
-      "event_id": "event-4d826022b4f64279",
-      "started_at": "2026-08-03T20:30:53.148447+08:00",
-      "completed_at": "2026-08-03T20:30:53.148447+08:00",
+      "event_id": "event-3b8fefd2d6d84074",
+      "started_at": "2026-08-06T22:46:12.570343+08:00",
+      "completed_at": "2026-08-06T22:46:12.570343+08:00",
       "action_type": "family_feedback",
       "tool_name": "family_feedback",
       "delivery_status": "SUCCESS",
@@ -1157,9 +1157,9 @@
     "body": {
       "schema_version": "1.0",
       "result_id": "feedback-api-2",
-      "event_id": "event-4d826022b4f64279",
-      "started_at": "2026-08-03T20:30:53.148447+08:00",
-      "completed_at": "2026-08-03T20:30:53.148447+08:00",
+      "event_id": "event-3b8fefd2d6d84074",
+      "started_at": "2026-08-06T22:46:12.570343+08:00",
+      "completed_at": "2026-08-06T22:46:12.570343+08:00",
       "action_type": "family_feedback",
       "tool_name": "family_feedback",
       "delivery_status": "SUCCESS",
@@ -1178,7 +1178,7 @@
     "status": 200,
     "body": {
       "schema_version": "1.0",
-      "event_id": "event-4d826022b4f64279",
+      "event_id": "event-3b8fefd2d6d84074",
       "resident_id": "resident-frontend-api",
       "created_at": "2026-07-31T03:17:05+08:00",
       "updated_at": "2026-07-31T03:18:30+08:00",
@@ -1451,7 +1451,7 @@
             "red_score": 0.9,
             "stable_posture_seconds": 15
           },
-          "trace_id": "trace-bc056ce8efeb46e8a290502b89d701a9"
+          "trace_id": "trace-de8c4b2515ff4367a3c5815867cc1b57"
         },
         {
           "baseline_snapshot": {
@@ -1494,7 +1494,7 @@
           "error": null,
           "evaluated_at": "2026-07-31T03:17:05+08:00",
           "event_created": true,
-          "event_id": "event-4d826022b4f64279",
+          "event_id": "event-3b8fefd2d6d84074",
           "evidence_id": "evi-api-2-trunk-sway",
           "matched_rule": "R-FALL-02",
           "next_state": "ORANGE",
@@ -1558,7 +1558,7 @@
             "red_score": 0.9,
             "stable_posture_seconds": 15
           },
-          "trace_id": "trace-00ef64aa94d24085a05015ead649ce5d"
+          "trace_id": "trace-e86688c4e68945a39e4d781b153eef77"
         },
         {
           "baseline_snapshot": {
@@ -1601,7 +1601,7 @@
           "error": null,
           "evaluated_at": "2026-07-31T03:17:29+08:00",
           "event_created": false,
-          "event_id": "event-4d826022b4f64279",
+          "event_id": "event-3b8fefd2d6d84074",
           "evidence_id": "evi-api-2-posture-recovered",
           "matched_rule": "R-FALL-04",
           "next_state": "ORANGE",
@@ -1657,7 +1657,7 @@
             "red_score": 0.9,
             "stable_posture_seconds": 15
           },
-          "trace_id": "trace-ba853a66b466489199e17eb508a9c47b"
+          "trace_id": "trace-58b85fcbef01404e8c613adf7ff5aab4"
         },
         {
           "baseline_snapshot": {
@@ -1700,7 +1700,7 @@
           "error": null,
           "evaluated_at": "2026-07-31T03:18:30+08:00",
           "event_created": false,
-          "event_id": "event-4d826022b4f64279",
+          "event_id": "event-3b8fefd2d6d84074",
           "evidence_id": null,
           "matched_rule": "R-FALL-05",
           "next_state": "GREEN",
@@ -1734,15 +1734,15 @@
             "red_score": 0.9,
             "stable_posture_seconds": 15
           },
-          "trace_id": "trace-2c56ea38a85d4658ba713e06ec2dc6d9"
+          "trace_id": "trace-6c89694d325f43cdbd48afb4a264c02c"
         }
       ],
       "interventions": [
         {
           "schema_version": "1.0",
-          "result_id": "result-ada460e6b5d64b99a5e8e24a8356c36e",
-          "event_id": "event-4d826022b4f64279",
-          "started_at": "2026-08-03T20:30:51.547237+08:00",
+          "result_id": "result-b7ecb7df5b734059bb0f8a03501b5d70",
+          "event_id": "event-3b8fefd2d6d84074",
+          "started_at": "2026-08-06T22:46:11.027744+08:00",
           "completed_at": "2026-07-31T03:18:30+08:00",
           "action_type": "voice",
           "tool_name": "mock_voice",
@@ -1759,9 +1759,9 @@
         {
           "schema_version": "1.0",
           "result_id": "feedback-api-2",
-          "event_id": "event-4d826022b4f64279",
-          "started_at": "2026-08-03T20:30:53.148447+08:00",
-          "completed_at": "2026-08-03T20:30:53.148447+08:00",
+          "event_id": "event-3b8fefd2d6d84074",
+          "started_at": "2026-08-06T22:46:12.570343+08:00",
+          "completed_at": "2026-08-06T22:46:12.570343+08:00",
           "action_type": "family_feedback",
           "tool_name": "family_feedback",
           "delivery_status": "SUCCESS",

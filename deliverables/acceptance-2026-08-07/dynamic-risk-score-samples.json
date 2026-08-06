@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "ruleset_version": "ruleset-v1.0",
+  "purpose": "脱敏动态风险分验收向量；不是固定风险分配置。",
+  "formula": "round(0.45*severity + 0.30*confidence + 0.15*data_quality + 0.10*context, 2)",
+  "samples": [
+    {
+      "sample_id": "dynamic-orange-baseline-context",
+      "inputs": {"severity": 0.78, "confidence": 0.92, "data_quality": 0.88, "context": 0.25},
+      "raw_score": 0.784,
+      "final_score": 0.78,
+      "expected_risk_level": "ORANGE",
+      "matched_rule": "R-FALL-02",
+      "note": "夜间上下文为0.25。"
+    },
+    {
+      "sample_id": "dynamic-orange-repeated-context",
+      "inputs": {"severity": 0.82, "confidence": 0.92, "data_quality": 0.88, "context": 0.45},
+      "raw_score": 0.822,
+      "final_score": 0.82,
+      "expected_risk_level": "ORANGE",
+      "matched_rule": "R-FALL-02",
+      "note": "夜间加24小时内重复异常上下文；这是历史产物中出现0.82的可解释来源。"
+    },
+    {
+      "sample_id": "dynamic-orange-higher-severity",
+      "inputs": {"severity": 0.95, "confidence": 0.92, "data_quality": 0.88, "context": 0.45},
+      "raw_score": 0.8805,
+      "final_score": 0.88,
+      "expected_risk_level": "ORANGE",
+      "matched_rule": "R-FALL-02",
+      "note": "严重度变化后分数随公式变化，不应复用0.82。"
+    },
+    {
+      "sample_id": "quality-blocked",
+      "inputs": {"severity": 0.95, "confidence": 0.92, "data_quality": 0.69, "context": 0.45},
+      "raw_score": null,
+      "final_score": null,
+      "expected_risk_level": "GREEN",
+      "matched_rule": "R-FALL-03",
+      "note": "质量低于0.70时不计算升级分数。"
+    }
+  ]
+}
