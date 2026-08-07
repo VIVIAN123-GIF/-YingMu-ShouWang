@@ -3,9 +3,9 @@
 | 项目 | 内容 |
 |---|---|
 | 负责人 | 常易铭 |
-| 更新日期 | 2026年8月6日 |
+| 更新日期 | 2026年8月7日 |
 | 分支 | `feature/cym/audio-behavior-demo` |
-| 当前状态 | 已完成多日趋势与昼夜节律Mock接入；实景长期数据和正式阈值仍待统一素材验证 |
+| 当前状态 | 已完成多日趋势及合成音频/行为来源验收；实景长期数据和正式阈值仍待统一素材验证 |
 
 ## 1. 项目边界
 
@@ -15,6 +15,8 @@
 2. 摄像头或本地MP4通过OpenCV生成人员框、活动量和人物中心轨迹。
 
 本模块只生成感知结果和Evidence，不直接输出GREEN、YELLOW、ORANGE或RED风险等级，也不作诈骗或心理疾病诊断。
+
+当前公开验收使用TTS合成音频、移动图形MP4和MOCK统计。它们只验证处理链路、契约和接口，不是实际老人音频/行为连续监测。来源分类与允许表述见`docs/8月7日合成音频与行为验收说明.md`。
 
 ## 2. 7月25日复现反馈修复
 
@@ -72,13 +74,15 @@
 │  ├─ behavior_test_20260724.md
 │  ├─ whisper_test_20260725.json
 │  ├─ reproduction_fix_20260725.md
-│  └─ trend_backend_submission_20260806.json
+│  ├─ trend_backend_submission_20260806.json
+│  └─ synthetic_acceptance_20260807.json
 └─ docs/
    ├─ 常易铭-7月24日调研交付.md
    ├─ 脱敏测试素材说明.md
    ├─ 降级规则.md
    ├─ 7月31日前任务拆分.md
-   └─ 8月7日前趋势交付.md
+   ├─ 8月7日前趋势交付.md
+   └─ 8月7日合成音频与行为验收说明.md
 ```
 
 原始录音、人物视频、Whisper模型、`.venv`、`output`和缓存不进入Git。
@@ -240,6 +244,8 @@ Windows PowerShell可执行：
 ```
 
 输出为`output\synthetic_test.wav`。它读取`samples\test_scam_script.txt`并调用Windows本地语音合成，不包含真人录音；发音效果取决于本机语音包。
+
+该文件必须使用`source_mode: RECORDED_REPLAY`和`simulated: true`。它只用于合成文件回放验收，不得描述为实时收音或真实老人音频监测。
 
 ### 7.2 执行转写
 
