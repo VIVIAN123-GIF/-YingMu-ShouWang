@@ -1,0 +1,29 @@
+{
+  "date": "2026-08-08",
+  "thresholds": {
+    "confidence": 0.7,
+    "data_quality": 0.7,
+    "stable_posture_seconds": 15.0,
+    "stable_torso_angle_p95_deg": 8.0
+  },
+  "videos": [
+    {"video": "1.mp4", "fps": 15.0, "duration_sec": 75.8, "confidence": 0.679, "stable_duration_sec": 14.2, "torso_angle_p95_deg": 7.22, "algorithm_output": "seated_or_low/upright transitions", "status": "CONFIDENCE BLOCKED"},
+    {"video": "2.mp4", "fps": 15.0, "duration_sec": 19.13, "confidence": 0.796, "stable_duration_sec": 9.27, "torso_angle_p95_deg": 7.51, "algorithm_output": "seated_or_low/upright transitions", "status": "STABILITY INSUFFICIENT"},
+    {"video": "3.mp4", "fps": 15.0, "duration_sec": 20.53, "confidence": 0.686, "stable_duration_sec": 14.67, "torso_angle_p95_deg": 7.94, "algorithm_output": "upright to seated_or_low", "status": "CONFIDENCE BLOCKED"}
+  ],
+  "golden_package": {
+    "path": "deliverables/zy/pose-demo/integration/golden_30s_fall_evidence.json",
+    "required_evidence": ["rapid_rise", "trunk_sway"],
+    "min_required_confidence": 0.817,
+    "min_required_data_quality": 0.854,
+    "status": "PASS",
+    "failure_status_must_remain": "CONFIDENCE BLOCKED",
+    "failure_action": "人工复核/重新处理，不触发风险升级"
+  },
+  "reprocess": [
+    "1.mp4: 提升可见度并复核起身/低位段",
+    "2.mp4: 补齐至少15秒稳定窗口并复核末段",
+    "3.mp4: 提升低位段可见度并复核稳定窗口",
+    "三段重跑后重算FPS、检测率、置信度、稳定时长、躯干角"
+  ]
+}
