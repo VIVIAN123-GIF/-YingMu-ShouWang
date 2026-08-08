@@ -14,6 +14,7 @@ os.environ["YINGMU_DB_PATH"] = str(TEST_DB)
 os.environ["YINGMU_ENV"] = "mock"
 os.environ["YINGMU_CONTROL_TOKEN"] = "test-control-token"
 os.environ["EZVIZ_WEBHOOK_SECRET"] = "test-webhook-secret"
+os.environ["EZVIZ_WEBHOOK_ALLOW_UNSIGNED_TEST"] = "false"
 os.environ["MIN_EVIDENCE_QUALITY"] = "0.7"
 os.environ["MIN_EVIDENCE_CONFIDENCE"] = "0.8"
 
@@ -603,6 +604,61 @@ def test_ezviz_alarm_webhook_verifies_signature_redacts_and_is_idempotent():
         )
         assert invalid.status_code == 401
         assert invalid.json()["error"]["code"] == "EZVIZ_WEBHOOK_SIGNATURE_INVALID"
+
+
+def test_ezviz_iot_webhook_is_adapted_to_raw_alarm():
+    device_serial = "test-ezviz-iot-device"
+
+    async def register_device():
+        async with AsyncSessionLocal() as db:
+            db.add(DeviceInfo(
+                resident_id="resident-ezviz-iot",
+                device_sn=device_serial,
+                channel_no=1,
+                device_name="test-ezviz-iot-device",
+                adapter_mode="MOCK",
+            ))
+            await db.commit()
+
+    async def persisted_alarm():
+        async with AsyncSessionLocal() as db:
+            return (await db.execute(select(RiskAlarm).where(
+                RiskAlarm.alarm_msg_id == "iot-alarm-001"
+            ))).scalar_one()
+
+    envelope = {
+        "header": {
+            "type": "ys.iot", "deviceId": device_serial,
+            "messageId": "iot-message-001", "messageTime": int(time.time() * 1000),
+        },
+        "body": {
+            "deviceId": device_serial, "resourceType": "gb_alarm",
+            "identifier": "motion_detected",
+            "payload": json.dumps({
+                "basic": {"UUID": "iot-alarm-001", "dateTime": "2026-08-08T17:22:56+08:00"},
+                "intelligentTag": {"pictures": [{"id": "iot-picture-001", "url": "https://private.example/iot"}]},
+                "serviceInfo": {},
+            }),
+        },
+    }
+    raw_body = json.dumps(envelope, separators=(",", ":")).encode("utf-8")
+    timestamp = str(int(time.time() * 1000))
+    signature = hmac.new(
+        b"test-webhook-secret", raw_body + timestamp.encode("utf-8"), hashlib.sha1
+    ).hexdigest()
+
+    with TestClient(app) as client:
+        asyncio.run(register_device())
+        response = client.post("/api/v1/webhooks/ezviz", content=raw_body, headers={
+            "content-type": "application/json", "message_type": "ys.iot",
+            "t": timestamp, "signature": signature,
+        })
+        assert response.status_code == 200
+        assert response.json() == {"messageId": "iot-message-001"}
+        alarm = asyncio.run(persisted_alarm())
+        assert alarm.resident_id == "resident-ezviz-iot"
+        assert alarm.alarm_type == "motion_detected"
+        assert "https://private.example/iot" not in alarm.raw_callback_json
 
 
 def test_all_frozen_routes_are_exposed_without_unfrozen_stream_route():

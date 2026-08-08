@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -25,24 +26,41 @@ def load_json(path: Path) -> dict:
     return payload
 
 
-def post_json(url: str, payload: dict, timeout_seconds: float) -> dict:
-    request = Request(
-        url,
-        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urlopen(request, timeout=timeout_seconds) as response:
-            return {
-                "status_code": response.status,
-                "body": json.loads(response.read().decode("utf-8")),
-            }
-    except HTTPError as exc:
-        body = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"{url} 返回 HTTP {exc.code}: {body}") from exc
-    except URLError as exc:
-        raise RuntimeError(f"无法连接 {url}: {exc.reason}") from exc
+def post_json(
+    url: str,
+    payload: dict,
+    timeout_seconds: float,
+    retries: int = 2,
+    retry_interval: float = 0.5,
+) -> dict:
+    """提交幂等结果；仅重试临时网络、限流和服务端错误。"""
+    last_error: Exception | None = None
+    for attempt in range(1, retries + 2):
+        request = Request(
+            url,
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=timeout_seconds) as response:
+                return {
+                    "status_code": response.status,
+                    "body": json.loads(response.read().decode("utf-8")),
+                    "attempts": attempt,
+                }
+        except HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            last_error = RuntimeError(f"{url} 返回 HTTP {exc.code}: {body}")
+            retryable = exc.code == 408 or exc.code == 429 or 500 <= exc.code < 600
+        except (URLError, TimeoutError) as exc:
+            last_error = RuntimeError(f"无法连接 {url}: {exc}")
+            retryable = True
+        if retryable and attempt <= retries:
+            time.sleep(retry_interval * attempt)
+            continue
+        raise last_error
+    raise RuntimeError(f"{url} request failed unexpectedly")
 
 
 def main() -> None:
@@ -67,6 +85,8 @@ def main() -> None:
         "--backend-url", default="http://127.0.0.1:8000", help="后端地址，不含 /api/v1"
     )
     parser.add_argument("--timeout", type=float, default=10.0, help="单次请求超时秒数")
+    parser.add_argument("--retries", type=int, default=2, help="临时故障的额外重试次数")
+    parser.add_argument("--retry-interval", type=float, default=0.5, help="首次重试间隔秒数")
     args = parser.parse_args()
 
     try:
@@ -108,11 +128,13 @@ def main() -> None:
 
         base_url = args.backend_url.rstrip("/")
         observation_results = [
-            post_json(f"{base_url}/api/v1/observations", observation, args.timeout)
+            post_json(f"{base_url}/api/v1/observations", observation, args.timeout,
+                      args.retries, args.retry_interval)
             for observation in observations
         ]
         evidence_result = post_json(
-            f"{base_url}/api/v1/evidence", evidence, args.timeout
+            f"{base_url}/api/v1/evidence", evidence, args.timeout,
+            args.retries, args.retry_interval
         )
     except (RuntimeError, ValueError) as exc:
         raise SystemExit(f"SUBMIT_FAILED: {exc}") from exc
