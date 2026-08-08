@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "evi-activity-range-20260803-demo-0001",
+  "observation_ids": [
+    "obs-activity-baseline-20260803-demo-0001",
+    "obs-activity-current-20260803-demo-0001"
+  ],
+  "resident_id": "resident-interface-001",
+  "timestamp": "2026-08-03T10:00:00+08:00",
+  "risk_domain": "MENTAL",
+  "evidence_type": "activity_range_decline",
+  "severity": 0.5,
+  "confidence": 0.78,
+  "data_quality": 0.8,
+  "baseline_value": 4.0,
+  "current_value": 2.0,
+  "baseline_deviation": -2.0,
+  "time_scale": "LONG",
+  "location": "living_room",
+  "explanation": "模拟多日统计显示当前访问区域数低于个人基线；仅表示活动范围变化，需要结合外出、生病和家属反馈复核，不作心理诊断",
+  "adapter_version": "behavior-adapter-v1.1",
+  "source_mode": "MOCK",
+  "simulated": true
+}

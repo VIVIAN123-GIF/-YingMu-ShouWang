@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "observation_id": "obs-audio-transcript-20260803-demo-0001",
+  "resident_id": "resident-interface-001",
+  "timestamp": "2026-08-03T10:00:00+08:00",
+  "source": "audio",
+  "feature_name": "audio_transcript",
+  "feature_value": "保证收益，请告诉我验证码并马上转账。",
+  "unit": null,
+  "location": "living_room",
+  "confidence": 0.82,
+  "data_quality": 0.85,
+  "source_mode": "RECORDED_REPLAY",
+  "asset_id": "asset-synthetic-audio-20260803-0001",
+  "simulated": true,
+  "metadata": {
+    "adapter_version": "speech-adapter-v1.1",
+    "model": "interface-sample",
+    "language": "Chinese",
+    "interpretation": "HIGH_RISK_INTERACTION_FEATURE_ONLY"
+  }
+}
