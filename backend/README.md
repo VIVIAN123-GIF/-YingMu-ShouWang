@@ -39,6 +39,21 @@ python -m uvicorn backend.main:app --reload
 
 调用链为：`HTTP 请求 → api → service → SQLAlchemy models → SQLite`。
 
+## 决策规则来源
+
+后端不维护第二套风险阈值。张薇已合并的
+`contracts/v1/rulesets/ruleset-v1.0.json` 是规则版本、短中长时间窗和
+观察阈值的唯一来源；`contracts/v1/engine.py` 是对应的确定性 Mock
+状态机。`backend/service/risk_service.py` 负责把该规则集适配到持久化
+RiskEvent、Evidence 和 RuleTrace。
+
+常易铭的语音/行为算法只提交 Observation 与 Evidence，不提交最终风险
+等级。可用下面的隔离验收命令验证其 2026-08-03 原始交付物：
+
+```powershell
+python scripts/validate_voice_behavior_package.py
+```
+
 ## 验证
 
 ```powershell

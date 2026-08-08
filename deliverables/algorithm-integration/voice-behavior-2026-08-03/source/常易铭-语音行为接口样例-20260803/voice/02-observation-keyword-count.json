@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "observation_id": "obs-audio-keyword-count-20260803-demo-0001",
+  "resident_id": "resident-interface-001",
+  "timestamp": "2026-08-03T10:00:00+08:00",
+  "source": "audio",
+  "feature_name": "fraud_keyword_match_count",
+  "feature_value": 3,
+  "unit": "count",
+  "location": "living_room",
+  "confidence": 0.82,
+  "data_quality": 0.85,
+  "source_mode": "RECORDED_REPLAY",
+  "asset_id": "asset-synthetic-audio-20260803-0001",
+  "simulated": true,
+  "metadata": {
+    "adapter_version": "speech-adapter-v1.1",
+    "matched_labels": [
+      "guaranteed_return",
+      "verification_code_like",
+      "immediate_transfer"
+    ],
+    "score_status": "DEMO_UNCALIBRATED",
+    "interpretation": "HIGH_RISK_INTERACTION_FEATURE_ONLY"
+  }
+}

@@ -7,14 +7,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.config import MIN_EVIDENCE_CONFIDENCE, MIN_EVIDENCE_QUALITY, RULESET_VERSION
 from backend.db.models import Evidence, InterventionResult, RiskEvent, RiskEventEvidence, RuleTrace
 from backend.service.serialization import aware, dumps, event_dict, loads
+from contracts.v1.ruleset import load_ruleset
 
 
 ACTIVE_EVENT_STATUSES = ("OPEN", "INTERVENING", "OBSERVING")
 DANGER_EVIDENCE_TYPES = {
     "rapid_rise", "slow_rise", "trunk_sway", "gait_instability", "relative_speed_change",
 }
-RECOVERY_SECONDS = 60
-STABLE_POSTURE_SECONDS = 15.0
+# 张薇维护的 ruleset-v1.0 是时间窗和阈值的唯一来源。后端只负责
+# 持久化和 HTTP 适配，不能在这里再维护一套不同的决策常量。
+RULESET = load_ruleset()
+RECOVERY_SECONDS = int(RULESET.thresholds["observation_seconds"])
+STABLE_POSTURE_SECONDS = float(RULESET.thresholds["stable_posture_seconds"])
 
 
 def _timestamp_after(left, right) -> bool:
@@ -202,7 +206,7 @@ class MockRiskEngine:
 
             return existing.risk_level, False, existing, "R-FALL-02"
 
-        start = evaluated_at - timedelta(seconds=30)
+        start = evaluated_at - timedelta(seconds=RULESET.windows["short_seconds"])
         rows = (await db.execute(
             select(Evidence)
             .where(
@@ -219,50 +223,53 @@ class MockRiskEngine:
             {"rapid_rise", "trunk_sway"}.issubset(types)
             and any(row.confidence >= 0.80 for row in valid)
         )
-        if not orange:
+        if orange:
+            event_id = (
+                "event-mock-fall-001"
+                if resident_id == "resident-mock-001"
+                else f"event-{uuid.uuid4().hex[:16]}"
+            )
+            evidence_rows = [
+                row for row in valid
+                if row.evidence_type in {"rapid_rise", "trunk_sway"}
+            ]
+            event = RiskEvent(
+                schema_version="1.0",
+                event_id=event_id,
+                resident_id=resident_id,
+                created_at=evaluated_at,
+                updated_at=evaluated_at,
+                primary_domain="FALL",
+                related_domains=dumps([]),
+                risk_level="ORANGE",
+                risk_score=0.82,
+                evidence_ids=dumps([row.evidence_id for row in evidence_rows]),
+                evidence_summary=dumps([
+                    {
+                        "evidence_id": row.evidence_id,
+                        "evidence_type": row.evidence_type,
+                        "explanation": row.explanation,
+                    }
+                    for row in evidence_rows
+                ]),
+                time_horizon="IMMINENT",
+                recommended_action="先坐稳，扶住固定物，再慢慢起身",
+                intervention_policy="fall-orange-gentle-v1",
+                status="INTERVENING",
+                ruleset_version=RULESET_VERSION,
+                source_mode=evidence_rows[-1].source_mode,
+                simulated=all(row.simulated for row in evidence_rows),
+                evidences=evidence_rows,
+            )
+            db.add(event)
+            await db.commit()
+            await db.refresh(event)
+            return "ORANGE", True, event, "R-FALL-02"
+
+        if "rapid_rise" in types:
             return "GREEN", False, None, "R-FALL-01"
 
-        event_id = (
-            "event-mock-fall-001"
-            if resident_id == "resident-mock-001"
-            else f"event-{uuid.uuid4().hex[:16]}"
-        )
-        evidence_rows = [
-            row for row in valid
-            if row.evidence_type in {"rapid_rise", "trunk_sway"}
-        ]
-        event = RiskEvent(
-            schema_version="1.0",
-            event_id=event_id,
-            resident_id=resident_id,
-            created_at=evaluated_at,
-            updated_at=evaluated_at,
-            primary_domain="FALL",
-            related_domains=dumps([]),
-            risk_level="ORANGE",
-            risk_score=0.82,
-            evidence_ids=dumps([row.evidence_id for row in evidence_rows]),
-            evidence_summary=dumps([
-                {
-                    "evidence_id": row.evidence_id,
-                    "evidence_type": row.evidence_type,
-                    "explanation": row.explanation,
-                }
-                for row in evidence_rows
-            ]),
-            time_horizon="IMMINENT",
-            recommended_action="先坐稳，扶住固定物，再慢慢起身",
-            intervention_policy="fall-orange-gentle-v1",
-            status="INTERVENING",
-            ruleset_version=RULESET_VERSION,
-            source_mode=evidence_rows[-1].source_mode,
-            simulated=all(row.simulated for row in evidence_rows),
-            evidences=evidence_rows,
-        )
-        db.add(event)
-        await db.commit()
-        await db.refresh(event)
-        return "ORANGE", True, event, "R-FALL-02"
+        return "GREEN", False, None, "NO_MATCH"
 
 
 engine = MockRiskEngine()
