@@ -1,0 +1,31 @@
+{
+  "integration_version": "1.0",
+  "module": "pose",
+  "source_file": "incoming/gait_module_output_samples_2026-08-03.json",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "scenarios": [
+    {
+      "name": "normal_gait",
+      "status": "http_validated",
+      "expected_rule": "R-FALL-01",
+      "expected_event_created": false
+    },
+    {
+      "name": "abnormal_gait_trunk_sway",
+      "status": "http_validated",
+      "expected_rule": "R-FALL-01",
+      "expected_event_created": false
+    },
+    {
+      "name": "low_quality_tracking_lost",
+      "status": "http_validated",
+      "expected_rule": "R-FALL-03",
+      "expected_event_created": false
+    }
+  ],
+  "pending": [
+    "补充与 trunk_sway 同一 resident_id、30 秒内的 rapid_rise 场景，以验证 ORANGE 事件创建",
+    "使用算法程序实际调用后端后，将请求和响应归档到 results/"
+  ]
+}
