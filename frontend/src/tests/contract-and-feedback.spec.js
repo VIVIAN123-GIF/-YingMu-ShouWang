@@ -117,4 +117,14 @@ describe('家属反馈幂等', () => {
     expect(first.feedback_id).toBe(id)
     expect(second).toEqual(first)
   })
+
+  it('诈骗核验反馈同样使用稳定ID并复用第一次结果', async () => {
+    setDataMode('mock')
+    const feedback = { feedback_type: 'verify', value: '身份不明确，继续联系', operator: 'family' }
+    const id = stableFeedbackId('event-fraud-visitor', feedback)
+    const first = await submitFamilyFeedback('event-fraud-visitor', feedback)
+    const second = await submitFamilyFeedback('event-fraud-visitor', feedback)
+    expect(first.feedback_id).toBe(id)
+    expect(second).toEqual(first)
+  })
 })

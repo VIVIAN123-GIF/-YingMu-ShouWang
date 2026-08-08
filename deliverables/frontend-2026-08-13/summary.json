@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "completed_at": "2026-08-07T03:36:19.834Z",
+  "result": "PASS",
+  "data_mode": "mock",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "real_device_claimed": false,
+  "checkpoints": [
+    "黄色周报与低打扰原则",
+    "家属关怀反馈提交",
+    "诈骗访客三类证据与身份核验提交"
+  ],
+  "repository_screenshots": [
+    "01-weekly-initial.png",
+    "02-care-submitted.png",
+    "03-verify-submitted.png"
+  ]
+}
