@@ -52,7 +52,8 @@ describe('API ViewModel 适配', () => {
 
   it('规范化设备、空周报与基线状态', () => {
     expect(normalizeDevice({ device_alias: 'A', adapter_mode: 'EZVIZ_CLOUD' })).toMatchObject({ name: 'A', adapter: 'EZVIZ_CLOUD' })
-    expect(normalizeWeeklyReport({ trend: [], visitor_case: null, care: { options: [] } })).toMatchObject({ trend: [], visitor_case: null, care: { options: [] } })
+    expect(normalizeWeeklyReport({ trend: [], visitor_case: null, care: { event_id: 'event-mental-week', options: [] } }))
+      .toMatchObject({ trend: [], visitor_case: null, care: { event_id: 'event-mental-week', options: [] } })
     const baseline = normalizeBaseline({ baselines: {
       rise_duration: { median: 3.5, mad: 0.4, sample_count: 12, distinct_days: 3, status: 'PROVISIONAL' },
       custom_metric: { median: 1, mad: 0.1, sample_count: 2, distinct_days: 1, status: 'INSUFFICIENT' },

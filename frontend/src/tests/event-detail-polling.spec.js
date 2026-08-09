@@ -2,16 +2,18 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getAssetMock, getEventMock, runtimeMock } = vi.hoisted(() => ({
+const { getAssetMock, getEventMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
   getAssetMock: vi.fn(),
   getEventMock: vi.fn(),
   runtimeMock: { mode: 'api' },
+  submitInterventionResultMock: vi.fn(),
 }))
 
 vi.mock('../services/repository', () => ({
   getAsset: getAssetMock,
   getEvent: getEventMock,
   runtime: runtimeMock,
+  submitInterventionResult: submitInterventionResultMock,
 }))
 
 import EventDetailView from '../views/EventDetailView.vue'
@@ -89,6 +91,7 @@ describe('事件详情 API 自动同步', () => {
     runtimeMock.mode = 'api'
     getEventMock.mockReset()
     getAssetMock.mockReset()
+    submitInterventionResultMock.mockReset()
     getAssetMock.mockRejectedValue(Object.assign(new Error('not found'), { response: { status: 404 } }))
   })
 
@@ -172,5 +175,38 @@ describe('事件详情 API 自动同步', () => {
     wrapper.unmount()
     await vi.advanceTimersByTimeAsync(6000)
     expect(getEventMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('坐稳确认只回写 InterventionResult，不在前端直接关闭事件', async () => {
+    const current = apiEvent('INTERVENING')
+    getEventMock.mockResolvedValueOnce(current)
+    submitInterventionResultMock.mockResolvedValueOnce({
+      schema_version: '1.0',
+      result_id: 'result-stable-1',
+      event_id: current.event_id,
+      started_at: '2026-07-31T03:07:10+08:00',
+      completed_at: '2026-07-31T03:07:10+08:00',
+      action_type: 'resident_response',
+      tool_name: 'family_console',
+      delivery_status: 'SUCCESS',
+      resident_response: 'stable',
+      family_feedback: null,
+      risk_after: null,
+      resolved: false,
+      resolution_reason: null,
+      operator: 'family',
+      source_mode: 'MOCK',
+      simulated: true,
+    })
+    const { wrapper } = await mountView()
+
+    await wrapper.get('[data-testid="elder-stable-submit"]').trigger('click')
+    await flushPromises()
+
+    expect(submitInterventionResultMock).toHaveBeenCalledWith(current, 'stable')
+    expect(wrapper.text()).toContain('坐稳确认已记录')
+    expect(wrapper.text()).toContain('正在干预')
+    expect(wrapper.text()).toContain('不会直接关闭事件')
+    wrapper.unmount()
   })
 })

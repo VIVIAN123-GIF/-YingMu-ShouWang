@@ -1,0 +1,32 @@
+[
+  {
+    "timestamp": "2026-08-07T03:36:19.056Z",
+    "operation": "weekly.read",
+    "status": "MOCK",
+    "mode": "mock",
+    "active_source": "mock",
+    "event_id": null,
+    "ruleset_version": null,
+    "detail": "fixed-json"
+  },
+  {
+    "timestamp": "2026-08-07T03:36:19.510Z",
+    "operation": "feedback.write",
+    "status": "MOCK",
+    "mode": "mock",
+    "active_source": "mock",
+    "event_id": "event-mental-week",
+    "ruleset_version": null,
+    "detail": "feedback-event-mental-week-b77aff5a"
+  },
+  {
+    "timestamp": "2026-08-07T03:36:19.664Z",
+    "operation": "feedback.write",
+    "status": "MOCK",
+    "mode": "mock",
+    "active_source": "mock",
+    "event_id": "event-fraud-visitor",
+    "ruleset_version": null,
+    "detail": "feedback-event-fraud-visitor-467803a5"
+  }
+]

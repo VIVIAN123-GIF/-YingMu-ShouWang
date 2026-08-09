@@ -1,6 +1,6 @@
 # 萤目守望统一家属端
 
-基于 Vue 3、Element Plus 与 ECharts 的统一家属端。项目完成九个一级入口，其中四个核心页面完成，其余为低保真骨架。
+基于 Vue 3、Element Plus 与 ECharts 的统一家属端。九个一级入口均已具备可运行页面：核心页面提供完整风险交互，档案、关怀、系统和回放页面提供对应的数据读取、来源标识和反馈能力。
 
 ## 启动
 
@@ -94,6 +94,37 @@ npm run evidence:api
 ## 个人基线与活动热力图
 
 `/baseline` 展示后端中位数、MAD、样本数、有效天数和基线状态。固定 Mock 数据额外提供“日期 × 时段”近七日活动热力图，并显示“模拟实验回放”。当前后端未提供活动时序接口，因此 API 模式只展示真实基线统计和明确空状态，不使用 Mock 趋势补位。
+
+## 8 月 13 日周报与核验卡验收
+
+`/weekly` 在固定 Mock 模式下提供黄色趋势周报、家属关怀确认和诈骗访客核验卡。`/care` 提供独立的关怀工作台；关怀与核验反馈都通过统一的 `submitFamilyFeedback` 写入，并使用稳定反馈 ID 保障重复提交幂等；页面只更新提交结果文案，不自行改变风险状态。
+
+`/resident`、`/system`、`/replay` 已不再是低保真占位页，分别提供老人档案与授权范围、设备状态与能力核验、事件场景选择与时间轴回放。事件详情的“我已坐稳”操作通过 `POST /api/v1/events/{event_id}/results` 回写 `InterventionResult`，使用稳定结果 ID 并支持 API/Mock/Auto 降级。
+
+- 周报：展示趋势 Evidence、低打扰原则和一次性关怀建议；文案不作医学诊断。
+- 关怀确认：提交后显示“关怀反馈已记录”，来源和模拟状态沿用报告数据。
+- 诈骗核验卡：展示访客、停留时长和高风险组合词三类 Evidence，提交后显示“身份核验已记录”。
+- API 模式：后端未返回趋势、关怀选项或 `visitor_case` 时显示明确空状态，不用 Mock 数据补位。
+
+生成 8 月 13 日前端演示证据：
+
+```powershell
+npm run evidence -- --grep "8月13日前端周报"
+```
+
+材料输出到 `artifacts/weekly-evidence-2026-08-13` 和仓库交付目录 `deliverables/frontend-2026-08-13`。其中内容均为 `MOCK`/`RECORDED_REPLAY` 模拟演示，不代表真实诈骗识别或真实设备闭环。
+
+## 陈硕任务看板验收
+
+新增入口和离线备用页的验收命令：
+
+```powershell
+npm run evidence -- --grep "陈硕前端任务看板入口"
+```
+
+材料输出到 `artifacts/cs-completion-2026-08-09` 和 `deliverables/frontend-cs-2026-08-09`，包含老人档案、关怀工作台、系统状态、100 天场景回放、坐稳确认和离线备用页截图、审计日志及 `summary.json`。该验收明确标注 `source_mode=MOCK`、`simulated=true`，不宣称真实设备结果。
+
+`public/offline.html` 是后端不可用时的静态备用页；进入应用后可切换 `MOCK` 模式查看脱敏演示数据。`frontend/.env.example` 提供 API 地址、数据模式、居民标识和授权片段配置模板。
 
 ## 依赖审计说明
 

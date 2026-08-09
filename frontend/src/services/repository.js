@@ -8,7 +8,9 @@ import assetsMock from '../mocks/assets.json'
 import observationsMock from '../mocks/observations.json'
 import baselineMock from '../mocks/baseline.json'
 import { DATA_MODES } from '../domain/constants'
-import { validateDashboard, validateEventList, validateEventViewModel } from '../domain/validation'
+import {
+  validateDashboard, validateEventList, validateEventViewModel, validateInterventionResult,
+} from '../domain/validation'
 import {
   normalizeBaseline, normalizeDashboard, normalizeDevice, normalizeEvent, normalizeWeeklyReport,
 } from './viewModel'
@@ -36,6 +38,7 @@ const mocks = {
 }
 
 const feedbackCache = new Map()
+const interventionResultCache = new Map()
 
 export const runtime = reactive({
   mode: DATA_MODES[initialMode] ? initialMode : 'auto',
@@ -226,6 +229,77 @@ function stableFeedbackId(eventId, feedback) {
     hash = Math.imul(hash, 16777619)
   }
   return `feedback-${eventId}-${(hash >>> 0).toString(16)}`
+}
+
+export function stableInterventionResultId(eventId, residentResponse) {
+  const source = `${eventId}|resident_response|${residentResponse}`
+  let hash = 2166136261
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return `result-${eventId}-${(hash >>> 0).toString(16)}`
+}
+
+function interventionResultPayload(event, residentResponse) {
+  const timestamp = new Date().toISOString()
+  return {
+    schema_version: '1.0',
+    result_id: stableInterventionResultId(event.event_id, residentResponse),
+    event_id: event.event_id,
+    started_at: timestamp,
+    completed_at: timestamp,
+    action_type: 'resident_response',
+    tool_name: 'family_console',
+    delivery_status: 'SUCCESS',
+    resident_response: residentResponse,
+    family_feedback: null,
+    risk_after: null,
+    resolved: false,
+    resolution_reason: null,
+    operator: 'family',
+    source_mode: event.source_mode,
+    simulated: event.simulated,
+  }
+}
+
+export async function submitInterventionResult(event, residentResponse = 'stable') {
+  const requestBody = interventionResultPayload(event, residentResponse)
+  const resultId = requestBody.result_id
+
+  if (interventionResultCache.has(resultId)) {
+    recordAudit('intervention-result.write', 'IDEMPOTENT_REPLAY', { event_id: event.event_id, detail: resultId })
+    return structuredClone(interventionResultCache.get(resultId))
+  }
+
+  if (runtime.mode !== 'mock') {
+    try {
+      const result = validateInterventionResult(payload(await client.post(
+        `/api/v1/events/${event.event_id}/results`,
+        requestBody,
+        { headers: { 'Idempotency-Key': resultId } },
+      )))
+      runtime.activeSource = 'api'
+      runtime.degraded = false
+      interventionResultCache.set(resultId, result)
+      recordAudit('intervention-result.write', 'SUCCESS', { event_id: event.event_id, detail: resultId })
+      return structuredClone(result)
+    } catch (error) {
+      if (!(runtime.mode === 'auto' && shouldFallback(error))) {
+        recordAudit('intervention-result.write', 'FAILED', { event_id: event.event_id, detail: error?.message })
+        throw error
+      }
+      runtime.activeSource = 'mock'
+      runtime.degraded = true
+      runtime.message = '干预结果接口暂不可用，确认结果仅保存在本次演示中'
+      recordAudit('intervention-result.write', 'DEGRADED', { event_id: event.event_id, detail: error?.message })
+    }
+  }
+
+  const result = { ...requestBody, saved_in_demo: true }
+  interventionResultCache.set(resultId, result)
+  recordAudit('intervention-result.write', 'MOCK', { event_id: event.event_id, detail: resultId })
+  return structuredClone(result)
 }
 
 export async function submitFamilyFeedback(eventId, feedback) {
