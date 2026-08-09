@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "completed_at": "2026-08-09T02:57:27.451Z",
+  "result": "PASS",
+  "data_mode": "mock",
+  "source_mode": "MOCK",
+  "simulated": true,
+  "real_device_claimed": false,
+  "checkpoints": [
+    "/resident 可运行并显示来源标识",
+    "/care 可运行并显示来源标识",
+    "/system 可运行并显示来源标识",
+    "/replay 可运行并显示来源标识",
+    "事件详情坐稳确认回写并保持状态机控制",
+    "离线备用页可访问且不伪造实时状态"
+  ],
+  "repository_screenshots": [
+    "01-resident.png",
+    "02-care.png",
+    "03-system.png",
+    "04-replay.png",
+    "05-resident-response.png",
+    "06-offline.png"
+  ]
+}

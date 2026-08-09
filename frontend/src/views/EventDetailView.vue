@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/common/PageHeader.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
@@ -7,7 +8,7 @@ import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import MediaPanel from '../components/common/MediaPanel.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
-import { getAsset, getEvent, runtime } from '../services/repository'
+import { getAsset, getEvent, runtime, submitInterventionResult } from '../services/repository'
 import { domainLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const route = useRoute()
@@ -21,6 +22,8 @@ const traceOpen = ref(false)
 const selectedEvidence = ref(null)
 const syncState = ref('loading')
 const syncWarning = ref('')
+const submittingResidentResponse = ref(false)
+const residentResponseRecorded = ref(false)
 
 const POLL_INTERVAL_MS = 1500
 const TERMINAL_STATUSES = new Set(['RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
@@ -222,12 +225,32 @@ function startEventSession() {
   syncState.value = 'loading'
   traceOpen.value = false
   selectedEvidence.value = null
+  submittingResidentResponse.value = false
+  residentResponseRecorded.value = false
   void refreshEvent(activeSession, true)
 }
 
 function stopEventSession() {
   sessionId += 1
   clearPollTimer()
+}
+
+async function confirmResidentStable() {
+  if (!event.value || submittingResidentResponse.value || residentResponseRecorded.value) return
+  submittingResidentResponse.value = true
+  try {
+    const result = await submitInterventionResult(event.value, 'stable')
+    const interventions = event.value.interventions || (event.value.interventions = [])
+    const existingIndex = interventions.findIndex((item) => item.result_id === result.result_id)
+    if (existingIndex >= 0) interventions.splice(existingIndex, 1, result)
+    else interventions.push(result)
+    residentResponseRecorded.value = true
+    ElMessage.success('坐稳确认已记录，系统将继续观察风险是否回落')
+  } catch (err) {
+    ElMessage.error(`确认提交失败：${err.message}`)
+  } finally {
+    submittingResidentResponse.value = false
+  }
 }
 
 watch(() => [route.params.eventId, runtime.mode], startEventSession, { immediate: true })
@@ -357,7 +380,17 @@ onBeforeUnmount(stopEventSession)
             <span>老人侧柔性提醒</span>
             <h2>先坐稳，扶住身边固定物</h2>
             <p>一次只提供一个清楚动作，不制造紧张。</p>
-            <el-button type="primary" size="large">我已坐稳</el-button>
+            <el-button
+              data-testid="elder-stable-submit"
+              type="primary"
+              size="large"
+              :loading="submittingResidentResponse"
+              :disabled="residentResponseRecorded"
+              @click="confirmResidentStable"
+            >
+              {{ residentResponseRecorded ? '坐稳确认已记录' : '我已坐稳' }}
+            </el-button>
+            <p v-if="residentResponseRecorded" class="elder-action-note">确认不会直接关闭事件，仍由后端 Evidence 和观察期决定风险是否回落。</p>
           </section>
         </aside>
       </section>
