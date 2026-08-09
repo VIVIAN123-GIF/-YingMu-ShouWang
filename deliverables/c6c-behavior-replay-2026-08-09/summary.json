@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "C6C_BEHAVIOR_RESULT_ONLY_LOCAL_INGESTION",
+  "delivery_zip_sha256": "44943F36C48492BD6C3D225128E94192F9E5B5903DD8C51D784E51042B283116",
+  "declared_input_video_sha256": "7CFD8723DB12F2553C6310ED1B51B7A775E0D49056E684AA85CE139AA3003A7A",
+  "manifest_checks_passed": true,
+  "contains_raw_media": false,
+  "contains_credentials": false,
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "asset_submission_verified": true,
+  "observation_submission_count": 6,
+  "observation_submission_verified": true,
+  "duplicate_observation_idempotent": true,
+  "asset_provenance_preserved": true,
+  "evidence_count": 0,
+  "risk_evaluation_executed": false,
+  "risk_state_machine_closed": false,
+  "automatic_live_device_chain_verified": false,
+  "overall_result": "PARTIAL",
+  "interpretation": "Asset and Observations were actually submitted to a temporary local backend. No Evidence was supplied, so no risk evaluation was run or claimed."
+}

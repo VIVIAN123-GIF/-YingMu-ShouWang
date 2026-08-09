@@ -1,5 +1,3 @@
-from typing import Literal
-
 from pydantic import BaseModel
 
 from backend.schemas.common import SourceMode, TimezoneDatetime
@@ -24,12 +22,6 @@ class Asset(BaseModel):
     device_model: str | None = None
     camera_position_id: str | None = None
     authorization_status: str = "PENDING"
-    authorization_record_id: str | None = None
-    retention_until: TimezoneDatetime | None = None
-    device_ref: str | None = None
-    device_model: str | None = None
-    camera_position_id: str | None = None
-    authorization_status: Literal["PENDING", "AUTHORIZED", "REVOKED"] = "PENDING"
     authorization_record_id: str | None = None
     retention_until: TimezoneDatetime | None = None
 
