@@ -19,6 +19,18 @@
 - `data/raw/urfd/original/`
 - `data/raw/urfd/extracted/`
 - `data/raw/manifest.csv`
+- `deliverables/zy/pose-demo/processed/`
+
+当前已生成的派生数据：
+
+- `processed/urfd_pose_cleaned_frames.csv`
+- `processed/urfd_gait_features.csv`
+- `processed/build_summary.json`
+
+当前构建口径：
+
+- 仅处理 `cam0`
+- `frame_stride=2`
 
 ## Pre-VFall
 

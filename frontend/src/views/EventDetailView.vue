@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/common/PageHeader.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
@@ -7,7 +7,7 @@ import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import MediaPanel from '../components/common/MediaPanel.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
-import { getAsset, getEvent } from '../services/repository'
+import { getAsset, getEvent, runtime } from '../services/repository'
 import { domainLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const route = useRoute()
@@ -16,8 +16,39 @@ const loading = ref(true)
 const error = ref('')
 const event = ref(null)
 const asset = ref(null)
+const assetNotice = ref('')
 const traceOpen = ref(false)
 const selectedEvidence = ref(null)
+const syncState = ref('loading')
+const syncWarning = ref('')
+
+const POLL_INTERVAL_MS = 1500
+const TERMINAL_STATUSES = new Set(['RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
+let pollTimer = null
+let sessionId = 0
+let settledAssetId = null
+
+const syncLabel = computed(() => ({
+  loading: '正在读取事件',
+  polling: '自动同步中',
+  retrying: '同步重试中',
+  complete: '同步已完成',
+  idle: runtime.mode === 'mock' ? '固定数据模式' : '等待同步',
+}[syncState.value]))
+
+const syncTagType = computed(() => ({
+  retrying: 'warning',
+  complete: 'success',
+  idle: 'info',
+}[syncState.value] || 'primary'))
+
+const mediaAsset = computed(() => asset.value || {
+  title: '事件画面',
+  source_mode: event.value?.source_mode || 'MOCK',
+  simulated: event.value?.simulated ?? true,
+  available: false,
+  notice: assetNotice.value || '关联 Observation 未提供可追溯素材。',
+})
 
 const selectedObservations = computed(() => {
   const ids = new Set(selectedEvidence.value?.observation_ids || [])
@@ -60,27 +91,147 @@ const riskChartOption = computed(() => ({
   }],
 }))
 
+const displayRuleTraces = computed(() => event.value?.rule_traces || [])
+
+function contextText(trace) {
+  const entries = Object.entries(trace?.context_snapshot?.contributions || {}).filter(([, value]) => Number(value) > 0)
+  return entries.length ? entries.map(([key, value]) => `${key} +${value}`).join(' · ') : '无附加上下文'
+}
+
+function traceScore(trace) {
+  const value = trace?.score_components?.final_score
+  return typeof value === 'number' ? formatRiskScore(value) : '未生成事件分数'
+}
+
+function qualityText(trace) {
+  const items = trace?.quality_snapshot?.evidences || []
+  if (!items.length) return '无证据质量快照'
+  return items.map((item) => (
+    `${item.evidence_type}: 质量${item.data_quality} / 置信${item.confidence} / ${item.usable ? '通过' : '拦截'}`
+  )).join('；')
+}
+
+function baselineStatusText(trace) {
+  const status = trace?.baseline_snapshot?.overall_status || 'INSUFFICIENT'
+  return { PROVISIONAL: '初步基线', INSUFFICIENT: '样本不足', STABLE: '工程稳定基线（非医学）' }[status] || status
+}
+
+function scoreComponentsText(trace) {
+  const score = trace?.score_components || {}
+  if (typeof score.final_score !== 'number') return '本次规则不生成事件分数'
+  return `严重度${score.severity}、置信度${score.confidence}、质量${score.data_quality}、上下文${score.context}`
+}
+
 function openTrace(evidence) {
   selectedEvidence.value = evidence
   traceOpen.value = true
 }
 
-async function load() {
-  loading.value = true
-  error.value = ''
-  try {
-    event.value = await getEvent(route.params.eventId || 'event-fall-100')
-    const assetId = firstEventAssetId(event.value)
-    asset.value = assetId ? await getAsset(assetId) : null
-  } catch (err) {
-    error.value = `无法读取事件：${err.message}`
-  } finally {
-    loading.value = false
+function clearPollTimer() {
+  if (pollTimer !== null) {
+    window.clearTimeout(pollTimer)
+    pollTimer = null
   }
 }
 
-watch(() => route.params.eventId, load)
-onMounted(load)
+function pollingEnabled() {
+  return runtime.mode !== 'mock'
+}
+
+function isTerminal(currentEvent) {
+  return TERMINAL_STATUSES.has(currentEvent?.status)
+}
+
+function schedulePoll(activeSession) {
+  clearPollTimer()
+  if (activeSession !== sessionId || !pollingEnabled() || isTerminal(event.value)) return
+  pollTimer = window.setTimeout(() => {
+    pollTimer = null
+    void refreshEvent(activeSession)
+  }, POLL_INTERVAL_MS)
+}
+
+async function syncAsset(currentEvent, activeSession) {
+  const assetId = firstEventAssetId(currentEvent)
+  if (!assetId) {
+    settledAssetId = null
+    asset.value = null
+    assetNotice.value = '关联 Observation 未提供可追溯素材，事件证据和状态仍可查看。'
+    return
+  }
+  if (assetId === settledAssetId) return
+
+  asset.value = null
+  assetNotice.value = ''
+  try {
+    const nextAsset = await getAsset(assetId)
+    if (activeSession !== sessionId || firstEventAssetId(event.value) !== assetId) return
+    settledAssetId = assetId
+    asset.value = nextAsset
+  } catch (assetError) {
+    if (activeSession !== sessionId || firstEventAssetId(event.value) !== assetId) return
+    if (assetError?.response?.status === 404) settledAssetId = assetId
+    assetNotice.value = `后端暂无素材记录（${assetId}），事件证据和状态仍可查看。`
+  }
+}
+
+async function refreshEvent(activeSession, initial = false) {
+  if (activeSession !== sessionId) return
+  if (initial) loading.value = true
+  else syncState.value = 'polling'
+
+  try {
+    const nextEvent = await getEvent(route.params.eventId || 'event-fall-100')
+    if (activeSession !== sessionId) return
+    event.value = nextEvent
+    error.value = ''
+    syncWarning.value = ''
+    await syncAsset(nextEvent, activeSession)
+    if (activeSession !== sessionId) return
+
+    if (isTerminal(nextEvent)) {
+      syncState.value = 'complete'
+      clearPollTimer()
+    } else if (pollingEnabled()) {
+      syncState.value = 'polling'
+      schedulePoll(activeSession)
+    } else {
+      syncState.value = 'idle'
+    }
+  } catch (err) {
+    if (activeSession !== sessionId) return
+    if (event.value) syncWarning.value = `自动同步暂时失败，将继续重试：${err.message}`
+    else error.value = `无法读取事件：${err.message}`
+    syncState.value = pollingEnabled() ? 'retrying' : 'idle'
+    if (pollingEnabled()) schedulePoll(activeSession)
+  } finally {
+    if (activeSession === sessionId && initial) loading.value = false
+  }
+}
+
+function startEventSession() {
+  sessionId += 1
+  const activeSession = sessionId
+  clearPollTimer()
+  settledAssetId = null
+  event.value = null
+  asset.value = null
+  assetNotice.value = ''
+  error.value = ''
+  syncWarning.value = ''
+  syncState.value = 'loading'
+  traceOpen.value = false
+  selectedEvidence.value = null
+  void refreshEvent(activeSession, true)
+}
+
+function stopEventSession() {
+  sessionId += 1
+  clearPollTimer()
+}
+
+watch(() => [route.params.eventId, runtime.mode], startEventSession, { immediate: true })
+onBeforeUnmount(stopEventSession)
 </script>
 
 <template>
@@ -89,10 +240,12 @@ onMounted(load)
       title="风险事件详情"
       description="从证据形成、系统动作到观察回落，每一步都有记录。"
     >
+      <el-tag :type="syncTagType" size="large" effect="plain" data-testid="event-sync-status">{{ syncLabel }}</el-tag>
       <el-button size="large" plain @click="router.back()">返回</el-button>
     </PageHeader>
 
     <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
+    <el-alert v-if="syncWarning" :title="syncWarning" type="warning" show-icon :closable="false" />
 
     <template v-if="event">
       <section class="event-summary-card">
@@ -136,6 +289,26 @@ onMounted(load)
             <el-empty v-else description="该绿色事件没有异常 Evidence" />
           </article>
 
+          <article v-if="displayRuleTraces.length" class="content-card" data-testid="rule-trace-panel">
+            <div class="card-heading"><div><span class="section-kicker">RuleTrace</span><h2>后端实际规则判断</h2></div><span>{{ displayRuleTraces.length }} 次评估</span></div>
+            <div class="tool-results">
+              <article v-for="trace in displayRuleTraces" :key="trace.trace_id">
+                <el-tag effect="dark">{{ trace.matched_rule }}</el-tag>
+                <h3>{{ trace.reason || '后端未返回规则解释' }}</h3>
+                <dl class="detail-list">
+                  <div><dt>状态迁移</dt><dd>{{ trace.previous_status || trace.previous_state }} → {{ trace.next_status || trace.next_state }}</dd></div>
+                  <div><dt>实际评分</dt><dd>{{ traceScore(trace) }}</dd></div>
+                  <div><dt>评分分量</dt><dd>{{ scoreComponentsText(trace) }}</dd></div>
+                  <div><dt>质量门槛</dt><dd>{{ trace.thresholds?.data_quality ?? '—' }}</dd></div>
+                  <div><dt>逐条质量</dt><dd>{{ qualityText(trace) }}</dd></div>
+                  <div><dt>基线状态</dt><dd>{{ baselineStatusText(trace) }}</dd></div>
+                  <div><dt>上下文</dt><dd>{{ contextText(trace) }}</dd></div>
+                  <div><dt>查询窗口</dt><dd>短时 {{ trace.queried_windows?.short_seconds ?? '—' }}秒 · 中期 {{ trace.queried_windows?.medium_hours ?? '—' }}小时 · 长期 {{ trace.queried_windows?.long_days ?? '—' }}天</dd></div>
+                </dl>
+              </article>
+            </div>
+          </article>
+
           <article class="content-card">
             <div class="card-heading"><div><span class="section-kicker">系统动作</span><h2>干预与观察时间轴</h2></div></div>
             <el-timeline v-if="event.timeline?.length" class="action-timeline" data-testid="event-action-timeline">
@@ -150,10 +323,14 @@ onMounted(load)
             <div class="card-heading"><div><span class="section-kicker">风险趋势</span><h2>{{ event.status === 'RESOLVED' ? '风险水位已经回落' : '当前仍在干预或观察' }}</h2></div><el-tag :type="event.status === 'RESOLVED' ? 'success' : 'warning'" size="large">{{ event.observation_seconds || 0 }} 秒观察</el-tag></div>
             <ChartPanel :option="riskChartOption" height="270px" aria-label="风险事件发生后逐步回落的趋势图" />
           </article>
+          <article v-else-if="event.rule_traces?.length" class="content-card api-empty-state">
+            <div class="card-heading"><div><span class="section-kicker">风险趋势</span><h2>以真实状态迁移为准</h2></div></div>
+            <el-alert title="后端未返回逐点风险分，页面不会根据状态猜测数值；请查看上方规则与动作时间轴。" type="info" show-icon :closable="false" />
+          </article>
         </div>
 
         <aside class="event-aside">
-          <MediaPanel :asset="asset" :source-mode="event.source_mode" :simulated="event.simulated" />
+          <MediaPanel :asset="mediaAsset" :source-mode="event.source_mode" :simulated="event.simulated" />
 
           <section class="content-card tool-card">
             <div class="card-heading"><div><span class="section-kicker">工具结果</span><h2>执行记录</h2></div></div>
@@ -166,6 +343,7 @@ onMounted(load)
                 <dl class="detail-list">
                   <div><dt>执行方式</dt><dd>{{ result.action_type }}</dd></div>
                   <div><dt>老人反馈</dt><dd>{{ result.resident_response || '暂无' }}</dd></div>
+                  <div v-if="result.family_feedback"><dt>家属反馈</dt><dd>{{ result.family_feedback }}</dd></div>
                   <div><dt>干预后水位</dt><dd>{{ formatRiskScore(result.risk_after) }}</dd></div>
                   <div><dt>结果</dt><dd>{{ result.resolution_reason || '等待结果' }}</dd></div>
                 </dl>

@@ -78,6 +78,29 @@ class BehaviorObservationTests(unittest.TestCase):
             },
         )
 
+    def test_region_statistics_add_four_observations(self):
+        summary = {
+            "source_mode": "MOCK",
+            "simulated": True,
+            "frames_processed": 30,
+            "detected_frames": 20,
+            "max_person_count": 1,
+            "max_motion_area": 1000,
+            "activity_counts": {"LOW": 30},
+            "track_points": 20,
+            "travel_distance_px": 50.0,
+            "threshold_status": "DEMO_UNCALIBRATED",
+            "region_statistics": {
+                "visited_region_count": 2,
+                "transition_count": 1,
+                "dwell_seconds": {"doorway": 2.0, "living_room": 8.0},
+                "region_sequence": ["doorway", "living_room"],
+            },
+        }
+        observations = build_behavior_observations(summary, resident_id="resident-001")
+        self.assertEqual(len(observations), 10)
+        self.assertIn("visited_region_count", {item["feature_name"] for item in observations})
+
 
 if __name__ == "__main__":
     unittest.main()

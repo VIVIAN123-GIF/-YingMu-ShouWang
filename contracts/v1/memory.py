@@ -66,6 +66,8 @@ class MemoryStore:
         "sit_to_stand_duration": "rise_duration",
         "trunk_sway_angle": "trunk_sway",
         "gait_stability_score": "gait_stability",
+        "relative_gait_speed": "relative_gait_speed",
+        "stable_trunk_angle_deg": "stable_trunk_angle_deg",
         "activity_range": "activity_range",
         "sleep_midpoint": "circadian",
     }
@@ -189,7 +191,7 @@ class MemoryStore:
         short = self.query_short(resident_id, now)
         medium = self.query_medium(resident_id, now)
         long = self.query_long(resident_id, now)
-        low_light = sum(1 for item in medium if item.evidence_type == "low_light")
+        low_light = sum(1 for item in medium if item.evidence_type == "low_illumination")
         abnormal_rises = sum(1 for item in medium if item.evidence_type == "rapid_rise")
         night_rises = sum(1 for item in medium if item.evidence_type in {"rapid_rise", "night_rise"} and (item.timestamp.hour >= 22 or item.timestamp.hour < 6))
         return {

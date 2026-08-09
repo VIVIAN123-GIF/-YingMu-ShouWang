@@ -1,0 +1,34 @@
+[
+  {
+    "trace_id": "trace-e543da1fab23483d9b13eaa79fa7ad81",
+    "event_id": null,
+    "evaluated_at": "2026-07-31T03:07:01+08:00",
+    "matched_rule": "R-FALL-01",
+    "previous_status": null,
+    "next_status": null
+  },
+  {
+    "trace_id": "trace-a997645a8480484badfea853bef7ee5b",
+    "event_id": "event-fab9bfe341ed4bef",
+    "evaluated_at": "2026-07-31T03:07:05+08:00",
+    "matched_rule": "R-FALL-02",
+    "previous_status": null,
+    "next_status": "INTERVENING"
+  },
+  {
+    "trace_id": "trace-8ea11fe4668f4cf082eb20379ee0683b",
+    "event_id": "event-fab9bfe341ed4bef",
+    "evaluated_at": "2026-07-31T03:07:29+08:00",
+    "matched_rule": "R-FALL-04",
+    "previous_status": "INTERVENING",
+    "next_status": "OBSERVING"
+  },
+  {
+    "trace_id": "trace-25f334813dda49aaaf73aa1a3bf0d2eb",
+    "event_id": "event-fab9bfe341ed4bef",
+    "evaluated_at": "2026-07-31T03:08:30+08:00",
+    "matched_rule": "R-FALL-05",
+    "previous_status": "OBSERVING",
+    "next_status": "RESOLVED"
+  }
+]

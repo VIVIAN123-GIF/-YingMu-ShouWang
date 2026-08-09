@@ -28,7 +28,7 @@ python -m uvicorn backend.main:app --reload
 - Swagger：<http://127.0.0.1:8000/docs>
 - 健康检查：<http://127.0.0.1:8000/health>
 
-真实萤石凭证只可放在本地 `.env`，不得提交或写入日志。Mock 模式不需要真实凭证。
+真实萤石凭证和设备视频加密验证码只可放在本地 `.env`，不得提交或写入日志。Mock 模式不需要真实凭证。
 
 ## 分层约定
 
@@ -61,4 +61,10 @@ python -m pytest tests/test_risk_api.py -q
 python scripts/validate_database.py
 ```
 
-真实设备验收使用 `python scripts/validate_ezviz_live.py`。该脚本遵循“状态 → 抓图 → 临时播放地址”的顺序，并只保存脱敏结果。
+真实设备三轮验收使用：
+
+```powershell
+python scripts/validate_ezviz_live.py --runs 3
+```
+
+脚本遵循“状态 → 抓图 → 临时播放地址”的顺序，分别保存三轮脱敏报告、最后一轮兼容报告和一致性汇总。任一阶段失败时退出码为 1，但已完成轮次仍会保留；设备离线会明确标记为 `FAILED/MOCK/DEVICE_OFFLINE`。加密设备的 HLS 请求返回 60019 时，若本地已配置验证码，脚本会尝试 ezopen 回退；报告只记录协议和结果，不保存地址。

@@ -1,0 +1,82 @@
+[
+  {
+    "timestamp": "2026-08-01T14:21:12.423Z",
+    "operation": "events.list",
+    "status": "SUCCESS",
+    "mode": "api",
+    "active_source": "api",
+    "event_id": null,
+    "ruleset_version": null,
+    "detail": "fastapi"
+  },
+  {
+    "timestamp": "2026-08-01T14:21:13.160Z",
+    "operation": "event.detail",
+    "status": "SUCCESS",
+    "mode": "api",
+    "active_source": "api",
+    "event_id": "event-963294aefa894c44",
+    "ruleset_version": "ruleset-v1.0",
+    "detail": "fastapi"
+  },
+  {
+    "timestamp": "2026-08-01T14:21:13.252Z",
+    "operation": "asset.read",
+    "status": "FAILED",
+    "mode": "api",
+    "active_source": "api",
+    "event_id": null,
+    "ruleset_version": null,
+    "detail": "Request failed with status code 404"
+  },
+  {
+    "timestamp": "2026-08-01T14:21:14.777Z",
+    "operation": "event.detail",
+    "status": "SUCCESS",
+    "mode": "api",
+    "active_source": "api",
+    "event_id": "event-963294aefa894c44",
+    "ruleset_version": "ruleset-v1.0",
+    "detail": "fastapi"
+  },
+  {
+    "timestamp": "2026-08-01T14:21:16.302Z",
+    "operation": "event.detail",
+    "status": "SUCCESS",
+    "mode": "api",
+    "active_source": "api",
+    "event_id": "event-963294aefa894c44",
+    "ruleset_version": "ruleset-v1.0",
+    "detail": "fastapi"
+  },
+  {
+    "timestamp": "2026-08-01T14:21:17.601Z",
+    "operation": "dashboard.read",
+    "status": "SUCCESS",
+    "mode": "api",
+    "active_source": "api",
+    "event_id": null,
+    "ruleset_version": null,
+    "detail": "fastapi"
+  },
+  {
+    "timestamp": "2026-08-01T14:21:18.363Z",
+    "operation": "weekly.read",
+    "status": "SUCCESS",
+    "mode": "api",
+    "active_source": "api",
+    "event_id": null,
+    "ruleset_version": null,
+    "detail": "fastapi"
+  },
+  {
+    "timestamp": "2026-08-01T14:21:19.103Z",
+    "operation": "baseline.read",
+    "status": "SUCCESS",
+    "mode": "api",
+    "active_source": "api",
+    "event_id": null,
+    "ruleset_version": "ruleset-v1.0",
+    "detail": "fastapi"
+  }
+]

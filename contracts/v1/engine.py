@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from pydantic import ValidationError
 
 from .memory import MemoryStore
+from .decision import FallDecisionPolicy, quality_snapshot
 from .models import (
     DeliveryStatus,
     EventStatus,
@@ -19,6 +20,7 @@ from .models import (
     RiskLevel,
 )
 from .ruleset import RuleTrace, Ruleset, load_ruleset
+from .semantics import EvidenceSemanticError, validate_evidence_semantics
 
 
 class ContractError(ValueError):
@@ -42,6 +44,7 @@ class MockRiskEngine:
 
     def __init__(self, ruleset: Ruleset | None = None):
         self.ruleset = ruleset or load_ruleset()
+        self.policy = FallDecisionPolicy(self.ruleset)
         self.observations: dict[str, Observation] = {}
         self.evidences: dict[str, Evidence] = {}
         self.events: dict[str, RiskEvent] = {}
@@ -82,6 +85,8 @@ class MockRiskEngine:
         reason: str,
         event_id: str | None = None,
         not_matched: dict[str, str] | None = None,
+        context_snapshot: dict | None = None,
+        score_components: dict | None = None,
     ) -> RuleTrace:
         snapshot = self.memory.snapshot(resident_id, now)
         trace = RuleTrace(
@@ -99,6 +104,11 @@ class MockRiskEngine:
             not_matched=not_matched or {},
             event_id=event_id,
             ruleset_version=self.ruleset.version,
+            thresholds=dict(self.ruleset.thresholds),
+            baseline_snapshot=snapshot["long"]["baseline"],
+            quality_snapshot=quality_snapshot(self.memory.query_short(resident_id, now), self.ruleset),
+            context_snapshot=context_snapshot or {},
+            score_components=score_components or {},
         )
         self.traces.append(trace)
         return trace
@@ -126,6 +136,10 @@ class MockRiskEngine:
             raise ConflictError("resident_id does not match linked Observation")
         if any(observation.source_mode != incoming.source_mode or observation.simulated != incoming.simulated for observation in linked):
             raise ConflictError("source_mode/simulated does not match linked Observation")
+        try:
+            validate_evidence_semantics(incoming, linked, self.ruleset)
+        except EvidenceSemanticError as error:
+            raise ContractError(str(error)) from error
         existing = self.evidences.get(incoming.evidence_id)
         if existing:
             if self._same(existing, incoming):
@@ -219,70 +233,38 @@ class MockRiskEngine:
         previous = self.memory.state(resident_id)
         active = self._active_event(resident_id)
         short = self.memory.query_short(resident_id, now)
-        recent = [e for e in short if self._usable(e)]
-        persistent = next((e for e in recent if e.evidence_type in {"persistent_instability", "no_response"}), None)
         latest_intervention = max(
             (item for item in self.interventions.values() if active and item.event_id == active.event_id),
             key=lambda item: item.started_at,
             default=None,
         )
-        repeated_hazard = next(
-            (
-                evidence for evidence in recent
-                if active
-                and self.intervention_attempts.get(active.event_id, 0) >= 2
-                and latest_intervention
-                and evidence.timestamp > latest_intervention.started_at
-                and evidence.evidence_type in {"trunk_sway", "gait_instability"}
-            ),
-            None,
+        trigger = max(
+            (item for item in short if item.timestamp <= now),
+            key=lambda item: item.timestamp,
+            default=None,
         )
-        if active and (persistent or repeated_hazard):
-            escalation_evidence = persistent or repeated_hazard
-            active.risk_level = RiskLevel.RED
-            active.risk_score = max(active.risk_score, self.ruleset.thresholds["red_score"])
-            active.status = EventStatus.ESCALATED
-            active.updated_at = escalation_evidence.timestamp
-            active.recommended_action = "通知家属并转人工接管，不自动拨打120。"
-            active.intervention_policy = "fall-red-human-handoff-v1"
-            self.memory.set_state(resident_id, RiskLevel.RED)
-            self._trace(resident_id=resident_id, now=now, matched_rule="R-FALL-07", previous_state=previous, next_state=RiskLevel.RED, reason="persistent instability, no response, or a hazard after two interventions is present", event_id=active.event_id)
-            return active
-
-        recovered = next(
-            (e for e in recent if e.evidence_type == "posture_recovered" and isinstance(e.current_value, (int, float)) and float(e.current_value) >= self.ruleset.thresholds["stable_posture_seconds"]),
-            None,
+        context_score = self._context_score(resident_id, now)
+        context_snapshot = {"context_score": context_score}
+        decision = self.policy.evaluate(
+            now=now,
+            previous_state=previous.value,
+            active_status=active.status.value if active else None,
+            active_created_at=active.created_at if active else None,
+            recovery_started_at=self.recovery_at.get(active.event_id) if active else None,
+            recent=short,
+            trigger=trigger,
+            context_score=context_score,
+            intervention_attempts=self.intervention_attempts.get(active.event_id, 0) if active else 0,
+            latest_intervention_at=latest_intervention.started_at if latest_intervention else None,
         )
-        if active and active.status in {EventStatus.INTERVENING, EventStatus.OPEN} and recovered:
-            active.status = EventStatus.OBSERVING
-            active.updated_at = recovered.timestamp
-            self.recovery_at[active.event_id] = recovered.timestamp
-            self.memory.set_state(resident_id, RiskLevel.ORANGE)
-            self._trace(resident_id=resident_id, now=now, matched_rule="R-FALL-04", previous_state=previous, next_state=RiskLevel.ORANGE, reason="stable posture reached 15 seconds; begin observation", event_id=active.event_id)
-            return active
+        next_state = RiskLevel(decision.risk_level)
 
-        if active and active.status == EventStatus.OBSERVING:
-            recovery_at = self.recovery_at.get(active.event_id)
-            hazard = next((e for e in recent if recovery_at and e.timestamp > recovery_at and e.evidence_type == "trunk_sway"), None)
-            if hazard:
-                active.status = EventStatus.INTERVENING
-                active.updated_at = hazard.timestamp
-                self.memory.set_state(resident_id, RiskLevel.ORANGE)
-                self._trace(resident_id=resident_id, now=now, matched_rule="R-FALL-06", previous_state=previous, next_state=RiskLevel.ORANGE, reason="new trunk_sway during observation requires another intervention", event_id=active.event_id)
-                return active
-            self._trace(resident_id=resident_id, now=now, matched_rule="NO_MATCH", previous_state=previous, next_state=previous, reason="observation is still in progress", event_id=active.event_id, not_matched={"R-FALL-05": "60-second observation window not complete"})
-            return active
-
-        if active:
-            self._trace(resident_id=resident_id, now=now, matched_rule="NO_MATCH", previous_state=previous, next_state=previous, reason="active event is awaiting new evidence", event_id=active.event_id)
-            return active
-
-        rapid = next((e for e in recent if e.evidence_type == "rapid_rise"), None)
-        sway = next((e for e in recent if e.evidence_type == "trunk_sway"), None)
-        if rapid and sway and abs(sway.timestamp - rapid.timestamp).total_seconds() <= self.ruleset.windows["short_seconds"] and self.ruleset.high_confidence([rapid.confidence, sway.confidence]):
+        if decision.action == "CREATE_EVENT":
+            selected = [self.evidences[item] for item in decision.evidence_ids]
+            rapid = next(item for item in selected if item.evidence_type == "rapid_rise")
+            sway = next(item for item in selected if item.evidence_type == "trunk_sway")
             event_id = self._next_event_id(resident_id)
             created = max(rapid.timestamp, sway.timestamp)
-            score = self.ruleset.score([rapid, sway], self._context_score(resident_id, created))
             event = RiskEvent(
                 schema_version="1.0",
                 event_id=event_id,
@@ -292,7 +274,7 @@ class MockRiskEngine:
                 primary_domain="FALL",
                 related_domains=[],
                 risk_level=RiskLevel.ORANGE,
-                risk_score=score,
+                risk_score=decision.score,
                 evidence_ids=[rapid.evidence_id, sway.evidence_id],
                 evidence_summary=[
                     EvidenceSummary(evidence_id=rapid.evidence_id, evidence_type=rapid.evidence_type, explanation=rapid.explanation),
@@ -308,12 +290,56 @@ class MockRiskEngine:
             )
             self.events[event.event_id] = event
             self.memory.set_state(resident_id, RiskLevel.ORANGE)
-            self._trace(resident_id=resident_id, now=now, matched_rule="R-FALL-02", previous_state=previous, next_state=RiskLevel.ORANGE, reason="rapid_rise and trunk_sway are within 30 seconds with usable quality and high confidence", event_id=event.event_id, not_matched={"R-FALL-01": "a second independent short-window evidence is present"})
+            self._trace(resident_id=resident_id, now=now, matched_rule=decision.matched_rule,
+                        previous_state=previous, next_state=RiskLevel.ORANGE,
+                        reason=decision.reason, event_id=event.event_id,
+                        not_matched=decision.not_matched, context_snapshot=context_snapshot,
+                        score_components=decision.score_components)
             return event
-        if rapid:
-            self._trace(resident_id=resident_id, now=now, matched_rule="R-FALL-01", previous_state=previous, next_state=RiskLevel.GREEN, reason="rapid_rise alone waits for an independent danger signal", not_matched={"R-FALL-02": "trunk_sway is absent or outside the 30-second window"})
-        else:
-            self._trace(resident_id=resident_id, now=now, matched_rule="NO_MATCH", previous_state=previous, next_state=previous, reason="no usable short-window combination is present")
+
+        if active and decision.action == "BEGIN_OBSERVING":
+            active.status = EventStatus.OBSERVING
+            active.updated_at = trigger.timestamp
+            self.recovery_at[active.event_id] = trigger.timestamp
+            self.memory.set_state(resident_id, RiskLevel.ORANGE)
+        elif active and decision.action == "RESTART_INTERVENTION":
+            hazard = self.evidences[decision.evidence_ids[0]]
+            active.status = EventStatus.INTERVENING
+            active.updated_at = hazard.timestamp
+            self.recovery_at.pop(active.event_id, None)
+            self.memory.set_state(resident_id, RiskLevel.ORANGE)
+        elif active and decision.action == "ESCALATE":
+            hazard = self.evidences[decision.evidence_ids[0]]
+            active.risk_level = RiskLevel.RED
+            active.risk_score = max(active.risk_score, decision.score or self.ruleset.thresholds["red_score"])
+            active.status = EventStatus.ESCALATED
+            active.updated_at = hazard.timestamp
+            active.recommended_action = "通知家属并转人工接管，不自动拨打120。"
+            active.intervention_policy = "fall-red-human-handoff-v1"
+            self.memory.set_state(resident_id, RiskLevel.RED)
+        elif active and decision.action == "RESOLVE":
+            active.status = EventStatus.RESOLVED
+            active.updated_at = now
+            self.memory.set_state(resident_id, RiskLevel.GREEN)
+            result = max(
+                (item for item in self.interventions.values() if item.event_id == active.event_id),
+                key=lambda item: item.started_at,
+                default=None,
+            )
+            if result:
+                result.completed_at = now
+                result.resident_response = "stable"
+                result.risk_after = 0.24
+                result.resolved = True
+                result.resolution_reason = "姿态恢复且60秒观察期内无新风险证据"
+
+        self._trace(resident_id=resident_id, now=now, matched_rule=decision.matched_rule,
+                    previous_state=previous, next_state=next_state, reason=decision.reason,
+                    event_id=active.event_id if active else None,
+                    not_matched=decision.not_matched, context_snapshot=context_snapshot,
+                    score_components=decision.score_components)
+        if active:
+            return active
         return None
 
     def intervene(self, event_id: str, now: datetime | None = None) -> InterventionResult:
@@ -357,33 +383,8 @@ class MockRiskEngine:
         event = self.events.get(event_id)
         if event is None:
             raise ConflictError(f"unknown event_id: {event_id}")
-        recovery_at = self.recovery_at.get(event_id)
-        later_hazard = recovery_at and any(
-            evidence.resident_id == event.resident_id
-            and evidence.evidence_type in {"rapid_rise", "trunk_sway", "gait_instability"}
-            and recovery_at < evidence.timestamp <= now
-            and self._usable(evidence)
-            for evidence in self.evidences.values()
-        )
-        if event.status == EventStatus.OBSERVING and later_hazard:
-            event.status = EventStatus.INTERVENING
-            event.updated_at = now
-            self.memory.set_state(event.resident_id, RiskLevel.ORANGE)
-            self._trace(resident_id=event.resident_id, now=now, matched_rule="R-FALL-06", previous_state=RiskLevel.ORANGE, next_state=RiskLevel.ORANGE, reason="new usable hazard appeared during observation", event_id=event_id)
-            return event
-        if event.status == EventStatus.OBSERVING and recovery_at and now - recovery_at >= timedelta(seconds=self.ruleset.thresholds["observation_seconds"]):
-            event.status = EventStatus.RESOLVED
-            event.updated_at = now
-            self.memory.set_state(event.resident_id, RiskLevel.GREEN)
-            result = max((item for item in self.interventions.values() if item.event_id == event_id), key=lambda item: item.started_at, default=None)
-            if result:
-                result.completed_at = now
-                result.resident_response = "stable"
-                result.risk_after = 0.24
-                result.resolved = True
-                result.resolution_reason = "姿态恢复且60秒观察期内无新风险证据"
-            self._trace(resident_id=event.resident_id, now=now, matched_rule="R-FALL-05", previous_state=RiskLevel.ORANGE, next_state=RiskLevel.GREEN, reason="15-second stable posture followed by a full 60-second observation", event_id=event_id)
-        return event
+        self.evaluate(event.resident_id, now)
+        return self.events[event_id]
 
     def snapshot(self):
         return {

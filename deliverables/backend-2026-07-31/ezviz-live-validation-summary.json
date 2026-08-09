@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "EZVIZ_LIVE_ACCEPTANCE_SUMMARY",
+  "generated_at": "2026-07-30T19:55:19.839+08:00",
+  "runs": 3,
+  "token_acquisition_mode": "APP_SECRET",
+  "successful_runs": 1,
+  "consistent": false,
+  "semantic_signature": [
+    {
+      "stage": "device_status",
+      "executed": true,
+      "result": "SUCCESS",
+      "business_code": "200",
+      "online": true,
+      "source_mode": "LIVE_DEVICE",
+      "failure_reason": null
+    },
+    {
+      "stage": "device_snapshot",
+      "executed": true,
+      "result": "SUCCESS",
+      "business_code": "200",
+      "online": null,
+      "source_mode": "LIVE_DEVICE",
+      "failure_reason": null
+    },
+    {
+      "stage": "temporary_playback_address",
+      "executed": true,
+      "result": "SUCCESS",
+      "business_code": "200",
+      "online": null,
+      "source_mode": "LIVE_DEVICE",
+      "failure_reason": null
+    }
+  ],
+  "contains_credentials": false,
+  "contains_permanent_public_url": false,
+  "overall_result": "INCOMPLETE"
+}

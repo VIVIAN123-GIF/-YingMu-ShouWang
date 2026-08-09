@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "evi-fall-posture-recovered-adl-14-cam0-rgb",
+  "observation_ids": [
+    "obs-posture-recovered-adl-14-cam0-rgb",
+    "obs-stable-trunk-angle-adl-14-cam0-rgb"
+  ],
+  "resident_id": "resident-demo-001",
+  "timestamp": "2026-08-07T03:07:28+08:00",
+  "risk_domain": "FALL",
+  "evidence_type": "posture_recovered",
+  "severity": 0.0,
+  "confidence": 0.941,
+  "data_quality": 0.941,
+  "baseline_value": 15.0,
+  "current_value": 0.792,
+  "baseline_deviation": -0.947,
+  "time_scale": "SHORT",
+  "location": "bedroom",
+  "explanation": "干预后躯干最大偏角7.86度，连续稳定0.792秒，恢复阈值为15秒。",
+  "adapter_version": "fall-evidence-rule-v1",
+  "source_mode": "PUBLIC_DATASET",
+  "simulated": true
+}

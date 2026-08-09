@@ -3,9 +3,9 @@
 | 项目 | 内容 |
 |---|---|
 | 负责人 | 常易铭 |
-| 更新日期 | 2026年7月25日 |
+| 更新日期 | 2026年7月30日 |
 | 分支 | `feature/cym/audio-behavior-demo` |
-| 当前状态 | 代码与接口样例可自动复现；真实人物效果和正式阈值仍待统一素材验证 |
+| 当前状态 | 7月31日前代码交付完成；区域实景效果和正式阈值仍待统一素材验证 |
 
 ## 1. 项目边界
 
@@ -38,19 +38,29 @@
 │  ├─ whisper_demo.py
 │  ├─ camera_test.py
 │  ├─ behavior_demo.py
+│  ├─ regions.py
+│  ├─ behavior_evidence.py
 │  ├─ observation.py
 │  ├─ evidence.py
-│  └─ generate_evidence_samples.py
+│  ├─ generate_evidence_samples.py
+│  ├─ generate_behavior_evidence.py
+│  └─ submit_to_backend.py
 ├─ scripts/
 │  ├─ generate_test_video.py
 │  └─ generate_test_audio.ps1
 ├─ tests/
 │  ├─ test_behavior.py
+│  ├─ test_regions.py
+│  ├─ test_behavior_evidence.py
+│  ├─ test_backend_submission.py
 │  ├─ test_evidence.py
 │  ├─ test_observation.py
 │  └─ test_whisper_demo.py
 ├─ samples/
 │  ├─ evidence_samples.json
+│  ├─ regions.example.json
+│  ├─ mock_behavior_statistics.json
+│  ├─ behavior_evidence_bundle.example.json
 │  ├─ test_scam_script.txt
 │  └─ test_scam_transcript.txt
 ├─ logs/
@@ -109,7 +119,7 @@ winget install --id Gyan.FFmpeg -e
 python -m unittest discover -s .\tests -v
 ```
 
-预期：当前16项测试全部`OK`，其中Observation样例还会通过仓库
+预期：当前26项测试全部`OK`，其中Observation样例还会通过仓库
 `contracts.v1.models.Observation`官方模型校验。
 
 ### 5.2 生成本地MP4链路测试视频
@@ -187,6 +197,31 @@ python .\src\behavior_demo.py --input 0 --max-seconds 30
 
 完整、直立、距离约2—3米的人体更容易被HOG检测。近距离、截断、遮挡和非直立姿态仍可能漏检。
 
+### 6.1 人工区域、进入/离开和统计
+
+先按实际画面修改`samples/regions.example.json`中的多边形坐标，然后运行：
+
+```powershell
+python .\src\behavior_demo.py `
+  --input 0 `
+  --max-seconds 30 `
+  --region-config .\samples\regions.example.json `
+  --region-events-output .\output\region_events.json `
+  --statistics-output .\output\region_statistics.json `
+  --summary-output .\output\region_summary.json `
+  --observation-output .\output\region_observations.json
+```
+
+画面会显示门口、客厅和走廊多边形，以及最大HOG人体框中心所在区域。程序输出：
+
+- `ENTER`/`EXIT`及本次停留秒数；
+- 访问过的区域数和顺序；
+- 每个区域累计停留秒数；
+- 区域转换总数及`doorway->living_room`形式的明细；
+- 10条行为Observation，其中新增区域数、转换数、最长停留和访问顺序。
+
+录像使用帧号/FPS计算相对时间，因此同一录像可得到一致统计。HOG短暂漏检时不会立刻判断离开；程序结束时才关闭最后一个停留区间。像素轨迹不解释为现实米数。
+
 ## 7. Whisper复现
 
 ### 7.1 生成无隐私的本地合成音频
@@ -225,7 +260,7 @@ python .\src\generate_evidence_samples.py `
   --output .\output\evidence_samples.json
 ```
 
-当前三条样例：
+原有三条基础样例：
 
 | evidence_type | 来源 | 边界 |
 |---|---|---|
@@ -244,7 +279,51 @@ python .\src\generate_evidence_samples.py `
 
 这些分数用于接口联调，尚未经过数据标定，不是实测准确率或正式阈值。
 
-## 9. 行为摘要隐私边界
+### 8.1 7月30日行为Evidence联调包
+
+以下命令根据脱敏模拟统计生成6条Observation和3条Evidence：
+
+```powershell
+python .\src\generate_behavior_evidence.py `
+  --input .\samples\mock_behavior_statistics.json `
+  --output .\output\behavior_evidence_bundle.json
+```
+
+三条Evidence为`activity_range_decline`、`unauthorized_visitor`和
+`unusual_dwell_time`。它们都引用联调包内真实存在的Observation ID，且整个包统一为
+`source_mode: MOCK`、`simulated: true`。访客结果只表达“授权信息未匹配，建议家属核验身份”；停留结果使用`DEMO_UNCALIBRATED`阈值，二者均不构成诈骗判断。
+
+## 9. FastAPI Mock接口提交
+
+在仓库根目录启动后端：
+
+```powershell
+python -m pip install -r backend\requirements.txt
+python -m uvicorn backend.main:app --reload
+```
+
+回到本Demo目录，先只校验不发送：
+
+```powershell
+python .\src\submit_to_backend.py `
+  --bundle .\samples\behavior_evidence_bundle.example.json `
+  --base-url http://127.0.0.1:8000 `
+  --log-output .\output\backend_dry_run.json `
+  --dry-run
+```
+
+真实提交：
+
+```powershell
+python .\src\submit_to_backend.py `
+  --bundle .\samples\behavior_evidence_bundle.example.json `
+  --base-url http://127.0.0.1:8000 `
+  --log-output .\output\backend_submission.json
+```
+
+客户端固定先提交Observation，再提交Evidence；某项失败后停止后续提交并返回非零退出码。日志只记录ID、接口、HTTP状态和幂等状态，不保存后端计算的最终风险等级。7月30日本机联调9项均返回HTTP 201，见`logs/backend_submission_success_20260730.json`；服务未启动的降级格式见对应failure日志。
+
+## 10. 行为摘要隐私边界
 
 `--summary-output`只写入：
 
@@ -256,20 +335,21 @@ python .\src\generate_evidence_samples.py `
 
 摘要不保存视频帧、人脸、绝对文件路径、设备序列号或账号信息。
 
-## 10. 当前限制
+## 11. 当前限制
 
 - 当前使用HOG，不是稳定的多人ID跟踪；
-- 当前只有人物中心像素轨迹，尚未完成人工区域标定和房间转换；
+- 已支持人工区域和房间转换，但示例坐标必须按部署画面调整；
 - `Travel distance`不是现实米制距离；
 - 活动量和行为标签阈值未标定；
 - 合成MP4只测试输入链路，不验证人物检测；
 - Whisper仍可能出现简繁差异和近音错字；
-- 访客授权、异常停留、异常踱步和多日趋势仍未实现；
-- 当前Evidence生成器构造联调样例，尚未连接实时Demo输出。
+- 访客授权和异常停留当前仅为MOCK联调，不具备真实身份识别能力；
+- 多日趋势使用模拟统计验证接口，尚未接入长期真实数据；
+- 异常踱步和正式阈值标定仍未实现。
 
 详细降级逻辑见`docs/降级规则.md`。
 
-## 11. 安全与提交检查
+## 12. 安全与提交检查
 
 禁止上传：
 

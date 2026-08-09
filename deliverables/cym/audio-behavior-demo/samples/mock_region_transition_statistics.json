@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "source_mode": "MOCK",
+  "simulated": true,
+  "fixture_id": "mock-region-transition-20260731-001",
+  "fixture_type": "DETERMINISTIC_POINT_SEQUENCE",
+  "region_config": "regions.example.json",
+  "point_sequence": [
+    {
+      "timestamp_seconds": 0.0,
+      "region_id": "doorway"
+    },
+    {
+      "timestamp_seconds": 5.0,
+      "region_id": "living_room"
+    },
+    {
+      "timestamp_seconds": 9.0,
+      "region_id": "corridor"
+    },
+    {
+      "timestamp_seconds": 12.0,
+      "region_id": null,
+      "action": "finalize"
+    }
+  ],
+  "visited_region_count": 3,
+  "visited_regions": [
+    "doorway",
+    "living_room",
+    "corridor"
+  ],
+  "dwell_seconds": {
+    "doorway": 5.0,
+    "living_room": 4.0,
+    "corridor": 3.0
+  },
+  "transition_count": 2,
+  "transitions": {
+    "doorway->living_room": 1,
+    "living_room->corridor": 1
+  },
+  "region_sequence": [
+    "doorway",
+    "living_room",
+    "corridor"
+  ],
+  "threshold_status": "DEMO_UNCALIBRATED",
+  "distance_unit": "pixel_not_meter",
+  "claim_boundary": "Synthetic deterministic fixture only; no person video, live device, or real-home accuracy claim."
+}

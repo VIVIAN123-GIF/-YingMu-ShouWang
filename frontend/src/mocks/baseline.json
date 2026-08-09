@@ -1,0 +1,21 @@
+{
+  "resident_id": "resident-001",
+  "as_of": "2026-08-01T08:00:00+08:00",
+  "ruleset_version": "ruleset-v1.0",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "overall_status": "INSUFFICIENT",
+  "baseline_progress": {
+    "observed_days": 0,
+    "provisional_target_days": 3,
+    "stable_target_days": 7
+  },
+  "provenance": null,
+  "baselines": {
+    "rise_duration": { "median": null, "mad": null, "sample_count": 0, "distinct_days": 0, "status": "INSUFFICIENT" },
+    "relative_gait_speed": { "median": null, "mad": null, "sample_count": 0, "distinct_days": 0, "status": "INSUFFICIENT" },
+    "stable_trunk_angle_deg": { "median": null, "mad": null, "sample_count": 0, "distinct_days": 0, "status": "INSUFFICIENT" }
+  },
+  "trend": [],
+  "activity_heatmap": null
+}

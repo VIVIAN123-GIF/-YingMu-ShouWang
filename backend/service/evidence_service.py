@@ -1,33 +1,23 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.config import MIN_EVIDENCE_CONFIDENCE, MIN_EVIDENCE_QUALITY, RULESET_VERSION
-from backend.db.models import Evidence, Observation
+from backend.config import RULESET_VERSION
+from backend.db.models import Asset, Evidence, Observation
 from backend.schemas.evidence import EvidenceCreate
 from backend.service.errors import ServiceError
-from backend.service.risk_service import evaluate
+from backend.service.risk_service import evaluate, ruleset
 from backend.service.rule_log_service import log_rule
 from backend.service.serialization import dumps, evidence_dict
+from backend.service.serialization import aware
+from contracts.v1.semantics import EvidenceSemanticError, validate_evidence_semantics
 
 
 def _log_evaluation(payload: EvidenceCreate, request_id: str, result: dict) -> None:
-    log_rule({
-        "timestamp": payload.timestamp.isoformat(),
-        "request_id": request_id,
-        "resident_id": payload.resident_id,
-        "evidence_id": payload.evidence_id,
-        "evidence_type": payload.evidence_type,
-        "source_mode": payload.source_mode.value,
-        "simulated": payload.simulated,
-        "ruleset_version": result["ruleset_version"],
-        "matched_rule": result["matched_rule"],
-        "previous_state": result["previous_state"],
-        "next_state": result["next_state"],
-        "previous_status": result.get("previous_status"),
-        "next_status": result.get("next_status"),
-        "event_id": result["event"]["event_id"] if result["event"] else None,
-        "error": None,
-    })
+    # The persisted RuleTrace is the canonical log payload. Request metadata is
+    # deliberately kept outside it so API, database and page semantics cannot drift.
+    log_rule(result["trace"])
 
 
 async def _create_quality_evidence(
@@ -35,8 +25,7 @@ async def _create_quality_evidence(
     payload: EvidenceCreate,
 ) -> str | None:
     if (
-        payload.data_quality >= MIN_EVIDENCE_QUALITY
-        and payload.confidence >= MIN_EVIDENCE_CONFIDENCE
+        ruleset.usable(payload.confidence, payload.data_quality)
     ):
         return None
 
@@ -128,6 +117,34 @@ async def create_evidence(
             "SOURCE_MISMATCH",
             "Evidence must inherit source_mode and simulated",
         )
+
+    if payload.risk_domain.value == "FALL" and payload.source_mode.value == "RECORDED_REPLAY":
+        authorization_check_at = max(aware(payload.timestamp), datetime.now(timezone.utc))
+        asset_ids = {row.asset_id for row in observations if row.asset_id}
+        if any(not row.asset_id for row in observations):
+            raise ServiceError(409, "ASSET_REQUIRED", "recorded fall Observations must reference an authorized asset")
+        assets = (await db.execute(select(Asset).where(Asset.asset_id.in_(asset_ids)))).scalars().all()
+        asset_by_id = {item.asset_id: item for item in assets}
+        missing_assets = sorted(asset_ids - set(asset_by_id))
+        if missing_assets:
+            raise ServiceError(409, "ASSET_NOT_FOUND", f"authorized assets do not exist: {missing_assets}")
+        for observation in observations:
+            asset = asset_by_id[observation.asset_id]
+            if asset.source_mode != observation.source_mode or asset.simulated != observation.simulated:
+                raise ServiceError(409, "ASSET_SOURCE_MISMATCH", "Asset and Observation source_mode/simulated must match")
+            if asset.device_model != "EZVIZ_C6C":
+                raise ServiceError(409, "ASSET_DEVICE_MISMATCH", "recorded fall Evidence requires an EZVIZ_C6C asset")
+            if asset.authorization_status != "AUTHORIZED" or not asset.authorization_record_id:
+                raise ServiceError(409, "ASSET_NOT_AUTHORIZED", "recorded C6c asset is not authorized")
+            if not asset.retention_until:
+                raise ServiceError(409, "ASSET_RETENTION_REQUIRED", "recorded C6c asset must declare a retention deadline")
+            if aware(asset.retention_until) < authorization_check_at:
+                raise ServiceError(409, "ASSET_AUTHORIZATION_EXPIRED", "recorded C6c asset authorization has expired")
+
+    try:
+        validate_evidence_semantics(payload, observations)
+    except EvidenceSemanticError as error:
+        raise ServiceError(422, "EVIDENCE_SEMANTICS_INVALID", str(error)) from error
 
     data = payload.model_dump(exclude={"observation_ids"})
     row = Evidence(**data, observation_ids=dumps(payload.observation_ids))

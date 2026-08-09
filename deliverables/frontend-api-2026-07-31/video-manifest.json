@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "data_mode": "api",
+  "source_mode": "MOCK",
+  "simulated": true,
+  "real_device_claimed": false,
+  "videos": [
+    {
+      "path": "frontend/artifacts/api-evidence/run-1/screen-recording.webm",
+      "bytes": 443150,
+      "sha256": "9f7ff067eb9a3469c1439479fe71214ada6e84bcdd447c6d18d954e28cc61d9a"
+    },
+    {
+      "path": "frontend/artifacts/api-evidence/run-2/screen-recording.webm",
+      "bytes": 532885,
+      "sha256": "637a47ee6419cf3185c04bb9311805f616ada84dc5cf8ca6323b82fba7dc89c1"
+    },
+    {
+      "path": "frontend/artifacts/api-evidence/run-3/screen-recording.webm",
+      "bytes": 515251,
+      "sha256": "28f46ba0737ae7ae421374d3a5606b52a1599c7e1fcfa95cd0fd8963d3017504"
+    }
+  ]
+}

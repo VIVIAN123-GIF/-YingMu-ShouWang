@@ -24,6 +24,11 @@ class RuleTrace:
     not_matched: dict[str, str]
     event_id: str | None
     ruleset_version: str
+    thresholds: dict[str, Any] | None = None
+    baseline_snapshot: dict[str, Any] | None = None
+    quality_snapshot: dict[str, Any] | None = None
+    context_snapshot: dict[str, Any] | None = None
+    score_components: dict[str, Any] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -37,6 +42,11 @@ class RuleTrace:
             "not_matched": self.not_matched,
             "event_id": self.event_id,
             "ruleset_version": self.ruleset_version,
+            "thresholds": self.thresholds or {},
+            "baseline_snapshot": self.baseline_snapshot or {},
+            "quality_snapshot": self.quality_snapshot or {},
+            "context_snapshot": self.context_snapshot or {},
+            "score_components": self.score_components or {},
         }
 
 
@@ -74,18 +84,38 @@ class Ruleset:
         return any(value >= self.thresholds["high_confidence"] for value in values)
 
     def score(self, evidences: list[Any], context_score: float = 0.0) -> float:
+        return self.score_details(evidences, context_score)["final_score"]
+
+    def score_details(self, evidences: list[Any], context_score: float = 0.0) -> dict[str, Any]:
         if not evidences:
-            return 0.0
+            return {
+                "severity": 0.0,
+                "confidence": 0.0,
+                "data_quality": 0.0,
+                "context": round(min(max(context_score, 0.0), 1.0), 4),
+                "weights": dict(self.risk_weights),
+                "raw_score": 0.0,
+                "final_score": 0.0,
+            }
         severity = max(float(item.severity) for item in evidences)
         confidence = max(float(item.confidence) for item in evidences)
         quality = min(float(item.data_quality) for item in evidences)
+        bounded_context = min(max(context_score, 0.0), 1.0)
         score = (
             self.risk_weights["severity"] * severity
             + self.risk_weights["confidence"] * confidence
             + self.risk_weights["data_quality"] * quality
-            + self.risk_weights["context"] * min(max(context_score, 0.0), 1.0)
+            + self.risk_weights["context"] * bounded_context
         )
-        return round(min(max(score, 0.0), 1.0), 2)
+        return {
+            "severity": round(severity, 4),
+            "confidence": round(confidence, 4),
+            "data_quality": round(quality, 4),
+            "context": round(bounded_context, 4),
+            "weights": dict(self.risk_weights),
+            "raw_score": round(score, 6),
+            "final_score": round(min(max(score, 0.0), 1.0), 2),
+        }
 
 
 def load_ruleset() -> Ruleset:
