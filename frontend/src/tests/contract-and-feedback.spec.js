@@ -12,7 +12,9 @@ import {
   validateRiskEvent,
   validateEventViewModel,
 } from '../domain/validation'
-import { setDataMode, stableFeedbackId, submitFamilyFeedback } from '../services/repository'
+import {
+  setDataMode, stableFeedbackId, stableInterventionResultId, submitFamilyFeedback, submitInterventionResult,
+} from '../services/repository'
 
 describe('0—1 风险分契约', () => {
   it('所有 Mock 风险分和风险历史均位于0—1', () => {
@@ -126,5 +128,19 @@ describe('家属反馈幂等', () => {
     const second = await submitFamilyFeedback('event-fraud-visitor', feedback)
     expect(first.feedback_id).toBe(id)
     expect(second).toEqual(first)
+  })
+
+  it('坐稳确认按稳定结果 ID 回写，且不将事件直接标记为已解决', async () => {
+    setDataMode('mock')
+    const event = structuredClone(events.find((item) => item.event_id === 'event-fall-intervening'))
+    const id = stableInterventionResultId(event.event_id, 'stable')
+    expect(id).toBe(stableInterventionResultId(event.event_id, 'stable'))
+    const first = await submitInterventionResult(event, 'stable')
+    const second = await submitInterventionResult(event, 'stable')
+    expect(first.result_id).toBe(id)
+    expect(second).toEqual(first)
+    expect(first.resident_response).toBe('stable')
+    expect(first.resolved).toBe(false)
+    expect(first.saved_in_demo).toBe(true)
   })
 })
