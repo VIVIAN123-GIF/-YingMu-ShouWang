@@ -114,6 +114,18 @@ npm run evidence -- --grep "8月13日前端周报"
 
 材料输出到 `artifacts/weekly-evidence-2026-08-13` 和仓库交付目录 `deliverables/frontend-2026-08-13`。其中内容均为 `MOCK`/`RECORDED_REPLAY` 模拟演示，不代表真实诈骗识别或真实设备闭环。
 
+## 陈硕任务看板验收
+
+新增入口和离线备用页的验收命令：
+
+```powershell
+npm run evidence -- --grep "陈硕前端任务看板入口"
+```
+
+材料输出到 `artifacts/cs-completion-2026-08-09` 和 `deliverables/frontend-cs-2026-08-09`，包含老人档案、关怀工作台、系统状态、100 天场景回放、坐稳确认和离线备用页截图、审计日志及 `summary.json`。该验收明确标注 `source_mode=MOCK`、`simulated=true`，不宣称真实设备结果。
+
+`public/offline.html` 是后端不可用时的静态备用页；进入应用后可切换 `MOCK` 模式查看脱敏演示数据。`frontend/.env.example` 提供 API 地址、数据模式、居民标识和授权片段配置模板。
+
 ## 依赖审计说明
 
 本次 `npm ci` 报告 6 项高危开发依赖问题，生产依赖审计为 0。该问题当前不阻塞演示，后续依赖升级时统一处理；本次不临时升级依赖，也不隐藏审计结果。
