@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config import EZVIZ_WEBHOOK_ALLOW_UNSIGNED_TEST
 from backend.db.database import get_db
+from backend.service.alarm_task_service import enqueue_alarm_task
 from backend.service.ezviz_alarm_service import ingest_alarm, verify_signature
 from backend.service.errors import ServiceError
 
@@ -50,6 +51,24 @@ def _log_test_shape(request: Request, envelope: object) -> None:
     )
 
 
+def _platform_test_message_id(envelope: object, request_message_type: str | None) -> str | None:
+    """Return the official console-test ID, without treating it as a device alarm.
+
+    Ezviz sends ``ys.test.msg`` when the developer presses the message-push
+    console's test button.  It uses the normal signing/acknowledgement protocol
+    but is not evidence of a physical-device alert and must not enter RiskAlarm.
+    """
+    if not isinstance(envelope, dict):
+        return None
+    header = envelope.get("header")
+    if not isinstance(header, dict):
+        return None
+    if header.get("type") != "ys.test.msg" and request_message_type != "ys.test.msg":
+        return None
+    message_id = header.get("messageId")
+    return message_id if isinstance(message_id, str) and message_id else None
+
+
 @router.post("")
 async def receive_ezviz_alarm(request: Request, db: AsyncSession = Depends(get_db)):
     raw_body = await request.body()
@@ -62,8 +81,17 @@ async def receive_ezviz_alarm(request: Request, db: AsyncSession = Depends(get_d
     if not isinstance(envelope, dict):
         raise ServiceError(422, "EZVIZ_WEBHOOK_ENVELOPE_INVALID", "WebHook body must be a JSON object")
     message_type = request.headers.get("message_type")
+    test_message_id = _platform_test_message_id(envelope, message_type)
+    if test_message_id:
+        # The platform considers HTTP 200 plus the original messageId a success.
+        # Do not enqueue a task or create an alarm for this console-only probe.
+        logger.info("ezviz_webhook_console_test_acknowledged message_id=%s", test_message_id)
+        return {"messageId": test_message_id}
     if message_type and message_type not in {"ys.alarm", "ys.iot"}:
         raise ServiceError(422, "EZVIZ_WEBHOOK_TYPE_UNSUPPORTED", "message_type must be ys.alarm or ys.iot")
-    message_id, _ = await ingest_alarm(db, envelope)
+    result = await ingest_alarm(db, envelope)
+    # Queueing is a short database write. The slower capture/algorithm work is performed
+    # by backend.worker.alarm_worker after this endpoint has returned to Ezviz.
+    await enqueue_alarm_task(db, result.alarm_msg_id)
     # 萤石要求最小成功响应为 {"messageId": "..."}；不要扩展该协议响应。
-    return {"messageId": message_id}
+    return {"messageId": result.message_id}

@@ -5,6 +5,7 @@ from .risk_event import RiskEvent
 from .risk_event_evidence import RiskEventEvidence
 from .intervention_result import InterventionResult
 from .alarm import RiskAlarm
+from .alarm_task import AlarmProcessingTask
 from .system_weekly import SystemConfig, WeeklyStat
 from .rule_trace import RuleTrace
 
@@ -16,6 +17,7 @@ __all__ = [
     "RiskEventEvidence",
     "InterventionResult",
     "RiskAlarm",
+    "AlarmProcessingTask",
     "SystemConfig",
     "WeeklyStat",
     "RuleTrace",
