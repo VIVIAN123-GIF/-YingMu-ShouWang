@@ -25,6 +25,14 @@ python -m backend.db.init_db
 python -m uvicorn backend.main:app --reload
 ```
 
+萤石 WebHook 的慢处理独立于 HTTP 服务运行。开发时在第二个终端执行：
+
+```powershell
+python -m backend.worker.alarm_worker
+```
+
+回调接口只会完成验签、去重、告警入库和任务入队，然后立即返回 `messageId`。Worker 会为每条新告警抓取一次平台快照，并在算法适配器接入前将任务标记为 `WAITING_ALGORITHM`；它不会伪造 Observation、Evidence 或 RiskEvent。可通过 `GET /api/v1/alarms/processing` 查看脱敏后的处理状态。
+
 - Swagger：<http://127.0.0.1:8000/docs>
 - 健康检查：<http://127.0.0.1:8000/health>
 

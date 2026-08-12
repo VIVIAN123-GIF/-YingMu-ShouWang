@@ -22,7 +22,8 @@ os.environ["MIN_EVIDENCE_CONFIDENCE"] = "0.8"
 from fastapi.testclient import TestClient
 
 from backend.db.database import AsyncSessionLocal, engine
-from backend.db.models import DeviceInfo, Evidence, InterventionResult, RiskAlarm, RiskEvent, RuleTrace
+from backend.db.models import (AlarmProcessingTask, DeviceInfo, Evidence, InterventionResult,
+                               RiskAlarm, RiskEvent, RuleTrace)
 from backend.main import app
 from contracts.v1.mock_memory_data import safe_history
 
@@ -984,7 +985,22 @@ def test_ezviz_alarm_webhook_verifies_signature_redacts_and_is_idempotent():
             rows = (await db.execute(select(RiskAlarm).where(
                 RiskAlarm.alarm_msg_id == "alarm-real-contract-001"
             ))).scalars().all()
-            return len(rows), rows[0].raw_callback_json
+            tasks = (await db.execute(select(AlarmProcessingTask).where(
+                AlarmProcessingTask.alarm_msg_id == "alarm-real-contract-001"
+            ))).scalars().all()
+            return len(rows), rows[0].raw_callback_json, tasks
+
+    async def process_queued_alarm():
+        from backend.service.alarm_task_service import claim_next_task, process_claimed_task
+
+        async def fake_capture():
+            return {"asset_id": "asset-mock-snapshot-001"}
+
+        async with AsyncSessionLocal() as db:
+            task = await claim_next_task(db)
+            assert task is not None
+            assert task.alarm_msg_id == "alarm-real-contract-001"
+            return await process_claimed_task(db, task, capture_snapshot=fake_capture)
 
     envelope = {
         "header": {
@@ -1022,12 +1038,25 @@ def test_ezviz_alarm_webhook_verifies_signature_redacts_and_is_idempotent():
         repeated = client.post("/api/v1/webhooks/ezviz", content=raw_body, headers=headers)
         assert repeated.status_code == 200
         assert repeated.json() == {"messageId": "message-real-contract-001"}
-        count, saved = asyncio.run(persisted_alarm())
+        count, saved, tasks = asyncio.run(persisted_alarm())
         assert count == 1
+        assert len(tasks) == 1
+        assert tasks[0].status == "PENDING"
+        processing = client.get("/api/v1/alarms/processing", params={"resident_id": "resident-ezviz-alarm"})
+        assert processing.status_code == 200
+        task_payload = processing.json()[0]
+        assert task_payload["task_id"].startswith("alarm-task-")
+        assert task_payload["status"] == "PENDING"
+        assert "device_sn" not in task_payload
+        assert "alarm_msg_id" not in task_payload
         assert "device-password-must-not-persist" not in saved
         assert "https://private.example/image" not in saved
         assert '\"checksum\":\"***\"' in saved
         assert '\"url\":\"***\"' in saved
+
+        processed = asyncio.run(process_queued_alarm())
+        assert processed.status == "WAITING_ALGORITHM"
+        assert processed.capture_asset_id == "asset-mock-snapshot-001"
 
         invalid = client.post(
             "/api/v1/webhooks/ezviz", content=raw_body,
@@ -1090,6 +1119,39 @@ def test_ezviz_iot_webhook_is_adapted_to_raw_alarm():
         assert alarm.resident_id == "resident-ezviz-iot"
         assert alarm.alarm_type == "motion_detected"
         assert "https://private.example/iot" not in alarm.raw_callback_json
+
+
+def test_ezviz_console_test_message_is_acknowledged_without_creating_an_alarm():
+    """The console's ys.test.msg verifies transport, not a physical alarm."""
+    envelope = {
+        "body": "console test",
+        "header": {
+            "channelNo": 0,
+            "deviceId": "not-a-real-device",
+            "messageId": "console-test-message-001",
+            "messageTime": int(time.time() * 1000),
+            "type": "ys.test.msg",
+        },
+    }
+    raw_body = json.dumps(envelope, separators=(",", ":")).encode("utf-8")
+    timestamp = str(int(time.time() * 1000))
+    signature = hmac.new(
+        b"test-webhook-secret", raw_body + timestamp.encode("utf-8"), hashlib.sha1
+    ).hexdigest()
+
+    async def alarm_count():
+        async with AsyncSessionLocal() as db:
+            return (await db.execute(select(func.count()).select_from(RiskAlarm))).scalar_one()
+
+    with TestClient(app) as client:
+        before = asyncio.run(alarm_count())
+        response = client.post("/api/v1/webhooks/ezviz", content=raw_body, headers={
+            "content-type": "application/json", "message_type": "ys.test.msg",
+            "t": timestamp, "signature": signature,
+        })
+        assert response.status_code == 200
+        assert response.json() == {"messageId": "console-test-message-001"}
+        assert asyncio.run(alarm_count()) == before
 
 
 def test_all_frozen_routes_are_exposed_without_unfrozen_stream_route():

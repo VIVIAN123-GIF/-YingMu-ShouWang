@@ -5,6 +5,7 @@ import hmac
 import json
 import logging
 import time
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -24,6 +25,13 @@ from backend.service.errors import ServiceError
 _SENSITIVE_BODY_FIELDS = {"checksum", "url", "shortUrl", "accessToken", "appSecret"}
 _CN_TZ = timezone(timedelta(hours=8))
 logger = logging.getLogger("backend.ezviz_webhook")
+
+
+@dataclass(frozen=True)
+class AlarmIngestResult:
+    message_id: str
+    alarm_msg_id: str
+    duplicate: bool
 
 
 def _redact(value: Any, key: str | None = None) -> Any:
@@ -125,7 +133,7 @@ def verify_signature(raw_body: bytes, timestamp: str | None, signature: str | No
         raise ServiceError(401, "EZVIZ_WEBHOOK_SIGNATURE_INVALID", "WebHook signature verification failed")
 
 
-async def ingest_alarm(db: AsyncSession, envelope: dict[str, Any]) -> tuple[str, bool]:
+async def ingest_alarm(db: AsyncSession, envelope: dict[str, Any]) -> AlarmIngestResult:
     header = envelope.get("header")
     body = envelope.get("body")
     if not isinstance(header, dict) or not isinstance(body, dict):
@@ -155,7 +163,7 @@ async def ingest_alarm(db: AsyncSession, envelope: dict[str, Any]) -> tuple[str,
     existing = (await db.execute(select(RiskAlarm).where(
         RiskAlarm.alarm_msg_id == alarm_id))).scalar_one_or_none()
     if existing:
-        return message_id, True
+        return AlarmIngestResult(message_id=message_id, alarm_msg_id=alarm_id, duplicate=True)
 
     pictures = body.get("pictureList")
     if message_type == "ys.iot" and isinstance(payload, dict):
@@ -177,4 +185,4 @@ async def ingest_alarm(db: AsyncSession, envelope: dict[str, Any]) -> tuple[str,
     await db.commit()
     logger.info("ezviz_alarm_ingested alarm_id=%s device_serial=%s alarm_type=%s", alarm_id, device_serial,
                 row.alarm_type)
-    return message_id, False
+    return AlarmIngestResult(message_id=message_id, alarm_msg_id=alarm_id, duplicate=False)
