@@ -111,6 +111,12 @@ p { font-size: 18px; line-height: 1.75; }
 .chart-caption span { padding: 7px 9px; display: flex; flex-direction: column; border-radius: 9px; background: #f4f8f6; color: var(--muted); font-size: 12px; }
 .chart-caption b { color: #29433e; }
 .device-status-line { margin: 10px 0 20px; padding: 16px; display: flex; align-items: center; gap: 13px; border-radius: 14px; background: #eff8f5; }
+.alarm-processing-card { margin-bottom: 22px; }
+.alarm-task-list { display: flex; flex-direction: column; gap: 10px; }
+.alarm-task-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.alarm-task-row > div { display: flex; flex-direction: column; gap: 4px; }
+.alarm-task-row > div:nth-child(2) { flex-direction: row; gap: 12px; color: var(--muted); font-size: 13px; }
+@media (max-width: 760px) { .alarm-task-row { grid-template-columns: 1fr; gap: 10px; } .alarm-task-row > div:nth-child(2) { flex-wrap: wrap; } }
 .online-dot { width: 14px; height: 14px; border-radius: 50%; background: #38a169; box-shadow: 0 0 0 6px rgba(56,161,105,.13); }.online-dot.offline { background: #c53030; box-shadow: 0 0 0 6px rgba(197,48,48,.13); }
 .device-status-line > div { display:flex;flex-direction:column;gap:4px }.device-status-line span { color:var(--muted);font-size:13px }
 .detail-list { margin: 0 0 18px; }

@@ -42,7 +42,7 @@ HTML 测试报告生成于 `artifacts/evidence/report`，同样不会随原 PR �
 复制 `frontend/.env.example` 为 `frontend/.env.local` 可配置：
 
 ```text
-VITE_API_BASE_URL=http://127.0.0.1:8000
+VITE_API_BASE_URL=/api/v1
 VITE_DATA_MODE=auto
 VITE_RESIDENT_ID=resident-001
 VITE_AUTHORIZED_CLIP_URL=
@@ -58,7 +58,7 @@ VITE_AUTHORIZED_CLIP_URL=
 
 ## 接口边界
 
-前端对接 `/api/v1/events`、事件详情、个人基线、周报、设备状态、截图、授权片段和家属反馈接口。页面不持有萤石账号、AccessToken 或永久公开视频地址。
+前端仅对接设备状态、告警处理任务、风险事件、事件详情、干预和家属反馈接口。
 
 每个事件和回放必须显示 `LIVE_DEVICE`、`RECORDED_REPLAY`、`PUBLIC_DATASET` 或 `MOCK`；模拟内容必须带“模拟实验回放”水印。
 
@@ -84,9 +84,9 @@ npm run evidence:api
 |---|---|
 | GET | `/api/v1/events` |
 | GET | `/api/v1/events/{id}` |
-| GET | `/api/v1/reports/weekly` |
+| GET | `/api/v1/alarms/processing?limit=20` |
 | GET | `/api/v1/device/status` |
-| GET | `/api/v1/assets/{id}` |
+| POST | `/api/v1/events/{id}/intervene` |
 | POST | `/api/v1/events/{id}/feedback` |
 
 截至 2026-07-30，三轮均已验证页面无需刷新即可自动同步 `INTERVENING → OBSERVING → RESOLVED`，并完成 Evidence/Observation 追溯、InterventionResult 同步和反馈幂等 `201 → 200`。每轮仓库材料包含完整脱敏请求/响应、事件快照、RuleTrace、状态迁移、工具结果、审计日志和关键截图；这里的 `data_mode=api` 只表示前端真实调用 FastAPI，Evidence 与工具仍标记为 `source_mode=MOCK`、`simulated=true`，不宣称真实设备闭环。
@@ -99,7 +99,7 @@ npm run evidence:api
 
 `/weekly` 在固定 Mock 模式下提供黄色趋势周报、家属关怀确认和诈骗访客核验卡。`/care` 提供独立的关怀工作台；关怀与核验反馈都通过统一的 `submitFamilyFeedback` 写入，并使用稳定反馈 ID 保障重复提交幂等；页面只更新提交结果文案，不自行改变风险状态。
 
-`/resident`、`/system`、`/replay` 已不再是低保真占位页，分别提供老人档案与授权范围、设备状态与能力核验、事件场景选择与时间轴回放。事件详情的“我已坐稳”操作通过 `POST /api/v1/events/{event_id}/results` 回写 `InterventionResult`，使用稳定结果 ID 并支持 API/Mock/Auto 降级。
+`/resident`、`/system`、`/replay` 分别提供老人档案、设备状态与事件场景回放。事件详情的干预操作通过 `POST /api/v1/events/{event_id}/intervene` 返回 `InterventionResult`。
 
 - 周报：展示趋势 Evidence、低打扰原则和一次性关怀建议；文案不作医学诊断。
 - 关怀确认：提交后显示“关怀反馈已记录”，来源和模拟状态沿用报告数据。

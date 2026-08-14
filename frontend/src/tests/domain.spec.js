@@ -4,9 +4,9 @@ import { shouldFallback } from '../services/repository'
 import { DataContractError } from '../domain/validation'
 
 describe('冻结枚举', () => {
-  it('保留四级风险、六种事件状态和四种来源', () => {
+  it('保留四级风险、五种事件状态和四种来源', () => {
     expect(Object.keys(RISK_LEVELS)).toEqual(['GREEN', 'YELLOW', 'ORANGE', 'RED'])
-    expect(Object.keys(EVENT_STATUSES)).toHaveLength(6)
+    expect(Object.keys(EVENT_STATUSES)).toEqual(['OPEN', 'INTERVENING', 'OBSERVING', 'RESOLVED', 'ESCALATED'])
     expect(Object.keys(SOURCE_MODES)).toEqual(['LIVE_DEVICE', 'RECORDED_REPLAY', 'PUBLIC_DATASET', 'MOCK'])
   })
 

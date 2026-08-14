@@ -2,15 +2,13 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getAssetMock, getEventMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
-  getAssetMock: vi.fn(),
+const { getEventMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
   getEventMock: vi.fn(),
   runtimeMock: { mode: 'api' },
   submitInterventionResultMock: vi.fn(),
 }))
 
 vi.mock('../services/repository', () => ({
-  getAsset: getAssetMock,
   getEvent: getEventMock,
   runtime: runtimeMock,
   submitInterventionResult: submitInterventionResultMock,
@@ -70,7 +68,6 @@ async function mountView(path = '/events/event-poll-1') {
         RiskBadge: { template: '<span />' },
         SourceBadge: { template: '<span />' },
         ChartPanel: { template: '<div />' },
-        MediaPanel: { template: '<div />' },
         'el-alert': { props: ['title'], template: '<div class="alert-stub">{{ title }}</div>' },
         'el-button': { template: '<button><slot /></button>' },
         'el-drawer': { template: '<div><slot /></div>' },
@@ -90,9 +87,7 @@ describe('事件详情 API 自动同步', () => {
     vi.useFakeTimers()
     runtimeMock.mode = 'api'
     getEventMock.mockReset()
-    getAssetMock.mockReset()
     submitInterventionResultMock.mockReset()
-    getAssetMock.mockRejectedValue(Object.assign(new Error('not found'), { response: { status: 404 } }))
   })
 
   afterEach(() => vi.useRealTimers())
@@ -116,7 +111,6 @@ describe('事件详情 API 自动同步', () => {
 
     await vi.advanceTimersByTimeAsync(6000)
     expect(getEventMock).toHaveBeenCalledTimes(3)
-    expect(getAssetMock).toHaveBeenCalledTimes(1)
     wrapper.unmount()
   })
 

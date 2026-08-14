@@ -63,7 +63,7 @@ async function submit(kind) {
       ElMessage.warning('当前 API 未返回可关联的事件，无法提交反馈')
       return
     }
-    await submitFamilyFeedback(eventId, { feedback_type: kind, value, operator: 'family' })
+    await submitFamilyFeedback(eventId, { feedback_type: 'confirm', value, operator: 'family' })
     if (kind === 'care') report.value.care.status = 'SUBMITTED'
     else report.value.visitor_case.verification_status = 'SUBMITTED'
     ElMessage.success('反馈已记录，将进入统一事件时间轴')

@@ -41,17 +41,19 @@ describe('API ViewModel 适配', () => {
   it('API 无事件时不混入 Mock 风险、今日统计或趋势', () => {
     const dashboard = normalizeDashboard({
       residentId: 'resident-api', events: [], baseline: {},
-      device: { online: true, device_alias: 'camera-mock-001', adapter_mode: 'MOCK', source_mode: 'MOCK', simulated: true },
+      device: { online: true, device_alias: 'camera-mock-001', adapter_mode: 'MOCK', source_mode: 'MOCK', simulated: true, collection_active: true },
     })
     expect(dashboard.current_risk).toBeNull()
     expect(dashboard.today.activity_minutes).toBeNull()
     expect(dashboard.risk_trend).toEqual([])
     expect(dashboard.device.name).toBe('camera-mock-001')
     expect(dashboard.device.data_quality).toBeNull()
+    expect(dashboard.device.collection_active).toBe(true)
   })
 
   it('规范化设备、空周报与基线状态', () => {
-    expect(normalizeDevice({ device_alias: 'A', adapter_mode: 'EZVIZ_CLOUD' })).toMatchObject({ name: 'A', adapter: 'EZVIZ_CLOUD' })
+    expect(normalizeDevice({ online: true, device_alias: 'A', adapter_mode: 'EZVIZ_CLOUD', source_mode: 'LIVE_DEVICE', simulated: false, collection_active: true }))
+      .toMatchObject({ name: 'A', adapter: 'EZVIZ_CLOUD', collection_active: true })
     expect(normalizeWeeklyReport({ trend: [], visitor_case: null, care: { event_id: 'event-mental-week', options: [] } }))
       .toMatchObject({ trend: [], visitor_case: null, care: { event_id: 'event-mental-week', options: [] } })
     const baseline = normalizeBaseline({ baselines: {

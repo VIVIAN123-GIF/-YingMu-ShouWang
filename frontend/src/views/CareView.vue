@@ -20,7 +20,7 @@ async function load() {
 async function submit() {
   if (!choice.value || !report.value?.care?.event_id) return ElMessage.warning('请选择反馈，且当前事件必须可关联')
   try {
-    await submitFamilyFeedback(report.value.care.event_id, { feedback_type: 'care', value: choice.value, operator: 'family' })
+    await submitFamilyFeedback(report.value.care.event_id, { feedback_type: 'confirm', value: choice.value, operator: 'family' })
     submitted.value = true
     ElMessage.success('关怀反馈已记录')
   } catch (err) { ElMessage.error(`提交失败：${err.message}`) }
