@@ -67,9 +67,9 @@ function metric(value, suffix = '') {
 }
 
 function onlineLabel(value) {
-  if (value === true) return '在线'
-  if (value === false) return '离线'
-  return '状态未知'
+  if (value === true) return '设备在线'
+  if (value === false) return '设备离线'
+  return '设备状态未知'
 }
 </script>
 

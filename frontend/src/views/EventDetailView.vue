@@ -3,12 +3,13 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/common/PageHeader.vue'
+import MediaPanel from '../components/common/MediaPanel.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
-import { getEvent, runtime, submitInterventionResult } from '../services/repository'
-import { domainLabel, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
+import { getAsset, getEvent, runtime, submitInterventionResult } from '../services/repository'
+import { domainLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,13 +18,17 @@ const error = ref('')
 const event = ref(null)
 const traceOpen = ref(false)
 const selectedEvidence = ref(null)
+const asset = ref(null)
+const assetId = ref(null)
+const assetState = ref('idle')
+const assetMessage = ref('')
 const syncState = ref('loading')
 const syncWarning = ref('')
 const submittingResidentResponse = ref(false)
 const residentResponseRecorded = ref(false)
 
 const POLL_INTERVAL_MS = 1500
-const TERMINAL_STATUSES = new Set(['RESOLVED', 'ESCALATED'])
+const TERMINAL_STATUSES = new Set(['RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
 let pollTimer = null
 let sessionId = 0
 
@@ -110,6 +115,43 @@ function clearPollTimer() {
   }
 }
 
+function eventAssetId(currentEvent) {
+  return currentEvent?.observations?.find((observation) => observation.asset_id)?.asset_id
+    || currentEvent?.asset_id
+    || null
+}
+
+async function syncAsset(currentEvent, activeSession) {
+  const nextAssetId = eventAssetId(currentEvent)
+  if (!nextAssetId) {
+    asset.value = null
+    assetId.value = null
+    assetState.value = 'idle'
+    assetMessage.value = ''
+    return
+  }
+  if (assetId.value === nextAssetId && assetState.value !== 'idle') return
+
+  asset.value = null
+  assetId.value = nextAssetId
+  assetState.value = 'loading'
+  assetMessage.value = ''
+  try {
+    const result = await getAsset(nextAssetId)
+    if (activeSession !== sessionId || assetId.value !== nextAssetId) return
+    asset.value = result
+    assetState.value = 'ready'
+  } catch (err) {
+    if (activeSession !== sessionId || assetId.value !== nextAssetId) return
+    asset.value = null
+    const missing = err?.response?.status === 404 || err?.api?.code === 'ASSET_NOT_FOUND'
+    assetState.value = missing ? 'missing' : 'failed'
+    assetMessage.value = missing
+      ? `后端暂无素材记录（${nextAssetId}）`
+      : `素材读取失败（${nextAssetId}）：${err.message}`
+  }
+}
+
 function pollingEnabled() {
   return runtime.mode !== 'mock'
 }
@@ -136,6 +178,7 @@ async function refreshEvent(activeSession, initial = false) {
     const nextEvent = await getEvent(route.params.eventId || 'event-fall-100')
     if (activeSession !== sessionId) return
     event.value = nextEvent
+    void syncAsset(nextEvent, activeSession)
     error.value = ''
     syncWarning.value = ''
     if (isTerminal(nextEvent)) {
@@ -168,6 +211,10 @@ function startEventSession() {
   syncState.value = 'loading'
   traceOpen.value = false
   selectedEvidence.value = null
+  asset.value = null
+  assetId.value = null
+  assetState.value = 'idle'
+  assetMessage.value = ''
   submittingResidentResponse.value = false
   residentResponseRecorded.value = false
   void refreshEvent(activeSession, true)
@@ -229,6 +276,10 @@ onBeforeUnmount(stopEventSession)
         </div>
         <div class="event-score"><span>{{ formatRiskScore(event.risk_score) }}</span><small>事件峰值</small></div>
       </section>
+
+      <MediaPanel v-if="assetState === 'ready'" :asset="asset" :source-mode="event.source_mode" :simulated="event.simulated" />
+      <el-alert v-else-if="assetState === 'missing'" :title="assetMessage" type="warning" show-icon :closable="false" data-testid="asset-status" />
+      <el-alert v-else-if="assetState === 'failed'" :title="assetMessage" type="error" show-icon :closable="false" data-testid="asset-status" />
 
       <section class="event-detail-grid">
         <div class="event-primary-column">
@@ -358,6 +409,7 @@ onBeforeUnmount(stopEventSession)
               <div><dt>来源</dt><dd>{{ observation.source }}</dd></div>
               <div><dt>置信度</dt><dd>{{ formatPercent(observation.confidence) }}</dd></div>
               <div><dt>质量</dt><dd>{{ formatPercent(observation.data_quality) }}</dd></div>
+              <div><dt>素材标识</dt><dd>{{ formatAssetId(observation.asset_id) }}</dd></div>
             </dl>
           </article>
           <el-alert v-if="!selectedObservations.length" title="接口尚未返回关联 Observation，当前只能追溯到 Evidence ID。" type="warning" show-icon :closable="false" />

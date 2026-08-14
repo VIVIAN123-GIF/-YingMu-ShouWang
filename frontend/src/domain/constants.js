@@ -18,6 +18,7 @@ export const EVENT_STATUSES = Object.freeze({
   OBSERVING: '观察期',
   RESOLVED: '已回落',
   ESCALATED: '人工接管',
+  FALSE_ALARM: '已确认误报',
 })
 
 export const SOURCE_MODES = Object.freeze({
@@ -50,7 +51,7 @@ export const ALARM_TASK_STATUSES = Object.freeze({
 /**
  * @typedef {'FALL'|'MENTAL'|'FRAUD'|'SYSTEM'} RiskDomain
  * @typedef {'GREEN'|'YELLOW'|'ORANGE'|'RED'} RiskLevel
- * @typedef {'OPEN'|'INTERVENING'|'OBSERVING'|'RESOLVED'|'ESCALATED'} EventStatus
+ * @typedef {'OPEN'|'INTERVENING'|'OBSERVING'|'RESOLVED'|'ESCALATED'|'FALSE_ALARM'} EventStatus
  * @typedef {'LIVE_DEVICE'|'RECORDED_REPLAY'|'PUBLIC_DATASET'|'MOCK'} SourceMode
  * @typedef {'SUCCESS'|'FAILED'|'RETRYING'} DeliveryStatus
  */

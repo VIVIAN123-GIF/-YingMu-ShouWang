@@ -8,7 +8,7 @@ import observationsMock from '../mocks/observations.json'
 import baselineMock from '../mocks/baseline.json'
 import { DATA_MODES } from '../domain/constants'
 import {
-  validateAlarmProcessingTasks, validateDashboard, validateDeviceStatus, validateEventList, validateEventViewModel, validateInterventionResult,
+  validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceStatus, validateEventList, validateEventViewModel, validateInterventionResult,
 } from '../domain/validation'
 import {
   normalizeBaseline, normalizeDashboard, normalizeDevice, normalizeEvent, normalizeWeeklyReport,
@@ -16,7 +16,8 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 const RESIDENT_ID = import.meta.env.VITE_RESIDENT_ID || 'resident-001'
-const configuredMode = import.meta.env.VITE_DATA_MODE || 'auto'
+// API is the safe default: mock fallback must be explicitly enabled for demos.
+const configuredMode = import.meta.env.VITE_DATA_MODE || 'api'
 const initialMode = sessionStorage.getItem('yingmu-data-mode') || configuredMode
 
 export const apiClient = axios.create({
@@ -50,6 +51,7 @@ const mocks = {
 
 const feedbackCache = new Map()
 const interventionResultCache = new Map()
+const assetRequestCache = new Map()
 
 export const runtime = reactive({
   mode: DATA_MODES[initialMode] ? initialMode : 'auto',
@@ -195,11 +197,56 @@ export async function getEvent(eventId) {
 }
 
 export async function getWeeklyReport(residentId = RESIDENT_ID) {
-  return normalizeWeeklyReport(structuredClone(mocks.weekly))
+  return resolveData('reports.weekly', async () => normalizeWeeklyReport(payload(await apiClient.get(
+    '/reports/weekly', { params: { resident_id: residentId } },
+  ))), () => normalizeWeeklyReport(mocks.weekly))
+}
+
+export async function getAsset(assetId) {
+  if (!assetId) return null
+
+  const cacheKey = `${runtime.mode}:${assetId}`
+  if (assetRequestCache.has(cacheKey)) return assetRequestCache.get(cacheKey)
+
+  if (runtime.mode === 'mock') {
+    const result = validateAsset({
+      asset_id: assetId,
+      title: '固定 JSON 演示素材',
+      source_mode: 'MOCK',
+      simulated: true,
+      stream_url: null,
+      fallback_url: null,
+      fallback_kind: 'unavailable',
+      available: false,
+      verification_status: 'MOCK_ONLY',
+      captured_at: new Date().toISOString(),
+      notice: `固定演示数据仅保留素材标识（${assetId}）`,
+    })
+    recordAudit('asset.read', 'MOCK', { detail: assetId })
+    assetRequestCache.set(cacheKey, Promise.resolve(result))
+    return result
+  }
+
+  const request = (async () => {
+    try {
+      const result = validateAsset(payload(await apiClient.get(`/assets/${encodeURIComponent(assetId)}`)))
+      recordAudit('asset.read', 'SUCCESS', { detail: assetId })
+      return result
+    } catch (error) {
+      recordAudit('asset.read', 'FAILED', { detail: error?.message || assetId })
+      const missing = error?.response?.status === 404 || error?.api?.code === 'ASSET_NOT_FOUND'
+      if (!missing) assetRequestCache.delete(cacheKey)
+      throw error
+    }
+  })()
+  assetRequestCache.set(cacheKey, request)
+  return request
 }
 
 export async function getBaseline(residentId = RESIDENT_ID) {
-  return normalizeBaseline(structuredClone(mocks.baseline))
+  return resolveData('residents.baseline', async () => normalizeBaseline(payload(await apiClient.get(
+    `/residents/${encodeURIComponent(residentId)}/baseline`,
+  ))), () => normalizeBaseline(mocks.baseline))
 }
 
 export async function getDeviceStatus() {

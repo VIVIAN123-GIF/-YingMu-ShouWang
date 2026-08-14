@@ -108,6 +108,11 @@ describe('0—1 风险分契约', () => {
     invalid.risk_score = 84
     expect(() => validateRiskEvent(invalid)).toThrow(DataContractError)
   })
+
+  it('兼容后端已支持的误报终态', () => {
+    const falseAlarm = { ...structuredClone(fourObjects.risk_event), status: 'FALSE_ALARM' }
+    expect(() => validateRiskEvent(falseAlarm)).not.toThrow()
+  })
 })
 
 describe('家属反馈幂等', () => {

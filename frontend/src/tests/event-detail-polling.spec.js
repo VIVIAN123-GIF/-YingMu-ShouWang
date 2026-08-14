@@ -2,13 +2,15 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getEventMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
+const { getAssetMock, getEventMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
+  getAssetMock: vi.fn(),
   getEventMock: vi.fn(),
   runtimeMock: { mode: 'api' },
   submitInterventionResultMock: vi.fn(),
 }))
 
 vi.mock('../services/repository', () => ({
+  getAsset: getAssetMock,
   getEvent: getEventMock,
   runtime: runtimeMock,
   submitInterventionResult: submitInterventionResultMock,
@@ -21,6 +23,7 @@ function apiEvent(status, { eventId = 'event-poll-1', assetId = 'asset-poll-1' }
     INTERVENING: '2026-07-31T03:07:05+08:00',
     OBSERVING: '2026-07-31T03:07:29+08:00',
     RESOLVED: '2026-07-31T03:08:30+08:00',
+    FALSE_ALARM: '2026-07-31T03:08:30+08:00',
   }
   return {
     event_id: eventId,
@@ -86,6 +89,11 @@ describe('事件详情 API 自动同步', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     runtimeMock.mode = 'api'
+    getAssetMock.mockReset()
+    getAssetMock.mockResolvedValue({
+      asset_id: 'asset-poll-1', title: '测试素材', source_mode: 'MOCK', simulated: true,
+      stream_url: null, fallback_url: null, notice: '暂无文件', captured_at: '2026-07-31T03:07:05+08:00',
+    })
     getEventMock.mockReset()
     submitInterventionResultMock.mockReset()
   })
@@ -93,6 +101,10 @@ describe('事件详情 API 自动同步', () => {
   afterEach(() => vi.useRealTimers())
 
   it('自动显示干预、观察和回落，并在终态停止且不重复请求404素材', async () => {
+    const notFound = Object.assign(new Error('authorized asset does not exist'), {
+      response: { status: 404 }, api: { code: 'ASSET_NOT_FOUND' },
+    })
+    getAssetMock.mockRejectedValue(notFound)
     getEventMock
       .mockResolvedValueOnce(apiEvent('INTERVENING'))
       .mockResolvedValueOnce(apiEvent('OBSERVING'))
@@ -100,6 +112,7 @@ describe('事件详情 API 自动同步', () => {
     const { wrapper } = await mountView()
 
     expect(wrapper.text()).toContain('正在干预')
+    expect(wrapper.text()).toContain('后端暂无素材记录（asset-poll-1）')
     expect(wrapper.get('[data-testid="event-sync-status"]').text()).toBe('自动同步中')
     await vi.advanceTimersByTimeAsync(1500)
     await flushPromises()
@@ -111,6 +124,8 @@ describe('事件详情 API 自动同步', () => {
 
     await vi.advanceTimersByTimeAsync(6000)
     expect(getEventMock).toHaveBeenCalledTimes(3)
+    expect(getAssetMock).toHaveBeenCalledTimes(1)
+    expect(getAssetMock).toHaveBeenCalledWith('asset-poll-1')
     wrapper.unmount()
   })
 
@@ -131,6 +146,17 @@ describe('事件详情 API 自动同步', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('已回落')
     expect(wrapper.text()).not.toContain('自动同步暂时失败')
+    wrapper.unmount()
+  })
+
+  it('误报状态作为终态展示并停止轮询', async () => {
+    getEventMock.mockResolvedValueOnce(apiEvent('FALSE_ALARM', { assetId: null }))
+    const { wrapper } = await mountView()
+
+    expect(wrapper.text()).toContain('已确认误报')
+    expect(wrapper.get('[data-testid="event-sync-status"]').text()).toBe('同步已完成')
+    await vi.advanceTimersByTimeAsync(6000)
+    expect(getEventMock).toHaveBeenCalledTimes(1)
     wrapper.unmount()
   })
 

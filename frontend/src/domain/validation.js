@@ -157,6 +157,19 @@ export function validateObservation(observation, index = 0) {
   return observation
 }
 
+export function validateAsset(asset) {
+  const label = 'Asset'
+  assertObject(asset, label)
+  ;['asset_id', 'title', 'fallback_kind', 'verification_status', 'notice']
+    .forEach((field) => assertString(assertRequired(asset, field, label), `${label}.${field}`))
+  ;['stream_url', 'fallback_url'].forEach((field) =>
+    assertNullableString(assertRequired(asset, field, label), `${label}.${field}`))
+  assertBoolean(assertRequired(asset, 'available', label), `${label}.available`)
+  assertIsoTime(assertRequired(asset, 'captured_at', label), `${label}.captured_at`)
+  assertSource(asset, label)
+  return asset
+}
+
 export function validateInterventionResult(result, index = 0) {
   const label = `interventions[${index}]`
   assertObject(result, label)

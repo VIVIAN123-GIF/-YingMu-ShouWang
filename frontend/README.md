@@ -54,6 +54,8 @@ VITE_AUTHORIZED_CLIP_URL=
 
 `VITE_RESIDENT_ID` 用于统一首页、事件、周报和基线查询的居民标识；API 验收脚本会覆盖为隔离的验收居民。
 
+周报和个人基线在 `api`/`auto` 模式下会分别请求 `GET /api/v1/reports/weekly?resident_id=...` 与 `GET /api/v1/residents/{resident_id}/baseline`。后端尚未提供趋势、活动热力图、关怀选项或访客核验数据时，页面会显示明确空状态；不会用 Mock 数据伪装为 API 结果。
+
 页面右上角可在运行时切换模式。演示数据覆盖绿色日常、黄色心理趋势、橙色跌倒干预与回落、诈骗核验和工具失败。
 
 ## 接口边界
