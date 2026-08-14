@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const API_BASE = process.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+const API_BASE = process.env.API_BASE_URL || 'http://127.0.0.1:8000'
 const RESIDENT_ID = process.env.VITE_RESIDENT_ID || 'resident-frontend-api'
 
 function stamp(round, seconds) {
@@ -36,7 +36,9 @@ function evidence(round, kind, seconds, type, severity, currentValue, explanatio
   return {
     schema_version: '1.0',
     evidence_id: `evi-api-${round}-${kind}`,
-    observation_ids: observationIds || [`obs-api-${round}-${kind}`],
+    observation_ids: observationIds || (type === 'posture_recovered'
+      ? [`obs-api-${round}-${kind}`, `obs-api-${round}-${kind}-angle`]
+      : [`obs-api-${round}-${kind}`]),
     resident_id: RESIDENT_ID,
     timestamp: stamp(round, seconds),
     risk_domain: 'FALL',

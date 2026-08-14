@@ -6,6 +6,8 @@ import fourObjects from '../../contracts/v1/examples/four-objects.json'
 import {
   DataContractError,
   validateDashboard,
+  validateAlarmProcessingTask,
+  validateDeviceStatus,
   validateEvidence,
   validateInterventionResult,
   validateObservation,
@@ -106,12 +108,17 @@ describe('0—1 风险分契约', () => {
     invalid.risk_score = 84
     expect(() => validateRiskEvent(invalid)).toThrow(DataContractError)
   })
+
+  it('兼容后端已支持的误报终态', () => {
+    const falseAlarm = { ...structuredClone(fourObjects.risk_event), status: 'FALSE_ALARM' }
+    expect(() => validateRiskEvent(falseAlarm)).not.toThrow()
+  })
 })
 
 describe('家属反馈幂等', () => {
   it('相同事件和反馈生成稳定ID并复用第一次结果', async () => {
     setDataMode('mock')
-    const feedback = { feedback_type: 'care', value: '已联系，希望继续关注', operator: 'family' }
+    const feedback = { feedback_type: 'confirm', value: '已联系，希望继续关注', operator: 'family' }
     const id = stableFeedbackId('event-mental-week', feedback)
     expect(id).toBe(stableFeedbackId('event-mental-week', feedback))
     const first = await submitFamilyFeedback('event-mental-week', feedback)
@@ -122,7 +129,7 @@ describe('家属反馈幂等', () => {
 
   it('诈骗核验反馈同样使用稳定ID并复用第一次结果', async () => {
     setDataMode('mock')
-    const feedback = { feedback_type: 'verify', value: '身份不明确，继续联系', operator: 'family' }
+    const feedback = { feedback_type: 'confirm', value: '身份不明确，继续联系', operator: 'family' }
     const id = stableFeedbackId('event-fraud-visitor', feedback)
     const first = await submitFamilyFeedback('event-fraud-visitor', feedback)
     const second = await submitFamilyFeedback('event-fraud-visitor', feedback)
@@ -142,5 +149,49 @@ describe('家属反馈幂等', () => {
     expect(first.resident_response).toBe('stable')
     expect(first.resolved).toBe(false)
     expect(first.saved_in_demo).toBe(true)
+  })
+})
+
+describe('前端对接文档设备状态契约', () => {
+  const validDevice = {
+    online: true, adapter_mode: 'MOCK', source_mode: 'MOCK',
+    device_alias: 'camera-mock-001', simulated: true, collection_active: true,
+  }
+
+  it('接受完整合法的 DeviceStatus', () => {
+    expect(validateDeviceStatus(validDevice)).toEqual(validDevice)
+  })
+
+  it.each(['online', 'adapter_mode', 'source_mode', 'device_alias', 'simulated', 'collection_active'])(
+    '拒绝缺失 DeviceStatus 字段 %s', (field) => {
+      const invalid = structuredClone(validDevice)
+      delete invalid[field]
+      expect(() => validateDeviceStatus(invalid)).toThrow(DataContractError)
+    },
+  )
+
+  it.each([
+    ['adapter_mode', 'UNKNOWN'], ['source_mode', 'RECORDED_REPLAY'],
+    ['online', 'true'], ['simulated', 1], ['collection_active', null],
+  ])('拒绝非法 DeviceStatus %s', (field, value) => {
+    const invalid = { ...validDevice, [field]: value }
+    expect(() => validateDeviceStatus(invalid)).toThrow(DataContractError)
+  })
+})
+
+describe('告警处理任务契约', () => {
+  const task = {
+    task_id: 'alarm-task-1', alarm_ref: 'alarm-1', resident_id: 'resident-001', device_ref: 'device-1',
+    status: 'WAITING_ALGORITHM', attempt_count: 1, max_attempts: 3, capture_asset_id: 'asset-1',
+    error_code: null, error_message: null, available_at: '2026-08-11T15:00:00',
+    started_at: '2026-08-11T15:00:01', finished_at: null, create_time: '2026-08-11T15:00:00', update_time: '2026-08-11T15:00:01',
+  }
+
+  it('接受文档定义的告警任务并拒绝未知状态或缺失字段', () => {
+    expect(validateAlarmProcessingTask(task)).toEqual(task)
+    expect(() => validateAlarmProcessingTask({ ...task, status: 'DONE' })).toThrow(DataContractError)
+    const invalid = { ...task }
+    delete invalid.capture_asset_id
+    expect(() => validateAlarmProcessingTask(invalid)).toThrow(DataContractError)
   })
 })

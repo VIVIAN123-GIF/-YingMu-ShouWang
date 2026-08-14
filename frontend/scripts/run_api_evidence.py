@@ -103,7 +103,8 @@ def main() -> None:
         "YINGMU_ENV": "mock",
         "MIN_EVIDENCE_QUALITY": "0.70",
         "MIN_EVIDENCE_CONFIDENCE": "0.70",
-        "VITE_API_BASE_URL": "http://127.0.0.1:8010",
+        "API_BASE_URL": "http://127.0.0.1:8010",
+        "VITE_API_BASE_URL": "http://127.0.0.1:8010/api/v1",
         "VITE_DATA_MODE": "api",
         "VITE_RESIDENT_ID": "resident-frontend-api",
     })

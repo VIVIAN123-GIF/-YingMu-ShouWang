@@ -3,10 +3,10 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/common/PageHeader.vue'
+import MediaPanel from '../components/common/MediaPanel.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
-import MediaPanel from '../components/common/MediaPanel.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
 import { getAsset, getEvent, runtime, submitInterventionResult } from '../services/repository'
 import { domainLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
@@ -16,10 +16,12 @@ const router = useRouter()
 const loading = ref(true)
 const error = ref('')
 const event = ref(null)
-const asset = ref(null)
-const assetNotice = ref('')
 const traceOpen = ref(false)
 const selectedEvidence = ref(null)
+const asset = ref(null)
+const assetId = ref(null)
+const assetState = ref('idle')
+const assetMessage = ref('')
 const syncState = ref('loading')
 const syncWarning = ref('')
 const submittingResidentResponse = ref(false)
@@ -29,7 +31,6 @@ const POLL_INTERVAL_MS = 1500
 const TERMINAL_STATUSES = new Set(['RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
 let pollTimer = null
 let sessionId = 0
-let settledAssetId = null
 
 const syncLabel = computed(() => ({
   loading: '正在读取事件',
@@ -45,33 +46,10 @@ const syncTagType = computed(() => ({
   idle: 'info',
 }[syncState.value] || 'primary'))
 
-const mediaAsset = computed(() => asset.value || {
-  title: '事件画面',
-  source_mode: event.value?.source_mode || 'MOCK',
-  simulated: event.value?.simulated ?? true,
-  available: false,
-  notice: assetNotice.value || '关联 Observation 未提供可追溯素材。',
-})
-
 const selectedObservations = computed(() => {
   const ids = new Set(selectedEvidence.value?.observation_ids || [])
   return (event.value?.observations || []).filter((observation) => ids.has(observation.observation_id))
 })
-
-function observationAssetIdFor(evidence, currentEvent = event.value) {
-  const ids = new Set(evidence?.observation_ids || [])
-  return (currentEvent?.observations || []).find((observation) => (
-    ids.has(observation.observation_id)
-    && typeof observation.asset_id === 'string'
-    && observation.asset_id.length > 0
-  ))?.asset_id || null
-}
-
-function firstEventAssetId(currentEvent) {
-  return (currentEvent?.evidences || [])
-    .map((evidence) => observationAssetIdFor(evidence, currentEvent))
-    .find(Boolean) || null
-}
 
 const displayEvidences = computed(() => {
   const detailsById = new Map((event.value?.evidences || []).map((evidence) => [evidence.evidence_id, evidence]))
@@ -137,6 +115,43 @@ function clearPollTimer() {
   }
 }
 
+function eventAssetId(currentEvent) {
+  return currentEvent?.observations?.find((observation) => observation.asset_id)?.asset_id
+    || currentEvent?.asset_id
+    || null
+}
+
+async function syncAsset(currentEvent, activeSession) {
+  const nextAssetId = eventAssetId(currentEvent)
+  if (!nextAssetId) {
+    asset.value = null
+    assetId.value = null
+    assetState.value = 'idle'
+    assetMessage.value = ''
+    return
+  }
+  if (assetId.value === nextAssetId && assetState.value !== 'idle') return
+
+  asset.value = null
+  assetId.value = nextAssetId
+  assetState.value = 'loading'
+  assetMessage.value = ''
+  try {
+    const result = await getAsset(nextAssetId)
+    if (activeSession !== sessionId || assetId.value !== nextAssetId) return
+    asset.value = result
+    assetState.value = 'ready'
+  } catch (err) {
+    if (activeSession !== sessionId || assetId.value !== nextAssetId) return
+    asset.value = null
+    const missing = err?.response?.status === 404 || err?.api?.code === 'ASSET_NOT_FOUND'
+    assetState.value = missing ? 'missing' : 'failed'
+    assetMessage.value = missing
+      ? `后端暂无素材记录（${nextAssetId}）`
+      : `素材读取失败（${nextAssetId}）：${err.message}`
+  }
+}
+
 function pollingEnabled() {
   return runtime.mode !== 'mock'
 }
@@ -154,30 +169,6 @@ function schedulePoll(activeSession) {
   }, POLL_INTERVAL_MS)
 }
 
-async function syncAsset(currentEvent, activeSession) {
-  const assetId = firstEventAssetId(currentEvent)
-  if (!assetId) {
-    settledAssetId = null
-    asset.value = null
-    assetNotice.value = '关联 Observation 未提供可追溯素材，事件证据和状态仍可查看。'
-    return
-  }
-  if (assetId === settledAssetId) return
-
-  asset.value = null
-  assetNotice.value = ''
-  try {
-    const nextAsset = await getAsset(assetId)
-    if (activeSession !== sessionId || firstEventAssetId(event.value) !== assetId) return
-    settledAssetId = assetId
-    asset.value = nextAsset
-  } catch (assetError) {
-    if (activeSession !== sessionId || firstEventAssetId(event.value) !== assetId) return
-    if (assetError?.response?.status === 404) settledAssetId = assetId
-    assetNotice.value = `后端暂无素材记录（${assetId}），事件证据和状态仍可查看。`
-  }
-}
-
 async function refreshEvent(activeSession, initial = false) {
   if (activeSession !== sessionId) return
   if (initial) loading.value = true
@@ -187,11 +178,9 @@ async function refreshEvent(activeSession, initial = false) {
     const nextEvent = await getEvent(route.params.eventId || 'event-fall-100')
     if (activeSession !== sessionId) return
     event.value = nextEvent
+    void syncAsset(nextEvent, activeSession)
     error.value = ''
     syncWarning.value = ''
-    await syncAsset(nextEvent, activeSession)
-    if (activeSession !== sessionId) return
-
     if (isTerminal(nextEvent)) {
       syncState.value = 'complete'
       clearPollTimer()
@@ -216,15 +205,16 @@ function startEventSession() {
   sessionId += 1
   const activeSession = sessionId
   clearPollTimer()
-  settledAssetId = null
   event.value = null
-  asset.value = null
-  assetNotice.value = ''
   error.value = ''
   syncWarning.value = ''
   syncState.value = 'loading'
   traceOpen.value = false
   selectedEvidence.value = null
+  asset.value = null
+  assetId.value = null
+  assetState.value = 'idle'
+  assetMessage.value = ''
   submittingResidentResponse.value = false
   residentResponseRecorded.value = false
   void refreshEvent(activeSession, true)
@@ -287,6 +277,10 @@ onBeforeUnmount(stopEventSession)
         <div class="event-score"><span>{{ formatRiskScore(event.risk_score) }}</span><small>事件峰值</small></div>
       </section>
 
+      <MediaPanel v-if="assetState === 'ready'" :asset="asset" :source-mode="event.source_mode" :simulated="event.simulated" />
+      <el-alert v-else-if="assetState === 'missing'" :title="assetMessage" type="warning" show-icon :closable="false" data-testid="asset-status" />
+      <el-alert v-else-if="assetState === 'failed'" :title="assetMessage" type="error" show-icon :closable="false" data-testid="asset-status" />
+
       <section class="event-detail-grid">
         <div class="event-primary-column">
           <article class="content-card">
@@ -302,7 +296,6 @@ onBeforeUnmount(stopEventSession)
                 </div>
                 <div class="evidence-trace-summary">
                   <span>{{ (evidence.observation_ids || []).length }} 条 Observation</span>
-                  <span>{{ formatAssetId(observationAssetIdFor(evidence)) }}</span>
                   <span>{{ evidence.adapter_version || '暂无适配器详情' }}</span>
                 </div>
                 <SourceBadge v-if="evidence.source_mode" :mode="evidence.source_mode" :simulated="evidence.simulated" />
@@ -353,8 +346,6 @@ onBeforeUnmount(stopEventSession)
         </div>
 
         <aside class="event-aside">
-          <MediaPanel :asset="mediaAsset" :source-mode="event.source_mode" :simulated="event.simulated" />
-
           <section class="content-card tool-card">
             <div class="card-heading"><div><span class="section-kicker">工具结果</span><h2>执行记录</h2></div></div>
             <div v-if="event.interventions?.length" class="tool-results">
@@ -404,7 +395,6 @@ onBeforeUnmount(stopEventSession)
             <div><dt>Evidence ID</dt><dd>{{ selectedEvidence.evidence_id }}</dd></div>
             <div><dt>风险方向</dt><dd>{{ domainLabel(selectedEvidence.risk_domain) }}</dd></div>
             <div><dt>生成时间</dt><dd>{{ formatDateTime(selectedEvidence.timestamp) }}</dd></div>
-            <div><dt>素材 ID</dt><dd>{{ formatAssetId(observationAssetIdFor(selectedEvidence)) }}</dd></div>
             <div><dt>适配器版本</dt><dd>{{ selectedEvidence.adapter_version }}</dd></div>
             <div><dt>个人基线</dt><dd>{{ selectedEvidence.baseline_value ?? '—' }}</dd></div>
             <div><dt>当前值</dt><dd>{{ selectedEvidence.current_value ?? '—' }}</dd></div>
@@ -417,9 +407,9 @@ onBeforeUnmount(stopEventSession)
             <p>{{ observation.feature_value }} {{ observation.unit || '' }} · {{ formatDateTime(observation.timestamp) }}</p>
             <dl class="detail-list compact-list">
               <div><dt>来源</dt><dd>{{ observation.source }}</dd></div>
-              <div><dt>素材</dt><dd>{{ formatAssetId(observation.asset_id) }}</dd></div>
               <div><dt>置信度</dt><dd>{{ formatPercent(observation.confidence) }}</dd></div>
               <div><dt>质量</dt><dd>{{ formatPercent(observation.data_quality) }}</dd></div>
+              <div><dt>素材标识</dt><dd>{{ formatAssetId(observation.asset_id) }}</dd></div>
             </dl>
           </article>
           <el-alert v-if="!selectedObservations.length" title="接口尚未返回关联 Observation，当前只能追溯到 Evidence ID。" type="warning" show-icon :closable="false" />

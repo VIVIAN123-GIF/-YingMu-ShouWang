@@ -65,7 +65,7 @@ describe('黄色周报与诈骗核验卡', () => {
     await wrapper.get('[data-testid="care-submit"]').trigger('click')
     await flushPromises()
     expect(submitFamilyFeedbackMock).toHaveBeenCalledWith('event-mental-week', {
-      feedback_type: 'care', value: weeklyMock.care.options[0], operator: 'family',
+      feedback_type: 'confirm', value: weeklyMock.care.options[0], operator: 'family',
     })
     expect(wrapper.get('[data-testid="care-submit"]').text()).toContain('关怀反馈已记录')
 
@@ -73,7 +73,7 @@ describe('黄色周报与诈骗核验卡', () => {
     await wrapper.get('[data-testid="verify-submit"]').trigger('click')
     await flushPromises()
     expect(submitFamilyFeedbackMock).toHaveBeenCalledWith('event-fraud-visitor', {
-      feedback_type: 'verify', value: weeklyMock.visitor_case.verification_options[2], operator: 'family',
+      feedback_type: 'confirm', value: weeklyMock.visitor_case.verification_options[2], operator: 'family',
     })
     expect(wrapper.get('[data-testid="verify-submit"]').text()).toContain('身份核验已记录')
   })

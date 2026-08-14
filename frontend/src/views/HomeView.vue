@@ -67,9 +67,9 @@ function metric(value, suffix = '') {
 }
 
 function onlineLabel(value) {
-  if (value === true) return '在线'
-  if (value === false) return '离线'
-  return '状态未知'
+  if (value === true) return '设备在线'
+  if (value === false) return '设备离线'
+  return '设备状态未知'
 }
 </script>
 
@@ -147,15 +147,15 @@ function onlineLabel(value) {
           <div class="card-heading"><div><span class="section-kicker">设备与来源</span><h2>采集链路</h2></div></div>
           <div class="device-status-line">
             <span class="online-dot" :class="{ offline: data.device.online === false, unknown: data.device.online === null }"></span>
-            <div><strong>{{ onlineLabel(data.device.online) }}</strong><span>最后更新 {{ formatDateTime(data.device.last_seen) }}</span></div>
+            <div><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ data.device.collection_active ? '采集运行中' : '采集已停止' }}</span></div>
           </div>
           <dl class="detail-list">
-            <div><dt>设备</dt><dd>{{ data.device.name }}</dd></div>
-            <div><dt>适配器</dt><dd>{{ data.device.adapter }}</dd></div>
-            <div><dt>数据质量</dt><dd>{{ formatPercent(data.device.data_quality) }}</dd></div>
+            <div><dt>设备别名</dt><dd>{{ data.device.device_alias }}</dd></div>
+            <div><dt>适配器模式</dt><dd>{{ data.device.adapter_mode }}</dd></div>
+            <div><dt>采集状态</dt><dd>{{ data.device.collection_active ? '运行中' : '已停止' }}</dd></div>
           </dl>
           <SourceBadge :mode="data.device.source_mode" :simulated="data.device.simulated" />
-          <p class="privacy-note">前端仅读取后端状态和授权片段，不保存设备账号或 AccessToken。</p>
+          <p class="privacy-note">前端仅展示文档约定的设备状态和事件数据。</p>
         </article>
       </section>
 

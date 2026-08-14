@@ -36,7 +36,7 @@ onMounted(load)
       <section class="content-card">
         <div class="card-heading"><div><span class="section-kicker">授权范围</span><h2>当前家属可查看和操作</h2></div></div>
         <div class="permission-list"><el-tag v-for="item in permissions" :key="item" type="success" effect="plain">{{ item }}</el-tag></div>
-        <el-alert title="素材按事件授权访问；前端不会保存萤石主账号、AccessToken 或永久播放地址。" type="info" show-icon :closable="false" />
+        <el-alert title="前端仅展示文档约定的事件与设备信息。" type="info" show-icon :closable="false" />
       </section>
     </template>
   </div>

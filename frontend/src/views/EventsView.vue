@@ -1,11 +1,11 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '../components/common/PageHeader.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
-import { EVENT_STATUSES, RISK_DOMAINS, RISK_LEVELS, SOURCE_MODES } from '../domain/constants'
-import { getEvents } from '../services/repository'
+import { ALARM_TASK_STATUSES, EVENT_STATUSES, RISK_DOMAINS, RISK_LEVELS, SOURCE_MODES } from '../domain/constants'
+import { getAlarmProcessingTasks, getEvents, RESIDENT_ID, runtime } from '../services/repository'
 import { domainLabel, formatDateTime, formatRiskScore, statusLabel } from '../utils/format'
 
 const router = useRouter()
@@ -13,6 +13,10 @@ const loading = ref(true)
 const error = ref('')
 const events = ref([])
 const filters = ref({ domain: '', level: '', status: '', source: '' })
+const alarmTasks = ref([])
+const alarmLoading = ref(false)
+const alarmError = ref('')
+let alarmTimer = null
 
 const filteredEvents = computed(() => events.value
   .filter((event) => !filters.value.domain || event.primary_domain === filters.value.domain)
@@ -38,7 +42,43 @@ async function load() {
   }
 }
 
-onMounted(load)
+function stopAlarmPolling() {
+  if (alarmTimer !== null) {
+    window.clearTimeout(alarmTimer)
+    alarmTimer = null
+  }
+}
+
+function scheduleAlarmPolling() {
+  stopAlarmPolling()
+  if (runtime.mode === 'mock') return
+  alarmTimer = window.setTimeout(() => {
+    alarmTimer = null
+    void loadAlarmTasks()
+  }, 5000)
+}
+
+async function loadAlarmTasks() {
+  if (runtime.mode === 'mock') {
+    alarmTasks.value = []
+    stopAlarmPolling()
+    return
+  }
+  alarmLoading.value = true
+  try {
+    alarmTasks.value = await getAlarmProcessingTasks({ residentId: RESIDENT_ID, limit: 20 })
+    alarmError.value = ''
+  } catch (err) {
+    alarmError.value = `无法读取告警处理任务：${err.message}`
+  } finally {
+    alarmLoading.value = false
+    scheduleAlarmPolling()
+  }
+}
+
+onMounted(() => { void load(); void loadAlarmTasks() })
+watch(() => runtime.mode, () => { void loadAlarmTasks() })
+onBeforeUnmount(stopAlarmPolling)
 </script>
 
 <template>
@@ -48,6 +88,22 @@ onMounted(load)
     </PageHeader>
 
     <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
+
+    <section class="content-card alarm-processing-card" data-testid="alarm-processing">
+      <div class="card-heading">
+        <div><span class="section-kicker">告警处理队列</span><h2>设备告警处理任务</h2></div>
+        <el-tag size="large" effect="plain">{{ alarmTasks.length }} 条任务</el-tag>
+      </div>
+      <el-alert v-if="alarmError" :title="alarmError" type="warning" show-icon :closable="false" />
+      <div v-loading="alarmLoading" class="alarm-task-list">
+        <article v-for="task in alarmTasks" :key="task.task_id" class="alarm-task-row">
+          <div><strong>{{ task.alarm_ref }}</strong><span>{{ task.resident_id }} · {{ task.device_ref }}</span></div>
+          <div><span>尝试 {{ task.attempt_count }}/{{ task.max_attempts }}</span><span>{{ task.capture_asset_id ? '已取得素材凭证' : '暂无素材凭证' }}</span></div>
+          <el-tag :type="ALARM_TASK_STATUSES[task.status]?.type || 'info'" effect="plain">{{ ALARM_TASK_STATUSES[task.status]?.label || task.status }}</el-tag>
+        </article>
+        <el-empty v-if="!alarmTasks.length && !alarmLoading" description="暂无待处理告警任务" />
+      </div>
+    </section>
 
     <section class="content-card timeline-filters" aria-label="时间轴筛选">
       <label><span>风险方向</span><el-select v-model="filters.domain" clearable placeholder="全部方向"><el-option v-for="(label, value) in RISK_DOMAINS" :key="value" :label="label" :value="value" /></el-select></label>
