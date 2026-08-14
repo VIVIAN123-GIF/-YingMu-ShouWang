@@ -1063,7 +1063,23 @@ def test_ezviz_alarm_webhook_verifies_signature_redacts_and_is_idempotent():
             headers={**headers, "signature": "incorrect"},
         )
         assert invalid.status_code == 401
-        assert invalid.json()["error"]["code"] == "EZVIZ_WEBHOOK_SIGNATURE_INVALID"
+        error = invalid.json()["error"]
+        assert error["code"] == "EZVIZ_WEBHOOK_SIGNATURE_INVALID"
+        assert error["debug"] == {
+            "path": "/api/v1/webhooks/ezviz",
+            "content_type": "application/json",
+            "message_type_header": "ys.alarm",
+            "signature_present": True,
+            "timestamp_present": True,
+            "body_bytes": len(raw_body),
+            "json_valid": True,
+            "top_level_keys": ["body", "header"],
+            "header_keys": ["channelNo", "deviceId", "messageId", "messageTime", "type"],
+            "body_keys": ["alarmId", "alarmTime", "alarmType", "checksum", "pictureList"],
+            "payload_kind": "none",
+        }
+        assert "device-password-must-not-persist" not in json.dumps(error)
+        assert "https://private.example/image" not in json.dumps(error)
 
 
 def test_ezviz_iot_webhook_is_adapted_to_raw_alarm():
@@ -1151,6 +1167,46 @@ def test_ezviz_console_test_message_is_acknowledged_without_creating_an_alarm():
         })
         assert response.status_code == 200
         assert response.json() == {"messageId": "console-test-message-001"}
+        assert asyncio.run(alarm_count()) == before
+
+
+def test_ezviz_shadow_change_is_acknowledged_without_creating_an_alarm():
+    """Device state synchronization must not be treated as a risk alarm."""
+    envelope = {
+        "header": {
+            "channelNo": 1,
+            "deviceId": "not-a-real-device",
+            "messageId": "shadow-change-message-001",
+            "messageTime": int(time.time() * 1000),
+            "type": "ys.shadow.change",
+        },
+        "body": {
+            "attribute": "onlineStatus",
+            "deviceSerial": "not-a-real-device",
+            "domainId": "basic",
+            "localIndex": "0",
+            "resourceType": "device",
+            "statusValue": "1",
+        },
+    }
+    raw_body = json.dumps(envelope, separators=(",", ":")).encode("utf-8")
+    timestamp = str(int(time.time() * 1000))
+    signature = hmac.new(
+        b"test-webhook-secret", raw_body + timestamp.encode("utf-8"), hashlib.sha1
+    ).hexdigest()
+
+    async def alarm_count():
+        async with AsyncSessionLocal() as db:
+            return (await db.execute(select(func.count()).select_from(RiskAlarm))).scalar_one()
+
+    with TestClient(app) as client:
+        before = asyncio.run(alarm_count())
+        response = client.post("/api/v1/webhooks/ezviz", content=raw_body, headers={
+            "content-type": "application/json", "message_type": "ys.shadow.change",
+            "t": timestamp, "signature": signature,
+        })
+        assert response.status_code == 200
+        assert response.json() == {"messageId": "shadow-change-message-001"}
         assert asyncio.run(alarm_count()) == before
 
 

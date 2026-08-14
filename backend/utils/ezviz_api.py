@@ -1,4 +1,5 @@
 from typing import Dict, Any, Optional
+from backend.config import EZVIZ_CAPTURE_TIMEOUT_SECONDS
 from backend.utils.ezviz_auth import EzvizAuth
 
 
@@ -75,7 +76,8 @@ class EzvizAPI:
             body={
                 "deviceSerial": device_serial,
                 "channelNo": channel_no
-            }
+            },
+            timeout_seconds=EZVIZ_CAPTURE_TIMEOUT_SECONDS,
         )
 
     # ===================== 语音喊话接口 =====================

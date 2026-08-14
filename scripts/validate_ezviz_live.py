@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from backend.config import (ENV_MODE, EZVIZ_ACCESS_TOKEN,
                             EZVIZ_ACCESS_TOKEN_EXPIRES_AT, EZVIZ_APP_KEY,
                             EZVIZ_APP_SECRET, EZVIZ_BASE_URL,
+                            EZVIZ_CAPTURE_TIMEOUT_SECONDS,
                             EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL,
                             EZVIZ_DEVICE_VERIFY_CODE)
 from backend.utils import ezviz_auth as auth_module
@@ -134,7 +135,8 @@ async def call_stage(path: str, payload: dict[str, Any]) -> tuple[dict[str, Any]
     for attempt in range(2):
         token = await EzvizAuth.get_valid_token()
         form = {**payload, "accessToken": token}
-        async with httpx.AsyncClient(timeout=12.0) as client:
+        timeout_seconds = EZVIZ_CAPTURE_TIMEOUT_SECONDS if path == "/device/capture" else 12.0
+        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
             response = await client.post(f"{EZVIZ_BASE_URL}{path}", data=form)
         try:
             body = response.json()
