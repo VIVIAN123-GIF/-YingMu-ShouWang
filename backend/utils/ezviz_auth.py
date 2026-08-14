@@ -99,7 +99,8 @@ class EzvizAuth:
         path: str,
         method: str = "POST",
         params: Dict = None,
-        body: Dict = None
+        body: Dict = None,
+        timeout_seconds: float = 12.0,
     ) -> Dict[str, Any]:
         """
         萤石统一请求封装
@@ -110,6 +111,8 @@ class EzvizAuth:
         """
         retry_count = 0
         full_url = f"{EZVIZ_BASE_URL}{path}"
+        if timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be positive")
 
         while retry_count <= MAX_RETRY_TIMES:
             try:
@@ -120,7 +123,7 @@ class EzvizAuth:
                     form_body.update(body)
                 form_body["accessToken"] = token
 
-                async with httpx.AsyncClient(timeout=12.0) as client:
+                async with httpx.AsyncClient(timeout=timeout_seconds) as client:
                     if method.upper() == "GET":
                         res = await client.get(full_url, params=params)
                     else:
