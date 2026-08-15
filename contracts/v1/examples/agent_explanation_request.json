@@ -1,0 +1,27 @@
+{
+  "schema_version": "agent-explanation/1.0",
+  "request_id": "agent-event-001-v1",
+  "event_id": "event-001",
+  "resident_id": "resident-001",
+  "risk_level": "ORANGE",
+  "risk_score": 0.82,
+  "time_horizon": "IMMINENT",
+  "evidence": [
+    {
+      "evidence_type": "rapid_rise",
+      "explanation": "起身时长1.1秒，明显短于个人基线2.4秒"
+    },
+    {
+      "evidence_type": "trunk_sway",
+      "explanation": "躯干摆幅18.4度，高于个人基线5.2度"
+    }
+  ],
+  "baseline_status": "STABLE",
+  "intervention_status": "NOT_STARTED",
+  "verified_capabilities": [
+    "EZVIZ_CAPTURE"
+  ],
+  "unverified_capabilities": [
+    "EZVIZ_SERVER_VOICE"
+  ]
+}

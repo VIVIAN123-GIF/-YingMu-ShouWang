@@ -1,0 +1,14 @@
+{
+  "schema_version": "agent-explanation/1.0",
+  "request_id": "agent-event-001-v1",
+  "event_id": "event-001",
+  "summary": "老人快速起身后出现持续躯干摇摆",
+  "reasoning_points": [
+    "起身速度明显偏离个人基线",
+    "摇摆证据与快速起身位于同一短时窗口"
+  ],
+  "recommended_action_text": "建议提醒老人坐稳并继续观察",
+  "capability_notice": "设备服务端语音尚未验证，将使用明确标记的降级工具",
+  "generated_by": "llm-agent-v1",
+  "fallback_used": false
+}

@@ -1,0 +1,158 @@
+{
+  "$defs": {
+    "AgentBaselineStatus": {
+      "enum": [
+        "INSUFFICIENT",
+        "PROVISIONAL",
+        "STABLE",
+        "UNAVAILABLE"
+      ],
+      "title": "AgentBaselineStatus",
+      "type": "string"
+    },
+    "AgentEvidenceItem": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_type": {
+          "minLength": 1,
+          "title": "Evidence Type",
+          "type": "string"
+        },
+        "explanation": {
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_type",
+        "explanation"
+      ],
+      "title": "AgentEvidenceItem",
+      "type": "object"
+    },
+    "AgentInterventionStatus": {
+      "enum": [
+        "NOT_STARTED",
+        "SUCCESS",
+        "FAILED",
+        "RETRYING"
+      ],
+      "title": "AgentInterventionStatus",
+      "type": "string"
+    },
+    "PlatformCapability": {
+      "enum": [
+        "EZVIZ_DEVICE_STATUS",
+        "EZVIZ_CAPTURE",
+        "EZVIZ_WEBHOOK",
+        "EZVIZ_LIVE_PLAYBACK",
+        "EZVIZ_SERVER_VOICE",
+        "MOCK_VOICE",
+        "TEXT_NOTICE"
+      ],
+      "title": "PlatformCapability",
+      "type": "string"
+    },
+    "RiskLevel": {
+      "enum": [
+        "GREEN",
+        "YELLOW",
+        "ORANGE",
+        "RED"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "TimeHorizon": {
+      "enum": [
+        "TREND",
+        "TODAY",
+        "IMMINENT"
+      ],
+      "title": "TimeHorizon",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "agent-explanation/1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "request_id": {
+      "maxLength": 128,
+      "minLength": 3,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "event_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "resident_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Resident Id",
+      "type": "string"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel"
+    },
+    "risk_score": {
+      "title": "Risk Score",
+      "type": "number"
+    },
+    "time_horizon": {
+      "$ref": "#/$defs/TimeHorizon"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/AgentEvidenceItem"
+      },
+      "maxItems": 12,
+      "minItems": 1,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "baseline_status": {
+      "$ref": "#/$defs/AgentBaselineStatus"
+    },
+    "intervention_status": {
+      "$ref": "#/$defs/AgentInterventionStatus"
+    },
+    "verified_capabilities": {
+      "items": {
+        "$ref": "#/$defs/PlatformCapability"
+      },
+      "title": "Verified Capabilities",
+      "type": "array"
+    },
+    "unverified_capabilities": {
+      "items": {
+        "$ref": "#/$defs/PlatformCapability"
+      },
+      "title": "Unverified Capabilities",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "request_id",
+    "event_id",
+    "resident_id",
+    "risk_level",
+    "risk_score",
+    "time_horizon",
+    "evidence",
+    "baseline_status",
+    "intervention_status",
+    "verified_capabilities",
+    "unverified_capabilities"
+  ],
+  "title": "AgentExplanationRequest",
+  "type": "object"
+}
