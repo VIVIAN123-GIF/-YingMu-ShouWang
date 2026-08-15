@@ -110,6 +110,18 @@ p { font-size: 18px; line-height: 1.75; }
 .chart-caption { display: flex; flex-wrap: wrap; gap: 8px; }
 .chart-caption span { padding: 7px 9px; display: flex; flex-direction: column; border-radius: 9px; background: #f4f8f6; color: var(--muted); font-size: 12px; }
 .chart-caption b { color: #29433e; }
+.prefall-card { margin-bottom: 22px; background: linear-gradient(135deg, #ffffff, #f2f9f7); }
+.prefall-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+.prefall-meter, .prefall-fusion { padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.prefall-meter { display: flex; flex-direction: column; justify-content: space-between; gap: 8px; min-height: 138px; }
+.prefall-meter small { color: var(--muted); font-size: 13px; font-weight: 700; }
+.prefall-meter strong { color: var(--brand-dark); font-size: 34px; line-height: 1; }
+.prefall-meter span { color: var(--muted); font-size: 13px; }
+.prefall-fusion { grid-column: span 2; display: flex; flex-direction: column; gap: 12px; }
+.detail-list.compact { margin-bottom: 0; }
+.detail-list.compact div { padding: 7px 0; }
+.factor-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.intervention-line { margin: 14px 0 0; color: #415b56; font-size: 15px; }
 .device-status-line { margin: 10px 0 20px; padding: 16px; display: flex; align-items: center; gap: 13px; border-radius: 14px; background: #eff8f5; }
 .online-dot { width: 14px; height: 14px; border-radius: 50%; background: #38a169; box-shadow: 0 0 0 6px rgba(56,161,105,.13); }.online-dot.offline { background: #c53030; box-shadow: 0 0 0 6px rgba(197,48,48,.13); }
 .device-status-line > div { display:flex;flex-direction:column;gap:4px }.device-status-line span { color:var(--muted);font-size:13px }
@@ -140,7 +152,7 @@ p { font-size: 18px; line-height: 1.75; }
 }
 
 @media (max-width: 1180px) {
-  body{min-width:960px}.sidebar{flex-basis:76px}.sidebar .brand-copy,.sidebar .el-menu-item span,.sidebar .collapse-button span{display:none}.dashboard-grid,.weekly-columns,.event-detail-grid{grid-template-columns:1fr}.event-aside{display:grid;grid-template-columns:1fr 1fr}.hero-risk-card{grid-template-columns:130px 1fr}.today-status{grid-column:1/-1}.weekly-summary{grid-template-columns:1fr}.prototype-card{grid-template-columns:1fr}.prototype-visual{display:none}
+  body{min-width:960px}.sidebar{flex-basis:76px}.sidebar .brand-copy,.sidebar .el-menu-item span,.sidebar .collapse-button span{display:none}.dashboard-grid,.weekly-columns,.event-detail-grid{grid-template-columns:1fr}.event-aside{display:grid;grid-template-columns:1fr 1fr}.hero-risk-card{grid-template-columns:130px 1fr}.today-status{grid-column:1/-1}.weekly-summary{grid-template-columns:1fr}.prototype-card{grid-template-columns:1fr}.prototype-visual{display:none}.prefall-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.prefall-fusion{grid-column:1/-1}
 }
 
 @media print {

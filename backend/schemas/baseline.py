@@ -18,5 +18,6 @@ class ResidentBaselineResponse(BaseModel):
     as_of: TimezoneDatetime
     ruleset_version: str
     baselines: dict[str, BaselineMetric]
+    pre_fall_summary: dict[str, object]
     source_mode: SourceMode
     simulated: bool

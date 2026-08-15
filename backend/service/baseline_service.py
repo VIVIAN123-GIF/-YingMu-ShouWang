@@ -9,6 +9,8 @@ from backend.config import RULESET_VERSION
 from backend.db.models import Evidence, Observation, RiskEvent
 from backend.service.serialization import aware, loads
 from contracts.v1.memory import MemoryStore
+from contracts.v1.models import Evidence as ContractEvidence
+from contracts.v1.models import Observation as ContractObservation
 from contracts.v1.ruleset import load_ruleset
 
 
@@ -45,13 +47,6 @@ class BaselineStore:
             for evidence in evidences
             for observation_id in loads(evidence.observation_ids, [])
         }
-        observations = (await db.execute(
-            select(Observation).where(Observation.observation_id.in_(observation_ids))
-        )).scalars().all() if observation_ids else []
-        observation_by_id = {
-            observation.observation_id: observation
-            for observation in observations
-        }
         events = (await db.execute(
             select(RiskEvent).where(
                 RiskEvent.resident_id == resident_id,
@@ -62,14 +57,77 @@ class BaselineStore:
         values = defaultdict(list)
         days = defaultdict(set)
         accepted = []
+        memory = MemoryStore(self.ruleset)
+        all_evidences = (await db.execute(
+            select(Evidence)
+            .where(
+                Evidence.resident_id == resident_id,
+                Evidence.timestamp >= as_of - timedelta(minutes=3),
+                Evidence.timestamp <= as_of,
+            )
+            .order_by(Evidence.timestamp)
+        )).scalars().all()
+        all_observation_ids = {
+            observation_id
+            for evidence in all_evidences
+            for observation_id in loads(evidence.observation_ids, [])
+        } | observation_ids
+        all_observations = (await db.execute(
+            select(Observation).where(Observation.observation_id.in_(all_observation_ids))
+        )).scalars().all() if all_observation_ids else []
+        all_observation_by_id = {
+            observation.observation_id: observation
+            for observation in all_observations
+        }
+        for observation in all_observations:
+            memory.add_observation(ContractObservation.model_validate({
+                "schema_version": observation.schema_version,
+                "observation_id": observation.observation_id,
+                "resident_id": observation.resident_id,
+                "timestamp": aware(observation.timestamp),
+                "source": observation.source,
+                "feature_name": observation.feature_name,
+                "feature_value": observation.feature_value,
+                "unit": observation.unit,
+                "location": observation.location,
+                "confidence": observation.confidence,
+                "data_quality": observation.data_quality,
+                "source_mode": observation.source_mode,
+                "asset_id": observation.asset_id,
+                "simulated": observation.simulated,
+                "metadata": loads(observation.extra_metadata, {}),
+            }))
+        for evidence in all_evidences:
+            memory.add_evidence(ContractEvidence.model_validate({
+                "schema_version": evidence.schema_version,
+                "evidence_id": evidence.evidence_id,
+                "observation_ids": loads(evidence.observation_ids, []),
+                "resident_id": evidence.resident_id,
+                "timestamp": aware(evidence.timestamp),
+                "risk_domain": evidence.risk_domain,
+                "evidence_type": evidence.evidence_type,
+                "severity": evidence.severity,
+                "confidence": evidence.confidence,
+                "data_quality": evidence.data_quality,
+                "baseline_value": evidence.baseline_value,
+                "current_value": evidence.current_value,
+                "baseline_deviation": evidence.baseline_deviation,
+                "time_scale": evidence.time_scale,
+                "location": evidence.location,
+                "explanation": evidence.explanation,
+                "adapter_version": evidence.adapter_version,
+                "source_mode": evidence.source_mode,
+                "simulated": evidence.simulated,
+            }))
+
         for evidence in evidences:
             timestamp = aware(evidence.timestamp)
             if any(self._event_blocks_sample(event, timestamp) for event in events):
                 continue
             linked = [
-                observation_by_id[observation_id]
+                all_observation_by_id[observation_id]
                 for observation_id in loads(evidence.observation_ids, [])
-                if observation_id in observation_by_id
+                if observation_id in all_observation_by_id
             ]
             observation = next(
                 (
@@ -113,6 +171,7 @@ class BaselineStore:
             "as_of": as_of,
             "ruleset_version": RULESET_VERSION,
             "baselines": result,
+            "pre_fall_summary": memory.forewarning_profile(resident_id, as_of),
             "source_mode": source_mode,
             "simulated": simulated,
         }

@@ -179,6 +179,7 @@ export async function getDashboard(residentId = 'resident-001') {
       today: baseline?.today || mocks.dashboard.today,
       device: payload(deviceResponse),
       risk_trend: baseline?.risk_trend || mocks.dashboard.risk_trend,
+      pre_fall_summary: baseline?.pre_fall_summary || mocks.dashboard.pre_fall_summary,
       recent_events: events,
     }
   }, () => mocks.dashboard, validateDashboard)

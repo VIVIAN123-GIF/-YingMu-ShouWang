@@ -5,6 +5,14 @@ const TIME_SCALES = new Set(['SHORT', 'MEDIUM', 'LONG'])
 const TIME_HORIZONS = new Set(['TREND', 'TODAY', 'IMMINENT'])
 const OPERATORS = new Set(['system', 'family', 'staff'])
 const SUMMARY_FIELDS = new Set(['evidence_id', 'evidence_type', 'explanation'])
+const PRE_FALL_FACTORS = new Set([
+  'fall_precursor_evidence',
+  'personal_baseline_deviation',
+  'environment_interaction_risk',
+  'data_quality_downgrade',
+  'multi_scale_accumulation',
+  'normal_fluctuation',
+])
 
 export class DataContractError extends Error {
   constructor(message, field = null) {
@@ -237,6 +245,22 @@ export function validateDashboard(dashboard) {
   assertRiskScore(dashboard?.current_risk?.risk_score, 'current_risk.risk_score')
   assertSource(dashboard?.device, 'device')
   ;(dashboard?.risk_trend || []).forEach((point, index) => assertRiskScore(point.score, `risk_trend[${index}].score`))
+  if (dashboard?.pre_fall_summary) {
+    const summary = assertObject(dashboard.pre_fall_summary, 'pre_fall_summary')
+    assertKnown(assertRequired(summary, 'risk_level', 'pre_fall_summary'), RISK_LEVELS, 'pre_fall_summary.risk_level')
+    ;['instant_risk', 'risk_30s', 'trend_3min', 'personal_deviation', 'environment_risk', 'quality_penalty']
+      .forEach((field) => assertRiskScore(assertRequired(summary, field, 'pre_fall_summary'), `pre_fall_summary.${field}`))
+    assertOneOf(assertRequired(summary, 'trend_direction', 'pre_fall_summary'), new Set(['RISING', 'STABLE', 'FALLING']), 'pre_fall_summary.trend_direction')
+    const factors = assertRequired(summary, 'dominant_factors', 'pre_fall_summary')
+    if (!Array.isArray(factors) || factors.some((factor) => !PRE_FALL_FACTORS.has(factor))) {
+      fail('pre_fall_summary.dominant_factors 包含未知项', 'pre_fall_summary.dominant_factors')
+    }
+    const evidenceIds = assertRequired(summary, 'evidence_ids', 'pre_fall_summary')
+    if (!Array.isArray(evidenceIds) || evidenceIds.some((id) => typeof id !== 'string' || !id)) {
+      fail('pre_fall_summary.evidence_ids 必须是字符串数组', 'pre_fall_summary.evidence_ids')
+    }
+    assertString(assertRequired(summary, 'recommended_intervention', 'pre_fall_summary'), 'pre_fall_summary.recommended_intervention')
+  }
   ;(dashboard?.recent_events || []).forEach((event, index) => {
     assertRiskScore(event.risk_score, `recent_events[${index}].risk_score`)
     assertKnown(event.risk_level, RISK_LEVELS, `recent_events[${index}].risk_level`)

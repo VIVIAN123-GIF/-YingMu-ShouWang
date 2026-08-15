@@ -150,6 +150,42 @@ class MemoryAndRulesetTests(unittest.TestCase):
         self.assertEqual((event.risk_level.value, event.status.value, event.risk_score), ("ORANGE", "INTERVENING", 0.82))
         self.assertEqual(engine.traces[-1].matched_rule, "R-FALL-02")
 
+    def test_forewarning_profile_fuses_personal_environment_and_time_scales(self):
+        engine = MockRiskEngine()
+        for index in (1, 2):
+            engine.ingest_observation(self.data["observations"][index])
+            engine.ingest_evidence(self.data["evidence"][index])
+        low_light_observation = deepcopy(self.data["observations"][2])
+        low_light_observation["observation_id"] = "obs-low-light-env"
+        low_light_observation["timestamp"] = "2026-07-31T03:07:04+08:00"
+        low_light_observation["source"] = "environment"
+        low_light_observation["feature_name"] = "scene_brightness"
+        low_light_observation["feature_value"] = 0.18
+        low_light_observation["unit"] = "ratio"
+        low_light_evidence = deepcopy(self.data["evidence"][2])
+        low_light_evidence["evidence_id"] = "evi-low-light-env"
+        low_light_evidence["observation_ids"] = [low_light_observation["observation_id"]]
+        low_light_evidence["timestamp"] = low_light_observation["timestamp"]
+        low_light_evidence["evidence_type"] = "low_light"
+        low_light_evidence["severity"] = 0.62
+        low_light_evidence["baseline_value"] = None
+        low_light_evidence["current_value"] = 0.18
+        low_light_evidence["baseline_deviation"] = None
+        low_light_evidence["explanation"] = "画面亮度偏低，夜间起身时环境风险升高"
+        engine.ingest_observation(low_light_observation)
+        engine.ingest_evidence(low_light_evidence)
+
+        profile = engine.memory.forewarning_profile(RESIDENT_ID, datetime.fromisoformat("2026-07-31T03:07:05+08:00"))
+
+        self.assertEqual(profile["risk_level"], "ORANGE")
+        self.assertGreaterEqual(profile["instant_risk"], 0.7)
+        self.assertGreaterEqual(profile["risk_30s"], 0.7)
+        self.assertGreaterEqual(profile["trend_3min"], 0.7)
+        self.assertIn("personal_baseline_deviation", profile["dominant_factors"])
+        self.assertIn("environment_interaction_risk", profile["dominant_factors"])
+        self.assertIn("multi_scale_accumulation", profile["dominant_factors"])
+        self.assertEqual(profile["recommended_intervention"], "执行低打扰语音或灯光提醒，并进入恢复观察。")
+
     def test_recovery_observing_then_resolution_rule_04_and_05(self):
         engine, _ = run_fixed_sequence()
         matches = [trace.matched_rule for trace in engine.traces]

@@ -291,6 +291,37 @@ def test_baseline_uses_only_safe_high_quality_samples():
         assert "trunk_sway" not in baselines
 
 
+def test_baseline_endpoint_returns_pre_fall_summary():
+    resident_id = "resident-prefall-summary"
+    with TestClient(app) as client:
+        post_pair(
+            client,
+            resident_id,
+            "prefall-rapid",
+            "rapid_rise",
+            "2026-07-31T03:07:01+08:00",
+        )
+        post_pair(
+            client,
+            resident_id,
+            "prefall-sway",
+            "trunk_sway",
+            "2026-07-31T03:07:05+08:00",
+        )
+        response = client.get(
+            f"/api/v1/residents/{resident_id}/baseline",
+            params={"as_of": "2026-07-31T03:07:05+08:00"},
+        )
+        assert response.status_code == 200
+        summary = response.json()["pre_fall_summary"]
+        assert summary["risk_level"] == "ORANGE"
+        assert summary["instant_risk"] >= 0.7
+        assert summary["risk_30s"] >= 0.7
+        assert summary["trend_3min"] >= 0.7
+        assert "personal_baseline_deviation" in summary["dominant_factors"]
+        assert summary["recommended_intervention"] == "执行低打扰语音或灯光提醒，并进入恢复观察。"
+
+
 def test_validation_and_missing_reference():
     with TestClient(app) as client:
         invalid_time = observation(
