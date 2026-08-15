@@ -37,6 +37,29 @@
     { "time": "03:07:29", "score": 0.43, "label": "重新坐稳" },
     { "time": "03:08:30", "score": 0.24, "label": "观察结束" }
   ],
+  "pre_fall_summary": {
+    "as_of": "2026-07-24T03:07:08+08:00",
+    "risk_level": "ORANGE",
+    "instant_risk": 0.83,
+    "risk_30s": 0.79,
+    "trend_3min": 0.76,
+    "trend_direction": "RISING",
+    "personal_deviation": 0.93,
+    "environment_risk": 0.31,
+    "quality_penalty": 0,
+    "dominant_factors": [
+      "fall_precursor_evidence",
+      "personal_baseline_deviation",
+      "environment_interaction_risk",
+      "multi_scale_accumulation"
+    ],
+    "evidence_ids": [
+      "evi-fall-rapid-rise",
+      "evi-fall-trunk-sway",
+      "evi-fall-low-light"
+    ],
+    "recommended_intervention": "执行低打扰语音或灯光提醒，并进入恢复观察。"
+  },
   "recent_events": [
     {
       "event_id": "event-fall-100",

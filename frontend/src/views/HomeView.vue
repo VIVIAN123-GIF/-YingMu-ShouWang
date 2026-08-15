@@ -13,6 +13,19 @@ const router = useRouter()
 const loading = ref(true)
 const error = ref('')
 const data = ref(null)
+const factorLabels = {
+  fall_precursor_evidence: '跌倒前兆证据',
+  personal_baseline_deviation: '偏离个人基线',
+  environment_interaction_risk: '人-环境交互风险',
+  data_quality_downgrade: '数据质量降级',
+  multi_scale_accumulation: '多时标累积',
+  normal_fluctuation: '日常波动',
+}
+const trendLabels = {
+  RISING: '上升',
+  STABLE: '平稳',
+  FALLING: '回落',
+}
 
 const chartOption = computed(() => ({
   grid: { left: 46, right: 24, top: 32, bottom: 42 },
@@ -157,6 +170,47 @@ function onlineLabel(value) {
           <SourceBadge :mode="data.device.source_mode" :simulated="data.device.simulated" />
           <p class="privacy-note">前端仅展示文档约定的设备状态和事件数据。</p>
         </article>
+      </section>
+
+      <section v-if="data.pre_fall_summary" class="content-card prefall-card">
+        <div class="card-heading">
+          <div><span class="section-kicker">跌倒前兆</span><h2>个体记忆驱动的多时间尺度预警</h2></div>
+          <RiskBadge :level="data.pre_fall_summary.risk_level" />
+        </div>
+        <div class="prefall-grid">
+          <div class="prefall-meter">
+            <small>当前数秒</small>
+            <strong>{{ formatRiskScore(data.pre_fall_summary.instant_risk) }}</strong>
+            <span>即时失稳</span>
+          </div>
+          <div class="prefall-meter">
+            <small>未来30秒</small>
+            <strong>{{ formatRiskScore(data.pre_fall_summary.risk_30s) }}</strong>
+            <span>短时恶化</span>
+          </div>
+          <div class="prefall-meter">
+            <small>最近3分钟</small>
+            <strong>{{ formatRiskScore(data.pre_fall_summary.trend_3min) }}</strong>
+            <span>{{ trendLabels[data.pre_fall_summary.trend_direction] || data.pre_fall_summary.trend_direction }}</span>
+          </div>
+          <div class="prefall-fusion">
+            <dl class="detail-list compact">
+              <div><dt>个人偏离</dt><dd>{{ formatRiskScore(data.pre_fall_summary.personal_deviation) }}</dd></div>
+              <div><dt>环境交互</dt><dd>{{ formatRiskScore(data.pre_fall_summary.environment_risk) }}</dd></div>
+              <div><dt>质量降级</dt><dd>{{ formatRiskScore(data.pre_fall_summary.quality_penalty) }}</dd></div>
+            </dl>
+            <div class="factor-list">
+              <el-tag
+                v-for="factor in data.pre_fall_summary.dominant_factors"
+                :key="factor"
+                effect="plain"
+              >
+                {{ factorLabels[factor] || factor }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <p class="intervention-line">{{ data.pre_fall_summary.recommended_intervention }}</p>
       </section>
 
       <section class="content-card events-card">

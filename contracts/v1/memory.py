@@ -62,6 +62,25 @@ class MemoryStore:
         "quality_gate_failed",
     }
     QUALITY_FLAGS = {"tracking_lost", "camera_occlusion", "audio_quality_low"}
+    ENVIRONMENT_TYPES = {
+        "low_light",
+        "obstacle_zone",
+        "narrow_passage",
+        "far_from_support",
+        "danger_zone_stay",
+        "route_crosses_obstacle",
+    }
+    PRE_FALL_TYPES = {
+        "rapid_rise",
+        "slow_rise",
+        "trunk_sway",
+        "gait_instability",
+        "persistent_instability",
+        "step_asymmetry",
+        "dragging_step",
+        "unstable_turn",
+        "support_reach",
+    }
     METRIC_BY_FEATURE = {
         "sit_to_stand_duration": "rise_duration",
         "trunk_sway_angle": "trunk_sway",
@@ -201,6 +220,140 @@ class MemoryStore:
             "medium": {"window_hours": self.ruleset.windows["medium_hours"], "abnormal_rise_count": abnormal_rises, "night_rise_count": night_rises, "low_light_count": low_light, "activity_state": self._activity_state(medium), "risk_state": self.state(resident_id).value},
             "long": {"window_days": self.ruleset.windows["long_days"], "evidence_ids": [item.evidence_id for item in long], "baseline": {key: value.as_dict() for key, value in self.baseline(resident_id, now).items()}},
         }
+
+    def forewarning_profile(self, resident_id: str, now: datetime) -> dict[str, Any]:
+        short = [item for item in self.query_short(resident_id, now) if item.risk_domain.value != "SYSTEM"]
+        medium = [item for item in self.query_medium(resident_id, now) if item.risk_domain.value != "SYSTEM"]
+        quality_penalty = self._quality_penalty(short)
+        personal_deviation = self._personal_deviation(short + medium)
+        environment_risk = self._environment_risk(medium)
+        rule_risk = self._rule_risk(short)
+        trend_risk = self._trend_risk(medium)
+        instant = self._clamp(0.58 * rule_risk + 0.22 * personal_deviation + 0.20 * environment_risk - quality_penalty)
+        thirty_seconds = self._clamp(0.55 * instant + 0.35 * trend_risk + 0.10 * environment_risk)
+        three_minutes = self._clamp(0.45 * trend_risk + 0.25 * personal_deviation + 0.20 * environment_risk + 0.10 * instant)
+        dominant = self._dominant_factors(short, medium, personal_deviation, environment_risk, quality_penalty)
+        return {
+            "as_of": now.isoformat(),
+            "risk_level": self._risk_level(max(instant, thirty_seconds, three_minutes)),
+            "instant_risk": round(instant, 2),
+            "risk_30s": round(thirty_seconds, 2),
+            "trend_3min": round(three_minutes, 2),
+            "trend_direction": self._trend_direction(instant, three_minutes),
+            "personal_deviation": round(personal_deviation, 2),
+            "environment_risk": round(environment_risk, 2),
+            "quality_penalty": round(quality_penalty, 2),
+            "dominant_factors": dominant,
+            "evidence_ids": [item.evidence_id for item in sorted(short + medium, key=lambda item: item.timestamp) if item.evidence_type in self.PRE_FALL_TYPES | self.ENVIRONMENT_TYPES][-6:],
+            "recommended_intervention": self._recommended_intervention(max(instant, thirty_seconds, three_minutes), quality_penalty),
+        }
+
+    @staticmethod
+    def _clamp(value: float) -> float:
+        return min(max(value, 0.0), 1.0)
+
+    @staticmethod
+    def _risk_level(score: float) -> str:
+        if score >= 0.9:
+            return "RED"
+        if score >= 0.7:
+            return "ORANGE"
+        if score >= 0.4:
+            return "YELLOW"
+        return "GREEN"
+
+    @staticmethod
+    def _trend_direction(instant: float, trend: float) -> str:
+        if trend >= instant + 0.08:
+            return "RISING"
+        if trend <= instant - 0.08:
+            return "FALLING"
+        return "STABLE"
+
+    def _quality_penalty(self, evidences: list[Evidence]) -> float:
+        if not evidences:
+            return 0.0
+        worst_quality = min(float(item.data_quality) for item in evidences)
+        if worst_quality >= self.ruleset.thresholds["data_quality"]:
+            return 0.0
+        return min((self.ruleset.thresholds["data_quality"] - worst_quality) * 0.8, 0.3)
+
+    @staticmethod
+    def _personal_deviation(evidences: list[Evidence]) -> float:
+        deviations = [
+            min(abs(float(item.baseline_deviation)) / 3.0, 1.0)
+            for item in evidences
+            if item.baseline_deviation is not None
+        ]
+        return max(deviations, default=0.0)
+
+    def _environment_risk(self, evidences: list[Evidence]) -> float:
+        risks = [
+            max(float(item.severity), float(item.confidence) * 0.65)
+            for item in evidences
+            if item.evidence_type in self.ENVIRONMENT_TYPES
+        ]
+        return min(sum(risks) / 2.0, 1.0)
+
+    def _rule_risk(self, evidences: list[Evidence]) -> float:
+        usable = [
+            item for item in evidences
+            if item.evidence_type in self.PRE_FALL_TYPES
+            and item.confidence >= self.ruleset.thresholds["confidence"]
+            and item.data_quality >= self.ruleset.thresholds["data_quality"]
+        ]
+        if not usable:
+            return 0.0
+        base = max(float(item.severity) for item in usable)
+        if len({item.evidence_type for item in usable}) >= 2:
+            base += 0.12
+        return min(base, 1.0)
+
+    def _trend_risk(self, evidences: list[Evidence]) -> float:
+        recent = [
+            item for item in evidences
+            if item.evidence_type in self.PRE_FALL_TYPES
+            and item.confidence >= self.ruleset.thresholds["confidence"]
+            and item.data_quality >= self.ruleset.thresholds["data_quality"]
+        ]
+        if not recent:
+            return 0.0
+        average = sum(float(item.severity) for item in recent) / len(recent)
+        repeated = min(len(recent) / 4.0, 0.25)
+        return min(average + repeated, 1.0)
+
+    def _dominant_factors(
+        self,
+        short: list[Evidence],
+        medium: list[Evidence],
+        personal_deviation: float,
+        environment_risk: float,
+        quality_penalty: float,
+    ) -> list[str]:
+        factors = []
+        if any(item.evidence_type in self.PRE_FALL_TYPES for item in short):
+            factors.append("fall_precursor_evidence")
+        if personal_deviation >= 0.5:
+            factors.append("personal_baseline_deviation")
+        if environment_risk >= 0.3:
+            factors.append("environment_interaction_risk")
+        if quality_penalty > 0:
+            factors.append("data_quality_downgrade")
+        if len([item for item in medium if item.evidence_type in self.PRE_FALL_TYPES]) >= 2:
+            factors.append("multi_scale_accumulation")
+        return factors or ["normal_fluctuation"]
+
+    @staticmethod
+    def _recommended_intervention(score: float, quality_penalty: float) -> str:
+        if quality_penalty > 0.15:
+            return "画面质量不足，先切换补光或备用观测，不直接升级报警。"
+        if score >= 0.9:
+            return "通知家属并转人工接管，继续观察是否恢复。"
+        if score >= 0.7:
+            return "执行低打扰语音或灯光提醒，并进入恢复观察。"
+        if score >= 0.4:
+            return "保持观察，等待第二条独立前兆证据。"
+        return "仅记录为日常波动，不打扰老人。"
 
     @staticmethod
     def _activity_state(evidences: Iterable[Evidence]) -> str:

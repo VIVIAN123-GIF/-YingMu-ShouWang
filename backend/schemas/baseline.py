@@ -33,5 +33,6 @@ class ResidentBaselineResponse(BaseModel):
     overall_status: Literal["INSUFFICIENT", "PROVISIONAL", "STABLE"]
     baseline_progress: BaselineProgress
     provenance: BaselineProvenance | None
+    pre_fall_summary: dict[str, object]
     source_mode: SourceMode
     simulated: bool
