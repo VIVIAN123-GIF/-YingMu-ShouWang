@@ -39,13 +39,20 @@ describe('API ViewModel 适配', () => {
   })
 
   it('API 无事件时不混入 Mock 风险、今日统计或趋势', () => {
+    const preFallSummary = {
+      risk_level: 'GREEN', instant_risk: 0.1, risk_30s: 0.08, trend_3min: 0.05,
+      trend_direction: 'STABLE', personal_deviation: 0, environment_risk: 0,
+      quality_penalty: 0, dominant_factors: ['normal_fluctuation'], evidence_ids: [],
+      recommended_intervention: '仅记录为日常波动，不打扰老人。',
+    }
     const dashboard = normalizeDashboard({
-      residentId: 'resident-api', events: [], baseline: {},
+      residentId: 'resident-api', events: [], baseline: { pre_fall_summary: preFallSummary },
       device: { online: true, device_alias: 'camera-mock-001', adapter_mode: 'MOCK', source_mode: 'MOCK', simulated: true, collection_active: true },
     })
     expect(dashboard.current_risk).toBeNull()
     expect(dashboard.today.activity_minutes).toBeNull()
     expect(dashboard.risk_trend).toEqual([])
+    expect(dashboard.pre_fall_summary).toEqual(preFallSummary)
     expect(dashboard.device.name).toBe('camera-mock-001')
     expect(dashboard.device.data_quality).toBeNull()
     expect(dashboard.device.collection_active).toBe(true)

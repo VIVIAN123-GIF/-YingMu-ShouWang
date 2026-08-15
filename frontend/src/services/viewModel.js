@@ -115,6 +115,7 @@ export function normalizeDashboard({ events = [], device = {}, baseline = {}, re
     },
     device: normalizeDevice(device),
     risk_trend: asArray(baseline?.risk_trend),
+    pre_fall_summary: baseline?.pre_fall_summary || null,
     recent_events: normalizedEvents,
   }
 }

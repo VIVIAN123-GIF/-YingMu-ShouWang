@@ -169,12 +169,13 @@ function hydrateMockEvent(event) {
 
 export async function getDashboard(residentId = RESIDENT_ID) {
   return resolveData('dashboard.read', async () => {
-    const [eventsResponse, deviceResponse] = await Promise.all([
+    const [eventsResponse, deviceResponse, baselineResponse] = await Promise.all([
       apiClient.get('/events', { params: { resident_id: residentId } }),
       apiClient.get('/device/status'),
+      apiClient.get(`/residents/${encodeURIComponent(residentId)}/baseline`),
     ])
     const events = validateEventList(listFrom(payload(eventsResponse)))
-    const baseline = mocks.baseline
+    const baseline = payload(baselineResponse)
     return normalizeDashboard({ events, device: validateDeviceStatus(payload(deviceResponse)), baseline, residentId })
   }, () => normalizeDashboard({
     events: mocks.events, device: validateDeviceStatus(mocks.device), baseline: mocks.baseline, residentId,
