@@ -1,0 +1,12 @@
+{
+  "schema_version": "platform-snapshot/1.0",
+  "request_id": "ezviz-capture-20260815-001",
+  "device_ref": "device-redacted-a13f",
+  "channel_no": 1,
+  "captured_at": "2026-08-15T09:30:00+08:00",
+  "source_mode": "LIVE_DEVICE",
+  "simulated": false,
+  "temporary_url": "https://snapshot.invalid/internal/capture-001",
+  "expires_at": null,
+  "provider_latency_ms": 3650
+}
