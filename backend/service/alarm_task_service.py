@@ -13,6 +13,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import AlarmProcessingTask, RiskAlarm
 from backend.service.device_adapter import device_adapter
+from backend.service.snapshot_asset_service import (
+    SnapshotAssetError,
+    persist_snapshot_asset,
+)
+from contracts.v1.platform import PlatformSnapshotResult
 
 
 CLAIMABLE_STATUSES = ("PENDING", "RETRY")
@@ -112,18 +117,47 @@ async def process_claimed_task(
     db: AsyncSession,
     task: AlarmProcessingTask,
     *,
-    capture_snapshot: Callable[[], Awaitable[dict[str, Any]]] | None = None,
+    capture_snapshot: Callable[[], Awaitable[dict[str, Any] | PlatformSnapshotResult]] | None = None,
+    store_snapshot_asset: Callable[
+        [AsyncSession, PlatformSnapshotResult, str], Awaitable[dict[str, Any]]
+    ] | None = None,
 ) -> AlarmProcessingTask:
-    """Capture a platform snapshot, then deliberately wait for the future algorithm adapter."""
+    """Capture and persist an Asset before handing the task to an algorithm."""
     try:
-        snapshot = await (capture_snapshot() if capture_snapshot else device_adapter.snapshot())
-        task.capture_asset_id = snapshot.get("asset_id")
+        snapshot = await (capture_snapshot() if capture_snapshot else device_adapter.capture_snapshot())
+        if isinstance(snapshot, dict):
+            # Backward-compatible injection for tests or an already-persisted
+            # downloader. Production platform calls always return the contract.
+            task.capture_asset_id = snapshot.get("asset_id")
+        elif store_snapshot_asset is not None:
+            asset = await store_snapshot_asset(db, snapshot, task.task_id)
+            task.capture_asset_id = asset.get("asset_id")
+        else:
+            asset, _ = await persist_snapshot_asset(
+                db, snapshot, task_id=task.task_id
+            )
+            task.capture_asset_id = asset["asset_id"]
+        if not task.capture_asset_id:
+            raise SnapshotAssetError(
+                "CAPTURE_ASSET_REQUIRED",
+                "A persisted Asset is required before algorithm handoff",
+                retryable=False,
+            )
         task.status = "WAITING_ALGORITHM"
         task.finished_at = _now()
         task.error_code = None
         task.error_message = (
-            "Platform snapshot captured; no algorithm adapter is configured for this task yet."
+            "Platform snapshot stored as an authorized Asset; algorithm adapter is pending."
         )
+    except SnapshotAssetError as exc:
+        if exc.retryable and task.attempt_count < task.max_attempts:
+            task.status = "RETRY"
+            task.available_at = _now() + timedelta(seconds=2 ** task.attempt_count)
+        else:
+            task.status = "FAILED"
+            task.finished_at = _now()
+        task.error_code = exc.code
+        task.error_message = exc.message
     except Exception as exc:
         if task.attempt_count < task.max_attempts:
             task.status = "RETRY"

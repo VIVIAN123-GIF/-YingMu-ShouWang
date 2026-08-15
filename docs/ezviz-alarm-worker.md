@@ -9,10 +9,10 @@
                               ↓
                          alarm_worker
                               ↓
-             平台抓图 → WAITING_ALGORITHM
+       平台抓图 → 私有下载/校验 → Asset → WAITING_ALGORITHM
 ```
 
-当前算法适配器尚未接入，因此 Worker 不创建 `Observation`、`Evidence` 或 `RiskEvent`。`WAITING_ALGORITHM` 是明确的真实状态，不代表跌倒检测已完成。
+当前算法适配器尚未接入，因此 Worker 不创建 `Observation`、`Evidence` 或 `RiskEvent`。只有图片完成授权校验、私有落盘和 Asset 入库后，任务才能进入 `WAITING_ALGORITHM`；该状态不代表跌倒检测已完成。
 
 ## 运行
 
@@ -29,7 +29,7 @@ python -m backend.worker.alarm_worker
 
 - `PENDING`：告警已入队。
 - `PROCESSING`：Worker 已领取任务。
-- `WAITING_ALGORITHM`：抓图成功，等待未来算法适配器消费。
+- `WAITING_ALGORITHM`：抓图已私有保存且 Asset 已创建，等待算法适配器消费。
 - `RETRY`：抓图临时失败，最多重试 3 次。
 - `FAILED`：重试耗尽；保留失败类型，但不保存 URL、Token 或原始报文。
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from backend.schemas.common import SourceMode, TimezoneDatetime
 
@@ -24,6 +24,18 @@ class Asset(BaseModel):
     authorization_status: str = "PENDING"
     authorization_record_id: str | None = None
     retention_until: TimezoneDatetime | None = None
+    content_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    content_type: str | None = Field(default=None, pattern=r"^image/(jpeg|png|webp)$")
+    byte_size: int | None = Field(default=None, ge=1)
+
+    @model_validator(mode="after")
+    def require_complete_content_metadata(self):
+        values = (self.content_sha256, self.content_type, self.byte_size)
+        if any(value is not None for value in values) and not all(
+            value is not None for value in values
+        ):
+            raise ValueError("asset content metadata must be provided together")
+        return self
 
 
 class AssetCreate(Asset):

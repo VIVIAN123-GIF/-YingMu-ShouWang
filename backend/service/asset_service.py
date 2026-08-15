@@ -17,7 +17,9 @@ def asset_dict(row: Asset):
             "camera_position_id": row.camera_position_id,
             "authorization_status": row.authorization_status,
             "authorization_record_id": row.authorization_record_id,
-            "retention_until": aware(row.retention_until) if row.retention_until else None}
+            "retention_until": aware(row.retention_until) if row.retention_until else None,
+            "content_sha256": row.content_sha256, "content_type": row.content_type,
+            "byte_size": row.byte_size}
 
 
 async def get_asset(db: AsyncSession, asset_id: str):
@@ -27,14 +29,25 @@ async def get_asset(db: AsyncSession, asset_id: str):
     return asset_dict(row)
 
 
-async def create_asset(db: AsyncSession, payload: AssetCreate):
+async def create_asset(
+    db: AsyncSession,
+    payload: AssetCreate,
+    *,
+    storage_key: str | None = None,
+    commit: bool = True,
+):
     row = (await db.execute(select(Asset).where(Asset.asset_id == payload.asset_id))).scalar_one_or_none()
     if row:
         if asset_dict(row) != payload.model_dump():
             raise ServiceError(409, "ASSET_ID_CONFLICT", "asset_id exists with different content")
+        if storage_key is not None and row.storage_key != storage_key:
+            raise ServiceError(409, "ASSET_STORAGE_CONFLICT", "asset_id uses a different private object")
         return asset_dict(row), True
-    row = Asset(**payload.model_dump())
+    row = Asset(**payload.model_dump(), storage_key=storage_key)
     db.add(row)
-    await db.commit()
+    if commit:
+        await db.commit()
+    else:
+        await db.flush()
     await db.refresh(row)
     return asset_dict(row), False
