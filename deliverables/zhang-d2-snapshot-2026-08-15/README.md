@@ -1,6 +1,6 @@
 # 张同学 D2 萤石真实抓拍交付
 
-状态：`ENGINEERING_READY_FOR_FIELD_CAPTURE`
+状态：`SNAPSHOT_ASSET_PIPELINE_READY_FOR_FIELD_CAPTURE`
 
 ## 已完成工程能力
 
@@ -10,6 +10,9 @@
 - 实机验收脚本支持仅抓拍模式和独立输出目录。
 - 每次尝试单独保存；失败记录不会被成功记录覆盖。
 - 汇总报告统计成功、失败、跳过和抓拍延迟。
+- Worker 已接入私有下载、图片校验、SHA-256 和 Asset 创建。
+- 只有 Asset 成功后任务才进入 `WAITING_ALGORITHM`。
+- `storage_key` 仅保存在数据库内部，不通过 Asset API 返回。
 
 ## 现场前置条件
 
@@ -25,16 +28,43 @@
 
 ```dotenv
 YINGMU_ENV=live
+YINGMU_DB_PATH=
 EZVIZ_APP_KEY=
 EZVIZ_APP_SECRET=
 EZVIZ_DEVICE_SERIAL=
 EZVIZ_CHANNEL_NO=1
 EZVIZ_CAPTURE_TIMEOUT_SECONDS=45
 EZVIZ_RESIDENT_ID=
+EZVIZ_DEVICE_MODEL=EZVIZ_C6C
+YINGMU_PRIVATE_MEDIA_ROOT=
+YINGMU_CAMERA_POSITION_ID=living-room-c6c-v1
+YINGMU_AUTHORIZATION_RECORD_ID=
+YINGMU_RETENTION_UNTIL=
+YINGMU_SNAPSHOT_MAX_BYTES=10485760
+YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS=12
 ```
 
 `EZVIZ_ACCESS_TOKEN` 可以留空，由 AppSecret 获取并缓存。D2 抓拍不需要
 `EZVIZ_DEVICE_VERIFY_CODE`，该字段只与后续取流验证有关。
+`YINGMU_PRIVATE_MEDIA_ROOT` 必须是仓库和 OneDrive 之外的绝对路径；授权
+记录、机位或保留截止时间缺失时，Worker 会拒绝保存真实图片。
+
+## 启动真实链路
+
+启动 API 前先执行数据库兼容迁移：
+
+```powershell
+py -3.14 -m backend.db.init_db
+py -3.14 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+```
+
+另一个终端启动 Worker：
+
+```powershell
+py -3.14 -m backend.worker.alarm_worker
+```
+
+启动 Worker 前必须先查询并确认没有非计划的历史 `PENDING/RETRY` 任务。
 
 ## 运行前检查
 
