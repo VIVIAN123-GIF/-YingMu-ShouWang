@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import AlarmProcessingTask, RiskAlarm
 from backend.service.device_adapter import device_adapter
+from contracts.v1.platform import PlatformSnapshotResult
 
 
 CLAIMABLE_STATUSES = ("PENDING", "RETRY")
@@ -112,12 +113,16 @@ async def process_claimed_task(
     db: AsyncSession,
     task: AlarmProcessingTask,
     *,
-    capture_snapshot: Callable[[], Awaitable[dict[str, Any]]] | None = None,
+    capture_snapshot: Callable[[], Awaitable[dict[str, Any] | PlatformSnapshotResult]] | None = None,
 ) -> AlarmProcessingTask:
     """Capture a platform snapshot, then deliberately wait for the future algorithm adapter."""
     try:
-        snapshot = await (capture_snapshot() if capture_snapshot else device_adapter.snapshot())
-        task.capture_asset_id = snapshot.get("asset_id")
+        snapshot = await (capture_snapshot() if capture_snapshot else device_adapter.capture_snapshot())
+        # The platform adapter never invents an Asset. A legacy/test callback may
+        # return an asset_id only after an authorized downloader has persisted it.
+        task.capture_asset_id = (
+            snapshot.get("asset_id") if isinstance(snapshot, dict) else None
+        )
         task.status = "WAITING_ALGORITHM"
         task.finished_at = _now()
         task.error_code = None
