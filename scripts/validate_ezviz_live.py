@@ -29,7 +29,8 @@ from backend.config import (ENV_MODE, EZVIZ_ACCESS_TOKEN,
                             EZVIZ_APP_SECRET, EZVIZ_BASE_URL,
                             EZVIZ_CAPTURE_TIMEOUT_SECONDS,
                             EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL,
-                            EZVIZ_DEVICE_VERIFY_CODE)
+                            EZVIZ_DEVICE_VERIFY_CODE,
+                            YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS)
 from backend.utils import ezviz_auth as auth_module
 from backend.utils.ezviz_auth import EzvizAuth
 from contracts.v1.platform import PlatformSnapshotResult
@@ -224,7 +225,10 @@ async def validate_snapshot() -> dict[str, Any]:
         authorized = False
         image_http_status = None
         if valid_image:
-            async with httpx.AsyncClient(timeout=12.0, follow_redirects=True) as client:
+            async with httpx.AsyncClient(
+                timeout=YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS,
+                follow_redirects=True,
+            ) as client:
                 async with client.stream("GET", image_url) as image_response:
                     image_http_status = image_response.status_code
                     content_type = image_response.headers.get("content-type", "").lower()

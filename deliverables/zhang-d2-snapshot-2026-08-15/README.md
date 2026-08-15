@@ -1,5 +1,20 @@
 # 张同学 D2 萤石真实抓拍交付
 
+## Batch-2 实机结果（2026-08-15）
+
+`batch-1` 的 4 次失败均为图片读取 `REQUEST_TIMEOUT`，原因是验证脚本的图片下载超时固定为 12 秒。脚本现已改为读取 `YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS`，本次现场配置为 30 秒；`batch-1` 原始失败记录保留，未覆盖。
+
+`batch-2` 已完成 10 次独立真实抓拍：
+
+- `capture_attempts=10`
+- `capture_successes=10`
+- `capture_failures=0`
+- `capture_latency_ms`: minimum `3297`, maximum `6841`, average `4591`
+- `overall_result=SUCCESS`
+- `contains_credentials=false`, `contains_temporary_url=false`
+
+自动化报告已保存于 `batch-2/`。蔡同学仍需依据现场画面逐项完成 `field-verification-template.md` 的画面、机位和授权人工核对，不能由自动化报告代替。
+
 状态：`SNAPSHOT_ASSET_PIPELINE_READY_FOR_FIELD_CAPTURE`
 
 ## 已完成工程能力
@@ -41,7 +56,7 @@ YINGMU_CAMERA_POSITION_ID=living-room-c6c-v1
 YINGMU_AUTHORIZATION_RECORD_ID=
 YINGMU_RETENTION_UNTIL=
 YINGMU_SNAPSHOT_MAX_BYTES=10485760
-YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS=12
+YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS=30
 ```
 
 `EZVIZ_ACCESS_TOKEN` 可以留空，由 AppSecret 获取并缓存。D2 抓拍不需要
