@@ -168,6 +168,7 @@ class MemoryAndRulesetTests(unittest.TestCase):
         low_light_evidence["evidence_id"] = "evi-low-light-env"
         low_light_evidence["observation_ids"] = [low_light_observation["observation_id"]]
         low_light_evidence["timestamp"] = low_light_observation["timestamp"]
+        low_light_evidence["risk_domain"] = "SYSTEM"
         low_light_evidence["evidence_type"] = "low_light"
         low_light_evidence["severity"] = 0.62
         low_light_evidence["baseline_value"] = None

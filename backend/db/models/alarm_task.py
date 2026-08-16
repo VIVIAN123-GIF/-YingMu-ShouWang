@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 
 from backend.db.database import Base
 
@@ -30,6 +30,12 @@ class AlarmProcessingTask(Base):
     attempt_count = Column(Integer, nullable=False, default=0)
     max_attempts = Column(Integer, nullable=False, default=3)
     capture_asset_id = Column(String(160), nullable=True)
+    capture_completed_at = Column(DateTime, nullable=True)
+    algorithm_attempt_count = Column(Integer, nullable=False, default=0)
+    algorithm_started_at = Column(DateTime, nullable=True)
+    algorithm_completed_at = Column(DateTime, nullable=True)
+    algorithm_summary = Column(Text, nullable=True)
+    error_stage = Column(String(32), nullable=True)
     error_code = Column(String(64), nullable=True)
     error_message = Column(String(256), nullable=True)
     available_at = Column(DateTime, nullable=False, default=utcnow_naive)

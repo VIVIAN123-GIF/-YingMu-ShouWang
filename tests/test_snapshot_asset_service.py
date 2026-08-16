@@ -217,7 +217,7 @@ def test_worker_waits_for_persisted_asset_before_algorithm_handoff():
         session, task, capture_snapshot=capture, store_snapshot_asset=store
     ))
 
-    assert result.status == "WAITING_ALGORITHM"
+    assert result.status == "CAPTURED"
     assert result.capture_asset_id == "asset-live-worker-001"
     assert result.error_code is None
     assert session.commits == 1

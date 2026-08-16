@@ -14,24 +14,51 @@ import logging
 from backend.db.database import AsyncSessionLocal
 from backend.db.init_db import init_tables
 from backend.service.alarm_task_service import claim_next_task, process_claimed_task
+from backend.service.algorithm_task_service import (
+    claim_next_algorithm_task,
+    process_algorithm_task,
+)
+from backend.service.recovery_scheduler_service import advance_one_due_event
 
 
 logger = logging.getLogger("backend.alarm_worker")
 
 
 async def run_once() -> bool:
+    processed = False
     async with AsyncSessionLocal() as db:
         task = await claim_next_task(db)
-        if task is None:
-            return False
-        result = await process_claimed_task(db, task)
-        logger.info(
-            "alarm_task_processed task_id=%s status=%s attempt_count=%s",
-            result.task_id,
-            result.status,
-            result.attempt_count,
-        )
-        return True
+        if task is not None:
+            result = await process_claimed_task(db, task)
+            logger.info(
+                "alarm_capture_processed task_id=%s status=%s attempt_count=%s",
+                result.task_id,
+                result.status,
+                result.attempt_count,
+            )
+            processed = True
+        else:
+            task = await claim_next_algorithm_task(db)
+            if task is not None:
+                result = await process_algorithm_task(db, task)
+                logger.info(
+                    "alarm_algorithm_processed task_id=%s status=%s attempt_count=%s",
+                    result.task_id,
+                    result.status,
+                    result.algorithm_attempt_count,
+                )
+                processed = True
+    async with AsyncSessionLocal() as db:
+        transition = await advance_one_due_event(db)
+        if transition is not None:
+            logger.info(
+                "risk_state_advanced event_id=%s next_status=%s matched_rule=%s",
+                transition["event"]["event_id"] if transition.get("event") else None,
+                transition.get("next_status"),
+                transition.get("matched_rule"),
+            )
+            processed = True
+    return processed
 
 
 async def run(*, once: bool, poll_seconds: float) -> int:

@@ -6,9 +6,10 @@ import weeklyMock from '../mocks/weekly.json'
 import deviceMock from '../mocks/device.json'
 import observationsMock from '../mocks/observations.json'
 import baselineMock from '../mocks/baseline.json'
+import agentExplanationMock from '../mocks/agent-explanation.json'
 import { DATA_MODES } from '../domain/constants'
 import {
-  validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceStatus, validateEventList, validateEventViewModel, validateInterventionResult,
+  validateAgentExplanationJob, validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceStatus, validateEventList, validateEventViewModel, validateInterventionResult,
 } from '../domain/validation'
 import {
   normalizeBaseline, normalizeDashboard, normalizeDevice, normalizeEvent, normalizeWeeklyReport,
@@ -195,6 +196,23 @@ export async function getEvent(eventId) {
     validateEventViewModel(event)
     return normalizeEvent(event)
   }, () => normalizeEvent(hydrateMockEvent(mocks.events.find((event) => event.event_id === eventId) || mocks.events[0])), validateEventViewModel)
+}
+
+function mockAgentExplanation(eventId) {
+  const result = structuredClone(agentExplanationMock)
+  result.event_id = eventId
+  result.request_id = `agent-${eventId}-mock`
+  result.explanation.event_id = eventId
+  result.explanation.request_id = result.request_id
+  return result
+}
+
+export async function getEventExplanation(eventId) {
+  return resolveData('event.explanation.read', async () => {
+    return validateAgentExplanationJob(payload(await apiClient.get(
+      `/events/${encodeURIComponent(eventId)}/explanation`,
+    )))
+  }, () => mockAgentExplanation(eventId), validateAgentExplanationJob)
 }
 
 export async function getWeeklyReport(residentId = RESIDENT_ID) {

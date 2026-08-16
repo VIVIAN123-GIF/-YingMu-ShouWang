@@ -2,9 +2,10 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getAssetMock, getEventMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
+const { getAssetMock, getEventMock, getEventExplanationMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
   getAssetMock: vi.fn(),
   getEventMock: vi.fn(),
+  getEventExplanationMock: vi.fn(),
   runtimeMock: { mode: 'api' },
   submitInterventionResultMock: vi.fn(),
 }))
@@ -12,6 +13,7 @@ const { getAssetMock, getEventMock, runtimeMock, submitInterventionResultMock } 
 vi.mock('../services/repository', () => ({
   getAsset: getAssetMock,
   getEvent: getEventMock,
+  getEventExplanation: getEventExplanationMock,
   runtime: runtimeMock,
   submitInterventionResult: submitInterventionResultMock,
 }))
@@ -95,6 +97,17 @@ describe('事件详情 API 自动同步', () => {
       stream_url: null, fallback_url: null, notice: '暂无文件', captured_at: '2026-07-31T03:07:05+08:00',
     })
     getEventMock.mockReset()
+    getEventExplanationMock.mockReset()
+    getEventExplanationMock.mockResolvedValue({
+      event_id: 'event-poll-1', status: 'SUCCESS', request_id: 'agent-event-poll-1',
+      event_version_hash: 'version-1', generated_by: 'mock-agent-v1', fallback_used: false,
+      attempt_count: 1, error_code: null, created_at: null, completed_at: null,
+      explanation: {
+        schema_version: 'agent-explanation/1.0', request_id: 'agent-event-poll-1', event_id: 'event-poll-1',
+        summary: '已完成风险解释', reasoning_points: ['检测到快速起身'],
+        recommended_action_text: '请先坐稳', capability_notice: '使用模拟能力', generated_by: 'mock-agent-v1', fallback_used: false,
+      },
+    })
     submitInterventionResultMock.mockReset()
   })
 

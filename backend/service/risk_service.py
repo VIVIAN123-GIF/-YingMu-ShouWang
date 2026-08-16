@@ -1,11 +1,13 @@
 import uuid
+import logging
 from datetime import timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config import RULESET_VERSION
-from backend.db.models import Evidence, InterventionResult, RiskEvent, RiskEventEvidence, RuleTrace
+from backend.db.models import Evidence, InterventionResult, Observation, RiskEvent, RiskEventEvidence, RuleTrace
+from backend.service.feedback_aggregation_service import aggregate_active_event_feedback
 from backend.service.serialization import aware, dumps, event_dict, loads
 from contracts.v1.decision import FallDecisionPolicy, quality_snapshot
 from contracts.v1.ruleset import load_ruleset
@@ -14,6 +16,20 @@ from contracts.v1.ruleset import load_ruleset
 ACTIVE_EVENT_STATUSES = ("OPEN", "INTERVENING", "OBSERVING")
 ruleset = load_ruleset()
 policy = FallDecisionPolicy(ruleset)
+logger = logging.getLogger("backend.risk_service")
+
+
+async def _enqueue_explanation_safely(db: AsyncSession, event_id: str) -> None:
+    try:
+        from backend.service.agent_explanation_job_service import enqueue_event_explanation
+        await enqueue_event_explanation(db, event_id)
+    except Exception as exc:
+        await db.rollback()
+        logger.error(
+            "agent_explanation_enqueue_failed event_id=%s error_code=%s",
+            event_id,
+            type(exc).__name__,
+        )
 
 
 async def _active_event(db: AsyncSession, resident_id: str) -> RiskEvent | None:
@@ -85,12 +101,26 @@ async def _context(
         )
         .order_by(Evidence.timestamp)
     )).scalars().all()
-    recent = [item for item in all_rows if aware(item.timestamp) >= aware(short_start) and item.risk_domain == "FALL"]
+    short_rows = [item for item in all_rows if aware(item.timestamp) >= aware(short_start)]
+    recent = [item for item in short_rows if item.risk_domain == "FALL"]
     medium = [item for item in all_rows if aware(item.timestamp) >= aware(medium_start)]
+    usable_fall = [
+        item for item in recent
+        if ruleset.usable(float(item.confidence), float(item.data_quality))
+    ]
+    usable_system = [
+        item for item in short_rows
+        if item.risk_domain == "SYSTEM"
+        and ruleset.usable(float(item.confidence), float(item.data_quality))
+    ] if usable_fall else []
+    environment = [
+        item for item in usable_system
+        if item.evidence_type in {"high_risk_zone_entry", "obstacle_occupancy"}
+    ]
     contributions = {
         "night": ruleset.context_factors["night"] if evaluated_at.hour >= 22 or evaluated_at.hour < 6 else 0.0,
         "low_light": ruleset.context_factors["low_light"] if any(
-            item.evidence_type == "low_illumination" for item in medium
+            item.evidence_type in {"low_illumination", "low_light"} for item in usable_system
         ) else 0.0,
         "repeated_daily_abnormality": ruleset.context_factors["repeated_daily_abnormality"] if sum(
             item.evidence_type == "rapid_rise" for item in medium
@@ -102,9 +132,32 @@ async def _context(
             and abs(float(item.baseline_deviation)) >= 2
             for item in all_rows
         ) else 0.0,
+        "high_risk_zone": ruleset.context_factors["high_risk_zone"] if any(
+            item.evidence_type == "high_risk_zone_entry" for item in environment
+        ) else 0.0,
+        "obstacle_interaction": ruleset.context_factors["obstacle_interaction"] if any(
+            item.evidence_type == "obstacle_occupancy" for item in environment
+        ) else 0.0,
     }
     context_score = round(min(sum(contributions.values()), 1.0), 4)
-    context_snapshot = {"contributions": contributions, "context_score": context_score}
+    observation_ids = sorted({
+        observation_id for item in environment for observation_id in loads(item.observation_ids, [])
+    })
+    observations = (await db.execute(
+        select(Observation).where(Observation.observation_id.in_(observation_ids))
+    )).scalars().all() if observation_ids else []
+    scene_config_ids = sorted({
+        metadata.get("scene_config_id")
+        for observation in observations
+        if (metadata := loads(observation.extra_metadata, {})).get("scene_config_id")
+    })
+    context_snapshot = {
+        "policy_version": ruleset.context_policy_version,
+        "contributions": contributions,
+        "context_score": context_score,
+        "environment_evidence_ids": [item.evidence_id for item in environment],
+        "scene_config_ids": scene_config_ids,
+    }
     try:
         from backend.service.baseline_service import memory_store
         baseline_response = await memory_store.baseline(db, resident_id, evaluated_at)
@@ -125,7 +178,7 @@ async def _intervention_state(db: AsyncSession, event: RiskEvent | None):
         select(InterventionResult)
         .where(
             InterventionResult.event_id == event.event_id,
-            InterventionResult.action_type != "family_feedback",
+            InterventionResult.action_type.notin_(("family_feedback", "resident_response")),
         )
         .order_by(InterventionResult.started_at)
     )).scalars().all()
@@ -210,6 +263,8 @@ async def evaluate(
         trigger = (await db.execute(select(Evidence).where(
             Evidence.evidence_id == evidence_id
         ))).scalar_one_or_none()
+    if not duplicate:
+        await aggregate_active_event_feedback(db, existing, evaluated_at)
     recent, context_snapshot, baseline_snapshot = await _context(db, resident_id, evaluated_at)
     attempts, latest_intervention_at = await _intervention_state(db, existing)
 
@@ -298,6 +353,9 @@ async def evaluate(
         event_created=created, decision=decision, recent=recent,
         context_snapshot=context_snapshot, baseline_snapshot=baseline_snapshot,
     )
+    event_payload = event_dict(event) if event else None
+    if event is not None and (created or decision.action in {"ESCALATE", "RESOLVE"}):
+        await _enqueue_explanation_safely(db, event.event_id)
     return {
         "risk_level": next_state,
         "previous_state": previous_state,
@@ -305,7 +363,7 @@ async def evaluate(
         "previous_status": previous_status,
         "next_status": next_status,
         "event_created": created,
-        "event": event_dict(event) if event else None,
+        "event": event_payload,
         "matched_rule": decision.matched_rule,
         "ruleset_version": RULESET_VERSION,
         "system_evidence_id": system_evidence_id,

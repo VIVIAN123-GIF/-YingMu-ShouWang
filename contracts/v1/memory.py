@@ -64,6 +64,9 @@ class MemoryStore:
     QUALITY_FLAGS = {"tracking_lost", "camera_occlusion", "audio_quality_low"}
     ENVIRONMENT_TYPES = {
         "low_light",
+        "low_illumination",
+        "high_risk_zone_entry",
+        "obstacle_occupancy",
         "obstacle_zone",
         "narrow_passage",
         "far_from_support",
@@ -210,7 +213,7 @@ class MemoryStore:
         short = self.query_short(resident_id, now)
         medium = self.query_medium(resident_id, now)
         long = self.query_long(resident_id, now)
-        low_light = sum(1 for item in medium if item.evidence_type == "low_illumination")
+        low_light = sum(1 for item in medium if item.evidence_type in {"low_light", "low_illumination"})
         abnormal_rises = sum(1 for item in medium if item.evidence_type == "rapid_rise")
         night_rises = sum(1 for item in medium if item.evidence_type in {"rapid_rise", "night_rise"} and (item.timestamp.hour >= 22 or item.timestamp.hour < 6))
         return {
@@ -222,11 +225,24 @@ class MemoryStore:
         }
 
     def forewarning_profile(self, resident_id: str, now: datetime) -> dict[str, Any]:
-        short = [item for item in self.query_short(resident_id, now) if item.risk_domain.value != "SYSTEM"]
-        medium = [item for item in self.query_medium(resident_id, now) if item.risk_domain.value != "SYSTEM"]
+        all_short = self.query_short(resident_id, now)
+        all_medium = self.query_medium(resident_id, now)
+        short = [item for item in all_short if item.risk_domain.value != "SYSTEM"]
+        medium = [item for item in all_medium if item.risk_domain.value != "SYSTEM"]
+        usable_fall = [
+            item for item in short
+            if item.risk_domain.value == "FALL"
+            and self.ruleset.usable(float(item.confidence), float(item.data_quality))
+        ]
+        environment = [
+            item for item in all_medium
+            if item.risk_domain.value == "SYSTEM"
+            and item.evidence_type in self.ENVIRONMENT_TYPES
+            and self.ruleset.usable(float(item.confidence), float(item.data_quality))
+        ] if usable_fall else []
         quality_penalty = self._quality_penalty(short)
         personal_deviation = self._personal_deviation(short + medium)
-        environment_risk = self._environment_risk(medium)
+        environment_risk = self._environment_risk(environment)
         rule_risk = self._rule_risk(short)
         trend_risk = self._trend_risk(medium)
         instant = self._clamp(0.58 * rule_risk + 0.22 * personal_deviation + 0.20 * environment_risk - quality_penalty)
@@ -244,7 +260,7 @@ class MemoryStore:
             "environment_risk": round(environment_risk, 2),
             "quality_penalty": round(quality_penalty, 2),
             "dominant_factors": dominant,
-            "evidence_ids": [item.evidence_id for item in sorted(short + medium, key=lambda item: item.timestamp) if item.evidence_type in self.PRE_FALL_TYPES | self.ENVIRONMENT_TYPES][-6:],
+            "evidence_ids": [item.evidence_id for item in sorted(short + medium + environment, key=lambda item: item.timestamp) if item.evidence_type in self.PRE_FALL_TYPES | self.ENVIRONMENT_TYPES][-6:],
             "recommended_intervention": self._recommended_intervention(max(instant, thirty_seconds, three_minutes), quality_penalty),
         }
 

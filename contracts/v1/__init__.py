@@ -8,6 +8,7 @@ from .agent import (
     AgentInterventionStatus,
     PlatformCapability,
 )
+from .algorithm import AdapterBatch, AlgorithmJob
 
 from .models import (
     Evidence,
@@ -30,6 +31,8 @@ __all__ = [
     "AgentExplanationRequest",
     "AgentExplanationResponse",
     "AgentInterventionStatus",
+    "AdapterBatch",
+    "AlgorithmJob",
     "BaselineStatus",
     "InterventionResult",
     "MemoryStore",

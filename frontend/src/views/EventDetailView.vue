@@ -8,7 +8,7 @@ import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
-import { getAsset, getEvent, runtime, submitInterventionResult } from '../services/repository'
+import { getAsset, getEvent, getEventExplanation, runtime, submitInterventionResult } from '../services/repository'
 import { domainLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const route = useRoute()
@@ -26,10 +26,15 @@ const syncState = ref('loading')
 const syncWarning = ref('')
 const submittingResidentResponse = ref(false)
 const residentResponseRecorded = ref(false)
+const explanation = ref(null)
+const explanationError = ref('')
+const explanationState = ref('loading')
 
 const POLL_INTERVAL_MS = 1500
 const TERMINAL_STATUSES = new Set(['RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
+const EXPLANATION_TERMINAL_STATUSES = new Set(['NOT_REQUESTED', 'SUCCESS', 'FALLBACK', 'FAILED'])
 let pollTimer = null
+let explanationPollTimer = null
 let sessionId = 0
 
 const syncLabel = computed(() => ({
@@ -115,6 +120,13 @@ function clearPollTimer() {
   }
 }
 
+function clearExplanationPollTimer() {
+  if (explanationPollTimer !== null) {
+    window.clearTimeout(explanationPollTimer)
+    explanationPollTimer = null
+  }
+}
+
 function eventAssetId(currentEvent) {
   return currentEvent?.observations?.find((observation) => observation.asset_id)?.asset_id
     || currentEvent?.asset_id
@@ -169,6 +181,34 @@ function schedulePoll(activeSession) {
   }, POLL_INTERVAL_MS)
 }
 
+function scheduleExplanationPoll(activeSession) {
+  clearExplanationPollTimer()
+  if (activeSession !== sessionId || runtime.mode === 'mock' || EXPLANATION_TERMINAL_STATUSES.has(explanation.value?.status)) return
+  explanationPollTimer = window.setTimeout(() => {
+    explanationPollTimer = null
+    void refreshExplanation(activeSession)
+  }, POLL_INTERVAL_MS)
+}
+
+async function refreshExplanation(activeSession, initial = false) {
+  if (activeSession !== sessionId) return
+  if (initial) explanationState.value = 'loading'
+  try {
+    const result = await getEventExplanation(route.params.eventId || 'event-fall-100')
+    if (activeSession !== sessionId) return
+    explanation.value = result
+    explanationError.value = ''
+    explanationState.value = EXPLANATION_TERMINAL_STATUSES.has(result.status) ? 'complete' : 'polling'
+    if (!EXPLANATION_TERMINAL_STATUSES.has(result.status)) scheduleExplanationPoll(activeSession)
+    else clearExplanationPollTimer()
+  } catch (err) {
+    if (activeSession !== sessionId) return
+    explanationError.value = err?.message || '智能体解释读取失败'
+    explanationState.value = runtime.mode === 'auto' ? 'retrying' : 'failed'
+    if (runtime.mode !== 'mock') scheduleExplanationPoll(activeSession)
+  }
+}
+
 async function refreshEvent(activeSession, initial = false) {
   if (activeSession !== sessionId) return
   if (initial) loading.value = true
@@ -179,6 +219,7 @@ async function refreshEvent(activeSession, initial = false) {
     if (activeSession !== sessionId) return
     event.value = nextEvent
     void syncAsset(nextEvent, activeSession)
+    if (initial) void refreshExplanation(activeSession, true)
     error.value = ''
     syncWarning.value = ''
     if (isTerminal(nextEvent)) {
@@ -205,7 +246,11 @@ function startEventSession() {
   sessionId += 1
   const activeSession = sessionId
   clearPollTimer()
+  clearExplanationPollTimer()
   event.value = null
+  explanation.value = null
+  explanationError.value = ''
+  explanationState.value = 'loading'
   error.value = ''
   syncWarning.value = ''
   syncState.value = 'loading'
@@ -223,6 +268,7 @@ function startEventSession() {
 function stopEventSession() {
   sessionId += 1
   clearPollTimer()
+  clearExplanationPollTimer()
 }
 
 async function confirmResidentStable() {
@@ -280,6 +326,28 @@ onBeforeUnmount(stopEventSession)
       <MediaPanel v-if="assetState === 'ready'" :asset="asset" :source-mode="event.source_mode" :simulated="event.simulated" />
       <el-alert v-else-if="assetState === 'missing'" :title="assetMessage" type="warning" show-icon :closable="false" data-testid="asset-status" />
       <el-alert v-else-if="assetState === 'failed'" :title="assetMessage" type="error" show-icon :closable="false" data-testid="asset-status" />
+
+      <section class="content-card agent-explanation-card" data-testid="agent-explanation-panel">
+        <div class="card-heading">
+          <div><span class="section-kicker">Agent Explanation</span><h2>智能体风险解释</h2></div>
+          <el-tag v-if="explanation" :type="explanation.status === 'FAILED' ? 'danger' : explanation.status === 'FALLBACK' ? 'warning' : explanation.status === 'SUCCESS' ? 'success' : 'info'" effect="plain">
+            {{ explanation.status }}
+          </el-tag>
+        </div>
+        <el-alert v-if="explanationError" :title="explanationError" type="warning" show-icon :closable="false" data-testid="agent-explanation-error" />
+        <el-alert v-else-if="!explanation || ['PENDING', 'PROCESSING', 'RETRY'].includes(explanation.status)" title="智能体解释生成中，请稍候。" type="info" show-icon :closable="false" data-testid="agent-explanation-pending" />
+        <el-alert v-else-if="explanation.status === 'NOT_REQUESTED'" title="当前事件尚未请求智能体解释。" type="info" show-icon :closable="false" data-testid="agent-explanation-not-requested" />
+        <el-alert v-else-if="explanation.status === 'FAILED'" :title="explanation.error_code || '智能体解释生成失败，不影响风险事件本身。'" type="error" show-icon :closable="false" data-testid="agent-explanation-failed" />
+        <div v-else-if="explanation.explanation" class="agent-explanation-content" data-testid="agent-explanation-content">
+          <h3>{{ explanation.explanation.summary }}</h3>
+          <ul>
+            <li v-for="point in explanation.explanation.reasoning_points" :key="point">{{ point }}</li>
+          </ul>
+          <p><strong>建议：</strong>{{ explanation.explanation.recommended_action_text }}</p>
+          <p class="agent-capability-notice">{{ explanation.explanation.capability_notice }}</p>
+          <el-tag v-if="explanation.status === 'FALLBACK' || explanation.explanation.fallback_used" type="warning" effect="plain" data-testid="agent-explanation-fallback">模板降级解释</el-tag>
+        </div>
+      </section>
 
       <section class="event-detail-grid">
         <div class="event-primary-column">

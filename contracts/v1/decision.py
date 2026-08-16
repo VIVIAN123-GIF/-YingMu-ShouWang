@@ -71,16 +71,6 @@ class FallDecisionPolicy:
         thresholds = self.ruleset.thresholds
         usable_recent = [item for item in recent if self.usable(item)]
 
-        if trigger is not None and not self.usable(trigger):
-            return Decision(
-                "R-FALL-03",
-                previous_state,
-                active_status,
-                "NONE",
-                "confidence or data_quality is below the ruleset gate; no risk upgrade",
-                not_matched={"R-FALL-02": "trigger evidence is not usable"},
-            )
-
         if active_status in {"OPEN", "INTERVENING", "OBSERVING"}:
             persistent = next(
                 (item for item in usable_recent if item.evidence_type in {"persistent_instability", "no_response"}),
@@ -102,6 +92,16 @@ class FallDecisionPolicy:
                     "R-FALL-07", "RED", "ESCALATED", "ESCALATE",
                     "persistent hazard, no response, or hazard after two interventions",
                     (escalation.evidence_id,), thresholds["red_score"],
+                )
+
+            if trigger is not None and not self.usable(trigger):
+                return Decision(
+                    "R-FALL-03",
+                    previous_state,
+                    active_status,
+                    "NONE",
+                    "confidence or data_quality is below the ruleset gate; no risk upgrade",
+                    not_matched={"R-FALL-07": "no usable internal escalation signal is present"},
                 )
 
             if active_status in {"OPEN", "INTERVENING"} and trigger is not None and trigger.evidence_type == "posture_recovered":
@@ -157,6 +157,16 @@ class FallDecisionPolicy:
             return Decision(
                 "NO_MATCH", previous_state, active_status, "NONE",
                 "active event is awaiting new evidence",
+            )
+
+        if trigger is not None and not self.usable(trigger):
+            return Decision(
+                "R-FALL-03",
+                previous_state,
+                active_status,
+                "NONE",
+                "confidence or data_quality is below the ruleset gate; no risk upgrade",
+                not_matched={"R-FALL-02": "trigger evidence is not usable"},
             )
 
         rapid_items = [item for item in usable_recent if item.evidence_type == "rapid_rise"]

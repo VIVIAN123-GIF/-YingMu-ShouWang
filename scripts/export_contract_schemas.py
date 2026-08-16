@@ -14,6 +14,7 @@ if str(ROOT) not in sys.path:
 from contracts.v1.mock_data import sequence  # noqa: E402
 from contracts.v1.mock_memory_data import safe_history  # noqa: E402
 from contracts.v1.agent import AgentExplanationRequest, AgentExplanationResponse  # noqa: E402
+from contracts.v1.algorithm import AdapterBatch, AlgorithmJob  # noqa: E402
 from contracts.v1.models import Evidence, InterventionResult, Observation, RiskEvent  # noqa: E402
 from contracts.v1.platform import PlatformSnapshotResult  # noqa: E402
 from contracts.v1.rehearsal import run_fixed_sequence  # noqa: E402
@@ -35,6 +36,8 @@ def main() -> None:
         "platform_snapshot_result": PlatformSnapshotResult,
         "agent_explanation_request": AgentExplanationRequest,
         "agent_explanation_response": AgentExplanationResponse,
+        "algorithm_job": AlgorithmJob,
+        "adapter_batch": AdapterBatch,
     }
     for name, model in models.items():
         write_json(schema_dir / f"{name}.schema.json", model.model_json_schema())
@@ -99,6 +102,53 @@ def main() -> None:
             "capability_notice": "设备服务端语音尚未验证，将使用明确标记的降级工具",
             "generated_by": "llm-agent-v1",
             "fallback_used": False,
+        },
+        "algorithm_job": {
+            "schema_version": "algorithm-job/1.0",
+            "job_id": "job-alarm-task-001",
+            "correlation_id": "alarm-task-001",
+            "resident_id": "resident-001",
+            "asset_id": "asset-authorized-001",
+            "media_type": "VIDEO",
+            "media_locator": "C:/private-media/authorized/event-001.mp4",
+            "captured_at": "2026-08-15T09:30:00+08:00",
+            "source_mode": "RECORDED_REPLAY",
+            "simulated": True,
+            "location": "living_room",
+            "camera_position_id": "living-room-c6c-v1",
+            "scene_config_id": "scene-living-room-v1",
+            "requested_modules": ["GAIT", "TRAJECTORY"],
+            "deadline_ms": 8000,
+        },
+        "adapter_batch": {
+            "schema_version": "adapter-batch/1.0",
+            "job_id": "job-alarm-task-001",
+            "module": "GAIT",
+            "adapter_version": "gait-adapter-v1.0.0",
+            "status": "NO_EVIDENCE",
+            "started_at": "2026-08-15T09:30:01+08:00",
+            "completed_at": "2026-08-15T09:30:03+08:00",
+            "observations": [{
+                "schema_version": "1.0",
+                "observation_id": "obs-gait-asset001-quality-0",
+                "resident_id": "resident-001",
+                "timestamp": "2026-08-15T09:30:02+08:00",
+                "source": "pose",
+                "feature_name": "valid_frame_ratio",
+                "feature_value": 0.91,
+                "unit": "ratio",
+                "location": "living_room",
+                "confidence": 0.92,
+                "data_quality": 0.91,
+                "source_mode": "RECORDED_REPLAY",
+                "asset_id": "asset-authorized-001",
+                "simulated": True,
+                "metadata": {"model_version": "mediapipe-pose-heavy"},
+            }],
+            "evidences": [],
+            "resident_response_candidate": None,
+            "diagnostics": {"elapsed_ms": 1860, "valid_frame_ratio": 0.91},
+            "error": None,
         },
     }
     for name, payload in d1_examples.items():

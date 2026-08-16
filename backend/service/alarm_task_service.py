@@ -8,11 +8,12 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import select, update
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import AlarmProcessingTask, RiskAlarm
 from backend.service.device_adapter import device_adapter
+from backend.service.serialization import loads
 from backend.service.snapshot_asset_service import (
     SnapshotAssetError,
     persist_snapshot_asset,
@@ -34,6 +35,22 @@ def task_dict(task: AlarmProcessingTask) -> dict[str, Any]:
     # database for traceability; browser-facing task status uses opaque refs.
     alarm_ref = hashlib.sha256(task.alarm_msg_id.encode("utf-8")).hexdigest()[:12]
     device_ref = hashlib.sha256(task.device_sn.encode("utf-8")).hexdigest()[:12]
+    algorithm_summary = loads(task.algorithm_summary, None)
+    if isinstance(algorithm_summary, dict):
+        algorithm_summary = {
+            "modules": [
+                {
+                    "module": item.get("module"),
+                    "status": item.get("status"),
+                    "elapsed_ms": item.get("elapsed_ms"),
+                    "error_code": item.get("error_code"),
+                }
+                for item in algorithm_summary.get("modules", [])
+                if isinstance(item, dict)
+            ],
+            "observation_count": algorithm_summary.get("observation_count", 0),
+            "evidence_count": algorithm_summary.get("evidence_count", 0),
+        }
     return {
         "task_id": task.task_id,
         "alarm_ref": f"alarm-{alarm_ref}",
@@ -43,6 +60,12 @@ def task_dict(task: AlarmProcessingTask) -> dict[str, Any]:
         "attempt_count": task.attempt_count,
         "max_attempts": task.max_attempts,
         "capture_asset_id": task.capture_asset_id,
+        "capture_completed_at": task.capture_completed_at,
+        "algorithm_attempt_count": task.algorithm_attempt_count,
+        "algorithm_started_at": task.algorithm_started_at,
+        "algorithm_completed_at": task.algorithm_completed_at,
+        "algorithm_summary": algorithm_summary,
+        "error_stage": task.error_stage,
         "error_code": task.error_code,
         "error_message": task.error_message,
         "available_at": task.available_at,
@@ -84,7 +107,16 @@ async def claim_next_task(db: AsyncSession) -> AlarmProcessingTask | None:
     candidate = (await db.execute(
         select(AlarmProcessingTask)
         .where(
-            AlarmProcessingTask.status.in_(CLAIMABLE_STATUSES),
+            or_(
+                AlarmProcessingTask.status == "PENDING",
+                and_(
+                    AlarmProcessingTask.status == "RETRY",
+                    or_(
+                        AlarmProcessingTask.error_stage.is_(None),
+                        AlarmProcessingTask.error_stage == "CAPTURE",
+                    ),
+                ),
+            ),
             AlarmProcessingTask.available_at <= now,
         )
         .order_by(AlarmProcessingTask.create_time)
@@ -105,6 +137,7 @@ async def claim_next_task(db: AsyncSession) -> AlarmProcessingTask | None:
             attempt_count=AlarmProcessingTask.attempt_count + 1,
             error_code=None,
             error_message=None,
+            error_stage=None,
         )
     )
     await db.commit()
@@ -143,19 +176,20 @@ async def process_claimed_task(
                 "A persisted Asset is required before algorithm handoff",
                 retryable=False,
             )
-        task.status = "WAITING_ALGORITHM"
-        task.finished_at = _now()
+        task.status = "CAPTURED"
+        task.capture_completed_at = _now()
         task.error_code = None
-        task.error_message = (
-            "Platform snapshot stored as an authorized Asset; algorithm adapter is pending."
-        )
+        task.error_message = None
+        task.error_stage = None
     except SnapshotAssetError as exc:
         if exc.retryable and task.attempt_count < task.max_attempts:
             task.status = "RETRY"
             task.available_at = _now() + timedelta(seconds=2 ** task.attempt_count)
+            task.error_stage = "CAPTURE"
         else:
             task.status = "FAILED"
             task.finished_at = _now()
+            task.error_stage = "CAPTURE"
         task.error_code = exc.code
         task.error_message = exc.message
     except Exception as exc:
@@ -163,10 +197,12 @@ async def process_claimed_task(
             task.status = "RETRY"
             task.available_at = _now() + timedelta(seconds=2 ** task.attempt_count)
             task.error_code = "EZVIZ_CAPTURE_RETRY"
+            task.error_stage = "CAPTURE"
         else:
             task.status = "FAILED"
             task.finished_at = _now()
             task.error_code = "EZVIZ_CAPTURE_FAILED"
+            task.error_stage = "CAPTURE"
         # Do not persist provider URLs, tokens, or exception chains.
         task.error_message = f"Snapshot request failed: {type(exc).__name__}"
     await db.commit()
