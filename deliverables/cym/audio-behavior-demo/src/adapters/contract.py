@@ -29,7 +29,10 @@ class AdapterError(dict):
     """JSON-compatible standard error object."""
 
     def __init__(self, code: str, message: str, *, retryable: bool = False, details: dict | None = None):
-        super().__init__(code=code, message=message, retryable=retryable, details=details or {})
+        # Keep the public error shape identical to contracts.v1.AdapterError.
+        # ``details`` remains an accepted argument for older callers but is
+        # intentionally not serialized across the backend boundary.
+        super().__init__(code=str(code)[:64], message=str(message)[:256], retryable=retryable)
 
 
 @dataclass(frozen=True)
@@ -54,7 +57,10 @@ class AlgorithmJob:
         if isinstance(payload, cls):
             return payload
         if hasattr(payload, "model_dump"):
-            payload = payload.model_dump()
+            try:
+                payload = payload.model_dump(mode="json")
+            except TypeError:
+                payload = payload.model_dump()
         elif hasattr(payload, "dict") and callable(payload.dict):
             payload = payload.dict()
         elif all(hasattr(payload, name) for name in ("job_id", "resident_id", "asset_id", "media_locator")):
@@ -72,15 +78,29 @@ class AlgorithmJob:
         missing = [name for name in required if name not in payload]
         if missing:
             raise ContractValidationError("AlgorithmJob missing fields: " + ", ".join(missing))
+        # Pydantic's JSON mode normalizes datetime and Enum values when the
+        # Worker passes its canonical AlgorithmJob instance.  Normalize the
+        # fallback object path as well for compatibility with older callers.
+        captured_at = payload["captured_at"]
+        if isinstance(captured_at, datetime):
+            captured_at = captured_at.isoformat()
+        source_mode = payload["source_mode"]
+        source_mode = getattr(source_mode, "value", source_mode)
+        media_type = payload["media_type"]
+        media_type = getattr(media_type, "value", media_type)
+        requested_modules = [
+            getattr(item, "value", item)
+            for item in (payload.get("requested_modules") or [])
+        ]
         return cls(
             job_id=payload["job_id"], correlation_id=payload["correlation_id"],
             resident_id=payload["resident_id"], asset_id=payload["asset_id"],
-            media_type=payload["media_type"], media_locator=payload["media_locator"],
-            captured_at=payload["captured_at"], source_mode=payload["source_mode"],
+            media_type=media_type, media_locator=payload["media_locator"],
+            captured_at=captured_at, source_mode=source_mode,
             simulated=payload["simulated"], location=payload.get("location"),
             camera_position_id=payload.get("camera_position_id"),
             scene_config_id=payload.get("scene_config_id"),
-            requested_modules=list(payload.get("requested_modules") or []),
+            requested_modules=requested_modules,
             deadline_ms=payload.get("deadline_ms", 0),
         )
 
@@ -144,7 +164,8 @@ def error(code: str, message: str, *, retryable: bool = False, details: dict | N
 def build_batch(job: AlgorithmJob | dict[str, Any], *, module: str, status: str,
                 adapter_version: str, started_at: str, completed_at: str,
                 observations: list[dict], evidences: list[dict],
-                diagnostics: dict | None = None, batch_error: dict | None = None) -> dict:
+                diagnostics: dict | None = None, batch_error: dict | None = None,
+                resident_response_candidate: dict | None = None) -> dict:
     checked_job = validate_job(job)
     if module not in MODULES:
         raise ContractValidationError(f"module must be one of {sorted(MODULES)}")
@@ -172,24 +193,47 @@ def build_batch(job: AlgorithmJob | dict[str, Any], *, module: str, status: str,
             raise ContractValidationError("Evidence observation_ids must reference this batch")
     if status == "FAILED" and (observations or evidences):
         raise ContractValidationError("FAILED batches cannot contain observations or evidences")
-    if status == "NO_EVIDENCE" and evidences:
-        raise ContractValidationError("NO_EVIDENCE batches cannot contain evidences")
+    if status == "NO_EVIDENCE" and (not observations or evidences):
+        raise ContractValidationError("NO_EVIDENCE requires observations and no evidences")
+    if status == "LOW_QUALITY":
+        quality_types = {
+            "tracking_lost", "audio_quality_low", "camera_occlusion",
+            "stream_unavailable", "low_illumination", "low_light",
+        }
+        if not observations or not evidences:
+            raise ContractValidationError("LOW_QUALITY requires observations and quality evidence")
+        if any(item["evidence_type"] not in quality_types for item in evidences):
+            raise ContractValidationError("LOW_QUALITY may only contain quality evidence")
     if not isinstance(diagnostics, dict):
         raise ContractValidationError("diagnostics must be an object")
     if status == "FAILED" and not isinstance(batch_error, dict):
         raise ContractValidationError("FAILED batches require error")
     if isinstance(batch_error, dict):
-        required_error_fields = {"code", "message", "retryable", "details"}
+        required_error_fields = {"code", "message", "retryable"}
         if set(batch_error) != required_error_fields:
-            raise ContractValidationError("AdapterError must contain code, message, retryable and details")
+            raise ContractValidationError("AdapterError must contain code, message and retryable")
         if not isinstance(batch_error["code"], str) or not batch_error["code"].strip():
             raise ContractValidationError("AdapterError.code must be a non-empty string")
         if not isinstance(batch_error["message"], str) or not batch_error["message"].strip():
             raise ContractValidationError("AdapterError.message must be a non-empty string")
-        if not isinstance(batch_error["retryable"], bool) or not isinstance(batch_error["details"], dict):
-            raise ContractValidationError("AdapterError.retryable must be boolean and details must be an object")
+        if not isinstance(batch_error["retryable"], bool):
+            raise ContractValidationError("AdapterError.retryable must be boolean")
     if status != "FAILED" and batch_error is not None:
         raise ContractValidationError("successful batches must have error=null")
+    if resident_response_candidate is not None:
+        if module != "LANGUAGE":
+            raise ContractValidationError("resident_response_candidate is language-only")
+        if set(resident_response_candidate) != {
+            "intent", "confidence", "transcript_observation_id"
+        }:
+            raise ContractValidationError("resident_response_candidate has invalid fields")
+        if resident_response_candidate["intent"] not in INTENTS:
+            raise ContractValidationError("resident_response_candidate.intent is invalid")
+        confidence = resident_response_candidate["confidence"]
+        if not isinstance(confidence, (int, float)) or not 0 <= confidence <= 1:
+            raise ContractValidationError("resident_response_candidate.confidence is invalid")
+        if resident_response_candidate["transcript_observation_id"] not in observation_ids:
+            raise ContractValidationError("resident_response_candidate must reference an Observation")
     return {
         "schema_version": ADAPTER_SCHEMA_VERSION,
         "job_id": checked_job.job_id,
@@ -200,6 +244,7 @@ def build_batch(job: AlgorithmJob | dict[str, Any], *, module: str, status: str,
         "completed_at": completed_at,
         "observations": observations,
         "evidences": evidences,
+        "resident_response_candidate": resident_response_candidate,
         "diagnostics": diagnostics,
         "error": batch_error,
     }
@@ -236,5 +281,6 @@ def validate_adapter_batch(batch: dict, *, job: AlgorithmJob | dict | None = Non
         completed_at=batch["completed_at"], observations=batch["observations"],
         evidences=batch["evidences"], diagnostics=batch["diagnostics"],
         batch_error=batch["error"],
+        resident_response_candidate=batch.get("resident_response_candidate"),
     )
     return batch

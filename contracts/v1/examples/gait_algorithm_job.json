@@ -1,13 +1,17 @@
 {
+  "schema_version": "algorithm-job/1.0",
   "job_id": "job-gait-demo-001",
+  "correlation_id": "corr-gait-demo-001",
   "resident_id": "resident-demo-001",
   "asset_id": "asset-gait-demo-001",
-  "media_type": "gait_feature_json",
+  "media_type": "VIDEO",
   "media_locator": "contracts/v1/examples/gait_features_demo.json",
   "captured_at": "2026-08-16T09:30:00+08:00",
   "source_mode": "RECORDED_REPLAY",
   "simulated": true,
   "location": "bedroom",
   "camera_position_id": "camera-position-demo-001",
-  "scene_config_id": "scene-config-demo-001"
+  "scene_config_id": "scene-config-demo-001",
+  "requested_modules": ["GAIT"],
+  "deadline_ms": 8000
 }

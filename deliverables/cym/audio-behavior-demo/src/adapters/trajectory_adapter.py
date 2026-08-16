@@ -18,6 +18,7 @@ from pathlib import Path
 from behavior_adapter import ADAPTER_VERSION, build_behavior_batch
 
 from .contract import (
+    AdapterBatch,
     AlgorithmJob,
     ContractValidationError,
     build_batch,
@@ -146,7 +147,7 @@ def awaitable_video(path: Path, job: AlgorithmJob) -> dict:
     return _run_video(path, job)
 
 
-async def run(job: AlgorithmJob | dict) -> dict:
+async def run(job: AlgorithmJob) -> AdapterBatch:
     """Execute the trajectory adapter and return an ``adapter-batch/1.0`` dict."""
     started_at = now_timestamp()
     try:

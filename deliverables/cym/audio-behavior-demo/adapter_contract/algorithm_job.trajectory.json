@@ -1,9 +1,10 @@
 {
+  "schema_version": "algorithm-job/1.0",
   "job_id": "job-trajectory-demo-001",
   "correlation_id": "corr-demo-001",
   "resident_id": "resident-demo-001",
   "asset_id": "asset-trajectory-demo-001",
-  "media_type": "JSON",
+  "media_type": "VIDEO",
   "media_locator": "adapter_contract/trajectory_input.summary.json",
   "captured_at": "2026-08-16T10:00:00+08:00",
   "source_mode": "MOCK",
