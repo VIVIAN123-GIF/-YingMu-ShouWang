@@ -141,6 +141,10 @@ def test_gait_adapter_registry_invocation(monkeypatch, tmp_path: Path):
     feature_path = tmp_path / "features.json"
     _write_features(feature_path)
     monkeypatch.setenv("YINGMU_GAIT_ADAPTER", "contracts.v1.gait_adapter:run")
+    # Keep this single-module registry test independent of developer-local
+    # trajectory/language adapter settings in .env.
+    monkeypatch.delenv("YINGMU_TRAJECTORY_ADAPTER", raising=False)
+    monkeypatch.delenv("YINGMU_LANGUAGE_ADAPTER", raising=False)
     registry = AdapterRegistry()
     registry.load_configured()
 
