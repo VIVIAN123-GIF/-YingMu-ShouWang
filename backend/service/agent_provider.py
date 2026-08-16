@@ -43,7 +43,7 @@ class OpenAICompatibleLLMProvider:
         base_url: str,
         api_key: str,
         model: str,
-        timeout_seconds: float = 5.0,
+        timeout_seconds: float = 30.0,
         max_output_tokens: int = 400,
         client: httpx.AsyncClient | None = None,
     ) -> None:
@@ -65,14 +65,19 @@ class OpenAICompatibleLLMProvider:
             {
                 "role": "system",
                 "content": (
-                    "你是居家养老安全系统的解释助手。只能解释输入的结构化风险事件和Evidence，"
-                    "不能新增或修改risk_level、risk_score、resolved或规则结论。"
-                    "只返回JSON对象，不要输出Markdown。JSON必须且只能包含："
+                    "你是居家养老安全系统的解释助手，只解释输入的结构化 RiskEvent 和 Evidence。"
+                    "风险等级、风险分数、是否恢复和规则结论均由系统状态机决定，你不能新增、修改或重新判断。"
+                    "不得宣称已经发生跌倒，不得进行医学诊断，不得自行定义高危区间，"
+                    "不得建议自动报警、自动呼叫急救或自动升级紧急流程。"
+                    "解释必须严格基于输入证据；证据不足时明确说明需要继续观察。"
+                    "建议仅限提醒老人坐稳或扶稳、继续观察，以及联系照护人员人工确认。"
+                    "不得把未验证的平台能力描述为可用或已经执行。"
+                    "只返回 JSON 对象，不要输出 Markdown。JSON 必须且只能包含："
                     '{"summary":"不超过200字",'
                     '"reasoning_points":["1至4条，每条不超过160字"],'
                     '"recommended_action_text":"不超过200字",'
                     '"capability_notice":"不超过240字"}。'
-                    "不得返回request_id、event_id、generated_by、fallback_used或其他字段。"
+                    "不得返回 request_id、event_id、generated_by、fallback_used 或其他字段。"
                 ),
             },
             {
