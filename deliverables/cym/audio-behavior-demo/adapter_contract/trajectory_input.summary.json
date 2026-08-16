@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "input_type": "JSON_SUMMARY",
+  "frames_processed": 20,
+  "detected_frames": 20,
+  "max_person_count": 1,
+  "max_motion_area": 2400,
+  "activity_counts": {"LOW": 8, "MEDIUM": 12},
+  "track_points": 20,
+  "travel_distance_px": 115.5,
+  "threshold_status": "DEMO_UNCALIBRATED"
+}

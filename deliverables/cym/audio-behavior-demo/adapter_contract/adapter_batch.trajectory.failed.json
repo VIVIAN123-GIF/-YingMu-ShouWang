@@ -1,0 +1,13 @@
+{
+  "schema_version": "adapter-batch/1.0",
+  "job_id": "job-trajectory-sample-failed",
+  "module": "TRAJECTORY",
+  "adapter_version": "behavior-adapter-v3",
+  "status": "FAILED",
+  "started_at": "2026-08-16T10:00:01+08:00",
+  "completed_at": "2026-08-16T10:00:02+08:00",
+  "observations": [],
+  "evidences": [],
+  "diagnostics": {"input_format": "UNKNOWN"},
+  "error": {"code": "TRAJECTORY_INPUT_ERROR", "message": "输入文件不存在或格式不支持", "retryable": false, "details": {}}
+}

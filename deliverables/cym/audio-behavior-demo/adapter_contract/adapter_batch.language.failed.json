@@ -1,0 +1,13 @@
+{
+  "schema_version": "adapter-batch/1.0",
+  "job_id": "job-language-sample-failed",
+  "module": "LANGUAGE",
+  "adapter_version": "speech-adapter-v3",
+  "status": "FAILED",
+  "started_at": "2026-08-16T10:01:01+08:00",
+  "completed_at": "2026-08-16T10:01:02+08:00",
+  "observations": [],
+  "evidences": [],
+  "diagnostics": {"input_format": "UNKNOWN"},
+  "error": {"code": "LANGUAGE_INPUT_ERROR", "message": "音频文件不存在或格式不支持", "retryable": false, "details": {}}
+}
