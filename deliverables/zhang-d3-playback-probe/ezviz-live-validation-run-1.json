@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "EZVIZ_LIVE_ACCEPTANCE",
+  "generated_at": "2026-08-16T17:13:22.488+08:00",
+  "run_index": 1,
+  "acceptance_mode": "FULL_PLATFORM",
+  "token_acquisition_mode": "APP_SECRET",
+  "device_alias": "device-a44c5c0e83",
+  "contains_credentials": false,
+  "contains_permanent_public_url": false,
+  "contains_temporary_url": false,
+  "stages": [
+    {
+      "stage": "device_status",
+      "executed": true,
+      "requested_at": "2026-08-16T17:13:22.488+08:00",
+      "device_alias": "device-a44c5c0e83",
+      "result": "SUCCESS",
+      "api_call_succeeded": true,
+      "http_status": 200,
+      "business_code": "200",
+      "business_message": "Operation succeeded",
+      "latency_ms": 6528,
+      "online": true,
+      "source_mode": "LIVE_DEVICE",
+      "failure_reason": null
+    },
+    {
+      "stage": "device_snapshot",
+      "executed": true,
+      "requested_at": "2026-08-16T17:13:29.016+08:00",
+      "device_alias": "device-a44c5c0e83",
+      "result": "FAILED",
+      "http_status": 200,
+      "business_code": "20008",
+      "business_message": "设备响应超时",
+      "latency_ms": 17238,
+      "valid_image_obtained": false,
+      "image_http_status": null,
+      "authorization_status": "NOT_CONFIRMED",
+      "image_url_stored": false,
+      "temporary_url_stored": false,
+      "source_mode": "MOCK",
+      "simulated": true,
+      "failure_reason": "EZVIZ_BUSINESS_ERROR_20008"
+    },
+    {
+      "stage": "temporary_playback_address",
+      "executed": false,
+      "result": "SKIPPED",
+      "http_status": null,
+      "business_code": null,
+      "business_message": null,
+      "latency_ms": null,
+      "source_mode": "MOCK",
+      "failure_reason": "SNAPSHOT_NOT_SUCCESSFUL"
+    }
+  ],
+  "overall_result": "INCOMPLETE"
+}
