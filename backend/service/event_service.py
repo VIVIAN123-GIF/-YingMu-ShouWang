@@ -43,7 +43,13 @@ async def create_intervention_result(db: AsyncSession, event_id: str,
     db.add(row)
     await db.commit()
     await db.refresh(row)
-    return intervention_dict(row), False
+    result = intervention_dict(row)
+    try:
+        from backend.service.agent_explanation_job_service import enqueue_event_explanation
+        await enqueue_event_explanation(db, event_id)
+    except Exception:
+        await db.rollback()
+    return result, False
 
 
 async def record_feedback(db: AsyncSession, event_id: str, payload: FamilyFeedbackCreate):

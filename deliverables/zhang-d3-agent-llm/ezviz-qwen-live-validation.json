@@ -1,29 +1,31 @@
 {
   "schema_version": "1.0",
   "test_kind": "EZVIZ_TOKEN_SWITCH_AGENT_LIVE_VALIDATION",
-  "generated_at": "2026-08-16T11:38:27.162+08:00",
+  "generated_at": "2026-08-16T13:20:29.085+08:00",
   "provider": "EZVIZ_TOKEN_SWITCH_OPENAI_COMPATIBLE",
   "model": "qwen3.6-flash",
   "request_id": "agent-event-001-v1",
   "event_id": "event-001",
-  "latency_ms": 5896,
-  "fallback_used": true,
-  "generated_by": "template-fallback-v1",
-  "result": "FALLBACK",
-  "failure_reason": "LLMProviderError",
+  "latency_ms": 24227,
+  "fallback_used": false,
+  "generated_by": "qwen3.6-flash",
+  "result": "SUCCESS",
+  "failure_reason": null,
   "response": {
     "schema_version": "agent-explanation/1.0",
     "request_id": "agent-event-001-v1",
     "event_id": "event-001",
-    "summary": "检测到跌倒风险前兆，需要继续关注老人状态",
+    "summary": "系统检测到老人起身动作异常，耗时1.1秒显著短于基线2.4秒，且躯干摆幅18.4度高于基线5.2度。当前风险等级为橙色，状态未恢复。证据提示起身过快可能导致平衡不稳，存在潜在跌倒风险，需人工确认。",
     "reasoning_points": [
-      "检测到起身速度偏快，超出当前风险评估关注范围",
-      "检测到躯干持续摇摆，稳定性需要继续观察"
+      "起身时长1.1秒远小于个人基线2.4秒，表明动作速度异常快，可能伴随重心控制不足。",
+      "躯干摆幅18.4度超过基线5.2度，显示身体稳定性下降，摆动幅度增大增加了失衡概率。",
+      "综合上述两项指标，系统判定存在即时风险，但尚未发生跌倒事件，需进一步观察验证。",
+      "平台仅具备图像捕获能力，语音交互功能未验证，无法通过自动呼叫进行紧急干预。"
     ],
-    "recommended_action_text": "建议提醒老人坐稳并继续观察",
-    "capability_notice": "萤石服务端语音尚未验证，将使用明确标记的文字或 Mock 提醒",
-    "generated_by": "template-fallback-v1",
-    "fallback_used": true
+    "recommended_action_text": "请提醒老人保持坐稳或扶稳，避免突然移动。建议继续观察其后续动作稳定性，并联系照护人员进行人工确认，以排除潜在安全隐患。",
+    "capability_notice": "当前已验证能力仅为EZVIZ_CAPTURE（图像捕获），用于辅助视觉分析。EZVIZ_SERVER_VOICE（服务器语音）未被验证，不可作为自动报警、呼叫急救或升级紧急流程的依据，所有紧急操作需由人工介入执行。",
+    "generated_by": "qwen3.6-flash",
+    "fallback_used": false
   },
   "contains_api_key": false,
   "contains_media": false

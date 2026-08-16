@@ -5,6 +5,7 @@ const TIME_SCALES = new Set(['SHORT', 'MEDIUM', 'LONG'])
 const TIME_HORIZONS = new Set(['TREND', 'TODAY', 'IMMINENT'])
 const OPERATORS = new Set(['system', 'family', 'staff'])
 const ALARM_TASK_STATUSES = new Set(['PENDING', 'PROCESSING', 'WAITING_ALGORITHM', 'RETRY', 'FAILED'])
+const AGENT_EXPLANATION_STATUSES = new Set(['NOT_REQUESTED', 'PENDING', 'PROCESSING', 'RETRY', 'SUCCESS', 'FALLBACK', 'FAILED'])
 const SUMMARY_FIELDS = new Set(['evidence_id', 'evidence_type', 'explanation'])
 const PRE_FALL_FACTORS = new Set([
   'fall_precursor_evidence',
@@ -285,6 +286,35 @@ export function validateAlarmProcessingTask(task, index = 0) {
 export function validateAlarmProcessingTasks(tasks) {
   if (!Array.isArray(tasks)) fail('告警处理任务必须是数组', 'alarm_processing')
   return tasks.map(validateAlarmProcessingTask)
+}
+
+export function validateAgentExplanationJob(job) {
+  const label = 'AgentExplanation'
+  assertObject(job, label)
+  assertString(assertRequired(job, 'event_id', label), `${label}.event_id`)
+  assertOneOf(assertRequired(job, 'status', label), AGENT_EXPLANATION_STATUSES, `${label}.status`)
+  ;['request_id', 'event_version_hash', 'generated_by', 'error_code', 'created_at', 'completed_at']
+    .forEach((field) => assertNullableString(assertRequired(job, field, label), `${label}.${field}`))
+  const attemptCount = assertRequired(job, 'attempt_count', label)
+  if (!Number.isInteger(attemptCount) || attemptCount < 0) fail(`${label}.attempt_count must be a non-negative integer`, `${label}.attempt_count`)
+  const fallbackUsed = assertRequired(job, 'fallback_used', label)
+  if (fallbackUsed !== null && typeof fallbackUsed !== 'boolean') fail(`${label}.fallback_used must be boolean or null`, `${label}.fallback_used`)
+  const explanation = assertRequired(job, 'explanation', label)
+  if (explanation === null) {
+    if (['SUCCESS', 'FALLBACK'].includes(job.status)) fail(`${label}.explanation is required for completed status`, `${label}.explanation`)
+    return job
+  }
+  assertObject(explanation, `${label}.explanation`)
+  if (explanation.schema_version !== 'agent-explanation/1.0') fail(`${label}.explanation.schema_version is invalid`, `${label}.explanation.schema_version`)
+  ;['request_id', 'event_id', 'summary', 'recommended_action_text', 'capability_notice', 'generated_by']
+    .forEach((field) => assertString(assertRequired(explanation, field, `${label}.explanation`), `${label}.explanation.${field}`))
+  const points = assertRequired(explanation, 'reasoning_points', `${label}.explanation`)
+  if (!Array.isArray(points) || points.length === 0 || points.some((point) => typeof point !== 'string' || point.length === 0)) {
+    fail(`${label}.explanation.reasoning_points must be a non-empty string array`, `${label}.explanation.reasoning_points`)
+  }
+  assertBoolean(assertRequired(explanation, 'fallback_used', `${label}.explanation`), `${label}.explanation.fallback_used`)
+  if (fallbackUsed !== null) assertBoolean(fallbackUsed, `${label}.fallback_used`)
+  return job
 }
 
 export function validateDashboard(dashboard) {

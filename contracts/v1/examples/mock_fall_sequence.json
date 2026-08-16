@@ -91,7 +91,9 @@
       "source_mode": "MOCK",
       "asset_id": "asset-mock-fall-001",
       "simulated": true,
-      "metadata": {"model_version": "mock-pose-v1"}
+      "metadata": {
+        "model_version": "mock-pose-v1"
+      }
     }
   ],
   "evidence": [

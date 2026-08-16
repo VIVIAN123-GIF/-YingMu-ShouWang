@@ -1,0 +1,26 @@
+{
+  "request_id": "agent-event-fall-intervening-v1",
+  "event_id": "event-fall-intervening",
+  "event_version_hash": "mock-event-version-1",
+  "status": "SUCCESS",
+  "explanation": {
+    "schema_version": "agent-explanation/1.0",
+    "request_id": "agent-event-fall-intervening-v1",
+    "event_id": "event-fall-intervening",
+    "summary": "老人快速起身后出现持续躯干摇摆，当前需要先坐稳并继续观察。",
+    "reasoning_points": [
+      "起身速度明显快于个人基线。",
+      "起身后躯干出现连续摇摆。"
+    ],
+    "recommended_action_text": "请先坐稳并扶住身边固定物，系统将继续观察姿态是否恢复。",
+    "capability_notice": "当前语音提醒使用 Mock 能力，解释仅依据已生成的 RiskEvent 和 Evidence。",
+    "generated_by": "mock-agent-v1",
+    "fallback_used": false
+  },
+  "generated_by": "mock-agent-v1",
+  "fallback_used": false,
+  "attempt_count": 1,
+  "error_code": null,
+  "created_at": "2026-07-24T03:09:08+08:00",
+  "completed_at": "2026-07-24T03:09:09+08:00"
+}

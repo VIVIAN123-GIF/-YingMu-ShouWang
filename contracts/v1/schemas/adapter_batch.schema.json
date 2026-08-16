@@ -1,0 +1,518 @@
+{
+  "$defs": {
+    "AdapterError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "default": false,
+          "title": "Retryable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "AdapterError",
+      "type": "object"
+    },
+    "AdapterStatus": {
+      "enum": [
+        "SUCCESS",
+        "NO_EVIDENCE",
+        "LOW_QUALITY",
+        "FAILED"
+      ],
+      "title": "AdapterStatus",
+      "type": "string"
+    },
+    "AlgorithmModule": {
+      "enum": [
+        "GAIT",
+        "TRAJECTORY",
+        "LANGUAGE"
+      ],
+      "title": "AlgorithmModule",
+      "type": "string"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "evidence_id": {
+          "minLength": 1,
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "observation_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Observation Ids",
+          "type": "array"
+        },
+        "resident_id": {
+          "minLength": 1,
+          "title": "Resident Id",
+          "type": "string"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        },
+        "risk_domain": {
+          "$ref": "#/$defs/RiskDomain"
+        },
+        "evidence_type": {
+          "enum": [
+            "activity_range_baseline_sample",
+            "activity_range_decline",
+            "audio_quality_low",
+            "camera_occlusion",
+            "circadian_baseline_sample",
+            "day_night_rhythm_change",
+            "false_alarm_confirmed",
+            "family_concern",
+            "family_contact_completed",
+            "fraud_keyword",
+            "gait_instability",
+            "gait_stability_baseline_sample",
+            "high_risk_zone_entry",
+            "identity_verified",
+            "low_illumination",
+            "low_light",
+            "mental_self_report",
+            "no_response",
+            "normal_baseline_sample",
+            "obstacle_occupancy",
+            "persistent_instability",
+            "posture_recovered",
+            "professional_support_suggested",
+            "quality_gate_failed",
+            "rapid_rise",
+            "relative_speed_change",
+            "rise_duration_baseline_sample",
+            "room_transition_decline",
+            "slow_rise",
+            "stream_unavailable",
+            "tracking_lost",
+            "trend_recovered",
+            "trunk_sway",
+            "trunk_sway_baseline_sample",
+            "unauthorized_visitor",
+            "unusual_dwell_time",
+            "unusual_pacing",
+            "voluntary_screening_concern"
+          ],
+          "minLength": 1,
+          "title": "Evidence Type",
+          "type": "string",
+          "x-internal-only": [
+            "no_response",
+            "persistent_instability",
+            "quality_gate_failed"
+          ]
+        },
+        "severity": {
+          "title": "Severity",
+          "type": "number"
+        },
+        "confidence": {
+          "title": "Confidence",
+          "type": "number"
+        },
+        "data_quality": {
+          "title": "Data Quality",
+          "type": "number"
+        },
+        "baseline_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Baseline Value"
+        },
+        "current_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Value"
+        },
+        "baseline_deviation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Baseline Deviation"
+        },
+        "time_scale": {
+          "$ref": "#/$defs/TimeScale"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Location"
+        },
+        "explanation": {
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        },
+        "adapter_version": {
+          "minLength": 1,
+          "title": "Adapter Version",
+          "type": "string"
+        },
+        "source_mode": {
+          "$ref": "#/$defs/SourceMode"
+        },
+        "simulated": {
+          "title": "Simulated",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "evidence_id",
+        "observation_ids",
+        "resident_id",
+        "timestamp",
+        "risk_domain",
+        "evidence_type",
+        "severity",
+        "confidence",
+        "data_quality",
+        "baseline_value",
+        "current_value",
+        "baseline_deviation",
+        "time_scale",
+        "location",
+        "explanation",
+        "adapter_version",
+        "source_mode",
+        "simulated"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "Observation": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "observation_id": {
+          "minLength": 1,
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "resident_id": {
+          "minLength": 1,
+          "title": "Resident Id",
+          "type": "string"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "feature_name": {
+          "minLength": 1,
+          "title": "Feature Name",
+          "type": "string"
+        },
+        "feature_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            }
+          ],
+          "title": "Feature Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Location"
+        },
+        "confidence": {
+          "title": "Confidence",
+          "type": "number"
+        },
+        "data_quality": {
+          "title": "Data Quality",
+          "type": "number"
+        },
+        "source_mode": {
+          "$ref": "#/$defs/SourceMode"
+        },
+        "asset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Asset Id"
+        },
+        "simulated": {
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        }
+      },
+      "required": [
+        "schema_version",
+        "observation_id",
+        "resident_id",
+        "timestamp",
+        "source",
+        "feature_name",
+        "feature_value",
+        "unit",
+        "location",
+        "confidence",
+        "data_quality",
+        "source_mode",
+        "asset_id",
+        "simulated"
+      ],
+      "title": "Observation",
+      "type": "object"
+    },
+    "ResidentResponseCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "intent": {
+          "enum": [
+            "STABLE",
+            "HELP",
+            "UNCERTAIN"
+          ],
+          "title": "Intent",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "transcript_observation_id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Transcript Observation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "intent",
+        "confidence",
+        "transcript_observation_id"
+      ],
+      "title": "ResidentResponseCandidate",
+      "type": "object"
+    },
+    "RiskDomain": {
+      "enum": [
+        "FALL",
+        "MENTAL",
+        "FRAUD",
+        "SYSTEM"
+      ],
+      "title": "RiskDomain",
+      "type": "string"
+    },
+    "SourceMode": {
+      "enum": [
+        "LIVE_DEVICE",
+        "RECORDED_REPLAY",
+        "PUBLIC_DATASET",
+        "MOCK"
+      ],
+      "title": "SourceMode",
+      "type": "string"
+    },
+    "TimeScale": {
+      "enum": [
+        "SHORT",
+        "MEDIUM",
+        "LONG"
+      ],
+      "title": "TimeScale",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "adapter-batch/1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "job_id": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Job Id",
+      "type": "string"
+    },
+    "module": {
+      "$ref": "#/$defs/AlgorithmModule"
+    },
+    "adapter_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Adapter Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/AdapterStatus"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "observations": {
+      "items": {
+        "$ref": "#/$defs/Observation"
+      },
+      "title": "Observations",
+      "type": "array"
+    },
+    "evidences": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "title": "Evidences",
+      "type": "array"
+    },
+    "resident_response_candidate": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResidentResponseCandidate"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "diagnostics": {
+      "additionalProperties": true,
+      "title": "Diagnostics",
+      "type": "object"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AdapterError"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "schema_version",
+    "job_id",
+    "module",
+    "adapter_version",
+    "status",
+    "started_at",
+    "completed_at"
+  ],
+  "title": "AdapterBatch",
+  "type": "object"
+}

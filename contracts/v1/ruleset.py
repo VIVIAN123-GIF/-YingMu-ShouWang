@@ -53,6 +53,7 @@ class RuleTrace:
 @dataclass(frozen=True)
 class Ruleset:
     version: str
+    context_policy_version: str
     windows: dict[str, int]
     thresholds: dict[str, float]
     risk_weights: dict[str, float]
@@ -67,6 +68,7 @@ class Ruleset:
             raise ValueError("ruleset risk weights must sum to 1")
         return cls(
             version=payload["ruleset_version"],
+            context_policy_version=payload.get("context_policy_version", "env-context-v1.0"),
             windows=payload["windows"],
             thresholds=payload["thresholds"],
             risk_weights=weights,

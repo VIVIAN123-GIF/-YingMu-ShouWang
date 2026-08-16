@@ -1,0 +1,135 @@
+{
+  "$defs": {
+    "AlgorithmModule": {
+      "enum": [
+        "GAIT",
+        "TRAJECTORY",
+        "LANGUAGE"
+      ],
+      "title": "AlgorithmModule",
+      "type": "string"
+    },
+    "MediaType": {
+      "enum": [
+        "IMAGE",
+        "VIDEO",
+        "AUDIO"
+      ],
+      "title": "MediaType",
+      "type": "string"
+    },
+    "SourceMode": {
+      "enum": [
+        "LIVE_DEVICE",
+        "RECORDED_REPLAY",
+        "PUBLIC_DATASET",
+        "MOCK"
+      ],
+      "title": "SourceMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "algorithm-job/1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "job_id": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Job Id",
+      "type": "string"
+    },
+    "correlation_id": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Correlation Id",
+      "type": "string"
+    },
+    "resident_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Resident Id",
+      "type": "string"
+    },
+    "asset_id": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Asset Id",
+      "type": "string"
+    },
+    "media_type": {
+      "$ref": "#/$defs/MediaType"
+    },
+    "media_locator": {
+      "minLength": 1,
+      "title": "Media Locator",
+      "type": "string"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "source_mode": {
+      "$ref": "#/$defs/SourceMode"
+    },
+    "simulated": {
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "location": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Location",
+      "type": "string"
+    },
+    "camera_position_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Camera Position Id",
+      "type": "string"
+    },
+    "scene_config_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Scene Config Id",
+      "type": "string"
+    },
+    "requested_modules": {
+      "items": {
+        "$ref": "#/$defs/AlgorithmModule"
+      },
+      "minItems": 1,
+      "title": "Requested Modules",
+      "type": "array"
+    },
+    "deadline_ms": {
+      "default": 8000,
+      "maximum": 120000,
+      "minimum": 100,
+      "title": "Deadline Ms",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "job_id",
+    "correlation_id",
+    "resident_id",
+    "asset_id",
+    "media_type",
+    "media_locator",
+    "captured_at",
+    "source_mode",
+    "simulated",
+    "location",
+    "camera_position_id",
+    "scene_config_id",
+    "requested_modules"
+  ],
+  "title": "AlgorithmJob",
+  "type": "object"
+}

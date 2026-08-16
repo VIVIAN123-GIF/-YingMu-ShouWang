@@ -8,6 +8,7 @@ from .alarm import RiskAlarm
 from .alarm_task import AlarmProcessingTask
 from .system_weekly import SystemConfig, WeeklyStat
 from .rule_trace import RuleTrace
+from .agent_explanation_job import AgentExplanationJob
 
 __all__ = [
     "DeviceInfo",
@@ -21,6 +22,7 @@ __all__ = [
     "SystemConfig",
     "WeeklyStat",
     "RuleTrace",
+    "AgentExplanationJob",
 ]
 from .asset import Asset
 

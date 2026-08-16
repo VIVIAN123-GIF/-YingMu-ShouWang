@@ -21,6 +21,7 @@
 - `agent.py`：`AgentExplanationRequest/Response`、能力枚举和基线/干预状态；
 - `schemas/platform_snapshot_result.schema.json`：平台抓拍归一化 JSON Schema；
 - `schemas/agent_explanation_*.schema.json`：智能体请求和响应 JSON Schema；
+- `schemas/algorithm_job.schema.json` 与 `schemas/adapter_batch.schema.json`：后端到算法适配器的严格边界；
 - `examples/platform_snapshot_result.json` 与 `examples/agent_explanation_*.json`：D1 冻结样例。
 
 智能体请求只接受结构化事件和 Evidence 摘要，不接受视频、音频、平台 Token、

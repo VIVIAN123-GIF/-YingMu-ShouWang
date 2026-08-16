@@ -157,6 +157,11 @@ def _private_object(root: Path, storage_key: str) -> Path:
     return path
 
 
+def resolve_private_asset_path(storage_key: str) -> Path:
+    """Resolve an internal Asset without exposing its storage location."""
+    return _private_object(_private_root(YINGMU_PRIVATE_MEDIA_ROOT), storage_key)
+
+
 async def _stream_snapshot(
     client: httpx.AsyncClient,
     snapshot: PlatformSnapshotResult,
