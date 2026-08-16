@@ -20,14 +20,14 @@ RiskEvent + Evidence
 可选的 OpenAI-compatible Provider 配置：
 
 ```dotenv
-AGENT_LLM_BASE_URL=
+AGENT_LLM_BASE_URL=https://openai.ezviz.com/v1
 AGENT_LLM_API_KEY=
-AGENT_LLM_MODEL=
+AGENT_LLM_MODEL=qwen3.6-flash
 AGENT_LLM_TIMEOUT_SECONDS=5
 AGENT_LLM_MAX_OUTPUT_TOKENS=400
 ```
 
-`AGENT_LLM_BASE_URL` 或 `AGENT_LLM_MODEL` 为空时，服务只使用模板降级。API Key 只允许存在本地 `.env`，禁止写入代码、测试样例和交付报告。
+`AGENT_LLM_BASE_URL` 或 `AGENT_LLM_MODEL` 为空时，服务只使用模板降级。API Key 只允许存在本地 `.env`，禁止写入代码、测试样例和交付报告。平台示例中的 `EZVIZ_API_KEY` 可作为兼容别名，但项目统一推荐使用 `AGENT_LLM_API_KEY`，避免和设备开放平台凭证混淆。
 
 Provider 失败、超时、429、5xx、非法 JSON 或响应合同校验失败时，服务返回：
 
@@ -35,6 +35,14 @@ Provider 失败、超时、429、5xx、非法 JSON 或响应合同校验失败�
 generated_by=template-fallback-v1
 fallback_used=true
 ```
+
+配置完成后执行一次真实验证：
+
+```powershell
+py -3.14 scripts/validate_agent_llm_live.py
+```
+
+只有报告中 `result=SUCCESS`、`fallback_used=false`、`generated_by=qwen3.6-flash` 才表示真实模型调用成功；`FALLBACK` 只证明降级链路可用。
 
 ## 干预工具
 
