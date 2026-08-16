@@ -12,16 +12,22 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator
+from contracts.v1.algorithm import (
+    AdapterBatch,
+    AdapterError,
+    AdapterStatus,
+    AlgorithmJob,
+    AlgorithmModule,
+    MediaType,
+    validate_batch_for_job,
+)
+from contracts.v1.models import Evidence, Observation, RiskDomain, TimeScale
 
-from contracts.v1.models import Evidence, Observation, RiskDomain, SourceMode, TimeScale
 
-
-ADAPTER_BATCH_SCHEMA_VERSION = "adapter-batch/1.0"
 ADAPTER_VERSION = "gait-adapter-v1"
-MODULE = "GAIT"
+MODULE = AlgorithmModule.GAIT
 
 FROZEN_FEATURES: tuple[str, ...] = (
     "rise_duration_s",
@@ -61,56 +67,8 @@ FEATURE_UNITS = {
 }
 
 
-class AlgorithmJob(BaseModel):
-    model_config = ConfigDict(extra="allow", str_strip_whitespace=True)
-
-    job_id: str = Field(min_length=1)
-    resident_id: str = Field(min_length=1)
-    asset_id: str | None = None
-    media_type: str | None = None
-    media_locator: str | None = None
-    captured_at: datetime
-    source_mode: SourceMode
-    simulated: StrictBool
-    location: str | None = None
-    camera_position_id: str | None = None
-    scene_config_id: str | None = None
-
-    @field_validator("captured_at")
-    @classmethod
-    def validate_captured_at(cls, value: datetime) -> datetime:
-        if value.tzinfo is None or value.utcoffset() is None:
-            raise ValueError("captured_at must include timezone offset")
-        return value
-
-
-class AdapterBatch(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    schema_version: Literal["adapter-batch/1.0"] = ADAPTER_BATCH_SCHEMA_VERSION
-    job_id: str
-    module: Literal["GAIT"] = MODULE
-    adapter_version: str = ADAPTER_VERSION
-    status: Literal["SUCCESS", "NO_EVIDENCE", "LOW_QUALITY", "FAILED"]
-    started_at: datetime
-    completed_at: datetime
-    observations: list[Observation]
-    evidences: list["AdapterEvidence"]
-    diagnostics: dict[str, Any] = Field(default_factory=dict)
-    error: dict[str, str] | None = None
-
-
-class AdapterEvidence(Evidence):
-    """Adapter-batch evidence carries asset lineage without changing core Evidence."""
-
-    asset_id: str | None
-
-    @field_validator("asset_id")
-    @classmethod
-    def validate_asset_id(cls, value: str | None) -> str | None:
-        if value is not None and not value.strip():
-            raise ValueError("asset_id must use null instead of an empty string")
-        return value
+class _FeatureInputError(ValueError):
+    pass
 
 
 def _now() -> datetime:
@@ -123,39 +81,32 @@ def _stable_id(prefix: str, *parts: object) -> str:
     return f"{prefix}-{digest}"
 
 
-def _job_from_any(job: AlgorithmJob | dict[str, Any] | object) -> AlgorithmJob:
-    if isinstance(job, AlgorithmJob):
-        return job
-    if isinstance(job, dict):
-        return AlgorithmJob.model_validate(job)
-    payload = {
-        field: getattr(job, field)
-        for field in AlgorithmJob.model_fields
-        if hasattr(job, field)
-    }
-    return AlgorithmJob.model_validate(payload)
-
-
-def _read_feature_payload(media_locator: str | None) -> tuple[dict[str, Any], dict[str, Any]]:
+def _read_feature_payload(media_locator: str) -> tuple[dict[str, Any], dict[str, Any]]:
     if not media_locator:
-        return {}, {"quality_reason": "missing_media_locator"}
+        raise _FeatureInputError("missing_media_locator")
 
     path = Path(media_locator)
     if not path.exists() or not path.is_file():
-        return {}, {"quality_reason": "media_locator_not_readable", "media_locator": media_locator}
+        raise _FeatureInputError("media_locator_not_readable")
 
     if path.suffix.lower() == ".json":
         payload = json.loads(path.read_text(encoding="utf-8"))
-        return _features_from_json(payload), {"feature_source": str(path)}
+        features = _features_from_json(payload)
+        if not features:
+            raise _FeatureInputError("feature_payload_empty")
+        return features, {"feature_source_type": "json"}
 
     if path.suffix.lower() == ".csv":
         with path.open("r", encoding="utf-8", newline="") as handle:
             rows = list(csv.DictReader(handle))
         if not rows:
-            return {}, {"quality_reason": "empty_feature_csv", "feature_source": str(path)}
-        return _features_from_mapping(rows[0]), {"feature_source": str(path), "feature_rows": len(rows)}
+            raise _FeatureInputError("empty_feature_csv")
+        features = _features_from_mapping(rows[0])
+        if not features:
+            raise _FeatureInputError("feature_payload_empty")
+        return features, {"feature_source_type": "csv", "feature_rows": len(rows)}
 
-    return {}, {"quality_reason": "unsupported_media_locator", "media_locator": media_locator}
+    raise _FeatureInputError("unsupported_media_locator")
 
 
 def _features_from_json(payload: Any) -> dict[str, Any]:
@@ -227,8 +178,8 @@ def _observation(job: AlgorithmJob, feature_name: str, value: Any, data_quality:
         asset_id=job.asset_id,
         simulated=job.simulated,
         metadata={
-            "adapter_module": MODULE,
-            "media_type": job.media_type,
+            "adapter_module": MODULE.value,
+            "media_type": job.media_type.value,
             "camera_position_id": job.camera_position_id,
             "scene_config_id": job.scene_config_id,
         },
@@ -243,11 +194,11 @@ def _evidence(
     current_value: float | None,
     baseline_value: float | None,
     explanation: str,
-) -> AdapterEvidence:
+) -> Evidence:
     deviation = None
     if current_value is not None and baseline_value not in (None, 0):
         deviation = (current_value - baseline_value) / baseline_value
-    return AdapterEvidence(
+    return Evidence(
         schema_version="1.0",
         evidence_id=_stable_id("evi-gait", job.job_id, job.resident_id, job.asset_id, evidence_type, observation.observation_id),
         observation_ids=[observation.observation_id],
@@ -266,14 +217,13 @@ def _evidence(
         explanation=explanation,
         adapter_version=ADAPTER_VERSION,
         source_mode=job.source_mode,
-        asset_id=job.asset_id,
         simulated=job.simulated,
     )
 
 
-def _build_evidences(job: AlgorithmJob, observations: list[Observation]) -> list[AdapterEvidence]:
+def _build_evidences(job: AlgorithmJob, observations: list[Observation]) -> list[Evidence]:
     by_feature = {item.feature_name: item for item in observations}
-    evidences: list[AdapterEvidence] = []
+    evidences: list[Evidence] = []
 
     rise = by_feature.get("rise_duration_s")
     if rise and isinstance(rise.feature_value, (int, float)):
@@ -315,25 +265,52 @@ def _build_evidences(job: AlgorithmJob, observations: list[Observation]) -> list
     return evidences
 
 
-async def run(job: AlgorithmJob | dict[str, Any] | object) -> AdapterBatch:
+def _failed_batch(
+    job: AlgorithmJob,
+    started_at: datetime,
+    *,
+    code: str,
+    message: str,
+) -> AdapterBatch:
+    batch = AdapterBatch(
+        schema_version="adapter-batch/1.0",
+        job_id=job.job_id,
+        module=MODULE,
+        adapter_version=ADAPTER_VERSION,
+        status=AdapterStatus.FAILED,
+        started_at=started_at,
+        completed_at=_now(),
+        observations=[],
+        evidences=[],
+        resident_response_candidate=None,
+        diagnostics={},
+        error=AdapterError(code=code, message=message, retryable=False),
+    )
+    return validate_batch_for_job(batch, job)
+
+
+async def run(job: AlgorithmJob) -> AdapterBatch:
     started_at = _now()
     try:
-        parsed_job = _job_from_any(job)
-        features, diagnostics = _read_feature_payload(parsed_job.media_locator)
+        features, diagnostics = _read_feature_payload(job.media_locator)
         data_quality = _quality(features)
         observations = [
-            _observation(parsed_job, feature_name, features[feature_name], data_quality)
+            _observation(job, feature_name, features[feature_name], data_quality)
             for feature_name in FROZEN_FEATURES
             if feature_name in features
         ]
-        evidences = _build_evidences(parsed_job, observations)
+        evidences = _build_evidences(job, observations)
 
-        if not observations or data_quality < 0.65:
-            status = "LOW_QUALITY"
+        if job.media_type == MediaType.IMAGE:
+            evidences = []
+            status = AdapterStatus.NO_EVIDENCE
+        elif data_quality < 0.65:
+            evidences = [item for item in evidences if item.evidence_type == "tracking_lost"]
+            status = AdapterStatus.LOW_QUALITY
         elif evidences:
-            status = "SUCCESS"
+            status = AdapterStatus.SUCCESS
         else:
-            status = "NO_EVIDENCE"
+            status = AdapterStatus.NO_EVIDENCE
 
         diagnostics.update(
             {
@@ -342,25 +319,32 @@ async def run(job: AlgorithmJob | dict[str, Any] | object) -> AdapterBatch:
                 "quality_threshold": 0.65,
             }
         )
-        return AdapterBatch(
-            job_id=parsed_job.job_id,
+        batch = AdapterBatch(
+            schema_version="adapter-batch/1.0",
+            job_id=job.job_id,
+            module=MODULE,
+            adapter_version=ADAPTER_VERSION,
             status=status,
             started_at=started_at,
             completed_at=_now(),
             observations=observations,
             evidences=evidences,
+            resident_response_candidate=None,
             diagnostics=diagnostics,
             error=None,
         )
-    except Exception as exc:
-        job_id = getattr(job, "job_id", None) if not isinstance(job, dict) else job.get("job_id")
-        return AdapterBatch(
-            job_id=job_id or "unknown",
-            status="FAILED",
-            started_at=started_at,
-            completed_at=_now(),
-            observations=[],
-            evidences=[],
-            diagnostics={},
-            error={"type": exc.__class__.__name__, "message": str(exc)},
+        return validate_batch_for_job(batch, job)
+    except _FeatureInputError as exc:
+        return _failed_batch(
+            job,
+            started_at,
+            code="FEATURE_INPUT_INVALID",
+            message=f"Invalid gait feature input: {exc}",
+        )
+    except (json.JSONDecodeError, UnicodeDecodeError, csv.Error, OSError, TypeError, ValueError) as exc:
+        return _failed_batch(
+            job,
+            started_at,
+            code="FEATURE_INPUT_INVALID",
+            message=f"Unable to read a valid gait feature payload ({type(exc).__name__})",
         )

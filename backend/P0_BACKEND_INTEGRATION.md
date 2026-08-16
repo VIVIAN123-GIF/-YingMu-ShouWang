@@ -17,9 +17,9 @@ py -3.14 -m backend.worker.agent_worker
 算法入口使用 `package.module:callable` 配置：
 
 ```ini
-YINGMU_GAIT_ADAPTER=
-YINGMU_TRAJECTORY_ADAPTER=
-YINGMU_LANGUAGE_ADAPTER=
+YINGMU_GAIT_ADAPTER=contracts.v1.gait_adapter:run
+YINGMU_TRAJECTORY_ADAPTER=adapters.trajectory_adapter:run
+YINGMU_LANGUAGE_ADAPTER=adapters.language_adapter:run
 YINGMU_SCENE_CONFIG_ID=scene-living-room-v1
 YINGMU_LOCATION=living_room
 ```

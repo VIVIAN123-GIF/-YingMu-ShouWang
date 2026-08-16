@@ -7,10 +7,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 sys.path.insert(0, str(SRC))
+sys.path.insert(0, str(ROOT.parents[2]))
 
-from adapters.contract import build_batch, validate_job  # noqa: E402
+from adapters.contract import ContractValidationError, build_batch, validate_job  # noqa: E402
 from adapters.language_adapter import run as run_language  # noqa: E402
 from adapters.trajectory_adapter import run as run_trajectory  # noqa: E402
+from contracts.v1.algorithm import (  # noqa: E402
+    AdapterBatch as CanonicalAdapterBatch,
+    AlgorithmJob as CanonicalAlgorithmJob,
+    validate_batch_for_job,
+)
 
 
 class AdapterContractTests(unittest.TestCase):
@@ -41,6 +47,14 @@ class AdapterContractTests(unittest.TestCase):
                 self.assertTrue(set(evidence["observation_ids"]).issubset(observation_ids))
                 self.assertEqual(evidence["resident_id"], job["resident_id"])
 
+            canonical_job = CanonicalAlgorithmJob.model_validate(job)
+            canonical_batch = CanonicalAdapterBatch.model_validate(batch)
+            validate_batch_for_job(canonical_batch, canonical_job)
+        self.assertEqual(
+            language["resident_response_candidate"]["intent"],
+            "STABLE",
+        )
+
     def test_ids_are_stable_for_retries(self):
         first = asyncio.run(run_language(self.language_job))
         second = asyncio.run(run_language(self.language_job))
@@ -63,18 +77,18 @@ class AdapterContractTests(unittest.TestCase):
 
     def test_no_evidence_and_low_quality_batch_contract(self):
         job = validate_job(self.trajectory_job)
-        empty = build_batch(
-            job, module="TRAJECTORY", status="NO_EVIDENCE", adapter_version="test-v1",
-            started_at="2026-08-16T10:00:00+08:00", completed_at="2026-08-16T10:00:01+08:00",
-            observations=[], evidences=[], diagnostics={"test": True},
-        )
-        self.assertEqual(empty["status"], "NO_EVIDENCE")
-        low = build_batch(
-            job, module="TRAJECTORY", status="LOW_QUALITY", adapter_version="test-v1",
-            started_at="2026-08-16T10:00:00+08:00", completed_at="2026-08-16T10:00:01+08:00",
-            observations=[], evidences=[], diagnostics={"tracking_quality": 0.0},
-        )
-        self.assertEqual(low["status"], "LOW_QUALITY")
+        with self.assertRaises(ContractValidationError):
+            build_batch(
+                job, module="TRAJECTORY", status="NO_EVIDENCE", adapter_version="test-v1",
+                started_at="2026-08-16T10:00:00+08:00", completed_at="2026-08-16T10:00:01+08:00",
+                observations=[], evidences=[], diagnostics={"test": True},
+            )
+        with self.assertRaises(ContractValidationError):
+            build_batch(
+                job, module="TRAJECTORY", status="LOW_QUALITY", adapter_version="test-v1",
+                started_at="2026-08-16T10:00:00+08:00", completed_at="2026-08-16T10:00:01+08:00",
+                observations=[], evidences=[], diagnostics={"tracking_quality": 0.0},
+            )
 
 
 if __name__ == "__main__":
