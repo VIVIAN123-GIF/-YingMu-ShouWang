@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from backend.config import AGENT_LLM_API_KEY, AGENT_LLM_BASE_URL, AGENT_LLM_MODEL
 from backend.service.agent_explanation_service import build_default_agent_explanation_service
+from contracts.v1.agent import AgentExplanationRequest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,9 +25,15 @@ TZ = timezone(timedelta(hours=8))
 
 async def validate(request_path: Path) -> dict:
     payload = json.loads(request_path.read_text(encoding="utf-8"))
+    request = AgentExplanationRequest.model_validate(payload)
     service = build_default_agent_explanation_service()
     started = time.perf_counter()
-    response = await service.explain_payload(payload)
+    failure_reason = None
+    try:
+        response = await service.provider.generate(request)
+    except Exception as exc:
+        failure_reason = type(exc).__name__
+        response = service.fallback.generate(request)
     latency_ms = round((time.perf_counter() - started) * 1000)
     return {
         "schema_version": "1.0",
@@ -40,6 +47,7 @@ async def validate(request_path: Path) -> dict:
         "fallback_used": response.fallback_used,
         "generated_by": response.generated_by,
         "result": "SUCCESS" if not response.fallback_used else "FALLBACK",
+        "failure_reason": failure_reason,
         "response": response.model_dump(mode="json"),
         "contains_api_key": False,
         "contains_media": False,
