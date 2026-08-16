@@ -7,7 +7,7 @@ import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { getDashboard } from '../services/repository'
-import { domainLabel, formatDateTime, formatRiskScore, statusLabel } from '../utils/format'
+import { domainLabel, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const router = useRouter()
 const loading = ref(true)
@@ -74,6 +74,16 @@ async function load() {
 }
 
 onMounted(load)
+
+function metric(value, suffix = '') {
+  return value === null || value === undefined ? '暂无数据' : `${value}${suffix}`
+}
+
+function onlineLabel(value) {
+  if (value === true) return '设备在线'
+  if (value === false) return '设备离线'
+  return '设备状态未知'
+}
 </script>
 
 <template>
@@ -93,7 +103,7 @@ onMounted(load)
     <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
 
     <template v-if="data">
-      <section class="hero-risk-card" :class="`surface-${data.current_risk.risk_level.toLowerCase()}`">
+      <section v-if="data.current_risk" class="hero-risk-card" :class="`surface-${data.current_risk.risk_level.toLowerCase()}`">
         <div class="risk-score-ring">
           <span>{{ formatRiskScore(data.current_risk.risk_score) }}</span>
           <small>综合水位</small>
@@ -109,23 +119,27 @@ onMounted(load)
           <div><strong>{{ statusLabel(data.current_risk.status) }}</strong><span>当前事件状态</span></div>
         </div>
       </section>
+      <section v-else class="content-card api-empty-state">
+        <el-empty description="后端当前没有该居民的风险事件" />
+        <p>页面保持 API 数据源，不使用固定 Mock 风险水位填充。</p>
+      </section>
 
       <section class="metric-grid" aria-label="今日状态摘要">
         <article class="metric-card">
           <span class="metric-icon mint"><Sunrise /></span>
-          <div><small>今日活动</small><strong>{{ data.today.activity_minutes }} 分钟</strong><span>活动以个人基线为参照</span></div>
+          <div><small>今日活动</small><strong>{{ metric(data.today.activity_minutes, ' 分钟') }}</strong><span>活动以个人基线为参照</span></div>
         </article>
         <article class="metric-card">
           <span class="metric-icon blue"><Connection /></span>
-          <div><small>房间活动</small><strong>{{ data.today.room_transitions }} 次</strong><span>仅保存脱敏统计</span></div>
+          <div><small>房间活动</small><strong>{{ metric(data.today.room_transitions, ' 次') }}</strong><span>仅保存脱敏统计</span></div>
         </article>
         <article class="metric-card">
           <span class="metric-icon sand"><Monitor /></span>
-          <div><small>设备状态</small><strong>{{ data.device.online ? '在线' : '离线' }}</strong><span>{{ data.device.name }}</span></div>
+          <div><small>设备状态</small><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ data.device.name }}</span></div>
         </article>
         <article class="metric-card">
           <span class="metric-icon coral"><CircleCheckFilled /></span>
-          <div><small>家属关怀</small><strong>{{ data.today.care_status }}</strong><span>本周最多主动汇总一次</span></div>
+          <div><small>家属关怀</small><strong>{{ metric(data.today.care_status) }}</strong><span>本周最多主动汇总一次</span></div>
         </article>
       </section>
 
@@ -135,8 +149,9 @@ onMounted(load)
             <div><span class="section-kicker">黄金半分钟</span><h2>风险水位与回落</h2></div>
             <el-tag type="success" effect="plain" size="large">已完成观察</el-tag>
           </div>
-          <ChartPanel :option="chartOption" height="320px" aria-label="凌晨风险水位先升高后回落的折线图" />
-          <div class="chart-caption">
+          <ChartPanel v-if="data.risk_trend.length" :option="chartOption" height="320px" aria-label="凌晨风险水位先升高后回落的折线图" />
+          <el-empty v-else description="后端未提供逐点风险趋势，事件状态以时间轴为准" />
+          <div v-if="data.risk_trend.length" class="chart-caption">
             <span v-for="item in data.risk_trend" :key="item.time"><b>{{ item.time }}</b>{{ item.label }}</span>
           </div>
         </article>
@@ -144,16 +159,16 @@ onMounted(load)
         <article class="content-card device-card">
           <div class="card-heading"><div><span class="section-kicker">设备与来源</span><h2>采集链路</h2></div></div>
           <div class="device-status-line">
-            <span class="online-dot" :class="{ offline: !data.device.online }"></span>
-            <div><strong>{{ data.device.online ? '设备在线' : '设备离线' }}</strong><span>最后更新 {{ formatDateTime(data.device.last_seen) }}</span></div>
+            <span class="online-dot" :class="{ offline: data.device.online === false, unknown: data.device.online === null }"></span>
+            <div><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ data.device.collection_active ? '采集运行中' : '采集已停止' }}</span></div>
           </div>
           <dl class="detail-list">
-            <div><dt>设备</dt><dd>{{ data.device.name }}</dd></div>
-            <div><dt>适配器</dt><dd>{{ data.device.adapter }}</dd></div>
-            <div><dt>数据质量</dt><dd>{{ Math.round(data.device.data_quality * 100) }}%</dd></div>
+            <div><dt>设备别名</dt><dd>{{ data.device.device_alias }}</dd></div>
+            <div><dt>适配器模式</dt><dd>{{ data.device.adapter_mode }}</dd></div>
+            <div><dt>采集状态</dt><dd>{{ data.device.collection_active ? '运行中' : '已停止' }}</dd></div>
           </dl>
           <SourceBadge :mode="data.device.source_mode" :simulated="data.device.simulated" />
-          <p class="privacy-note">前端仅读取后端状态和授权片段，不保存设备账号或 AccessToken。</p>
+          <p class="privacy-note">前端仅展示文档约定的设备状态和事件数据。</p>
         </article>
       </section>
 
@@ -203,7 +218,7 @@ onMounted(load)
           <div><span class="section-kicker">统一事件时间轴</span><h2>最近需要了解的事情</h2></div>
           <el-button size="large" plain @click="router.push('/events')">查看完整时间轴</el-button>
         </div>
-        <div class="event-list">
+        <div v-if="data.recent_events.length" class="event-list">
           <button
             v-for="event in data.recent_events"
             :key="event.event_id"
@@ -218,6 +233,7 @@ onMounted(load)
             <span class="row-arrow" aria-hidden="true">→</span>
           </button>
         </div>
+        <el-empty v-else description="当前 API 中没有最近事件" />
       </section>
     </template>
   </div>

@@ -48,13 +48,18 @@
     "primary_domain": "FALL",
     "related_domains": [],
     "risk_level": "ORANGE",
-    "risk_score": 0.82,
-    "evidence_ids": ["evi-contract-001"],
+    "risk_score": 0.78,
+    "evidence_ids": ["evi-contract-001", "evi-contract-trunk-sway-001"],
     "evidence_summary": [
       {
         "evidence_id": "evi-contract-001",
         "evidence_type": "rapid_rise",
         "explanation": "起身速度明显快于个人基线"
+      },
+      {
+        "evidence_id": "evi-contract-trunk-sway-001",
+        "evidence_type": "trunk_sway",
+        "explanation": "快速起身后出现明显躯干摇晃"
       }
     ],
     "time_horizon": "IMMINENT",

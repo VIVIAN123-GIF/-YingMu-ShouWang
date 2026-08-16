@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "observation_id": "obs-activity-baseline-20260803-demo-0001",
+  "resident_id": "resident-interface-001",
+  "timestamp": "2026-08-03T10:00:00+08:00",
+  "source": "behavior_statistics",
+  "feature_name": "baseline_visited_region_count",
+  "feature_value": 4,
+  "unit": "count",
+  "location": "living_room",
+  "confidence": 0.78,
+  "data_quality": 0.8,
+  "source_mode": "MOCK",
+  "asset_id": null,
+  "simulated": true,
+  "metadata": {
+    "adapter_version": "behavior-adapter-v1.1",
+    "threshold_status": "DEMO_UNCALIBRATED",
+    "purpose": "interface_rehearsal"
+  }
+}

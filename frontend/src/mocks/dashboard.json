@@ -23,12 +23,11 @@
   },
   "device": {
     "online": true,
-    "name": "客厅萤石 C6c",
-    "adapter": "mock-device-adapter-v1",
+    "adapter_mode": "MOCK",
+    "device_alias": "camera-mock-001",
     "source_mode": "MOCK",
     "simulated": true,
-    "last_seen": "2026-07-24T08:16:00+08:00",
-    "data_quality": 0.91
+    "collection_active": true
   },
   "risk_trend": [
     { "time": "03:06:50", "score": 0.28, "label": "日常" },

@@ -1,41 +1,39 @@
 {
   "status_code": 200,
   "body": {
-    "event": {
-      "schema_version": "1.0",
-      "event_id": "event-mock-fall-001",
-      "resident_id": "resident-mock-001",
-      "created_at": "2026-07-31T03:07:05+08:00",
-      "updated_at": "2026-07-31T03:07:05+08:00",
-      "primary_domain": "FALL",
-      "related_domains": [],
-      "risk_level": "ORANGE",
-      "risk_score": 0.82,
-      "evidence_ids": [
-        "evi-mock-rapid-rise-001",
-        "evi-mock-trunk-sway-001"
-      ],
-      "evidence_summary": [
-        {
-          "evidence_id": "evi-mock-rapid-rise-001",
-          "evidence_type": "rapid_rise",
-          "explanation": "起身速度明显快于个人基线"
-        },
-        {
-          "evidence_id": "evi-mock-trunk-sway-001",
-          "evidence_type": "trunk_sway",
-          "explanation": "快速起身后出现明显躯干摇晃"
-        }
-      ],
-      "time_horizon": "IMMINENT",
-      "recommended_action": "先坐稳，扶住固定物，再慢慢起身。",
-      "intervention_policy": "fall-orange-gentle-v1",
-      "status": "INTERVENING",
-      "ruleset_version": "ruleset-v1.0",
-      "source_mode": "MOCK",
-      "simulated": true
-    },
-    "evidence": [
+    "schema_version": "1.0",
+    "event_id": "event-mock-fall-001",
+    "resident_id": "resident-mock-001",
+    "created_at": "2026-07-31T03:07:05+08:00",
+    "updated_at": "2026-07-31T03:07:05+08:00",
+    "primary_domain": "FALL",
+    "related_domains": [],
+    "risk_level": "ORANGE",
+    "risk_score": 0.78,
+    "evidence_ids": [
+      "evi-mock-rapid-rise-001",
+      "evi-mock-trunk-sway-001"
+    ],
+    "evidence_summary": [
+      {
+        "evidence_id": "evi-mock-rapid-rise-001",
+        "evidence_type": "rapid_rise",
+        "explanation": "起身速度明显快于个人基线"
+      },
+      {
+        "evidence_id": "evi-mock-trunk-sway-001",
+        "evidence_type": "trunk_sway",
+        "explanation": "快速起身后出现明显躯干摇晃"
+      }
+    ],
+    "time_horizon": "IMMINENT",
+    "recommended_action": "先坐稳，扶住固定物，再慢慢起身",
+    "intervention_policy": "fall-orange-gentle-v1",
+    "status": "INTERVENING",
+    "ruleset_version": "ruleset-v1.0",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "evidences": [
       {
         "schema_version": "1.0",
         "evidence_id": "evi-mock-rapid-rise-001",
@@ -125,30 +123,198 @@
     ],
     "rule_traces": [
       {
-        "trace_id": "trace-7cac0fc966e34eaf9901ba06479becaa",
-        "event_id": null,
-        "resident_id": "resident-mock-001",
-        "evidence_id": "evi-mock-rapid-rise-001",
+        "baseline_snapshot": {
+          "baselines": {
+            "relative_gait_speed": {
+              "distinct_days": 0,
+              "mad": null,
+              "median": null,
+              "sample_count": 0,
+              "status": "INSUFFICIENT"
+            },
+            "rise_duration": {
+              "distinct_days": 0,
+              "mad": null,
+              "median": null,
+              "sample_count": 0,
+              "status": "INSUFFICIENT"
+            },
+            "stable_trunk_angle_deg": {
+              "distinct_days": 0,
+              "mad": null,
+              "median": null,
+              "sample_count": 0,
+              "status": "INSUFFICIENT"
+            }
+          },
+          "overall_status": "INSUFFICIENT",
+          "provenance": null
+        },
+        "context_snapshot": {
+          "context_score": 0.25,
+          "contributions": {
+            "long_term_deviation": 0.0,
+            "low_light": 0.0,
+            "night": 0.25,
+            "repeated_daily_abnormality": 0.0,
+            "yellow_state": 0.0
+          }
+        },
+        "error": null,
         "evaluated_at": "2026-07-31T03:07:01+08:00",
-        "ruleset_version": "ruleset-v1.0",
-        "matched_rule": "R-FALL-01",
-        "previous_state": "GREEN",
-        "next_state": "GREEN",
         "event_created": false,
-        "error": null
+        "event_id": null,
+        "evidence_id": "evi-mock-rapid-rise-001",
+        "matched_rule": "R-FALL-01",
+        "next_state": "GREEN",
+        "next_status": null,
+        "not_matched": {
+          "R-FALL-02": "trunk_sway is absent, unusable, or outside the short window"
+        },
+        "previous_state": "GREEN",
+        "previous_status": null,
+        "quality_snapshot": {
+          "evidences": [
+            {
+              "confidence": 0.92,
+              "data_quality": 0.88,
+              "evidence_id": "evi-mock-rapid-rise-001",
+              "evidence_type": "rapid_rise",
+              "usable": true
+            }
+          ],
+          "thresholds": {
+            "confidence": 0.7,
+            "data_quality": 0.7,
+            "high_confidence": 0.8
+          }
+        },
+        "queried_windows": {
+          "long_days": 7,
+          "medium_hours": 24,
+          "short_seconds": 30
+        },
+        "reason": "rapid_rise alone waits for an independent danger signal",
+        "resident_id": "resident-mock-001",
+        "ruleset_version": "ruleset-v1.0",
+        "score_components": {},
+        "thresholds": {
+          "confidence": 0.7,
+          "data_quality": 0.7,
+          "high_confidence": 0.8,
+          "observation_seconds": 60,
+          "orange_score": 0.7,
+          "red_score": 0.9,
+          "stable_posture_seconds": 15
+        },
+        "trace_id": "trace-dfb7a9890ea54eeba931eaeb456b5045"
       },
       {
-        "trace_id": "trace-2b750efcaa354dcda1e7dd37a37ed8c6",
-        "event_id": "event-mock-fall-001",
-        "resident_id": "resident-mock-001",
-        "evidence_id": "evi-mock-trunk-sway-001",
+        "baseline_snapshot": {
+          "baselines": {
+            "relative_gait_speed": {
+              "distinct_days": 0,
+              "mad": null,
+              "median": null,
+              "sample_count": 0,
+              "status": "INSUFFICIENT"
+            },
+            "rise_duration": {
+              "distinct_days": 0,
+              "mad": null,
+              "median": null,
+              "sample_count": 0,
+              "status": "INSUFFICIENT"
+            },
+            "stable_trunk_angle_deg": {
+              "distinct_days": 0,
+              "mad": null,
+              "median": null,
+              "sample_count": 0,
+              "status": "INSUFFICIENT"
+            }
+          },
+          "overall_status": "INSUFFICIENT",
+          "provenance": null
+        },
+        "context_snapshot": {
+          "context_score": 0.25,
+          "contributions": {
+            "long_term_deviation": 0.0,
+            "low_light": 0.0,
+            "night": 0.25,
+            "repeated_daily_abnormality": 0.0,
+            "yellow_state": 0.0
+          }
+        },
+        "error": null,
         "evaluated_at": "2026-07-31T03:07:05+08:00",
-        "ruleset_version": "ruleset-v1.0",
-        "matched_rule": "R-FALL-02",
-        "previous_state": "GREEN",
-        "next_state": "ORANGE",
         "event_created": true,
-        "error": null
+        "event_id": "event-mock-fall-001",
+        "evidence_id": "evi-mock-trunk-sway-001",
+        "matched_rule": "R-FALL-02",
+        "next_state": "ORANGE",
+        "next_status": "INTERVENING",
+        "not_matched": {
+          "R-FALL-01": "a second independent short-window evidence is present"
+        },
+        "previous_state": "GREEN",
+        "previous_status": null,
+        "quality_snapshot": {
+          "evidences": [
+            {
+              "confidence": 0.92,
+              "data_quality": 0.88,
+              "evidence_id": "evi-mock-rapid-rise-001",
+              "evidence_type": "rapid_rise",
+              "usable": true
+            },
+            {
+              "confidence": 0.92,
+              "data_quality": 0.88,
+              "evidence_id": "evi-mock-trunk-sway-001",
+              "evidence_type": "trunk_sway",
+              "usable": true
+            }
+          ],
+          "thresholds": {
+            "confidence": 0.7,
+            "data_quality": 0.7,
+            "high_confidence": 0.8
+          }
+        },
+        "queried_windows": {
+          "long_days": 7,
+          "medium_hours": 24,
+          "short_seconds": 30
+        },
+        "reason": "rapid_rise and trunk_sway are within the short window with usable quality and high confidence",
+        "resident_id": "resident-mock-001",
+        "ruleset_version": "ruleset-v1.0",
+        "score_components": {
+          "confidence": 0.92,
+          "context": 0.25,
+          "data_quality": 0.88,
+          "final_score": 0.78,
+          "raw_score": 0.784,
+          "severity": 0.78,
+          "weights": {
+            "confidence": 0.3,
+            "context": 0.1,
+            "data_quality": 0.15,
+            "severity": 0.45
+          }
+        },
+        "thresholds": {
+          "confidence": 0.7,
+          "data_quality": 0.7,
+          "high_confidence": 0.8,
+          "observation_seconds": 60,
+          "orange_score": 0.7,
+          "red_score": 0.9,
+          "stable_posture_seconds": 15
+        },
+        "trace_id": "trace-e023a374e7944ad0bd7dc312f99fefed"
       }
     ],
     "interventions": []

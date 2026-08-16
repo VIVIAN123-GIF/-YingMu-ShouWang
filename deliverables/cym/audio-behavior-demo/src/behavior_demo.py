@@ -10,6 +10,7 @@ from uuid import uuid4
 import cv2
 
 from observation import build_observation, validate_observation_collection
+from regions import RegionConfigError, RegionTracker, draw_regions, load_region_config
 
 
 FRAME_SIZE = (640, 480)
@@ -70,6 +71,21 @@ def parse_args():
         "--simulated",
         action="store_true",
         help="将本次输入标记为模拟实验",
+    )
+    parser.add_argument(
+        "--region-config",
+        type=Path,
+        help="人工多边形区域JSON；坐标会自动缩放到640x480分析帧",
+    )
+    parser.add_argument(
+        "--region-events-output",
+        type=Path,
+        help="可选的ENTER/EXIT区域事件JSON输出路径",
+    )
+    parser.add_argument(
+        "--statistics-output",
+        type=Path,
+        help="可选的访问区域、停留时长和转换统计JSON输出路径",
     )
     args = parser.parse_args()
 
@@ -215,12 +231,17 @@ class BehaviorAnalyzer:
             "behavior_label": behavior_label,
             "motion_area": motion_area,
             "activity_level": activity_level,
+            "tracked_point": self.smoothed_point if detections else None,
         }
 
 
 def render_frame(analysis_frame, result):
     """在原始分析帧的副本上绘图，不改变传入的analysis_frame。"""
     display_frame = analysis_frame.copy()
+
+    regions = result.get("regions", [])
+    if regions:
+        draw_regions(display_frame, regions, result.get("current_region"))
 
     for index, detection in enumerate(result["detections"], start=1):
         x, y, w, h = detection["box"]
@@ -278,6 +299,10 @@ def render_frame(analysis_frame, result):
             behavior_colors[result["behavior_label"]],
         ),
     ]
+    if regions:
+        labels.append(
+            (f"Region: {result.get('current_region') or 'outside/unknown'}", (0, 200, 255))
+        )
 
     for index, (text, color) in enumerate(labels):
         cv2.putText(
@@ -301,6 +326,16 @@ def write_summary(path, summary):
         encoding="utf-8",
     )
     print(f"运行摘要：{output_path}")
+
+
+def write_json(path, payload, label):
+    output_path = path.expanduser().resolve()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"{label}：{output_path}")
 
 
 def build_behavior_observations(
@@ -349,6 +384,21 @@ def build_behavior_observations(
         ("track_point_count", summary["track_points"], "count"),
         ("travel_distance", summary["travel_distance_px"], "pixel"),
     ]
+    region_statistics = summary.get("region_statistics")
+    if region_statistics:
+        max_dwell = max(region_statistics["dwell_seconds"].values(), default=0.0)
+        feature_specs.extend(
+            [
+                ("visited_region_count", region_statistics["visited_region_count"], "count"),
+                ("region_transition_count", region_statistics["transition_count"], "count"),
+                ("max_region_dwell_seconds", max_dwell, "second"),
+                (
+                    "visited_region_sequence",
+                    ">".join(region_statistics["region_sequence"]) or "NONE",
+                    None,
+                ),
+            ]
+        )
 
     observations = [
         build_observation(
@@ -388,6 +438,16 @@ def main():
         return 2
 
     analyzer = BehaviorAnalyzer()
+    regions = []
+    region_tracker = None
+    if args.region_config:
+        try:
+            regions = load_region_config(args.region_config, FRAME_SIZE)
+        except RegionConfigError as error:
+            print(error)
+            cap.release()
+            return 2
+        region_tracker = RegionTracker(regions)
     frame_count = 0
     detected_frame_count = 0
     max_person_count = 0
@@ -434,6 +494,15 @@ def main():
             max_motion_area = max(max_motion_area, result["motion_area"])
             activity_counts[result["activity_level"]] += 1
 
+            if region_tracker is not None:
+                if input_info["input_type"] == "VIDEO" and video_fps > 0:
+                    relative_seconds = (frame_count - 1) / video_fps
+                else:
+                    relative_seconds = time.perf_counter() - started_at
+                region_tracker.update(result["tracked_point"], relative_seconds)
+                result["regions"] = regions
+                result["current_region"] = region_tracker.current_region
+
             if not args.headless:
                 display_frame = render_frame(analysis_frame, result)
                 cv2.imshow("Behavior Demo", display_frame)
@@ -450,6 +519,13 @@ def main():
             cv2.destroyAllWindows()
 
     elapsed_seconds = time.perf_counter() - started_at
+    region_statistics = None
+    if region_tracker is not None:
+        if input_info["input_type"] == "VIDEO" and video_fps > 0:
+            final_timestamp = frame_count / video_fps
+        else:
+            final_timestamp = elapsed_seconds
+        region_statistics = region_tracker.finalize(final_timestamp)
     summary = {
         "schema_version": "1.0",
         "input_type": input_info["input_type"],
@@ -467,10 +543,42 @@ def main():
         "stop_reason": stop_reason,
         "threshold_status": "DEMO_UNCALIBRATED",
     }
+    if region_statistics is not None:
+        detected_ratio = detected_frame_count / frame_count if frame_count else 0.0
+        region_statistics.update(
+            {
+                "source_mode": input_info["source_mode"],
+                "simulated": bool(args.simulated),
+                "confidence": 0.50,
+                "data_quality": round(min(1.0, detected_ratio), 4),
+            }
+        )
+        summary["region_statistics"] = region_statistics
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     if args.summary_output:
         write_summary(args.summary_output, summary)
+    if args.region_events_output:
+        if region_tracker is None:
+            print("--region-events-output需要同时提供--region-config")
+            return 2
+        write_json(
+            args.region_events_output,
+            {
+                "schema_version": "1.0",
+                "source_mode": input_info["source_mode"],
+                "simulated": bool(args.simulated),
+                "confidence": 0.50,
+                "data_quality": region_statistics["data_quality"],
+                "events": region_tracker.events,
+            },
+            "区域事件输出",
+        )
+    if args.statistics_output:
+        if region_statistics is None:
+            print("--statistics-output需要同时提供--region-config")
+            return 2
+        write_json(args.statistics_output, region_statistics, "区域统计输出")
     if args.observation_output:
         observations = build_behavior_observations(
             summary,

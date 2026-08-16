@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "timestamp": "2026-08-03T18:12:36+08:00",
+  "base_url": "http://127.0.0.1:8000",
+  "dry_run": true,
+  "success": true,
+  "results": [
+    {
+      "file": "voice/01-observation-transcript.json",
+      "id": "obs-audio-transcript-20260803-demo-0001",
+      "status": "validated"
+    },
+    {
+      "file": "voice/02-observation-keyword-count.json",
+      "id": "obs-audio-keyword-count-20260803-demo-0001",
+      "status": "validated"
+    },
+    {
+      "file": "voice/03-evidence-fraud-keyword.json",
+      "id": "evi-fraud-keyword-20260803-demo-0001",
+      "status": "validated"
+    },
+    {
+      "file": "behavior/01-observation-baseline-range.json",
+      "id": "obs-activity-baseline-20260803-demo-0001",
+      "status": "validated"
+    },
+    {
+      "file": "behavior/02-observation-current-range.json",
+      "id": "obs-activity-current-20260803-demo-0001",
+      "status": "validated"
+    },
+    {
+      "file": "behavior/03-evidence-activity-range-decline.json",
+      "id": "evi-activity-range-20260803-demo-0001",
+      "status": "validated"
+    }
+  ]
+}

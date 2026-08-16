@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yingmu.local/schemas/v1/decision-evaluate.response.schema.json",
+  "title": "RiskEvaluateResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["risk_level", "event_created", "event", "matched_rule", "ruleset_version"],
+  "properties": {
+    "risk_level": {
+      "enum": ["GREEN", "YELLOW", "ORANGE", "RED"]
+    },
+    "event_created": {
+      "type": "boolean"
+    },
+    "event": {
+      "oneOf": [
+        {"$ref": "../../../contracts/v1/schemas/risk_event.schema.json"},
+        {"type": "null"}
+      ]
+    },
+    "matched_rule": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ruleset_version": {
+      "const": "ruleset-v1.0"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yingmu.local/schemas/v1/decision-evaluate.request.schema.json",
+  "title": "RiskEvaluateRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["resident_id", "evaluated_at"],
+  "properties": {
+    "resident_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp with timezone offset"
+    }
+  }
+}

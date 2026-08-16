@@ -26,6 +26,7 @@
     "后续继续观察趋势，单日活动增加不作为立即回落依据。"
   ],
   "care": {
+    "event_id": "event-mental-week",
     "status": "PENDING",
     "last_contact": null,
     "options": ["已联系，近期一切正常", "已联系，希望继续关注", "暂时无法联系"]

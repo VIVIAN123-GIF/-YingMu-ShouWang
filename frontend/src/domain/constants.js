@@ -40,6 +40,14 @@ export const DATA_MODES = Object.freeze({
   mock: '固定 JSON',
 })
 
+export const ALARM_TASK_STATUSES = Object.freeze({
+  PENDING: { label: '已接收设备告警，等待处理', type: 'info' },
+  PROCESSING: { label: '正在调用萤石抓图', type: 'primary' },
+  WAITING_ALGORITHM: { label: '平台取证完成，等待算法分析', type: 'info' },
+  RETRY: { label: '抓图失败，正在重试', type: 'warning' },
+  FAILED: { label: '平台取证失败', type: 'danger' },
+})
+
 /**
  * @typedef {'FALL'|'MENTAL'|'FRAUD'|'SYSTEM'} RiskDomain
  * @typedef {'GREEN'|'YELLOW'|'ORANGE'|'RED'} RiskLevel

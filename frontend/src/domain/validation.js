@@ -4,6 +4,7 @@ const SCHEMA_VERSION = '1.0'
 const TIME_SCALES = new Set(['SHORT', 'MEDIUM', 'LONG'])
 const TIME_HORIZONS = new Set(['TREND', 'TODAY', 'IMMINENT'])
 const OPERATORS = new Set(['system', 'family', 'staff'])
+const ALARM_TASK_STATUSES = new Set(['PENDING', 'PROCESSING', 'WAITING_ALGORITHM', 'RETRY', 'FAILED'])
 const SUMMARY_FIELDS = new Set(['evidence_id', 'evidence_type', 'explanation'])
 const PRE_FALL_FACTORS = new Set([
   'fall_precursor_evidence',
@@ -164,6 +165,19 @@ export function validateObservation(observation, index = 0) {
   return observation
 }
 
+export function validateAsset(asset) {
+  const label = 'Asset'
+  assertObject(asset, label)
+  ;['asset_id', 'title', 'fallback_kind', 'verification_status', 'notice']
+    .forEach((field) => assertString(assertRequired(asset, field, label), `${label}.${field}`))
+  ;['stream_url', 'fallback_url'].forEach((field) =>
+    assertNullableString(assertRequired(asset, field, label), `${label}.${field}`))
+  assertBoolean(assertRequired(asset, 'available', label), `${label}.available`)
+  assertIsoTime(assertRequired(asset, 'captured_at', label), `${label}.captured_at`)
+  assertSource(asset, label)
+  return asset
+}
+
 export function validateInterventionResult(result, index = 0) {
   const label = `interventions[${index}]`
   assertObject(result, label)
@@ -241,8 +255,40 @@ export function validateEventList(events) {
   return events.map(validateEventViewModel)
 }
 
+export function validateDeviceStatus(device) {
+  const label = 'DeviceStatus'
+  assertObject(device, label)
+  assertBoolean(assertRequired(device, 'online', label), `${label}.online`)
+  assertOneOf(assertRequired(device, 'adapter_mode', label), new Set(['EZVIZ_CLOUD', 'MOCK']), `${label}.adapter_mode`)
+  assertOneOf(assertRequired(device, 'source_mode', label), new Set(['LIVE_DEVICE', 'MOCK']), `${label}.source_mode`)
+  assertString(assertRequired(device, 'device_alias', label), `${label}.device_alias`)
+  assertBoolean(assertRequired(device, 'simulated', label), `${label}.simulated`)
+  assertBoolean(assertRequired(device, 'collection_active', label), `${label}.collection_active`)
+  return device
+}
+
+export function validateAlarmProcessingTask(task, index = 0) {
+  const label = `alarm_processing[${index}]`
+  assertObject(task, label)
+  ;['task_id', 'alarm_ref', 'resident_id', 'device_ref', 'available_at', 'create_time', 'update_time']
+    .forEach((field) => assertString(assertRequired(task, field, label), `${label}.${field}`))
+  assertOneOf(assertRequired(task, 'status', label), ALARM_TASK_STATUSES, `${label}.status`)
+  ;['attempt_count', 'max_attempts'].forEach((field) => {
+    const value = assertRequired(task, field, label)
+    if (!Number.isInteger(value) || value < 0) fail(`${label}.${field} 必须是非负整数`, `${label}.${field}`)
+  })
+  ;['capture_asset_id', 'error_code', 'error_message', 'started_at', 'finished_at'].forEach((field) =>
+    assertNullableString(assertRequired(task, field, label), `${label}.${field}`))
+  return task
+}
+
+export function validateAlarmProcessingTasks(tasks) {
+  if (!Array.isArray(tasks)) fail('告警处理任务必须是数组', 'alarm_processing')
+  return tasks.map(validateAlarmProcessingTask)
+}
+
 export function validateDashboard(dashboard) {
-  assertRiskScore(dashboard?.current_risk?.risk_score, 'current_risk.risk_score')
+  if (dashboard?.current_risk) assertRiskScore(dashboard.current_risk.risk_score, 'current_risk.risk_score')
   assertSource(dashboard?.device, 'device')
   ;(dashboard?.risk_trend || []).forEach((point, index) => assertRiskScore(point.score, `risk_trend[${index}].score`))
   if (dashboard?.pre_fall_summary) {

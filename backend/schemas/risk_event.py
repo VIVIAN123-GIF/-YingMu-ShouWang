@@ -41,9 +41,8 @@ class RiskEvaluateResponse(BaseModel):
     ruleset_version: str
 
 
-class EventDetailResponse(BaseModel):
-    event: RiskEvent
-    evidence: list[Evidence]
+class EventDetailResponse(RiskEvent):
+    evidences: list[Evidence]
     observations: list[Observation]
     rule_traces: list[dict[str, Any]]
     interventions: list[dict[str, Any]]

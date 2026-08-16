@@ -1,0 +1,339 @@
+{
+  "schema_version": "1.0",
+  "ruleset_version": "ruleset-v1.0",
+  "purpose": "Decision projections and expected results; full HTTP payloads are referenced by fixture_ref.",
+  "fixture_sources": {
+    "fall": "../../../contracts/v1/examples/mock_fall_sequence.json",
+    "audio_behavior": "../../cym/audio-behavior-demo/samples/behavior_evidence_bundle.example.json",
+    "speech": "../../cym/audio-behavior-demo/samples/evidence_samples.json"
+  },
+  "cases": [
+    {
+      "case_id": "DEC-NORMAL-001",
+      "category": "normal",
+      "precondition": "no active event",
+      "input": {
+        "fixture_ref": "fall#/evidence/0",
+        "evidence_type": "normal_baseline_sample",
+        "timestamp": "2026-07-31T03:06:00+08:00"
+      },
+      "expected": {
+        "risk_level": "GREEN",
+        "matched_rule": "NO_MATCH",
+        "event_created": false,
+        "event_status": null,
+        "alert_record_created": false,
+        "recommended_action": null
+      }
+    },
+    {
+      "case_id": "DEC-FALL-001",
+      "category": "rapid_rise_only",
+      "precondition": "no active event",
+      "input": {
+        "fixture_ref": "fall#/evidence/1",
+        "evidence_type": "rapid_rise",
+        "confidence": 0.92,
+        "data_quality": 0.88,
+        "timestamp": "2026-07-31T03:07:01+08:00"
+      },
+      "expected": {
+        "risk_level": "GREEN",
+        "matched_rule": "R-FALL-01",
+        "event_created": false,
+        "event_status": null,
+        "alert_record_created": false,
+        "recommended_action": null
+      }
+    },
+    {
+      "case_id": "DEC-FALL-002",
+      "category": "rapid_rise_plus_trunk_sway",
+      "precondition": "DEC-FALL-001 has been ingested for the same resident",
+      "input": {
+        "fixture_ref": "fall#/evidence/2",
+        "evidence_type": "trunk_sway",
+        "confidence": 0.90,
+        "data_quality": 0.88,
+        "timestamp": "2026-07-31T03:07:05+08:00",
+        "seconds_after_rapid_rise": 4.0
+      },
+      "expected": {
+        "risk_level": "ORANGE",
+        "matched_rule": "R-FALL-02",
+        "event_created": true,
+        "event_status": "INTERVENING",
+        "alert_record_created": true,
+        "recommended_action": "先坐稳，扶住固定物，再慢慢起身",
+        "intervention_policy": "fall-orange-gentle-v1",
+        "risk_score": 0.82,
+        "risk_score_provenance": "示例输入计算结果，不是固定值；不同严重度、质量或上下文应产生不同分数。"
+      }
+    },
+    {
+      "case_id": "DEC-BOUNDARY-QUALITY-069",
+      "category": "quality_gate_fail",
+      "precondition": "usable rapid_rise exists within 30 seconds; no active event",
+      "input": {
+        "evidence_type": "trunk_sway",
+        "confidence": 0.90,
+        "data_quality": 0.69
+      },
+      "expected": {
+        "risk_level": "GREEN",
+        "matched_rule": "R-FALL-03",
+        "event_created": false,
+        "alert_record_created": false,
+        "system_evidence_created": true
+      }
+    },
+    {
+      "case_id": "DEC-BOUNDARY-QUALITY-070",
+      "category": "quality_gate_inclusive_pass",
+      "precondition": "rapid_rise and trunk_sway are within 30 seconds; at least one confidence is 0.80",
+      "input": {
+        "evidence_types": ["rapid_rise", "trunk_sway"],
+        "confidence": [0.80, 0.70],
+        "data_quality": [0.70, 0.70]
+      },
+      "expected": {
+        "risk_level": "ORANGE",
+        "matched_rule": "R-FALL-02",
+        "event_created": true,
+        "event_status": "INTERVENING",
+        "alert_record_created": true
+      }
+    },
+    {
+      "case_id": "DEC-BOUNDARY-HIGH-CONFIDENCE",
+      "category": "high_confidence_gate_fail",
+      "precondition": "both evidences otherwise usable and within 30 seconds",
+      "input": {
+        "evidence_types": ["rapid_rise", "trunk_sway"],
+        "confidence": [0.79, 0.79],
+        "data_quality": [0.90, 0.90]
+      },
+      "expected": {
+        "risk_level": "GREEN",
+        "matched_rule": "R-FALL-01",
+        "event_created": false,
+        "alert_record_created": false
+      }
+    },
+    {
+      "case_id": "DEC-BOUNDARY-WINDOW-30",
+      "category": "short_window_inclusive_pass",
+      "precondition": "same resident, no active event, quality and confidence gates pass",
+      "input": {
+        "evidence_types": ["rapid_rise", "trunk_sway"],
+        "timestamp_difference_seconds": 30.0
+      },
+      "expected": {
+        "risk_level": "ORANGE",
+        "matched_rule": "R-FALL-02",
+        "event_created": true,
+        "event_status": "INTERVENING"
+      }
+    },
+    {
+      "case_id": "DEC-BOUNDARY-WINDOW-30001",
+      "category": "short_window_fail",
+      "precondition": "same resident, no active event, quality and confidence gates pass",
+      "input": {
+        "evidence_types": ["rapid_rise", "trunk_sway"],
+        "timestamp_difference_seconds": 30.001
+      },
+      "expected": {
+        "risk_level": "GREEN",
+        "matched_rule": "R-FALL-01",
+        "event_created": false,
+        "alert_record_created": false
+      }
+    },
+    {
+      "case_id": "DEC-RECOVERY-149",
+      "category": "recovery_below_threshold",
+      "precondition": "one ORANGE/INTERVENING event exists",
+      "input": {
+        "evidence_type": "posture_recovered",
+        "current_value": 14.9,
+        "baseline_value": 15.0,
+        "required_observation_features": ["stable_posture_duration", "stable_trunk_angle_deg"]
+      },
+      "expected": {
+        "risk_level": "ORANGE",
+        "matched_rule": "NO_MATCH",
+        "event_created": false,
+        "event_status": "INTERVENING",
+        "alert_record_created": false
+      }
+    },
+    {
+      "case_id": "DEC-RECOVERY-150",
+      "category": "recovery_threshold_pass",
+      "precondition": "one ORANGE/INTERVENING event exists",
+      "input": {
+        "fixture_ref": "fall#/evidence/3",
+        "evidence_type": "posture_recovered",
+        "current_value": 15.0,
+        "baseline_value": 15.0,
+        "timestamp": "2026-07-31T03:07:29+08:00"
+      },
+      "expected": {
+        "risk_level": "ORANGE",
+        "matched_rule": "R-FALL-04",
+        "event_created": false,
+        "event_status": "OBSERVING",
+        "alert_record_created": false,
+        "recommended_action": "继续观察，不重复告警"
+      }
+    },
+    {
+      "case_id": "DEC-OBSERVE-59999",
+      "category": "observation_in_progress",
+      "precondition": "event entered OBSERVING at T0",
+      "input": {
+        "endpoint": "POST /api/v1/risk/evaluate",
+        "evaluated_at": "T0+59.999s"
+      },
+      "expected": {
+        "risk_level": "ORANGE",
+        "matched_rule": "NO_MATCH",
+        "event_created": false,
+        "event_status": "OBSERVING",
+        "alert_record_created": false
+      }
+    },
+    {
+      "case_id": "DEC-OBSERVE-60000",
+      "category": "observation_completed",
+      "precondition": "event entered OBSERVING at T0 and no new usable danger evidence exists",
+      "input": {
+        "endpoint": "POST /api/v1/risk/evaluate",
+        "evaluated_at": "T0+60.000s"
+      },
+      "expected": {
+        "risk_level": "GREEN",
+        "matched_rule": "R-FALL-05",
+        "event_created": false,
+        "stored_event_peak_risk_level": "ORANGE",
+        "event_status": "RESOLVED",
+        "alert_record_created": false
+      }
+    },
+    {
+      "case_id": "DEC-OBSERVE-HAZARD",
+      "category": "danger_during_observation",
+      "precondition": "one event is OBSERVING",
+      "input": {
+        "evidence_type": "trunk_sway",
+        "confidence": 0.90,
+        "data_quality": 0.88,
+        "timestamp": "after recovery_started_at and before T0+60s"
+      },
+      "expected": {
+        "risk_level": "ORANGE",
+        "matched_rule": "R-FALL-06",
+        "event_created": false,
+        "event_status": "INTERVENING",
+        "alert_record_created": false,
+        "recommended_action": "恢复干预"
+      }
+    },
+    {
+      "case_id": "DEC-ESCALATE-002",
+      "category": "hazard_after_two_interventions",
+      "precondition": "same event has two intervention attempts",
+      "input": {
+        "evidence_type": "trunk_sway",
+        "confidence": 0.90,
+        "data_quality": 0.88,
+        "timestamp": "after latest_intervention_at"
+      },
+      "expected": {
+        "risk_level": "RED",
+        "matched_rule": "R-FALL-07",
+        "event_created": false,
+        "event_status": "ESCALATED",
+        "alert_record_created": false,
+        "recommended_action": "通知家属并转人工接管，不自动拨打120"
+      }
+    },
+    {
+      "case_id": "DEC-SPEECH-001",
+      "category": "fraud_keyword_v1_boundary",
+      "precondition": "no active fall event",
+      "input": {
+        "fixture_ref": "speech#/2",
+        "risk_domain": "FRAUD",
+        "evidence_type": "fraud_keyword",
+        "confidence": 0.84,
+        "data_quality": 0.78
+      },
+      "expected": {
+        "saved": true,
+        "risk_level": "GREEN",
+        "matched_rule": "NO_MATCH",
+        "event_created": false,
+        "event_status": null,
+        "alert_record_created": false,
+        "boundary": "keyword hit is not a fraud conclusion; v1.0 has no frozen FRAUD upgrade rule"
+      }
+    },
+    {
+      "case_id": "DEC-BEHAVIOR-001",
+      "category": "visitor_behavior_v1_boundary",
+      "precondition": "no active fall event",
+      "input": {
+        "fixture_refs": ["audio_behavior#/evidence/1", "audio_behavior#/evidence/2"],
+        "risk_domain": "FRAUD",
+        "evidence_types": ["unauthorized_visitor", "unusual_dwell_time"]
+      },
+      "expected": {
+        "saved": true,
+        "risk_level": "GREEN",
+        "matched_rule": "NO_MATCH",
+        "event_created": false,
+        "event_status": null,
+        "alert_record_created": false,
+        "boundary": "store and audit only until a FRAUD ruleset is reviewed and frozen"
+      }
+    },
+    {
+      "case_id": "DEC-MENTAL-001",
+      "category": "activity_decline_v1_boundary",
+      "precondition": "no active fall event",
+      "input": {
+        "fixture_ref": "audio_behavior#/evidence/0",
+        "risk_domain": "MENTAL",
+        "evidence_type": "activity_range_decline",
+        "time_scale": "LONG"
+      },
+      "expected": {
+        "saved": true,
+        "risk_level": "GREEN",
+        "matched_rule": "NO_MATCH",
+        "event_created": false,
+        "event_status": null,
+        "alert_record_created": false,
+        "boundary": "trend evidence is not a mental-health diagnosis"
+      }
+    },
+    {
+      "case_id": "DEC-IDEMPOTENT-001",
+      "category": "duplicate_evidence",
+      "precondition": "an Evidence has already been accepted",
+      "input": {
+        "operation": "resubmit identical evidence_id and identical JSON payload"
+      },
+      "expected": {
+        "http_status": 200,
+        "saved": false,
+        "idempotent": true,
+        "matched_rule": "R-SYSTEM-01",
+        "event_created": false,
+        "duplicate_tool_call": false
+      }
+    }
+  ]
+}

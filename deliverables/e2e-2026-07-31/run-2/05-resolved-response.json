@@ -1,0 +1,49 @@
+{
+  "status_code": 200,
+  "body": {
+    "risk_level": "GREEN",
+    "event_created": false,
+    "event": {
+      "schema_version": "1.0",
+      "event_id": "event-mock-fall-001",
+      "resident_id": "resident-mock-001",
+      "created_at": "2026-07-31T03:07:05+08:00",
+      "updated_at": "2026-07-31T03:08:30+08:00",
+      "primary_domain": "FALL",
+      "related_domains": [],
+      "risk_level": "ORANGE",
+      "risk_score": 0.78,
+      "evidence_ids": [
+        "evi-mock-rapid-rise-001",
+        "evi-mock-trunk-sway-001",
+        "evi-mock-posture-recovered-001"
+      ],
+      "evidence_summary": [
+        {
+          "evidence_id": "evi-mock-rapid-rise-001",
+          "evidence_type": "rapid_rise",
+          "explanation": "起身速度明显快于个人基线"
+        },
+        {
+          "evidence_id": "evi-mock-trunk-sway-001",
+          "evidence_type": "trunk_sway",
+          "explanation": "快速起身后出现明显躯干摇晃"
+        },
+        {
+          "evidence_id": "evi-mock-posture-recovered-001",
+          "evidence_type": "posture_recovered",
+          "explanation": "躯干最大偏角3.6度，连续稳定15秒，达到15秒恢复阈值"
+        }
+      ],
+      "time_horizon": "IMMINENT",
+      "recommended_action": "先坐稳，扶住固定物，再慢慢起身",
+      "intervention_policy": "fall-orange-gentle-v1",
+      "status": "RESOLVED",
+      "ruleset_version": "ruleset-v1.0",
+      "source_mode": "MOCK",
+      "simulated": true
+    },
+    "matched_rule": "R-FALL-05",
+    "ruleset_version": "ruleset-v1.0"
+  }
+}

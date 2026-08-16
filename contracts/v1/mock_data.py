@@ -59,6 +59,7 @@ def observations():
         _observation("obs-mock-rapid-rise-001", "2026-07-31T03:07:01+08:00", "sit_to_stand_duration", 1.2, "second", 0.92, 0.88),
         _observation("obs-mock-trunk-sway-001", "2026-07-31T03:07:05+08:00", "trunk_sway_angle", 18.0, "degree", 0.90, 0.88),
         _observation("obs-mock-posture-recovered-001", "2026-07-31T03:07:29+08:00", "stable_posture_duration", 15.0, "second", 0.94, 0.90),
+        _observation("obs-mock-stable-trunk-angle-001", "2026-07-31T03:07:29+08:00", "stable_trunk_angle_deg", 3.6, "degree", 0.94, 0.90),
     ]
 
 
@@ -67,9 +68,11 @@ def evidence():
         _evidence("evi-mock-green-001", "obs-mock-green-001", "2026-07-31T03:06:00+08:00", "normal_baseline_sample", 0.05, 0.95, 0.93, 3.5, 3.4, -0.1, "起身时长与个人基线基本一致"),
         _evidence("evi-mock-rapid-rise-001", "obs-mock-rapid-rise-001", "2026-07-31T03:07:01+08:00", "rapid_rise", 0.78, 0.92, 0.88, 3.5, 1.2, -2.1, "起身速度明显快于个人基线"),
         _evidence("evi-mock-trunk-sway-001", "obs-mock-trunk-sway-001", "2026-07-31T03:07:05+08:00", "trunk_sway", 0.86, 0.90, 0.88, 5.0, 18.0, 2.8, "起身后躯干出现连续摇晃"),
-        _evidence("evi-mock-posture-recovered-001", "obs-mock-posture-recovered-001", "2026-07-31T03:07:29+08:00", "posture_recovered", 0.12, 0.94, 0.90, None, 15.0, None, "老人已重新坐稳，连续15秒未出现新的高风险姿态"),
+        _evidence("evi-mock-posture-recovered-001", "obs-mock-posture-recovered-001", "2026-07-31T03:07:29+08:00", "posture_recovered", 0.0, 0.94, 0.90, 15.0, 15.0, 0.0, "躯干最大偏角3.6度，连续稳定15秒，达到15秒恢复阈值"),
     ]
 
 
 def sequence():
-    return {"observations": deepcopy(observations()), "evidence": deepcopy(evidence())}
+    payload = {"observations": deepcopy(observations()), "evidence": deepcopy(evidence())}
+    payload["evidence"][3]["observation_ids"].append("obs-mock-stable-trunk-angle-001")
+    return payload

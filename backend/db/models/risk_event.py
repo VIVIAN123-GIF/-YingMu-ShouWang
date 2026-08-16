@@ -34,6 +34,8 @@ class RiskEvent(Base):
     ruleset_version = Column(String(64), nullable=False, default="ruleset-v1.0")
     source_mode = Column(String(32), nullable=False, default="MOCK")
     simulated = Column(Boolean, nullable=False, default=True)
+    # Internal checkpoint for the recovery observation window; not part of the public contract.
+    recovery_started_at = Column(DateTime, nullable=True)
     create_time = Column(DateTime, default=datetime.datetime.now, nullable=False)
 
     evidences = relationship(

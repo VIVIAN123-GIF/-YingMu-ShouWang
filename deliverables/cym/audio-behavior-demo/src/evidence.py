@@ -5,6 +5,30 @@ SCHEMA_VERSION = "1.0"
 RISK_DOMAINS = {"FALL", "MENTAL", "FRAUD", "SYSTEM"}
 TIME_SCALES = {"SHORT", "MEDIUM", "LONG"}
 SOURCE_MODES = {"LIVE_DEVICE", "RECORDED_REPLAY", "PUBLIC_DATASET", "MOCK"}
+ALLOWED_EVIDENCE_TYPES = {
+    "FALL": {
+        "rapid_rise", "slow_rise", "trunk_sway", "gait_instability",
+        "relative_speed_change", "posture_recovered", "tracking_lost",
+        "normal_baseline_sample", "rise_duration_baseline_sample",
+        "trunk_sway_baseline_sample", "gait_stability_baseline_sample",
+    },
+    "MENTAL": {
+        "activity_range_decline", "room_transition_decline",
+        "day_night_rhythm_change", "unusual_pacing", "mental_self_report",
+        "family_concern", "voluntary_screening_concern",
+        "family_contact_completed", "professional_support_suggested",
+        "trend_recovered", "activity_range_baseline_sample",
+        "circadian_baseline_sample",
+    },
+    "FRAUD": {
+        "unauthorized_visitor", "unusual_dwell_time", "fraud_keyword",
+        "identity_verified", "false_alarm_confirmed",
+    },
+    "SYSTEM": {
+        "audio_quality_low", "low_illumination", "high_risk_zone_entry",
+        "obstacle_occupancy", "camera_occlusion", "stream_unavailable",
+    },
+}
 REQUIRED_FIELDS = {
     "schema_version",
     "evidence_id",
@@ -97,6 +121,8 @@ def validate_evidence(evidence):
         raise EvidenceValidationError(
             f"risk_domain必须属于：{', '.join(sorted(RISK_DOMAINS))}"
         )
+    if evidence["evidence_type"] not in ALLOWED_EVIDENCE_TYPES[evidence["risk_domain"]]:
+        raise EvidenceValidationError("evidence_type不属于Freeze v1.0冻结枚举")
     if evidence["time_scale"] not in TIME_SCALES:
         raise EvidenceValidationError(
             f"time_scale必须属于：{', '.join(sorted(TIME_SCALES))}"
