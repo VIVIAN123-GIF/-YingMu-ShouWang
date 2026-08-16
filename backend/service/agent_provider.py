@@ -6,6 +6,7 @@ import json
 from typing import Protocol
 
 import httpx
+from pydantic import BaseModel, ConfigDict, Field
 
 from contracts.v1.agent import AgentExplanationRequest, AgentExplanationResponse
 
@@ -17,6 +18,17 @@ class LLMProvider(Protocol):
 
 class LLMProviderError(RuntimeError):
     """Raised when a provider response cannot be safely consumed."""
+
+
+class _ProviderContent(BaseModel):
+    """Only explanatory text is model-controlled; identity stays server-owned."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    summary: str = Field(min_length=1, max_length=200)
+    reasoning_points: list[str] = Field(min_length=1, max_length=4)
+    recommended_action_text: str = Field(min_length=1, max_length=200)
+    capability_notice: str = Field(min_length=1, max_length=240)
 
 
 class OpenAICompatibleLLMProvider:
@@ -31,7 +43,7 @@ class OpenAICompatibleLLMProvider:
         base_url: str,
         api_key: str,
         model: str,
-        timeout_seconds: float = 5.0,
+        timeout_seconds: float = 30.0,
         max_output_tokens: int = 400,
         client: httpx.AsyncClient | None = None,
     ) -> None:
@@ -53,9 +65,19 @@ class OpenAICompatibleLLMProvider:
             {
                 "role": "system",
                 "content": (
-                    "你是居家养老安全系统的解释助手。只能解释输入的结构化风险事件和Evidence，"
-                    "不能新增或修改risk_level、risk_score、resolved或规则结论。"
-                    "只返回符合约定JSON结构的解释，不要输出Markdown。"
+                    "你是居家养老安全系统的解释助手，只解释输入的结构化 RiskEvent 和 Evidence。"
+                    "风险等级、风险分数、是否恢复和规则结论均由系统状态机决定，你不能新增、修改或重新判断。"
+                    "不得宣称已经发生跌倒，不得进行医学诊断，不得自行定义高危区间，"
+                    "不得建议自动报警、自动呼叫急救或自动升级紧急流程。"
+                    "解释必须严格基于输入证据；证据不足时明确说明需要继续观察。"
+                    "建议仅限提醒老人坐稳或扶稳、继续观察，以及联系照护人员人工确认。"
+                    "不得把未验证的平台能力描述为可用或已经执行。"
+                    "只返回 JSON 对象，不要输出 Markdown。JSON 必须且只能包含："
+                    '{"summary":"不超过200字",'
+                    '"reasoning_points":["1至4条，每条不超过160字"],'
+                    '"recommended_action_text":"不超过200字",'
+                    '"capability_notice":"不超过240字"}。'
+                    "不得返回 request_id、event_id、generated_by、fallback_used 或其他字段。"
                 ),
             },
             {
@@ -88,16 +110,20 @@ class OpenAICompatibleLLMProvider:
                 envelope = response.json()
                 content = envelope["choices"][0]["message"]["content"]
                 decoded = json.loads(content) if isinstance(content, str) else content
-                result = AgentExplanationResponse.model_validate(decoded)
+                content_result = _ProviderContent.model_validate(decoded)
             except (KeyError, IndexError, TypeError, ValueError) as exc:
                 raise LLMProviderError("provider returned invalid explanation JSON") from exc
-            if (
-                result.request_id != request.request_id
-                or result.event_id != request.event_id
-                or result.fallback_used
-            ):
-                raise LLMProviderError("provider response identity or fallback flag is invalid")
-            return result
+            return AgentExplanationResponse(
+                schema_version="agent-explanation/1.0",
+                request_id=request.request_id,
+                event_id=request.event_id,
+                summary=content_result.summary,
+                reasoning_points=content_result.reasoning_points,
+                recommended_action_text=content_result.recommended_action_text,
+                capability_notice=content_result.capability_notice,
+                generated_by=self.model,
+                fallback_used=False,
+            )
         except LLMProviderError:
             raise
         except (httpx.HTTPError, TimeoutError) as exc:

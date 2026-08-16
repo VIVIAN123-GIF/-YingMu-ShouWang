@@ -62,15 +62,10 @@ class Provider:
 
 def llm_response_payload(req: AgentExplanationRequest) -> dict:
     return {
-        "schema_version": "agent-explanation/1.0",
-        "request_id": req.request_id,
-        "event_id": req.event_id,
         "summary": "老人快速起身后出现持续摇摆",
         "reasoning_points": ["起身速度偏离个人基线", "摇摆证据需要继续观察"],
         "recommended_action_text": "建议提醒老人坐稳并继续观察",
         "capability_notice": "设备服务端语音尚未验证",
-        "generated_by": "llm-agent-test",
-        "fallback_used": False,
     }
 
 
@@ -101,9 +96,15 @@ def test_provider_success_uses_validated_json_without_sensitive_media():
 
     assert result.fallback_used is False
     assert result.request_id == req.request_id
+    assert result.generated_by == "test-model"
     assert captured["temperature"] == 0
     assert "image" not in json.dumps(captured).lower()
     assert "video" not in json.dumps(captured).lower()
+    system_prompt = captured["messages"][0]["content"]
+    assert "不得宣称已经发生跌倒" in system_prompt
+    assert "不得建议自动报警" in system_prompt
+    assert "联系照护人员人工确认" in system_prompt
+    assert "不得把未验证的平台能力描述为可用" in system_prompt
 
 
 @pytest.mark.parametrize("error", [TimeoutError("timeout"), RuntimeError("429"), ValueError("bad json")])

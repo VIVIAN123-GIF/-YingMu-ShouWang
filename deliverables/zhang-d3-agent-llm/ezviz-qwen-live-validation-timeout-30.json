@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "EZVIZ_TOKEN_SWITCH_AGENT_LIVE_VALIDATION",
+  "generated_at": "2026-08-16T11:42:28.609+08:00",
+  "provider": "EZVIZ_TOKEN_SWITCH_OPENAI_COMPATIBLE",
+  "model": "qwen3.6-flash",
+  "request_id": "agent-event-001-v1",
+  "event_id": "event-001",
+  "latency_ms": 23584,
+  "fallback_used": false,
+  "generated_by": "qwen3.6-flash",
+  "result": "SUCCESS",
+  "failure_reason": null,
+  "response": {
+    "schema_version": "agent-explanation/1.0",
+    "request_id": "agent-event-001-v1",
+    "event_id": "event-001",
+    "summary": "检测到橙色风险， imminent 级别。证据显示起身时间1.1秒显著短于基线2.4秒，躯干摆幅18.4度高于基线5.2度。表明起身动作异常迅速且不稳定，存在跌倒高风险。",
+    "reasoning_points": [
+      "起身时长1.1秒远小于个人基线2.4秒，提示动作过快或借力起身，失去正常缓冲过程。",
+      "躯干摆幅18.4度超过基线5.2度，反映身体控制能力下降，平衡性受损。",
+      "两项指标同时偏离基线，符合快速起立伴随失衡的典型跌倒前兆模式。",
+      "风险评分0.82属高危区间，需立即关注以防意外发生。"
+    ],
+    "recommended_action_text": "立即通知照护人员查看老人状况，确认是否已安全站立或需要协助。若无人回应，启动紧急呼叫流程。避免让老人独自活动直至风险解除。",
+    "capability_notice": "已验证EZVIZ_CAPTURE能力可用，用于获取现场图像辅助判断。EZVIZ_SERVER_VOICE未验证，暂不可用语音交互功能。请确保摄像头工作正常以支持后续决策。",
+    "generated_by": "qwen3.6-flash",
+    "fallback_used": false
+  },
+  "contains_api_key": false,
+  "contains_media": false
+}

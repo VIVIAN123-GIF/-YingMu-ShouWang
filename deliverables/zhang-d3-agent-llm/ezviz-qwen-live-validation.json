@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "EZVIZ_TOKEN_SWITCH_AGENT_LIVE_VALIDATION",
+  "generated_at": "2026-08-16T11:38:27.162+08:00",
+  "provider": "EZVIZ_TOKEN_SWITCH_OPENAI_COMPATIBLE",
+  "model": "qwen3.6-flash",
+  "request_id": "agent-event-001-v1",
+  "event_id": "event-001",
+  "latency_ms": 5896,
+  "fallback_used": true,
+  "generated_by": "template-fallback-v1",
+  "result": "FALLBACK",
+  "failure_reason": "LLMProviderError",
+  "response": {
+    "schema_version": "agent-explanation/1.0",
+    "request_id": "agent-event-001-v1",
+    "event_id": "event-001",
+    "summary": "检测到跌倒风险前兆，需要继续关注老人状态",
+    "reasoning_points": [
+      "检测到起身速度偏快，超出当前风险评估关注范围",
+      "检测到躯干持续摇摆，稳定性需要继续观察"
+    ],
+    "recommended_action_text": "建议提醒老人坐稳并继续观察",
+    "capability_notice": "萤石服务端语音尚未验证，将使用明确标记的文字或 Mock 提醒",
+    "generated_by": "template-fallback-v1",
+    "fallback_used": true
+  },
+  "contains_api_key": false,
+  "contains_media": false
+}

@@ -20,14 +20,14 @@ RiskEvent + Evidence
 可选的 OpenAI-compatible Provider 配置：
 
 ```dotenv
-AGENT_LLM_BASE_URL=
+AGENT_LLM_BASE_URL=https://openai.ezviz.com/v1
 AGENT_LLM_API_KEY=
-AGENT_LLM_MODEL=
-AGENT_LLM_TIMEOUT_SECONDS=5
+AGENT_LLM_MODEL=qwen3.6-flash
+AGENT_LLM_TIMEOUT_SECONDS=30
 AGENT_LLM_MAX_OUTPUT_TOKENS=400
 ```
 
-`AGENT_LLM_BASE_URL` 或 `AGENT_LLM_MODEL` 为空时，服务只使用模板降级。API Key 只允许存在本地 `.env`，禁止写入代码、测试样例和交付报告。
+`AGENT_LLM_BASE_URL` 或 `AGENT_LLM_MODEL` 为空时，服务只使用模板降级。API Key 只允许存在本地 `.env`，禁止写入代码、测试样例和交付报告。平台示例中的 `EZVIZ_API_KEY` 可作为兼容别名，但项目统一推荐使用 `AGENT_LLM_API_KEY`，避免和设备开放平台凭证混淆。
 
 Provider 失败、超时、429、5xx、非法 JSON 或响应合同校验失败时，服务返回：
 
@@ -35,6 +35,18 @@ Provider 失败、超时、429、5xx、非法 JSON 或响应合同校验失败�
 generated_by=template-fallback-v1
 fallback_used=true
 ```
+
+配置完成后执行一次真实验证：
+
+```powershell
+py -3.14 scripts/validate_agent_llm_live.py
+```
+
+只有报告中 `result=SUCCESS`、`fallback_used=false`、`generated_by=qwen3.6-flash` 才表示真实模型调用成功；`FALLBACK` 只证明降级链路可用。
+
+2026-08-16 对萤石 Token Switch `qwen3.6-flash` 的现场验证结果：5 秒和 15 秒超时配置均进入模板降级；30 秒配置成功返回，实测耗时 23584 ms。因此演示环境使用 30 秒超时，并在 RiskEvent 提交后异步生成解释。前端应先显示“解释生成中”，模型失败或超过 30 秒时再显示模板解释，不能阻塞风险事件入库和干预状态机。
+
+模型仅可解释输入证据，不得宣称已经发生跌倒、进行医学诊断、自行定义风险区间，或自行触发报警和紧急流程。干预是否升级仍由风险引擎、状态机和人工确认共同决定。
 
 ## 干预工具
 
