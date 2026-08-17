@@ -302,7 +302,14 @@ export function validateAgentExplanationJob(job) {
   const explanation = assertRequired(job, 'explanation', label)
   if (explanation === null) {
     if (['SUCCESS', 'FALLBACK'].includes(job.status)) fail(`${label}.explanation is required for completed status`, `${label}.explanation`)
-    return job
+    return {
+      event_id: job.event_id,
+      status: job.status,
+      explanation: null,
+      attempt_count: job.attempt_count,
+      created_at: job.created_at,
+      completed_at: job.completed_at,
+    }
   }
   assertObject(explanation, `${label}.explanation`)
   if (explanation.schema_version !== 'agent-explanation/1.0') fail(`${label}.explanation.schema_version is invalid`, `${label}.explanation.schema_version`)
@@ -314,7 +321,21 @@ export function validateAgentExplanationJob(job) {
   }
   assertBoolean(assertRequired(explanation, 'fallback_used', `${label}.explanation`), `${label}.explanation.fallback_used`)
   if (fallbackUsed !== null) assertBoolean(fallbackUsed, `${label}.fallback_used`)
-  return job
+  return {
+    event_id: job.event_id,
+    status: job.status,
+    explanation: {
+      summary: explanation.summary,
+      reasoning_points: [...explanation.reasoning_points],
+      recommended_action_text: explanation.recommended_action_text,
+      capability_notice: explanation.capability_notice,
+      generated_by: explanation.generated_by,
+      fallback_used: explanation.fallback_used,
+    },
+    attempt_count: job.attempt_count,
+    created_at: job.created_at,
+    completed_at: job.completed_at,
+  }
 }
 
 export function validateDashboard(dashboard) {

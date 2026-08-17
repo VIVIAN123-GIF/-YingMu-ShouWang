@@ -103,7 +103,7 @@ describe('agent explanation frontend contract', () => {
     ['NOT_REQUESTED', 'agent-explanation-not-requested', '暂无智能体解释'],
     ['PENDING', 'agent-explanation-pending', '解释生成中'],
     ['PROCESSING', 'agent-explanation-pending', '解释生成中'],
-    ['RETRY', 'agent-explanation-retry', '正在重试'],
+    ['RETRY', 'agent-explanation-retry', '解释生成重试中'],
   ])('renders the %s non-terminal state', async (status, testId, copy) => {
     runtimeMock.mode = 'api'
     vi.useFakeTimers()
@@ -117,7 +117,7 @@ describe('agent explanation frontend contract', () => {
     wrapper.unmount()
   })
 
-  it('polls NOT_REQUESTED, PENDING and RETRY until SUCCESS at 1500ms intervals', async () => {
+  it('polls every non-terminal status until SUCCESS at 1500ms intervals', async () => {
     runtimeMock.mode = 'api'
     vi.useFakeTimers()
     getEventMock.mockResolvedValue(eventFixture())
@@ -125,12 +125,13 @@ describe('agent explanation frontend contract', () => {
     getEventExplanationMock
       .mockResolvedValueOnce(explanationFixture('NOT_REQUESTED'))
       .mockResolvedValueOnce(explanationFixture('PENDING'))
+      .mockResolvedValueOnce(explanationFixture('PROCESSING'))
       .mockResolvedValueOnce(explanationFixture('RETRY'))
       .mockResolvedValueOnce(explanationFixture('SUCCESS'))
     const wrapper = await mountView()
 
     expect(wrapper.get('[data-testid="agent-explanation-not-requested"]').exists()).toBe(true)
-    for (let count = 2; count <= 4; count += 1) {
+    for (let count = 2; count <= 5; count += 1) {
       await vi.advanceTimersByTimeAsync(1500)
       await flushPromises()
       expect(getEventExplanationMock).toHaveBeenCalledTimes(count)
@@ -140,7 +141,7 @@ describe('agent explanation frontend contract', () => {
     expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('否')
 
     await vi.advanceTimersByTimeAsync(6000)
-    expect(getEventExplanationMock).toHaveBeenCalledTimes(4)
+    expect(getEventExplanationMock).toHaveBeenCalledTimes(5)
     wrapper.unmount()
   })
 
@@ -171,7 +172,8 @@ describe('agent explanation frontend contract', () => {
       .mockResolvedValueOnce(explanationFixture('SUCCESS'))
     const wrapper = await mountView()
 
-    expect(wrapper.get('[data-testid="agent-explanation-error"]').text()).toContain('temporary explanation network error')
+    expect(wrapper.get('[data-testid="agent-explanation-error"]').text()).toContain('智能体解释暂时读取失败，将自动重试')
+    expect(wrapper.text()).not.toContain('temporary explanation network error')
     expect(wrapper.text()).toContain('Risk event')
     expect(wrapper.text()).toContain('Fast rise')
 
@@ -205,6 +207,34 @@ describe('agent explanation frontend contract', () => {
     expect(getEventExplanationMock).toHaveBeenCalledTimes(2)
   })
 
+  it('ignores a stale explanation response after the route changes', async () => {
+    runtimeMock.mode = 'api'
+    let resolveOldExplanation
+    const oldExplanation = new Promise((resolve) => { resolveOldExplanation = resolve })
+    const nextExplanation = explanationFixture('SUCCESS')
+    nextExplanation.explanation.summary = 'New event summary'
+    getEventMock.mockResolvedValue(eventFixture())
+    getAssetMock.mockResolvedValue(null)
+    getEventExplanationMock
+      .mockReturnValueOnce(oldExplanation)
+      .mockResolvedValueOnce(nextExplanation)
+    const wrapper = await mountView()
+
+    await wrapper.vm.$router.push('/events/event-agent-next')
+    await flushPromises()
+    expect(getEventExplanationMock).toHaveBeenNthCalledWith(1, 'event-agent-test')
+    expect(getEventExplanationMock).toHaveBeenNthCalledWith(2, 'event-agent-next')
+    expect(wrapper.get('[data-testid="agent-explanation-content"]').text()).toContain('New event summary')
+
+    const staleExplanation = explanationFixture('SUCCESS')
+    staleExplanation.explanation.summary = 'Stale event summary'
+    resolveOldExplanation(staleExplanation)
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('Stale event summary')
+    expect(wrapper.get('[data-testid="agent-explanation-content"]').text()).toContain('New event summary')
+    wrapper.unmount()
+  })
+
   it('renders RiskEvent immediately without waiting for the explanation request', async () => {
     runtimeMock.mode = 'api'
     let resolveExplanation
@@ -221,6 +251,41 @@ describe('agent explanation frontend contract', () => {
     resolveExplanation(explanationFixture('SUCCESS'))
   })
 
+  it('starts the event and explanation reads independently', async () => {
+    runtimeMock.mode = 'api'
+    let resolveEvent
+    getEventMock.mockReturnValue(new Promise((resolve) => { resolveEvent = resolve }))
+    getAssetMock.mockResolvedValue(null)
+    getEventExplanationMock.mockResolvedValue(explanationFixture('PENDING'))
+
+    const wrapper = await mountView()
+
+    expect(getEventMock).toHaveBeenCalledTimes(1)
+    expect(getEventExplanationMock).toHaveBeenCalledTimes(1)
+    resolveEvent(eventFixture())
+    await flushPromises()
+    expect(wrapper.text()).toContain('Risk event')
+    wrapper.unmount()
+  })
+
+  it('keeps polling the backend explanation in explicit mock mode', async () => {
+    runtimeMock.mode = 'mock'
+    vi.useFakeTimers()
+    getEventMock.mockResolvedValue(eventFixture())
+    getAssetMock.mockResolvedValue(null)
+    getEventExplanationMock
+      .mockResolvedValueOnce(explanationFixture('PENDING'))
+      .mockResolvedValueOnce(explanationFixture('SUCCESS'))
+
+    const wrapper = await mountView()
+    await vi.advanceTimersByTimeAsync(1500)
+    await flushPromises()
+
+    expect(getEventExplanationMock).toHaveBeenCalledTimes(2)
+    expect(wrapper.get('[data-testid="agent-explanation-content"]').text()).toContain('LLM summary')
+    wrapper.unmount()
+  })
+
   it('continues refreshing RiskEvent while the explanation remains PROCESSING', async () => {
     runtimeMock.mode = 'api'
     vi.useFakeTimers()
@@ -231,7 +296,9 @@ describe('agent explanation frontend contract', () => {
       .mockResolvedValueOnce(eventFixture())
       .mockResolvedValueOnce(resolvedEvent)
     getAssetMock.mockResolvedValue(null)
-    getEventExplanationMock.mockResolvedValue(explanationFixture('PROCESSING'))
+    getEventExplanationMock
+      .mockResolvedValueOnce(explanationFixture('PROCESSING'))
+      .mockResolvedValueOnce(explanationFixture('SUCCESS'))
     const wrapper = await mountView()
 
     expect(wrapper.text()).toContain('正在干预')
@@ -240,8 +307,9 @@ describe('agent explanation frontend contract', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('已回落')
-    expect(wrapper.get('[data-testid="agent-explanation-pending"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="agent-explanation-content"]').text()).toContain('LLM summary')
     expect(getEventMock).toHaveBeenCalledTimes(2)
+    expect(getEventExplanationMock).toHaveBeenCalledTimes(2)
     wrapper.unmount()
   })
 

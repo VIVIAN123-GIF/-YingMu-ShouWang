@@ -1,24 +1,56 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import {
   ChatLineRound, Clock, DataAnalysis, DocumentChecked, Expand, Fold, House,
   InfoFilled, Monitor, TrendCharts, User, VideoPlay, Warning,
 } from '@element-plus/icons-vue'
 import { routes } from '../../router'
 import { DATA_MODES } from '../../domain/constants'
-import { runtime, setDataMode } from '../../services/repository'
+import { getEvents, runtime, setDataMode } from '../../services/repository'
 
 const route = useRoute()
 const router = useRouter()
 const collapsed = ref(false)
+const openingEventDetail = ref(false)
 const navRoutes = routes.filter((item) => item.meta?.nav)
 const iconMap = { ChatLineRound, Clock, DataAnalysis, DocumentChecked, House, Monitor, TrendCharts, User, VideoPlay }
 const activePath = computed(() => route.name === 'event-detail' ? '/events/:eventId' : route.path)
 
-function handleSelect(path) {
-  if (path === '/events/:eventId') router.push('/events/event-fall-100')
-  else router.push(path)
+function createdAtTimestamp(event) {
+  const timestamp = Date.parse(event?.created_at || '')
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
+
+async function handleSelect(path) {
+  if (path !== '/events/:eventId') {
+    await router.push(path)
+    return
+  }
+
+  if (route.name === 'event-detail' && route.params.eventId) return
+  if (openingEventDetail.value) return
+
+  openingEventDetail.value = true
+  try {
+    const events = await getEvents()
+    const latestEvent = events.reduce((latest, event) => (
+      !latest || createdAtTimestamp(event) > createdAtTimestamp(latest) ? event : latest
+    ), null)
+
+    if (!latestEvent) {
+      ElMessage.info('暂无风险事件，请先等待风险事件生成')
+      await router.push('/events')
+      return
+    }
+
+    await router.push({ name: 'event-detail', params: { eventId: latestEvent.event_id } })
+  } catch {
+    ElMessage.error('无法读取风险事件，请稍后重试')
+  } finally {
+    openingEventDetail.value = false
+  }
 }
 </script>
 

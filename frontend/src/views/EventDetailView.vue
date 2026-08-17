@@ -39,10 +39,10 @@ const EXPLANATION_STATUS_META = Object.freeze({
   NOT_REQUESTED: { label: '暂无智能体解释', type: 'info' },
   PENDING: { label: '解释生成中', type: 'info' },
   PROCESSING: { label: '解释生成中', type: 'info' },
-  RETRY: { label: '正在重试', type: 'warning' },
+  RETRY: { label: '解释生成重试中', type: 'warning' },
   SUCCESS: { label: '智能体解释', type: 'success' },
   FALLBACK: { label: '模板降级解释', type: 'warning' },
-  FAILED: { label: '解释失败', type: 'danger' },
+  FAILED: { label: '解释生成失败', type: 'danger' },
 })
 let pollTimer = null
 let explanationPollTimer = null
@@ -67,13 +67,11 @@ const explanationStatusMeta = computed(() => (
 ))
 
 const explanationGeneratedBy = computed(() => (
-  explanation.value?.explanation?.generated_by || explanation.value?.generated_by || '未提供'
+  explanation.value?.explanation?.generated_by || '未提供'
 ))
 
 const explanationFallbackUsed = computed(() => (
-  explanation.value?.status === 'FALLBACK'
-  || explanation.value?.explanation?.fallback_used === true
-  || explanation.value?.fallback_used === true
+  explanation.value?.explanation?.fallback_used === true
 ))
 
 const selectedObservations = computed(() => {
@@ -208,7 +206,7 @@ function schedulePoll(activeSession) {
 
 function scheduleExplanationPoll(activeSession) {
   clearExplanationPollTimer()
-  if (activeSession !== sessionId || runtime.mode === 'mock' || EXPLANATION_TERMINAL_STATUSES.has(explanation.value?.status)) return
+  if (activeSession !== sessionId || EXPLANATION_TERMINAL_STATUSES.has(explanation.value?.status)) return
   explanationPollTimer = window.setTimeout(() => {
     explanationPollTimer = null
     void refreshExplanation(activeSession)
@@ -228,9 +226,9 @@ async function refreshExplanation(activeSession, initial = false) {
     else clearExplanationPollTimer()
   } catch (err) {
     if (activeSession !== sessionId) return
-    explanationError.value = err?.message || '智能体解释读取失败'
-    explanationState.value = runtime.mode === 'auto' ? 'retrying' : 'failed'
-    if (runtime.mode !== 'mock') scheduleExplanationPoll(activeSession)
+    explanationError.value = '智能体解释暂时读取失败，将自动重试'
+    explanationState.value = 'retrying'
+    scheduleExplanationPoll(activeSession)
   }
 }
 
@@ -244,7 +242,6 @@ async function refreshEvent(activeSession, initial = false) {
     if (activeSession !== sessionId) return
     event.value = nextEvent
     void syncAsset(nextEvent, activeSession)
-    if (initial) void refreshExplanation(activeSession, true)
     error.value = ''
     syncWarning.value = ''
     if (isTerminal(nextEvent)) {
@@ -290,6 +287,7 @@ function startEventSession() {
   submittingIntervention.value = false
   interventionRequested.value = false
   void refreshEvent(activeSession, true)
+  void refreshExplanation(activeSession, true)
 }
 
 function stopEventSession() {
@@ -375,16 +373,16 @@ onBeforeUnmount(stopEventSession)
 
       <section class="content-card agent-explanation-card" data-testid="agent-explanation-panel">
         <div class="card-heading">
-          <div><span class="section-kicker">Agent Explanation</span><h2>智能体风险解释</h2></div>
+          <div><span class="section-kicker">Agent Explanation</span><h2>智能体解释</h2></div>
           <el-tag v-if="explanation" :type="explanationStatusMeta.type" effect="plain" data-testid="agent-explanation-status">
             {{ explanationStatusMeta.label }}
           </el-tag>
         </div>
         <el-alert v-if="explanationError" :title="explanationError" type="warning" show-icon :closable="false" data-testid="agent-explanation-error" />
         <el-alert v-else-if="!explanation || ['PENDING', 'PROCESSING'].includes(explanation.status)" title="解释生成中" type="info" show-icon :closable="false" data-testid="agent-explanation-pending" />
-        <el-alert v-else-if="explanation.status === 'RETRY'" title="正在重试" type="warning" show-icon :closable="false" data-testid="agent-explanation-retry" />
+        <el-alert v-else-if="explanation.status === 'RETRY'" title="解释生成重试中" type="warning" show-icon :closable="false" data-testid="agent-explanation-retry" />
         <el-alert v-else-if="explanation.status === 'NOT_REQUESTED'" title="暂无智能体解释" type="info" show-icon :closable="false" data-testid="agent-explanation-not-requested" />
-        <el-alert v-else-if="explanation.status === 'FAILED'" :title="`解释失败，但风险事件与 Evidence 仍正常展示。${explanation.error_code ? `（${explanation.error_code}）` : ''}`" type="error" show-icon :closable="false" data-testid="agent-explanation-failed" />
+        <el-alert v-else-if="explanation.status === 'FAILED'" title="解释生成失败，但风险事件与 Evidence 仍正常展示。" type="error" show-icon :closable="false" data-testid="agent-explanation-failed" />
         <div v-else-if="explanation.explanation" class="agent-explanation-content" data-testid="agent-explanation-content">
           <h3>{{ explanation.explanation.summary }}</h3>
           <ul>

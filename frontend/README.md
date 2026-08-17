@@ -62,6 +62,8 @@ VITE_AUTHORIZED_CLIP_URL=
 
 前端仅对接设备状态、告警处理任务、风险事件、事件详情、干预和家属反馈接口。
 
+事件详情的智能体解释只读取 `GET /api/v1/events/{event_id}/explanation`。解释在所有数据模式下均以后端结果为准，不使用前端固定 JSON 降级；浏览器不会调用同路径的补偿 POST，也不配置或发送 `X-Control-Token`。解释响应会先投影为展示所需字段，未知扩展字段不会进入组件状态或浏览器存储。
+
 每个事件和回放必须显示 `LIVE_DEVICE`、`RECORDED_REPLAY`、`PUBLIC_DATASET` 或 `MOCK`；模拟内容必须带“模拟实验回放”水印。
 
 ### 四对象 v1.0 契约
