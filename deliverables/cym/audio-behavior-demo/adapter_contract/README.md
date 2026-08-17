@@ -2,12 +2,14 @@
 
 本目录提供两个独立入口。它们只调用 `src/behavior_adapter.py` 和
 `src/audio_evidence.py` 的已有构造函数，不写数据库、不调用风险引擎、不输出
-`risk_level`。
+`risk_level`。公共合同唯一来源是仓库根目录的
+`contracts/v1/algorithm.py`；适配器不再定义第二套 `AlgorithmJob` 或
+`AdapterBatch`。
 
 ## 入口和配置
 
 ```ini
-PYTHONPATH=deliverables/cym/audio-behavior-demo/src
+PYTHONPATH=.;deliverables/cym/audio-behavior-demo/src
 YINGMU_TRAJECTORY_ADAPTER=adapters.trajectory_adapter:run
 YINGMU_LANGUAGE_ADAPTER=adapters.language_adapter:run
 ```
@@ -18,8 +20,17 @@ YINGMU_LANGUAGE_ADAPTER=adapters.language_adapter:run
 async def run(job: AlgorithmJob) -> AdapterBatch
 ```
 
-`AlgorithmJob` 可以直接传 Python `dict`，也可以传
-`adapters.contract.AlgorithmJob`。返回值是 JSON-compatible `dict`，顶层固定
+入口签名严格为：
+
+```python
+from contracts.v1.algorithm import AdapterBatch, AlgorithmJob
+
+async def run(job: AlgorithmJob) -> AdapterBatch:
+    ...
+```
+
+后端注册器传入仓库公共 `AlgorithmJob`，入口返回仓库公共 `AdapterBatch`。
+顶层固定
 包含 `schema_version=adapter-batch/1.0`、`job_id`、`module`、
 `adapter_version`、`status`、`started_at`、`completed_at`、`observations`、
 `evidences`、`diagnostics` 和 `error`。
@@ -34,7 +45,7 @@ python -c "import asyncio,json; from adapters.trajectory_adapter import run; j=j
 python -c "import asyncio,json; from adapters.language_adapter import run; j=json.load(open('deliverables/cym/audio-behavior-demo/adapter_contract/algorithm_job.language.json',encoding='utf-8')); print(json.dumps(asyncio.run(run(j)),ensure_ascii=False,indent=2))"
 ```
 
-依赖沿用 Demo 的 `requirements.txt`：行为入口需要 Python、OpenCV 和已有行为
+依赖沿用 Demo 的 `requirements.txt`，并要求从仓库根目录启动：行为入口需要 Python、OpenCV 和已有行为
 模块；语言文本测试只需要 Python，真实音频还需要 `openai-whisper` 和系统
 `FFmpeg`。缺少 Whisper 或 FFmpeg 时返回 `FAILED`，不会伪造转写。
 
@@ -59,12 +70,12 @@ python -c "import asyncio,json; from adapters.language_adapter import run; j=jso
 ## 状态和边界
 
 - `SUCCESS`：完成处理并产生至少一条 Evidence；
-- `NO_EVIDENCE`：正常完成但本段没有风险 Evidence，允许 `evidences=[]`；
+- `NO_EVIDENCE`：正常完成但本段没有风险 Evidence，必须保留至少一条 Observation，且 `evidences=[]`；
 - `LOW_QUALITY`：行为检出比例低于 0.65，或音频质量低于 0.45；
 - `FAILED`：输入、依赖或处理异常，且 `observations=[]`、`evidences=[]`，必须有
   标准 `AdapterError`。
 
-语言回应写入 `diagnostics.resident_response`，其中 `intent` 只会是
+语言回应写入 AdapterBatch 顶层 `resident_response_candidate`，其中 `intent` 只会是
 `STABLE`、`HELP`、`UNCERTAIN`，`transcript_observation_id` 必须指向本批次的
 `asr_transcript_redacted` Observation。无回应不直接判定跌倒。
 

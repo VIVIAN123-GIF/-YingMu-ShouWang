@@ -9,5 +9,5 @@
   "observations": [],
   "evidences": [],
   "diagnostics": {"input_format": "UNKNOWN"},
-  "error": {"code": "LANGUAGE_INPUT_ERROR", "message": "音频文件不存在或格式不支持", "retryable": false, "details": {}}
+  "error": {"code": "LANGUAGE_INPUT_ERROR", "message": "音频文件不存在或格式不支持", "retryable": false}
 }
