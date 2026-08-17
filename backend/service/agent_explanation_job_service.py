@@ -16,7 +16,7 @@ from backend.service.agent_explanation_service import (
     build_default_agent_explanation_service,
 )
 from backend.service.errors import ServiceError
-from backend.service.serialization import aware, dumps, loads
+from backend.service.serialization import aware, dumps, loads, utc_naive_to_cn
 from contracts.v1.agent import (
     AgentBaselineStatus,
     AgentEvidenceItem,
@@ -127,8 +127,8 @@ def job_dict(row: AgentExplanationJob) -> dict[str, Any]:
         "fallback_used": row.fallback_used,
         "attempt_count": row.attempt_count,
         "error_code": row.error_code,
-        "created_at": aware(row.created_at),
-        "completed_at": aware(row.completed_at) if row.completed_at else None,
+        "created_at": utc_naive_to_cn(row.created_at),
+        "completed_at": utc_naive_to_cn(row.completed_at) if row.completed_at else None,
     }
 
 

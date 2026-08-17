@@ -2,18 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import InterventionResult, RiskEvent
 from backend.service.risk_service import evaluate, ruleset
-from backend.service.serialization import aware
-
-
-def utcnow_naive() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+from backend.service.serialization import aware, cn_now_naive
 
 
 async def _is_due(db: AsyncSession, event: RiskEvent, now: datetime) -> bool:
@@ -54,7 +50,7 @@ async def advance_one_due_event(
     *,
     now: datetime | None = None,
 ) -> dict | None:
-    current = now or utcnow_naive()
+    current = now or cn_now_naive()
     events = (await db.execute(
         select(RiskEvent)
         .where(RiskEvent.status.in_(("INTERVENING", "OBSERVING")))
