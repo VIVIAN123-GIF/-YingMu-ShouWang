@@ -14,10 +14,13 @@ from pathlib import Path
 from audio_evidence import ADAPTER_VERSION, build_audio_batch
 
 from .contract import (
+    AdapterBatch,
+    AlgorithmModule,
     AlgorithmJob,
     ContractValidationError,
     build_batch,
     error,
+    job_payload,
     now_timestamp,
     validate_job,
 )
@@ -100,19 +103,19 @@ def _response_diagnostic(observations: list[dict]) -> dict:
     }
 
 
-async def run(job: AlgorithmJob | dict) -> dict:
-    """Execute the language adapter and return an ``adapter-batch/1.0`` dict."""
+async def run(job: AlgorithmJob) -> AdapterBatch:
+    """Execute the language adapter using the repository's frozen contract."""
     started_at = now_timestamp()
     try:
         checked_job = validate_job(job)
-        if checked_job.requested_modules and "LANGUAGE" not in checked_job.requested_modules:
+        if checked_job.requested_modules and AlgorithmModule.LANGUAGE not in checked_job.requested_modules:
             raise ValueError("LANGUAGE is not listed in requested_modules")
         transcript, input_format, quality_metrics = await asyncio.to_thread(_load_transcript, checked_job)
         completed_at = now_timestamp()
         inner = build_audio_batch(
-            checked_job.to_dict(), transcript,
+            job_payload(checked_job), transcript,
             resident_id=checked_job.resident_id,
-            source_mode=checked_job.source_mode,
+            source_mode=checked_job.source_mode.value,
             location=checked_job.location,
             simulated=checked_job.simulated,
             quality_metrics=quality_metrics,
@@ -127,16 +130,17 @@ async def run(job: AlgorithmJob | dict) -> dict:
         )
         quality = float(quality_observation["feature_value"]) if quality_observation else 0.0
         status = "LOW_QUALITY" if quality < LOW_QUALITY_THRESHOLD else ("SUCCESS" if evidences else "NO_EVIDENCE")
+        response_candidate = _response_diagnostic(observations)
         diagnostics = {
             "input_format": input_format,
             "audio_quality": round(quality, 4),
             "core_algorithm": "audio_evidence.py",
-            "resident_response": _response_diagnostic(observations),
         }
         return build_batch(
             checked_job, module="LANGUAGE", status=status,
             adapter_version=ADAPTER_VERSION, started_at=started_at, completed_at=completed_at,
             observations=observations, evidences=evidences, diagnostics=diagnostics,
+            resident_response_candidate=response_candidate,
         )
     except (ContractValidationError, FileNotFoundError, ValueError, OSError, RuntimeError, json.JSONDecodeError) as exc:
         code = "LANGUAGE_INPUT_ERROR"

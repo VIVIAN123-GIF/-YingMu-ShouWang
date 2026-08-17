@@ -18,10 +18,13 @@ from pathlib import Path
 from behavior_adapter import ADAPTER_VERSION, build_behavior_batch
 
 from .contract import (
+    AdapterBatch,
+    AlgorithmModule,
     AlgorithmJob,
     ContractValidationError,
     build_batch,
     error,
+    job_payload,
     now_timestamp,
     validate_job,
 )
@@ -79,7 +82,7 @@ def _csv_summary(path: Path, job: AlgorithmJob) -> dict:
     return {
         "schema_version": "1.0",
         "input_type": "CSV",
-        "source_mode": job.source_mode,
+        "source_mode": job.source_mode.value,
         "simulated": job.simulated,
         "frames_processed": len(rows),
         "detected_frames": detected,
@@ -98,9 +101,9 @@ def _load_json_summary(path: Path, job: AlgorithmJob) -> dict:
     if not isinstance(summary, dict):
         raise ValueError("trajectory JSON must contain an object or a summary object")
     summary = dict(summary)
-    summary["source_mode"] = job.source_mode
+    summary["source_mode"] = job.source_mode.value
     summary["simulated"] = job.simulated
-    summary["captured_at"] = job.captured_at
+    summary["captured_at"] = job.captured_at.isoformat()
     return summary
 
 
@@ -146,19 +149,19 @@ def awaitable_video(path: Path, job: AlgorithmJob) -> dict:
     return _run_video(path, job)
 
 
-async def run(job: AlgorithmJob | dict) -> dict:
-    """Execute the trajectory adapter and return an ``adapter-batch/1.0`` dict."""
+async def run(job: AlgorithmJob) -> AdapterBatch:
+    """Execute the trajectory adapter using the repository's frozen contract."""
     started_at = now_timestamp()
     try:
         checked_job = validate_job(job)
-        if checked_job.requested_modules and "TRAJECTORY" not in checked_job.requested_modules:
+        if checked_job.requested_modules and AlgorithmModule.TRAJECTORY not in checked_job.requested_modules:
             raise ValueError("TRAJECTORY is not listed in requested_modules")
         summary, input_format = await asyncio.to_thread(_load_summary, checked_job)
-        summary["source_mode"] = checked_job.source_mode
+        summary["source_mode"] = checked_job.source_mode.value
         summary["simulated"] = checked_job.simulated
-        summary["captured_at"] = checked_job.captured_at
+        summary["captured_at"] = checked_job.captured_at.isoformat()
         inner = build_behavior_batch(
-            checked_job.to_dict(), summary,
+            job_payload(checked_job), summary,
             resident_id=checked_job.resident_id,
             location=checked_job.location,
             started_at=started_at,
