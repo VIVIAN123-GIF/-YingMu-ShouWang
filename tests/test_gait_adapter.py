@@ -12,6 +12,7 @@ from contracts.v1.algorithm import (
     validate_batch_for_job,
 )
 from contracts.v1.gait_adapter import FROZEN_FEATURES, run
+from contracts.v1.gait_video import _derive_gait_features
 from backend.service.adapter_registry import AdapterRegistry
 
 
@@ -153,6 +154,69 @@ def test_gait_adapter_registry_invocation(monkeypatch, tmp_path: Path):
     assert batch.module == AlgorithmModule.GAIT
     assert batch.status == "SUCCESS"
     assert batch.error is None
+
+
+def test_gait_adapter_extracts_features_from_mp4(monkeypatch, tmp_path: Path):
+    video_path = tmp_path / "authorized-replay.mp4"
+    video_path.write_bytes(b"test-video-placeholder")
+
+    def fake_extract(path: Path):
+        assert path == video_path
+        return (
+            {
+                "rise_duration_s": 1.2,
+                "trunk_sway_angle_deg": 14.0,
+                "step_speed_norm_s": 0.8,
+                "step_asymmetry_ratio": 0.4,
+                "valid_frame_ratio": 0.9,
+            },
+            {
+                "feature_source_type": "video",
+                "frames_processed": 120,
+                "pose_frames": 108,
+            },
+        )
+
+    monkeypatch.setattr("contracts.v1.gait_adapter.extract_gait_features", fake_extract)
+    batch = asyncio.run(run(_job(video_path)))
+
+    assert batch.status == "SUCCESS"
+    assert batch.diagnostics["feature_source_type"] == "video"
+    assert batch.diagnostics["frames_processed"] == 120
+    assert {item.feature_name for item in batch.observations} == {
+        "rise_duration_s",
+        "trunk_sway_angle_deg",
+        "step_speed_norm_s",
+        "step_asymmetry_ratio",
+        "valid_frame_ratio",
+    }
+
+
+def test_video_pose_rows_are_converted_to_frozen_features():
+    rows = [
+        {
+            "timestamp_ms": float(index * 500),
+            "pelvis_x": 0.45 + index * 0.01,
+            "pelvis_y": 0.70 - index * 0.02,
+            "trunk_angle_deg": float(index * 3),
+            "left_stride_extent": 0.12,
+            "right_stride_extent": 0.08,
+            "support_distance": 0.20,
+            "core_visibility_mean": 0.92,
+        }
+        for index in range(8)
+    ]
+
+    features, diagnostics = _derive_gait_features(
+        rows, total_frames=10, fps=2.0, duration_s=5.0,
+    )
+
+    assert set(features).issubset(FROZEN_FEATURES)
+    assert features["valid_frame_ratio"] == 0.8
+    assert features["step_asymmetry_ratio"] > 0
+    assert features["support_distance_norm"] == 0.2
+    assert features["turn_angular_velocity_deg_s"] > 0
+    assert diagnostics["feature_source_type"] == "video"
 
 
 def test_gait_adapter_no_evidence(tmp_path: Path):
