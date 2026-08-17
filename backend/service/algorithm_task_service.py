@@ -9,7 +9,11 @@ from typing import Any
 from sqlalchemy import and_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.config import YINGMU_LOCATION, YINGMU_SCENE_CONFIG_ID
+from backend.config import (
+    YINGMU_ALGORITHM_TIMEOUT_SECONDS,
+    YINGMU_LOCATION,
+    YINGMU_SCENE_CONFIG_ID,
+)
 from backend.db.models import AlarmProcessingTask, Asset
 from backend.schemas.evidence import EvidenceCreate
 from backend.schemas.observation import ObservationCreate
@@ -201,7 +205,7 @@ async def process_algorithm_task(
             camera_position_id=asset.camera_position_id or "unconfigured-camera-position",
             scene_config_id=YINGMU_SCENE_CONFIG_ID,
             requested_modules=modules,
-            deadline_ms=8000,
+            deadline_ms=round(YINGMU_ALGORITHM_TIMEOUT_SECONDS * 1000),
         )
         registry.load_configured()
         missing = [module for module in modules if registry.get(module) is None]
