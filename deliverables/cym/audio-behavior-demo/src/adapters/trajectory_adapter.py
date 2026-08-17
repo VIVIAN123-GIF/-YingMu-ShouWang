@@ -16,10 +16,9 @@ from collections import Counter
 from pathlib import Path
 
 from behavior_adapter import ADAPTER_VERSION, build_behavior_batch
+from contracts.v1.algorithm import AdapterBatch, AlgorithmJob, validate_batch_for_job
 
 from .contract import (
-    AdapterBatch,
-    AlgorithmJob,
     ContractValidationError,
     build_batch,
     error,
@@ -148,7 +147,7 @@ def awaitable_video(path: Path, job: AlgorithmJob) -> dict:
 
 
 async def run(job: AlgorithmJob) -> AdapterBatch:
-    """Execute the trajectory adapter and return an ``adapter-batch/1.0`` dict."""
+    """Execute the trajectory adapter through the canonical Worker contract."""
     started_at = now_timestamp()
     try:
         checked_job = validate_job(job)
@@ -171,7 +170,7 @@ async def run(job: AlgorithmJob) -> AdapterBatch:
         detected = int(summary.get("detected_frames", 0))
         quality = detected / frames if frames else 0.0
         status = "LOW_QUALITY" if quality < TRACKING_QUALITY_THRESHOLD else ("SUCCESS" if evidences else "NO_EVIDENCE")
-        return build_batch(
+        batch = build_batch(
             checked_job, module="TRAJECTORY", status=status,
             adapter_version=ADAPTER_VERSION, started_at=started_at, completed_at=now_timestamp(),
             observations=observations, evidences=evidences,
@@ -184,10 +183,12 @@ async def run(job: AlgorithmJob) -> AdapterBatch:
                 "core_algorithm": "behavior_demo.py",
             },
         )
+        return validate_batch_for_job(AdapterBatch.model_validate(batch), job)
     except (ContractValidationError, FileNotFoundError, ValueError, json.JSONDecodeError, OSError, RuntimeError) as exc:
-        return build_batch(
+        batch = build_batch(
             job, module="TRAJECTORY", status="FAILED", adapter_version=ADAPTER_VERSION,
             started_at=started_at, completed_at=now_timestamp(), observations=[], evidences=[],
             diagnostics={"input_format": "UNKNOWN"},
             batch_error=error("TRAJECTORY_INPUT_ERROR", str(exc), retryable=isinstance(exc, OSError)),
         )
+        return validate_batch_for_job(AdapterBatch.model_validate(batch), job)

@@ -12,10 +12,9 @@ import shutil
 from pathlib import Path
 
 from audio_evidence import ADAPTER_VERSION, build_audio_batch
+from contracts.v1.algorithm import AdapterBatch, AlgorithmJob, validate_batch_for_job
 
 from .contract import (
-    AdapterBatch,
-    AlgorithmJob,
     ContractValidationError,
     build_batch,
     error,
@@ -102,7 +101,7 @@ def _response_diagnostic(observations: list[dict]) -> dict:
 
 
 async def run(job: AlgorithmJob) -> AdapterBatch:
-    """Execute the language adapter and return an ``adapter-batch/1.0`` dict."""
+    """Execute the language adapter through the canonical Worker contract."""
     started_at = now_timestamp()
     try:
         checked_job = validate_job(job)
@@ -135,21 +134,23 @@ async def run(job: AlgorithmJob) -> AdapterBatch:
             "core_algorithm": "audio_evidence.py",
             "resident_response": resident_response,
         }
-        return build_batch(
+        batch = build_batch(
             checked_job, module="LANGUAGE", status=status,
             adapter_version=ADAPTER_VERSION, started_at=started_at, completed_at=completed_at,
             observations=observations, evidences=evidences, diagnostics=diagnostics,
             resident_response_candidate=resident_response,
         )
+        return validate_batch_for_job(AdapterBatch.model_validate(batch), job)
     except (ContractValidationError, FileNotFoundError, ValueError, OSError, RuntimeError, json.JSONDecodeError) as exc:
         code = "LANGUAGE_INPUT_ERROR"
         if "FFmpeg" in str(exc):
             code = "FFMPEG_UNAVAILABLE"
         elif "Whisper" in str(exc) or "whisper" in str(exc):
             code = "WHISPER_UNAVAILABLE"
-        return build_batch(
+        batch = build_batch(
             job, module="LANGUAGE", status="FAILED", adapter_version=ADAPTER_VERSION,
             started_at=started_at, completed_at=now_timestamp(), observations=[], evidences=[],
             diagnostics={"input_format": "UNKNOWN"},
             batch_error=error(code, str(exc), retryable=code in {"FFMPEG_UNAVAILABLE", "WHISPER_UNAVAILABLE"}),
         )
+        return validate_batch_for_job(AdapterBatch.model_validate(batch), job)
