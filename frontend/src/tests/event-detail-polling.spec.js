@@ -2,10 +2,11 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getAssetMock, getEventMock, getEventExplanationMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
+const { getAssetMock, getEventMock, getEventExplanationMock, interveneEventMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
   getAssetMock: vi.fn(),
   getEventMock: vi.fn(),
   getEventExplanationMock: vi.fn(),
+  interveneEventMock: vi.fn(),
   runtimeMock: { mode: 'api' },
   submitInterventionResultMock: vi.fn(),
 }))
@@ -14,6 +15,7 @@ vi.mock('../services/repository', () => ({
   getAsset: getAssetMock,
   getEvent: getEventMock,
   getEventExplanation: getEventExplanationMock,
+  interveneEvent: interveneEventMock,
   runtime: runtimeMock,
   submitInterventionResult: submitInterventionResultMock,
 }))
@@ -109,6 +111,7 @@ describe('事件详情 API 自动同步', () => {
       },
     })
     submitInterventionResultMock.mockReset()
+    interveneEventMock.mockReset()
   })
 
   afterEach(() => vi.useRealTimers())
@@ -240,6 +243,29 @@ describe('事件详情 API 自动同步', () => {
     expect(wrapper.text()).toContain('坐稳确认已记录')
     expect(wrapper.text()).toContain('正在干预')
     expect(wrapper.text()).toContain('不会直接关闭事件')
+    wrapper.unmount()
+  })
+
+  it('发起干预只调用后端干预动作并展示返回的工具结果', async () => {
+    const current = apiEvent('INTERVENING')
+    getEventMock.mockResolvedValueOnce(current)
+    interveneEventMock.mockResolvedValueOnce({
+      schema_version: '1.0', result_id: 'result-intervene-1', event_id: current.event_id,
+      started_at: '2026-07-31T03:07:10+08:00', completed_at: '2026-07-31T03:07:10+08:00',
+      action_type: 'voice', tool_name: 'mock_voice', delivery_status: 'SUCCESS', resident_response: null,
+      family_feedback: null, risk_after: null, resolved: false, resolution_reason: 'Declared Mock fallback',
+      operator: 'system', source_mode: 'MOCK', simulated: true,
+    })
+    const { wrapper } = await mountView()
+
+    await wrapper.get('[data-testid="intervention-submit"]').trigger('click')
+    await flushPromises()
+
+    expect(interveneEventMock).toHaveBeenCalledWith(current.event_id)
+    expect(submitInterventionResultMock).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('干预请求已提交')
+    expect(wrapper.text()).toContain('mock_voice')
+    expect(wrapper.text()).toContain('正在干预')
     wrapper.unmount()
   })
 })

@@ -8,7 +8,7 @@ import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
-import { getAsset, getEvent, getEventExplanation, runtime, submitInterventionResult } from '../services/repository'
+import { getAsset, getEvent, getEventExplanation, interveneEvent, runtime, submitInterventionResult } from '../services/repository'
 import { domainLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const route = useRoute()
@@ -29,10 +29,21 @@ const residentResponseRecorded = ref(false)
 const explanation = ref(null)
 const explanationError = ref('')
 const explanationState = ref('loading')
+const submittingIntervention = ref(false)
+const interventionRequested = ref(false)
 
 const POLL_INTERVAL_MS = 1500
 const TERMINAL_STATUSES = new Set(['RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
-const EXPLANATION_TERMINAL_STATUSES = new Set(['NOT_REQUESTED', 'SUCCESS', 'FALLBACK', 'FAILED'])
+const EXPLANATION_TERMINAL_STATUSES = new Set(['SUCCESS', 'FALLBACK', 'FAILED'])
+const EXPLANATION_STATUS_META = Object.freeze({
+  NOT_REQUESTED: { label: '暂无智能体解释', type: 'info' },
+  PENDING: { label: '解释生成中', type: 'info' },
+  PROCESSING: { label: '解释生成中', type: 'info' },
+  RETRY: { label: '解释生成重试中', type: 'warning' },
+  SUCCESS: { label: '智能体解释', type: 'success' },
+  FALLBACK: { label: '模板降级解释', type: 'warning' },
+  FAILED: { label: '解释生成失败', type: 'danger' },
+})
 let pollTimer = null
 let explanationPollTimer = null
 let sessionId = 0
@@ -50,6 +61,18 @@ const syncTagType = computed(() => ({
   complete: 'success',
   idle: 'info',
 }[syncState.value] || 'primary'))
+
+const explanationStatusMeta = computed(() => (
+  EXPLANATION_STATUS_META[explanation.value?.status] || { label: '解释生成中', type: 'info' }
+))
+
+const explanationGeneratedBy = computed(() => (
+  explanation.value?.explanation?.generated_by || '未提供'
+))
+
+const explanationFallbackUsed = computed(() => (
+  explanation.value?.explanation?.fallback_used === true
+))
 
 const selectedObservations = computed(() => {
   const ids = new Set(selectedEvidence.value?.observation_ids || [])
@@ -183,7 +206,7 @@ function schedulePoll(activeSession) {
 
 function scheduleExplanationPoll(activeSession) {
   clearExplanationPollTimer()
-  if (activeSession !== sessionId || runtime.mode === 'mock' || EXPLANATION_TERMINAL_STATUSES.has(explanation.value?.status)) return
+  if (activeSession !== sessionId || EXPLANATION_TERMINAL_STATUSES.has(explanation.value?.status)) return
   explanationPollTimer = window.setTimeout(() => {
     explanationPollTimer = null
     void refreshExplanation(activeSession)
@@ -203,9 +226,9 @@ async function refreshExplanation(activeSession, initial = false) {
     else clearExplanationPollTimer()
   } catch (err) {
     if (activeSession !== sessionId) return
-    explanationError.value = err?.message || '智能体解释读取失败'
-    explanationState.value = runtime.mode === 'auto' ? 'retrying' : 'failed'
-    if (runtime.mode !== 'mock') scheduleExplanationPoll(activeSession)
+    explanationError.value = '智能体解释暂时读取失败，将自动重试'
+    explanationState.value = 'retrying'
+    scheduleExplanationPoll(activeSession)
   }
 }
 
@@ -219,7 +242,6 @@ async function refreshEvent(activeSession, initial = false) {
     if (activeSession !== sessionId) return
     event.value = nextEvent
     void syncAsset(nextEvent, activeSession)
-    if (initial) void refreshExplanation(activeSession, true)
     error.value = ''
     syncWarning.value = ''
     if (isTerminal(nextEvent)) {
@@ -262,7 +284,10 @@ function startEventSession() {
   assetMessage.value = ''
   submittingResidentResponse.value = false
   residentResponseRecorded.value = false
+  submittingIntervention.value = false
+  interventionRequested.value = false
   void refreshEvent(activeSession, true)
+  void refreshExplanation(activeSession, true)
 }
 
 function stopEventSession() {
@@ -286,6 +311,24 @@ async function confirmResidentStable() {
     ElMessage.error(`确认提交失败：${err.message}`)
   } finally {
     submittingResidentResponse.value = false
+  }
+}
+
+async function requestIntervention() {
+  if (!event.value || submittingIntervention.value || interventionRequested.value) return
+  submittingIntervention.value = true
+  try {
+    const result = await interveneEvent(event.value.event_id)
+    const interventions = event.value.interventions || (event.value.interventions = [])
+    const existingIndex = interventions.findIndex((item) => item.result_id === result.result_id)
+    if (existingIndex >= 0) interventions.splice(existingIndex, 1, result)
+    else interventions.push(result)
+    interventionRequested.value = true
+    ElMessage.success('干预请求已由后端受理')
+  } catch (err) {
+    ElMessage.error(`干预请求失败：${err.message}`)
+  } finally {
+    submittingIntervention.value = false
   }
 }
 
@@ -326,26 +369,32 @@ onBeforeUnmount(stopEventSession)
       <MediaPanel v-if="assetState === 'ready'" :asset="asset" :source-mode="event.source_mode" :simulated="event.simulated" />
       <el-alert v-else-if="assetState === 'missing'" :title="assetMessage" type="warning" show-icon :closable="false" data-testid="asset-status" />
       <el-alert v-else-if="assetState === 'failed'" :title="assetMessage" type="error" show-icon :closable="false" data-testid="asset-status" />
+      <el-alert v-else-if="assetState === 'idle'" title="暂无可追溯视频" type="info" show-icon :closable="false" data-testid="asset-status" />
 
       <section class="content-card agent-explanation-card" data-testid="agent-explanation-panel">
         <div class="card-heading">
-          <div><span class="section-kicker">Agent Explanation</span><h2>智能体风险解释</h2></div>
-          <el-tag v-if="explanation" :type="explanation.status === 'FAILED' ? 'danger' : explanation.status === 'FALLBACK' ? 'warning' : explanation.status === 'SUCCESS' ? 'success' : 'info'" effect="plain">
-            {{ explanation.status }}
+          <div><span class="section-kicker">Agent Explanation</span><h2>智能体解释</h2></div>
+          <el-tag v-if="explanation" :type="explanationStatusMeta.type" effect="plain" data-testid="agent-explanation-status">
+            {{ explanationStatusMeta.label }}
           </el-tag>
         </div>
         <el-alert v-if="explanationError" :title="explanationError" type="warning" show-icon :closable="false" data-testid="agent-explanation-error" />
-        <el-alert v-else-if="!explanation || ['PENDING', 'PROCESSING', 'RETRY'].includes(explanation.status)" title="智能体解释生成中，请稍候。" type="info" show-icon :closable="false" data-testid="agent-explanation-pending" />
-        <el-alert v-else-if="explanation.status === 'NOT_REQUESTED'" title="当前事件尚未请求智能体解释。" type="info" show-icon :closable="false" data-testid="agent-explanation-not-requested" />
-        <el-alert v-else-if="explanation.status === 'FAILED'" :title="explanation.error_code || '智能体解释生成失败，不影响风险事件本身。'" type="error" show-icon :closable="false" data-testid="agent-explanation-failed" />
+        <el-alert v-else-if="!explanation || ['PENDING', 'PROCESSING'].includes(explanation.status)" title="解释生成中" type="info" show-icon :closable="false" data-testid="agent-explanation-pending" />
+        <el-alert v-else-if="explanation.status === 'RETRY'" title="解释生成重试中" type="warning" show-icon :closable="false" data-testid="agent-explanation-retry" />
+        <el-alert v-else-if="explanation.status === 'NOT_REQUESTED'" title="暂无智能体解释" type="info" show-icon :closable="false" data-testid="agent-explanation-not-requested" />
+        <el-alert v-else-if="explanation.status === 'FAILED'" title="解释生成失败，但风险事件与 Evidence 仍正常展示。" type="error" show-icon :closable="false" data-testid="agent-explanation-failed" />
         <div v-else-if="explanation.explanation" class="agent-explanation-content" data-testid="agent-explanation-content">
           <h3>{{ explanation.explanation.summary }}</h3>
           <ul>
-            <li v-for="point in explanation.explanation.reasoning_points" :key="point">{{ point }}</li>
+            <li v-for="(point, index) in explanation.explanation.reasoning_points" :key="`${index}-${point}`">{{ point }}</li>
           </ul>
           <p><strong>建议：</strong>{{ explanation.explanation.recommended_action_text }}</p>
           <p class="agent-capability-notice">{{ explanation.explanation.capability_notice }}</p>
-          <el-tag v-if="explanation.status === 'FALLBACK' || explanation.explanation.fallback_used" type="warning" effect="plain" data-testid="agent-explanation-fallback">模板降级解释</el-tag>
+          <dl class="detail-list agent-explanation-meta">
+            <div><dt>生成来源</dt><dd data-testid="agent-explanation-generated-by">{{ explanationGeneratedBy }}</dd></div>
+            <div><dt>模板降级</dt><dd data-testid="agent-explanation-fallback-used">{{ explanationFallbackUsed ? '是' : '否' }}</dd></div>
+          </dl>
+          <el-tag v-if="explanationFallbackUsed" type="warning" effect="plain" data-testid="agent-explanation-fallback">模板降级解释</el-tag>
         </div>
       </section>
 
@@ -414,6 +463,21 @@ onBeforeUnmount(stopEventSession)
         </div>
 
         <aside class="event-aside">
+          <section v-if="['OPEN', 'INTERVENING'].includes(event.status)" class="content-card intervention-action-card" data-testid="intervention-action-panel">
+            <div class="card-heading"><div><span class="section-kicker">Intervention</span><h2>后端干预</h2></div></div>
+            <p>由后端选择并执行已批准的干预工具，页面不会根据智能体解释自动触发。</p>
+            <el-button
+              data-testid="intervention-submit"
+              type="warning"
+              size="large"
+              :loading="submittingIntervention"
+              :disabled="interventionRequested"
+              @click="requestIntervention"
+            >
+              {{ interventionRequested ? '干预请求已提交' : '发起干预' }}
+            </el-button>
+          </section>
+
           <section class="content-card tool-card">
             <div class="card-heading"><div><span class="section-kicker">工具结果</span><h2>执行记录</h2></div></div>
             <div v-if="event.interventions?.length" class="tool-results">

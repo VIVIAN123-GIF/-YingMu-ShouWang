@@ -6,7 +6,6 @@ import weeklyMock from '../mocks/weekly.json'
 import deviceMock from '../mocks/device.json'
 import observationsMock from '../mocks/observations.json'
 import baselineMock from '../mocks/baseline.json'
-import agentExplanationMock from '../mocks/agent-explanation.json'
 import { DATA_MODES } from '../domain/constants'
 import {
   validateAgentExplanationJob, validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceStatus, validateEventList, validateEventViewModel, validateInterventionResult,
@@ -198,21 +197,71 @@ export async function getEvent(eventId) {
   }, () => normalizeEvent(hydrateMockEvent(mocks.events.find((event) => event.event_id === eventId) || mocks.events[0])), validateEventViewModel)
 }
 
-function mockAgentExplanation(eventId) {
-  const result = structuredClone(agentExplanationMock)
-  result.event_id = eventId
-  result.request_id = `agent-${eventId}-mock`
-  result.explanation.event_id = eventId
-  result.explanation.request_id = result.request_id
-  return result
-}
-
 export async function getEventExplanation(eventId) {
-  return resolveData('event.explanation.read', async () => {
-    return validateAgentExplanationJob(payload(await apiClient.get(
+  try {
+    const result = validateAgentExplanationJob(payload(await apiClient.get(
       `/events/${encodeURIComponent(eventId)}/explanation`,
     )))
-  }, () => mockAgentExplanation(eventId), validateAgentExplanationJob)
+    recordAudit('event.explanation.read', 'SUCCESS', {
+      event_id: result.event_id,
+      detail: `status=${result.status}`,
+    })
+    return result
+  } catch (error) {
+    recordAudit('event.explanation.read', 'FAILED', {
+      event_id: eventId,
+      detail: 'explanation-read-failed',
+    })
+    throw error
+  }
+}
+
+export async function interveneEvent(eventId) {
+  const encodedEventId = encodeURIComponent(eventId)
+  if (runtime.mode !== 'mock') {
+    try {
+      const result = validateInterventionResult(payload(await apiClient.post(
+        `/events/${encodedEventId}/intervene`, null,
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } },
+      )))
+      runtime.activeSource = 'api'
+      runtime.degraded = false
+      runtime.message = ''
+      recordAudit('intervention.trigger', 'SUCCESS', { event_id: eventId, detail: result.result_id })
+      return result
+    } catch (error) {
+      if (!(runtime.mode === 'auto' && shouldFallback(error))) {
+        recordAudit('intervention.trigger', 'FAILED', { event_id: eventId, detail: error?.message })
+        throw error
+      }
+      runtime.activeSource = 'mock'
+      runtime.degraded = true
+      runtime.message = '后端干预接口暂不可用，本次仅展示 Mock 干预结果'
+      recordAudit('intervention.trigger', 'DEGRADED', { event_id: eventId, detail: error?.message })
+    }
+  }
+
+  const timestamp = new Date().toISOString()
+  const result = validateInterventionResult({
+    schema_version: '1.0',
+    result_id: `result-${eventId}-mock-intervention`,
+    event_id: eventId,
+    started_at: timestamp,
+    completed_at: timestamp,
+    action_type: 'voice',
+    tool_name: 'mock_voice',
+    delivery_status: 'SUCCESS',
+    resident_response: null,
+    family_feedback: null,
+    risk_after: null,
+    resolved: false,
+    resolution_reason: 'Declared Mock fallback',
+    operator: 'system',
+    source_mode: 'MOCK',
+    simulated: true,
+  })
+  recordAudit('intervention.trigger', 'MOCK', { event_id: eventId, detail: result.result_id })
+  return result
 }
 
 export async function getWeeklyReport(residentId = RESIDENT_ID) {
@@ -337,7 +386,7 @@ export async function submitInterventionResult(event, residentResponse = 'stable
   if (runtime.mode !== 'mock') {
     try {
       const result = validateInterventionResult(payload(await apiClient.post(
-        `/events/${event.event_id}/intervene`, null,
+        `/events/${encodeURIComponent(event.event_id)}/results`, requestBody,
         { headers: { 'Idempotency-Key': resultId, 'Content-Type': 'application/json; charset=utf-8' } },
       )))
       runtime.activeSource = 'api'
