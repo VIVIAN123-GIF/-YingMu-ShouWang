@@ -1,12 +1,13 @@
 """Async GaitAdapter entrypoint for backend algorithm jobs.
 
-The adapter accepts a backend AlgorithmJob, reads precomputed gait features
-from a JSON/CSV media locator, and returns a pure adapter batch. It does not
-write storage or evaluate final risk levels.
+The adapter accepts a backend AlgorithmJob, extracts gait features from a
+local video or reads precomputed JSON/CSV features, and returns a pure adapter
+batch. It does not persist media or evaluate final risk levels.
 """
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import hashlib
 import json
@@ -24,6 +25,7 @@ from contracts.v1.algorithm import (
     validate_batch_for_job,
 )
 from contracts.v1.models import Evidence, Observation, RiskDomain, TimeScale
+from contracts.v1.gait_video import GaitVideoError, VIDEO_SUFFIXES, extract_gait_features
 
 
 ADAPTER_VERSION = "gait-adapter-v1"
@@ -85,7 +87,11 @@ def _read_feature_payload(media_locator: str) -> tuple[dict[str, Any], dict[str,
     if not media_locator:
         raise _FeatureInputError("missing_media_locator")
 
-    path = Path(media_locator)
+    if media_locator.startswith("file://"):
+        media_locator = media_locator[7:]
+    if "://" in media_locator:
+        raise _FeatureInputError("only_local_media_supported")
+    path = Path(media_locator).expanduser()
     if not path.exists() or not path.is_file():
         raise _FeatureInputError("media_locator_not_readable")
 
@@ -105,6 +111,12 @@ def _read_feature_payload(media_locator: str) -> tuple[dict[str, Any], dict[str,
         if not features:
             raise _FeatureInputError("feature_payload_empty")
         return features, {"feature_source_type": "csv", "feature_rows": len(rows)}
+
+    if path.suffix.lower() in VIDEO_SUFFIXES:
+        try:
+            return extract_gait_features(path)
+        except GaitVideoError as exc:
+            raise _FeatureInputError(str(exc)) from exc
 
     raise _FeatureInputError("unsupported_media_locator")
 
@@ -292,7 +304,7 @@ def _failed_batch(
 async def run(job: AlgorithmJob) -> AdapterBatch:
     started_at = _now()
     try:
-        features, diagnostics = _read_feature_payload(job.media_locator)
+        features, diagnostics = await asyncio.to_thread(_read_feature_payload, job.media_locator)
         data_quality = _quality(features)
         observations = [
             _observation(job, feature_name, features[feature_name], data_quality)
