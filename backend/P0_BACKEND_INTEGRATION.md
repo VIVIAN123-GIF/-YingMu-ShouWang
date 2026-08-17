@@ -18,13 +18,14 @@ py -3.14 -m backend.worker.agent_worker
 
 ```ini
 YINGMU_GAIT_ADAPTER=contracts.v1.gait_adapter:run
+YINGMU_GAIT_POSE_MODEL=models/pose_landmarker_heavy.task
 YINGMU_TRAJECTORY_ADAPTER=adapters.trajectory_adapter:run
 YINGMU_LANGUAGE_ADAPTER=adapters.language_adapter:run
 YINGMU_SCENE_CONFIG_ID=scene-living-room-v1
 YINGMU_LOCATION=living_room
 ```
 
-入口接收 `AlgorithmJob` 并返回 `AdapterBatch`。入口可为同步或异步函数，后端不会导入算法 Demo 目录。未注册时任务明确结束为 `FAILED / ADAPTER_NOT_REGISTERED`。
+入口接收 `AlgorithmJob` 并返回 `AdapterBatch`。步态入口直接支持本地 MP4/AVI/MOV/MKV/WebM，运行时在内存中提取冻结步态特征，同时继续兼容预计算 JSON/CSV；视频模式需安装 `deliverables/zy/pose-demo/requirements.txt` 并准备由 `YINGMU_GAIT_POSE_MODEL` 指定的 MediaPipe 模型。入口可为同步或异步函数，后端不会导入算法 Demo 目录。未注册时任务明确结束为 `FAILED / ADAPTER_NOT_REGISTERED`。
 
 告警任务状态：
 
