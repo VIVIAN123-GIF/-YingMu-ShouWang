@@ -10,7 +10,7 @@
   "source_mode": "RECORDED_REPLAY",
   "simulated": true,
   "location": "living_room",
-  "camera_position_id": "camera-c6c-demo",
+  "camera_position_id": "audio-capture-local",
   "scene_config_id": "scene-demo-v1",
   "requested_modules": ["LANGUAGE"],
   "deadline_ms": 30000

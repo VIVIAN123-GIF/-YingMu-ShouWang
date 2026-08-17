@@ -6,7 +6,22 @@
   "status": "NO_EVIDENCE",
   "started_at": "2026-08-16T10:01:01+08:00",
   "completed_at": "2026-08-16T10:01:02+08:00",
-  "observations": [],
+  "observations": [{
+    "schema_version": "1.0",
+    "observation_id": "obs-language-sample-no-evidence-transcript",
+    "resident_id": "resident-demo-001",
+    "timestamp": "2026-08-16T10:01:00+08:00",
+    "source": "whisper",
+    "feature_name": "asr_transcript_redacted",
+    "feature_value": "speech_detected=true",
+    "unit": null,
+    "location": "living_room",
+    "confidence": 0.7,
+    "data_quality": 0.8,
+    "source_mode": "RECORDED_REPLAY",
+    "asset_id": "asset-language-sample-no-evidence",
+    "simulated": true
+  }],
   "evidences": [],
   "diagnostics": {"input_format": "REDACTED_TEXT", "audio_quality": 0.8},
   "error": null

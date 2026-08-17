@@ -9,5 +9,5 @@
   "observations": [],
   "evidences": [],
   "diagnostics": {"input_format": "UNKNOWN"},
-  "error": {"code": "TRAJECTORY_INPUT_ERROR", "message": "输入文件不存在或格式不支持", "retryable": false, "details": {}}
+  "error": {"code": "TRAJECTORY_INPUT_ERROR", "message": "输入文件不存在或格式不支持", "retryable": false}
 }

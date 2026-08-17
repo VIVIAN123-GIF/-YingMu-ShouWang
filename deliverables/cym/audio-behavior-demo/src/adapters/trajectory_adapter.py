@@ -16,12 +16,15 @@ from collections import Counter
 from pathlib import Path
 
 from behavior_adapter import ADAPTER_VERSION, build_behavior_batch
-from contracts.v1.algorithm import AdapterBatch, AlgorithmJob, validate_batch_for_job
 
 from .contract import (
+    AdapterBatch,
+    AlgorithmModule,
+    AlgorithmJob,
     ContractValidationError,
     build_batch,
     error,
+    job_payload,
     now_timestamp,
     validate_job,
 )
@@ -79,7 +82,7 @@ def _csv_summary(path: Path, job: AlgorithmJob) -> dict:
     return {
         "schema_version": "1.0",
         "input_type": "CSV",
-        "source_mode": job.source_mode,
+        "source_mode": job.source_mode.value,
         "simulated": job.simulated,
         "frames_processed": len(rows),
         "detected_frames": detected,
@@ -98,9 +101,9 @@ def _load_json_summary(path: Path, job: AlgorithmJob) -> dict:
     if not isinstance(summary, dict):
         raise ValueError("trajectory JSON must contain an object or a summary object")
     summary = dict(summary)
-    summary["source_mode"] = job.source_mode
+    summary["source_mode"] = job.source_mode.value
     summary["simulated"] = job.simulated
-    summary["captured_at"] = job.captured_at
+    summary["captured_at"] = job.captured_at.isoformat()
     return summary
 
 
@@ -147,18 +150,18 @@ def awaitable_video(path: Path, job: AlgorithmJob) -> dict:
 
 
 async def run(job: AlgorithmJob) -> AdapterBatch:
-    """Execute the trajectory adapter through the canonical Worker contract."""
+    """Execute the trajectory adapter using the repository's frozen contract."""
     started_at = now_timestamp()
     try:
         checked_job = validate_job(job)
-        if checked_job.requested_modules and "TRAJECTORY" not in checked_job.requested_modules:
+        if checked_job.requested_modules and AlgorithmModule.TRAJECTORY not in checked_job.requested_modules:
             raise ValueError("TRAJECTORY is not listed in requested_modules")
         summary, input_format = await asyncio.to_thread(_load_summary, checked_job)
-        summary["source_mode"] = checked_job.source_mode
+        summary["source_mode"] = checked_job.source_mode.value
         summary["simulated"] = checked_job.simulated
-        summary["captured_at"] = checked_job.captured_at
+        summary["captured_at"] = checked_job.captured_at.isoformat()
         inner = build_behavior_batch(
-            checked_job.to_dict(), summary,
+            job_payload(checked_job), summary,
             resident_id=checked_job.resident_id,
             location=checked_job.location,
             started_at=started_at,
@@ -170,7 +173,7 @@ async def run(job: AlgorithmJob) -> AdapterBatch:
         detected = int(summary.get("detected_frames", 0))
         quality = detected / frames if frames else 0.0
         status = "LOW_QUALITY" if quality < TRACKING_QUALITY_THRESHOLD else ("SUCCESS" if evidences else "NO_EVIDENCE")
-        batch = build_batch(
+        return build_batch(
             checked_job, module="TRAJECTORY", status=status,
             adapter_version=ADAPTER_VERSION, started_at=started_at, completed_at=now_timestamp(),
             observations=observations, evidences=evidences,
@@ -183,12 +186,10 @@ async def run(job: AlgorithmJob) -> AdapterBatch:
                 "core_algorithm": "behavior_demo.py",
             },
         )
-        return validate_batch_for_job(AdapterBatch.model_validate(batch), job)
     except (ContractValidationError, FileNotFoundError, ValueError, json.JSONDecodeError, OSError, RuntimeError) as exc:
-        batch = build_batch(
+        return build_batch(
             job, module="TRAJECTORY", status="FAILED", adapter_version=ADAPTER_VERSION,
             started_at=started_at, completed_at=now_timestamp(), observations=[], evidences=[],
             diagnostics={"input_format": "UNKNOWN"},
             batch_error=error("TRAJECTORY_INPUT_ERROR", str(exc), retryable=isinstance(exc, OSError)),
         )
-        return validate_batch_for_job(AdapterBatch.model_validate(batch), job)
