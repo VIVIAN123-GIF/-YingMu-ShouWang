@@ -125,3 +125,64 @@ def test_gait_adapter_no_evidence(tmp_path: Path):
     assert batch.observations
     assert batch.evidences == []
     assert batch.error is None
+
+
+def test_gait_adapter_live_video_contract_does_not_expose_paths(tmp_path: Path):
+    video_path = tmp_path / "clip.mp4"
+    video_path.write_bytes(b"fake-video-bytes")
+    model_path = tmp_path / "mediapipe_pose.tflite"
+    model_path.write_bytes(b"model")
+
+    job = AlgorithmJob(
+        job_id="job-gait-live-001",
+        resident_id="resident-live-001",
+        asset_id="asset-live-001",
+        media_type="video",
+        media_locator=str(video_path),
+        model_path=str(model_path),
+        captured_at="2026-08-16T09:30:00+08:00",
+        source_mode="LIVE_DEVICE",
+        simulated=False,
+        location="bedroom",
+    )
+
+    batch = asyncio.run(run(job))
+
+    assert batch.job_id == job.job_id
+    assert batch.observations
+    assert batch.evidences or batch.status in {"NO_EVIDENCE", "LOW_QUALITY", "SUCCESS"}
+    assert all(item.resident_id == job.resident_id for item in batch.observations)
+    assert all(item.source_mode.value == "LIVE_DEVICE" for item in batch.observations)
+    assert all(item.simulated is False for item in batch.observations)
+    assert all(item.resident_id == job.resident_id for item in batch.evidences)
+    for evidence in batch.evidences:
+        assert evidence.observation_ids
+        assert all(any(obs.observation_id == obs_id for obs in batch.observations) for obs_id in evidence.observation_ids)
+    payload = batch.model_dump_json()
+    assert str(video_path) not in payload
+    assert str(model_path) not in payload
+    assert "media_locator" not in payload
+
+
+def test_gait_adapter_missing_model_reports_failed(tmp_path: Path):
+    video_path = tmp_path / "clip.mp4"
+    video_path.write_bytes(b"fake-video-bytes")
+
+    job = AlgorithmJob(
+        job_id="job-gait-failed-001",
+        resident_id="resident-live-002",
+        asset_id="asset-live-002",
+        media_type="video",
+        media_locator=str(video_path),
+        model_path=str(tmp_path / "missing_mediapipe.tflite"),
+        captured_at="2026-08-16T09:30:00+08:00",
+        source_mode="LIVE_DEVICE",
+        simulated=False,
+    )
+
+    batch = asyncio.run(run(job))
+
+    assert batch.status == "FAILED"
+    assert batch.error is not None
+    assert batch.observations == []
+    assert batch.evidences == []
