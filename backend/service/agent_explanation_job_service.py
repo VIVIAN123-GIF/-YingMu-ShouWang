@@ -64,6 +64,15 @@ async def _event_snapshot(
         )
         .order_by(InterventionResult.started_at.desc())
     )).scalars().first()
+    # Represent a resident response as a normalized semantic instead of a transcript.
+    if latest_intervention is not None and latest_intervention.resident_response:
+        semantic = f"resident_response_{latest_intervention.resident_response.lower()}"
+        if semantic in {"resident_response_help", "resident_response_stable"}:
+            evidence_items = evidence_items[:11]
+            evidence_items.append(AgentEvidenceItem(
+                evidence_type="resident_response",
+                explanation=semantic,
+            ))
     intervention_status = AgentInterventionStatus.NOT_STARTED
     if latest_intervention is not None:
         intervention_status = AgentInterventionStatus(latest_intervention.delivery_status)
