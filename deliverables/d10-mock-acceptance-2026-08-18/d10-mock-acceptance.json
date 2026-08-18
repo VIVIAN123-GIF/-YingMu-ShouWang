@@ -1,0 +1,320 @@
+{
+  "status": "PASS",
+  "source_mode": "MOCK",
+  "simulated": true,
+  "event_id": "event-d10-mock-001",
+  "event": {
+    "schema_version": "1.0",
+    "event_id": "event-d10-mock-001",
+    "resident_id": "resident-d10-demo-001",
+    "created_at": "2026-08-18T16:40:25+08:00",
+    "updated_at": "2026-08-18T16:40:27+08:00",
+    "primary_domain": "FALL",
+    "related_domains": [
+      "MENTAL"
+    ],
+    "risk_level": "ORANGE",
+    "risk_score": 0.82,
+    "evidence_ids": [
+      "evi-d10-trunk-sway-001",
+      "evi-d10-unusual-pacing-001"
+    ],
+    "evidence_summary": [
+      {
+        "evidence_id": "evi-d10-trunk-sway-001",
+        "evidence_type": "trunk_sway",
+        "explanation": "脱敏姿态摘要显示躯干摆动高于个人基线。"
+      },
+      {
+        "evidence_id": "evi-d10-unusual-pacing-001",
+        "evidence_type": "unusual_pacing",
+        "explanation": "脱敏行为摘要显示步速节律异常，关联心理健康域。"
+      }
+    ],
+    "time_horizon": "IMMINENT",
+    "recommended_action": "保持坐稳并继续观察。",
+    "intervention_policy": "fall-orange-gentle-v1",
+    "status": "INTERVENING",
+    "ruleset_version": "ruleset-v1.0",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "evidences": [
+      {
+        "schema_version": "1.0",
+        "evidence_id": "evi-d10-trunk-sway-001",
+        "observation_ids": [
+          "obs-d10-fall-001"
+        ],
+        "resident_id": "resident-d10-demo-001",
+        "timestamp": "2026-08-18T16:40:25+08:00",
+        "risk_domain": "FALL",
+        "evidence_type": "trunk_sway",
+        "severity": 0.82,
+        "confidence": 0.94,
+        "data_quality": 0.95,
+        "baseline_value": 0.2,
+        "current_value": 0.82,
+        "baseline_deviation": 3.1,
+        "time_scale": "SHORT",
+        "location": "living_room",
+        "explanation": "脱敏姿态摘要显示躯干摆动高于个人基线。",
+        "adapter_version": "mock-gait-v1",
+        "source_mode": "MOCK",
+        "simulated": true
+      },
+      {
+        "schema_version": "1.0",
+        "evidence_id": "evi-d10-unusual-pacing-001",
+        "observation_ids": [
+          "obs-d10-pacing-001"
+        ],
+        "resident_id": "resident-d10-demo-001",
+        "timestamp": "2026-08-18T16:40:27+08:00",
+        "risk_domain": "MENTAL",
+        "evidence_type": "unusual_pacing",
+        "severity": 0.61,
+        "confidence": 0.9,
+        "data_quality": 0.92,
+        "baseline_value": 0.3,
+        "current_value": 0.77,
+        "baseline_deviation": 2.4,
+        "time_scale": "SHORT",
+        "location": "living_room",
+        "explanation": "脱敏行为摘要显示步速节律异常，关联心理健康域。",
+        "adapter_version": "mock-trajectory-v1",
+        "source_mode": "MOCK",
+        "simulated": true
+      }
+    ],
+    "observations": [
+      {
+        "schema_version": "1.0",
+        "observation_id": "obs-d10-fall-001",
+        "resident_id": "resident-d10-demo-001",
+        "timestamp": "2026-08-18T16:40:25+08:00",
+        "source": "pose",
+        "feature_name": "trunk_sway_ratio",
+        "feature_value": 0.82,
+        "unit": "ratio",
+        "location": "living_room",
+        "confidence": 0.94,
+        "data_quality": 0.95,
+        "source_mode": "MOCK",
+        "asset_id": null,
+        "simulated": true,
+        "metadata": {
+          "model_version": "mock-gait-v1"
+        }
+      },
+      {
+        "schema_version": "1.0",
+        "observation_id": "obs-d10-pacing-001",
+        "resident_id": "resident-d10-demo-001",
+        "timestamp": "2026-08-18T16:40:27+08:00",
+        "source": "tracking",
+        "feature_name": "pace_variance",
+        "feature_value": 0.77,
+        "unit": "ratio",
+        "location": "living_room",
+        "confidence": 0.9,
+        "data_quality": 0.92,
+        "source_mode": "MOCK",
+        "asset_id": null,
+        "simulated": true,
+        "metadata": {
+          "model_version": "mock-trajectory-v1"
+        }
+      }
+    ],
+    "rule_traces": [],
+    "interventions": [
+      {
+        "schema_version": "1.0",
+        "result_id": "result-d10-language-help-001",
+        "event_id": "event-d10-mock-001",
+        "started_at": "2026-08-18T16:40:26+08:00",
+        "completed_at": "2026-08-18T16:40:26+08:00",
+        "action_type": "resident_response",
+        "tool_name": "language_adapter",
+        "delivery_status": "SUCCESS",
+        "resident_response": "help",
+        "family_feedback": null,
+        "risk_after": null,
+        "resolved": false,
+        "resolution_reason": null,
+        "operator": "system",
+        "source_mode": "MOCK",
+        "simulated": true
+      }
+    ]
+  },
+  "explanation_after_language": {
+    "request_id": "agent-event-d10-mock-001-1b84fc884b84f3e1edfeeeff",
+    "event_id": "event-d10-mock-001",
+    "event_version_hash": "c15cbc744362eb25a22350cdceb857c09cfd91bcbf06aacafc28f888c85881e4",
+    "status": "FALLBACK",
+    "explanation": {
+      "capability_notice": "萤石服务端语音尚未验证，将使用明确标记的文字或 Mock 提醒",
+      "event_id": "event-d10-mock-001",
+      "fallback_used": true,
+      "generated_by": "template-fallback-v1",
+      "reasoning_points": [
+        "检测到躯干持续摇摆，稳定性需要继续观察",
+        "resident_response_help"
+      ],
+      "recommended_action_text": "建议确认老人已回应并保持安全姿势",
+      "request_id": "agent-event-d10-mock-001-1b84fc884b84f3e1edfeeeff",
+      "schema_version": "agent-explanation/1.0",
+      "summary": "风险事件已有干预记录，系统正在观察回应结果"
+    },
+    "generated_by": "template-fallback-v1",
+    "fallback_used": true,
+    "attempt_count": 1,
+    "error_code": null,
+    "created_at": "2026-08-18 16:40:25.840061+08:00",
+    "completed_at": "2026-08-18 16:40:25.863475+08:00"
+  },
+  "explanation_after_unusual_pacing": {
+    "request_id": "agent-event-d10-mock-001-e75471e0637fe48f7effaa25",
+    "event_id": "event-d10-mock-001",
+    "event_version_hash": "f92229a3915e970fe8c1018fb8fb794596cfa4301406635e0f8d29f20ed47bc1",
+    "status": "FALLBACK",
+    "explanation": {
+      "capability_notice": "萤石服务端语音尚未验证，将使用明确标记的文字或 Mock 提醒",
+      "event_id": "event-d10-mock-001",
+      "fallback_used": true,
+      "generated_by": "template-fallback-v1",
+      "reasoning_points": [
+        "检测到躯干持续摇摆，稳定性需要继续观察",
+        "脱敏行为摘要显示步速节律异常，关联心理健康域。",
+        "resident_response_help"
+      ],
+      "recommended_action_text": "建议确认老人已回应并保持安全姿势",
+      "request_id": "agent-event-d10-mock-001-e75471e0637fe48f7effaa25",
+      "schema_version": "agent-explanation/1.0",
+      "summary": "风险事件已有干预记录，系统正在观察回应结果"
+    },
+    "generated_by": "template-fallback-v1",
+    "fallback_used": true,
+    "attempt_count": 1,
+    "error_code": null,
+    "created_at": "2026-08-18 16:40:25.889406+08:00",
+    "completed_at": "2026-08-18 16:40:25.908452+08:00"
+  },
+  "intervention_result": {
+    "schema_version": "1.0",
+    "result_id": "result-d10-language-help-001",
+    "event_id": "event-d10-mock-001",
+    "started_at": "2026-08-18 16:40:26+08:00",
+    "completed_at": "2026-08-18 16:40:26+08:00",
+    "action_type": "resident_response",
+    "tool_name": "language_adapter",
+    "delivery_status": "SUCCESS",
+    "resident_response": "help",
+    "family_feedback": null,
+    "risk_after": null,
+    "resolved": false,
+    "resolution_reason": null,
+    "operator": "system",
+    "source_mode": "MOCK",
+    "simulated": true
+  },
+  "evidence_result": {
+    "schema_version": "1.0",
+    "evidence_id": "evi-d10-unusual-pacing-001",
+    "observation_ids": [
+      "obs-d10-pacing-001"
+    ],
+    "resident_id": "resident-d10-demo-001",
+    "timestamp": "2026-08-18 16:40:27+08:00",
+    "risk_domain": "MENTAL",
+    "evidence_type": "unusual_pacing",
+    "severity": 0.61,
+    "confidence": 0.9,
+    "data_quality": 0.92,
+    "baseline_value": 0.3,
+    "current_value": 0.77,
+    "baseline_deviation": 2.4,
+    "time_scale": "SHORT",
+    "location": "living_room",
+    "explanation": "脱敏行为摘要显示步速节律异常，关联心理健康域。",
+    "adapter_version": "mock-trajectory-v1",
+    "source_mode": "MOCK",
+    "simulated": true
+  },
+  "explanation_request_redacted": [
+    {
+      "request_id": "agent-event-d10-mock-001-dab5580a6316bfff01263eb5",
+      "evidence": [
+        {
+          "evidence_type": "trunk_sway",
+          "explanation": "脱敏姿态摘要显示躯干摆动高于个人基线。"
+        }
+      ],
+      "intervention_status": "NOT_STARTED"
+    },
+    {
+      "request_id": "agent-event-d10-mock-001-1b84fc884b84f3e1edfeeeff",
+      "evidence": [
+        {
+          "evidence_type": "trunk_sway",
+          "explanation": "脱敏姿态摘要显示躯干摆动高于个人基线。"
+        },
+        {
+          "evidence_type": "resident_response",
+          "explanation": "resident_response_help"
+        }
+      ],
+      "intervention_status": "SUCCESS"
+    },
+    {
+      "request_id": "agent-event-d10-mock-001-e75471e0637fe48f7effaa25",
+      "evidence": [
+        {
+          "evidence_type": "trunk_sway",
+          "explanation": "脱敏姿态摘要显示躯干摆动高于个人基线。"
+        },
+        {
+          "evidence_type": "unusual_pacing",
+          "explanation": "脱敏行为摘要显示步速节律异常，关联心理健康域。"
+        },
+        {
+          "evidence_type": "resident_response",
+          "explanation": "resident_response_help"
+        }
+      ],
+      "intervention_status": "SUCCESS"
+    }
+  ],
+  "idempotence": {
+    "request_id_a": "agent-event-d10-mock-001-e75471e0637fe48f7effaa25",
+    "request_id_b": "agent-event-d10-mock-001-e75471e0637fe48f7effaa25",
+    "created_a": false,
+    "created_b": false,
+    "attempt_count": 1
+  },
+  "risk_fields_before_after_pacing": {
+    "before": {
+      "risk_level": "ORANGE",
+      "risk_score": 0.82,
+      "status": "INTERVENING"
+    },
+    "after": {
+      "risk_level": "ORANGE",
+      "risk_score": 0.82,
+      "status": "INTERVENING"
+    },
+    "unchanged": true
+  },
+  "worker_log": [
+    "agent_explanation_processed request_id=agent-event-d10-mock-001-dab5580a6316bfff01263eb5 event_id=event-d10-mock-001 status=FALLBACK attempts=1",
+    "agent_explanation_processed request_id=agent-event-d10-mock-001-1b84fc884b84f3e1edfeeeff event_id=event-d10-mock-001 status=FALLBACK attempts=1",
+    "agent_explanation_processed request_id=agent-event-d10-mock-001-e75471e0637fe48f7effaa25 event_id=event-d10-mock-001 status=FALLBACK attempts=1"
+  ],
+  "redaction_assertions": {
+    "contains_raw_media": false,
+    "contains_credentials": false,
+    "contains_raw_transcript": false,
+    "contains_resident_response_help": true
+  }
+}

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+import asyncio
+import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +19,8 @@ from backend.config import (
     YINGMU_AUTHORIZATION_RECORD_ID,
     YINGMU_CAMERA_POSITION_ID,
     YINGMU_PRIVATE_MEDIA_ROOT,
+    YINGMU_FFMPEG_BINARY,
+    YINGMU_VIDEO_CAPTURE_SECONDS,
     YINGMU_RETENTION_UNTIL,
     YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS,
     YINGMU_SNAPSHOT_MAX_BYTES,
@@ -26,6 +30,7 @@ from backend.schemas.asset import AssetCreate
 from backend.service.asset_service import asset_dict, create_asset
 from backend.service.errors import ServiceError
 from contracts.v1.platform import PlatformSnapshotResult
+from contracts.v1.platform import PlatformVideoSource
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -337,3 +342,84 @@ async def persist_snapshot_asset(
             "The snapshot Asset could not be written",
             retryable=True,
         ) from exc
+
+
+def _record_video_sync(
+    source: PlatformVideoSource,
+    *,
+    output_path: Path,
+    max_bytes: int,
+) -> tuple[str, int]:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    command = [
+        YINGMU_FFMPEG_BINARY, "-hide_banner", "-loglevel", "error", "-y",
+        "-i", str(source.temporary_url), "-t", str(YINGMU_VIDEO_CAPTURE_SECONDS),
+        "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+        str(output_path),
+    ]
+    try:
+        subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            timeout=max(30, YINGMU_VIDEO_CAPTURE_SECONDS + 30),
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise SnapshotAssetError(
+            "VIDEO_RECORDING_UNAVAILABLE", "The live video could not be recorded", retryable=True
+        ) from exc
+    if not output_path.is_file() or output_path.stat().st_size <= 0:
+        raise SnapshotAssetError("VIDEO_RECORDING_EMPTY", "The recorded video is empty", retryable=True)
+    byte_size = output_path.stat().st_size
+    if byte_size > max_bytes:
+        output_path.unlink(missing_ok=True)
+        raise SnapshotAssetError("VIDEO_TOO_LARGE", "The recorded video exceeds the configured byte limit", retryable=False)
+    digest = hashlib.sha256(output_path.read_bytes()).hexdigest()
+    return digest, byte_size
+
+
+async def persist_live_video_asset(
+    db: AsyncSession,
+    source: PlatformVideoSource,
+    *,
+    task_id: str,
+) -> tuple[dict, bool]:
+    retention = _authorized_retention(YINGMU_RETENTION_UNTIL, source.captured_at)
+    root = _private_root(YINGMU_PRIVATE_MEDIA_ROOT)
+    asset_id = f"asset-live-video-{hashlib.sha256(task_id.encode('utf-8')).hexdigest()[:24]}"
+    output_path = root / f"{asset_id}.mp4"
+    existing = (await db.execute(select(AssetRow).where(AssetRow.asset_id == asset_id))).scalar_one_or_none()
+    if existing is not None:
+        if not existing.storage_key or not (root / existing.storage_key).is_file():
+            raise SnapshotAssetError("ASSET_PRIVATE_OBJECT_MISSING", "The existing video Asset has no private object", retryable=False)
+        return asset_dict(existing), True
+    digest, byte_size = await asyncio.to_thread(
+        _record_video_sync, source, output_path=output_path, max_bytes=YINGMU_SNAPSHOT_MAX_BYTES * 30
+    )
+    payload = AssetCreate(
+        asset_id=asset_id,
+        title="Ezviz live alert video",
+        source_mode="LIVE_DEVICE",
+        simulated=False,
+        stream_url=None,
+        fallback_url=None,
+        fallback_kind="SERVER_MANAGED_VIDEO",
+        available=True,
+        verification_status="VERIFIED_LIVE_CAPTURE",
+        captured_at=source.captured_at,
+        notice="Recorded from the Ezviz live stream and stored privately",
+        device_ref=source.device_ref,
+        device_model=EZVIZ_DEVICE_MODEL,
+        camera_position_id=YINGMU_CAMERA_POSITION_ID,
+        authorization_status="AUTHORIZED",
+        authorization_record_id=YINGMU_AUTHORIZATION_RECORD_ID,
+        retention_until=retention,
+        content_sha256=digest,
+        content_type="video/mp4",
+        byte_size=byte_size,
+    )
+    try:
+        return await create_asset(db, payload, storage_key=output_path.name, commit=False)
+    except Exception:
+        output_path.unlink(missing_ok=True)
+        raise

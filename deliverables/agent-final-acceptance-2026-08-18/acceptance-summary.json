@@ -1,0 +1,214 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-18T15:11:22.423+08:00",
+  "api": {
+    "base_url": "http://127.0.0.1:8000",
+    "health": "ok",
+    "explanation_path": "/api/v1/events/event-3ba71dcd92774794/explanation"
+  },
+  "persisted_event": {
+    "event_id": "event-3ba71dcd92774794",
+    "source_mode": "RECORDED_REPLAY",
+    "simulated": true,
+    "risk_level": "ORANGE",
+    "risk_score": 0.76,
+    "status": "INTERVENING",
+    "evidence_count": 2,
+    "created_at": "2026-08-18T15:05:57.093147+08:00",
+    "updated_at": "2026-08-18T15:05:57.093147+08:00"
+  },
+  "success_response": {
+    "request_id": "agent-event-3ba71dcd92774794-8efbf4ac21d49d1ea7415a10",
+    "event_id": "event-3ba71dcd92774794",
+    "status": "SUCCESS",
+    "explanation": {
+      "schema_version": "agent-explanation/1.0",
+      "request_id": "agent-event-3ba71dcd92774794-8efbf4ac21d49d1ea7415a10",
+      "event_id": "event-3ba71dcd92774794",
+      "summary": "系统检测到快速起身及躯干晃动迹象，判定为橙色风险。因基线状态不可用且未开始干预，当前依据传感器数据评估潜在失衡风险。",
+      "reasoning_points": [
+        "证据显示存在快速起身动作，可能引发体位性低血压或平衡失调。",
+        "同时监测到躯干晃动，提示核心稳定性不足或重心不稳。",
+        "基线状态不可用，无法对比历史正常模式，需结合实时表现判断。",
+        "风险等级由系统状态机根据上述证据综合判定为橙色。"
+      ],
+      "recommended_action_text": "请提醒老人动作放缓，坐稳或扶稳稳固物体。建议继续观察后续状态变化，并联系照护人员进行人工确认，以排除跌倒隐患。",
+      "capability_notice": "已验证能力包括设备状态、抓拍、Webhook、模拟语音及文本通知。EZVIZ直播回放和服务器语音功能尚未验证，不可依赖其执行自动报警或紧急呼叫流程。",
+      "generated_by": "qwen3.6-flash",
+      "fallback_used": false
+    },
+    "generated_by": "qwen3.6-flash",
+    "fallback_used": false,
+    "attempt_count": 1,
+    "error_code": null,
+    "created_at": "2026-08-18T15:05:52.309463+08:00",
+    "completed_at": "2026-08-18T15:07:05.788968+08:00"
+  },
+  "fallback_response": {
+    "isolation": {
+      "database": "independent_test_database",
+      "process": "independent_one_shot_worker",
+      "simulation": "invalid_model_name_process_override",
+      "shared_env_modified": false
+    },
+    "request_id": "agent-event-128f6c7d359f4f81-c0aad178364daa5bd315a187",
+    "event_id": "event-128f6c7d359f4f81",
+    "status": "FALLBACK",
+    "explanation": {
+      "schema_version": "agent-explanation/1.0",
+      "request_id": "agent-event-128f6c7d359f4f81-c0aad178364daa5bd315a187",
+      "event_id": "event-128f6c7d359f4f81",
+      "summary": "检测到跌倒风险前兆，需要继续关注老人状态",
+      "reasoning_points": [
+        "检测到起身速度偏快，超出当前风险评估关注范围",
+        "检测到躯干持续摇摆，稳定性需要继续观察"
+      ],
+      "recommended_action_text": "建议提醒老人坐稳并继续观察",
+      "capability_notice": "萤石服务端语音尚未验证，将使用明确标记的文字或 Mock 提醒",
+      "generated_by": "template-fallback-v1",
+      "fallback_used": true
+    },
+    "generated_by": "template-fallback-v1",
+    "fallback_used": true,
+    "attempt_count": 1,
+    "error_code": null,
+    "created_at": "2026-08-18T15:08:03.330881+08:00",
+    "completed_at": "2026-08-18T15:08:26.138700+08:00"
+  },
+  "consecutive_get_checks": {
+    "success": {
+      "same_request_id": true,
+      "same_attempt_count": true,
+      "attempt_count_before": 1,
+      "attempt_count_after": 1,
+      "status_after": "SUCCESS"
+    },
+    "fallback": {
+      "same_request_id": true,
+      "same_attempt_count": true,
+      "attempt_count_before": 1,
+      "attempt_count_after": 1,
+      "status_after": "FALLBACK"
+    }
+  },
+  "risk_event_before_after": {
+    "success": {
+      "before": {
+        "risk_level": "ORANGE",
+        "risk_score": 0.76,
+        "status": "INTERVENING",
+        "resolved": false,
+        "rule_id": "not_exposed_on_risk_event"
+      },
+      "after": {
+        "risk_level": "ORANGE",
+        "risk_score": 0.76,
+        "status": "INTERVENING",
+        "resolved": false,
+        "rule_id": "not_exposed_on_risk_event"
+      },
+      "unchanged": true
+    },
+    "fallback": {
+      "before": {
+        "risk_level": "ORANGE",
+        "risk_score": 0.76,
+        "status": "INTERVENING"
+      },
+      "after": {
+        "risk_level": "ORANGE",
+        "risk_score": 0.76,
+        "status": "INTERVENING"
+      },
+      "event_still_persisted": true,
+      "unchanged": true
+    }
+  },
+  "worker_logs_redacted": [
+    "2026-08-18 15:07:05 INFO provider_response status_code=200",
+    "2026-08-18 15:07:05 INFO backend.agent_worker agent_explanation_processed request_id=agent-event-3ba71dcd92774794-8efbf4ac21d49d1ea7415a10 event_id=event-3ba71dcd92774794 status=SUCCESS attempts=1",
+    "2026-08-18 15:08:26 INFO provider_response status_code=404 simulation=invalid_model_name",
+    "2026-08-18 15:08:26 INFO backend.agent_worker agent_explanation_processed request_id=agent-event-128f6c7d359f4f81-c0aad178364daa5bd315a187 event_id=event-128f6c7d359f4f81 status=FALLBACK attempts=1"
+  ],
+  "model_request_audit": {
+    "top_level_keys": [
+      "schema_version",
+      "request_id",
+      "event_id",
+      "resident_id",
+      "risk_level",
+      "risk_score",
+      "time_horizon",
+      "evidence",
+      "baseline_status",
+      "intervention_status",
+      "verified_capabilities",
+      "unverified_capabilities"
+    ],
+    "evidence_item_keys": [
+      "evidence_type",
+      "explanation"
+    ],
+    "contains_raw_image": false,
+    "contains_raw_video": false,
+    "contains_raw_audio": false,
+    "contains_device_serial": false,
+    "contains_token": false,
+    "contains_temporary_url": false,
+    "contains_media_path": false,
+    "contains_storage_key": false,
+    "literal_four_category_only_claim": false,
+    "correction": "请求还包含幂等标识、匿名内部标识、时间范围和能力矩阵；不包含原始媒体或平台凭证。"
+  },
+  "constraint_checks": {
+    "response_cannot_modify_risk_or_state_fields": true,
+    "get_does_not_call_model": true,
+    "same_event_version_has_stable_request_id": true,
+    "get_does_not_increment_attempt_count": true,
+    "provider_failure_preserves_risk_event": true,
+    "provider_failure_isolated_from_state_machine": true,
+    "provider_call_runs_after_database_claim_commit": true,
+    "timestamps_have_plus_08_00": true,
+    "shared_env_modified": false
+  },
+  "capability_review": [
+    {
+      "name": "真实 ys.alarm WebHook HTTP 200 并告警入库",
+      "status": "SUPPORTED_WITH_RECORD",
+      "evidence": "当前共享数据库存在 1 条 ys.alarm 记录及对应处理任务；成功处理端点返回 HTTP 200。"
+    },
+    {
+      "name": "WebHook 告警创建抓拍任务",
+      "status": "VERIFIED",
+      "evidence": "当前共享数据库中 ys.alarm 与处理任务可关联。"
+    },
+    {
+      "name": "Worker 下载真实抓拍并完成 Asset 私有入库",
+      "status": "IMPLEMENTED_AND_AUTOMATED_TESTED_NEEDS_TRACEABLE_LIVE_ASSET_RECORD",
+      "evidence": "实现和自动化测试通过，但当前共享数据库没有 LIVE_DEVICE Asset，3 个历史 capture_asset_id 也无法关联 Asset 行。"
+    },
+    {
+      "name": "公共接口不泄露临时 URL、storage_key、Token 或完整设备序列号",
+      "status": "VERIFIED_BY_CODE_AND_TESTS"
+    },
+    {
+      "name": "RiskEvent 创建和状态变化生成持久化 Explanation 任务",
+      "status": "VERIFIED"
+    },
+    {
+      "name": "GET event explanation 返回最新解释",
+      "status": "VERIFIED_LIVE"
+    }
+  ],
+  "persistence_checks": {
+    "risk_event_rows": 1,
+    "evidence_rows": 2,
+    "explanation_job_rows": 1
+  },
+  "regression": {
+    "command": "python -m pytest -q",
+    "passed": 175,
+    "failed": 0
+  },
+  "sensitive_material_included": false
+}

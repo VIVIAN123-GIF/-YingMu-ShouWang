@@ -146,6 +146,19 @@ def test_gait_adapter_image_does_not_emit_temporal_evidence(tmp_path: Path):
     assert batch.evidences == []
 
 
+def test_gait_adapter_real_image_is_no_evidence(tmp_path: Path):
+    image_path = tmp_path / "capture.jpg"
+    image_path.write_bytes(b"not-used-by-image-quality-path")
+    job = _job(image_path).model_copy(update={"media_type": MediaType.IMAGE})
+
+    batch = asyncio.run(run(job))
+
+    assert batch.status == "NO_EVIDENCE"
+    assert batch.error is None
+    assert batch.evidences == []
+    assert [item.feature_name for item in batch.observations] == ["valid_frame_ratio"]
+
+
 def test_gait_adapter_registry_invocation(monkeypatch, tmp_path: Path):
     feature_path = tmp_path / "features.json"
     _write_features(feature_path)

@@ -13,12 +13,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import AlarmProcessingTask, RiskAlarm
 from backend.service.device_adapter import device_adapter
+from backend.config import YINGMU_CAPTURE_MEDIA_MODE
 from backend.service.serialization import loads
 from backend.service.snapshot_asset_service import (
     SnapshotAssetError,
     persist_snapshot_asset,
+    persist_live_video_asset,
 )
-from contracts.v1.platform import PlatformSnapshotResult
+from contracts.v1.platform import PlatformSnapshotResult, PlatformVideoSource
 
 
 CLAIMABLE_STATUSES = ("PENDING", "RETRY")
@@ -154,22 +156,43 @@ async def process_claimed_task(
     store_snapshot_asset: Callable[
         [AsyncSession, PlatformSnapshotResult, str], Awaitable[dict[str, Any]]
     ] | None = None,
+    capture_video_source: Callable[[], Awaitable[PlatformVideoSource]] | None = None,
+    store_video_asset: Callable[
+        [AsyncSession, PlatformVideoSource, str], Awaitable[dict]
+    ] | None = None,
 ) -> AlarmProcessingTask:
     """Capture and persist an Asset before handing the task to an algorithm."""
     try:
-        snapshot = await (capture_snapshot() if capture_snapshot else device_adapter.capture_snapshot())
-        if isinstance(snapshot, dict):
-            # Backward-compatible injection for tests or an already-persisted
-            # downloader. Production platform calls always return the contract.
-            task.capture_asset_id = snapshot.get("asset_id")
-        elif store_snapshot_asset is not None:
-            asset = await store_snapshot_asset(db, snapshot, task.task_id)
+        # Explicit snapshot dependencies are used by tests and replay callers;
+        # they must remain deterministic even when the process is configured
+        # for live video capture.
+        if (
+            YINGMU_CAPTURE_MEDIA_MODE == "VIDEO"
+            and capture_snapshot is None
+            and store_snapshot_asset is None
+        ):
+            source = await (capture_video_source() if capture_video_source else device_adapter.capture_video_source())
+            video_result = await (
+                store_video_asset(db, source, task.task_id)
+                if store_video_asset
+                else persist_live_video_asset(db, source, task_id=task.task_id)
+            )
+            asset, _ = video_result
             task.capture_asset_id = asset.get("asset_id")
         else:
-            asset, _ = await persist_snapshot_asset(
-                db, snapshot, task_id=task.task_id
-            )
-            task.capture_asset_id = asset["asset_id"]
+            snapshot = await (capture_snapshot() if capture_snapshot else device_adapter.capture_snapshot())
+            if isinstance(snapshot, dict):
+                # Backward-compatible injection for tests or an already-persisted
+                # downloader. Production platform calls always return the contract.
+                task.capture_asset_id = snapshot.get("asset_id")
+            elif store_snapshot_asset is not None:
+                asset = await store_snapshot_asset(db, snapshot, task.task_id)
+                task.capture_asset_id = asset.get("asset_id")
+            else:
+                asset, _ = await persist_snapshot_asset(
+                    db, snapshot, task_id=task.task_id
+                )
+                task.capture_asset_id = asset["asset_id"]
         if not task.capture_asset_id:
             raise SnapshotAssetError(
                 "CAPTURE_ASSET_REQUIRED",

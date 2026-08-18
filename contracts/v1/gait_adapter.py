@@ -95,6 +95,11 @@ def _read_feature_payload(media_locator: str) -> tuple[dict[str, Any], dict[str,
     if not path.exists() or not path.is_file():
         raise _FeatureInputError("media_locator_not_readable")
 
+    # A single snapshot cannot provide temporal gait evidence. Keep the
+    # capture usable by recording only a frame-quality Observation.
+    if path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp", ".bmp"}:
+        return {"valid_frame_ratio": 1.0}, {"feature_source_type": "image"}
+
     if path.suffix.lower() == ".json":
         payload = json.loads(path.read_text(encoding="utf-8"))
         features = _features_from_json(payload)

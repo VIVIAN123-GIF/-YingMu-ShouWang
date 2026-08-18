@@ -43,7 +43,7 @@ from backend.service.feedback_aggregation_service import (
 )
 from backend.service.recovery_scheduler_service import advance_one_due_event
 from backend.service.risk_service import _context, evaluate
-from backend.service.serialization import dumps
+from backend.service.serialization import dumps, loads
 from contracts.v1.algorithm import AdapterBatch, AlgorithmModule
 
 
@@ -336,6 +336,49 @@ def test_agent_job_is_version_idempotent_and_persists_fallback(tmp_path):
     assert repeated_created is False
     assert first_id == second_id
     assert status == "FALLBACK"
+
+
+def test_agent_snapshot_includes_only_normalized_resident_help_semantic(tmp_path):
+    async def operation(db):
+        resident_id = "resident-agent-help"
+        event = event_row("event-agent-help", resident_id)
+        observation = observation_row("obs-event-agent-help", resident_id)
+        evidence = evidence_row(
+            "evi-event-agent-help", observation.observation_id, resident_id, "trunk_sway"
+        )
+        intervention = InterventionResult(
+            schema_version="1.0",
+            result_id="result-agent-help",
+            event_id=event.event_id,
+            started_at=NOW,
+            completed_at=NOW,
+            action_type="resident_response",
+            tool_name="language_adapter",
+            delivery_status="SUCCESS",
+            resident_response="help",
+            family_feedback=None,
+            risk_after=None,
+            resolved=False,
+            resolution_reason=None,
+            operator="system",
+            source_mode="MOCK",
+            simulated=True,
+        )
+        db.add_all([observation, evidence, event, intervention])
+        await db.commit()
+        job, _ = await enqueue_event_explanation(db, event.event_id)
+        return loads(job.request_payload, {})
+
+    request_payload = asyncio.run(with_database(tmp_path, operation))
+    serialized = dumps(request_payload).lower()
+    assert {
+        "evidence_type": "resident_response",
+        "explanation": "resident_response_help",
+    } in request_payload["evidence"]
+    assert "transcript" not in serialized
+    assert "audio" not in serialized
+    assert "media" not in serialized
+    assert "token" not in serialized
 
 
 def test_unregistered_algorithm_adapter_finishes_failed(monkeypatch, tmp_path):
