@@ -25,7 +25,10 @@ class Asset(BaseModel):
     authorization_record_id: str | None = None
     retention_until: TimezoneDatetime | None = None
     content_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
-    content_type: str | None = Field(default=None, pattern=r"^image/(jpeg|png|webp)$")
+    content_type: str | None = Field(
+        default=None,
+        pattern=r"^(image/(jpeg|png|webp)|video/mp4)$",
+    )
     byte_size: int | None = Field(default=None, ge=1)
 
     @model_validator(mode="after")

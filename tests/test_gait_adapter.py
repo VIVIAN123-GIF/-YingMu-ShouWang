@@ -90,6 +90,14 @@ def test_gait_adapter_batch_contract_and_references(tmp_path: Path):
             "tracking_lost",
         }
 
+    recovered = next(item for item in batch.evidences if item.evidence_type == "posture_recovered")
+    recovered_features = {
+        item.feature_name
+        for item in batch.observations
+        if item.observation_id in recovered.observation_ids
+    }
+    assert recovered_features == {"stable_posture_duration", "stable_trunk_angle_deg"}
+
 
 def test_gait_adapter_ids_are_stable_for_same_input(tmp_path: Path):
     feature_path = tmp_path / "features.json"

@@ -206,6 +206,8 @@ def _evidence(
     current_value: float | None,
     baseline_value: float | None,
     explanation: str,
+    *,
+    related_observations: tuple[Observation, ...] = (),
 ) -> Evidence:
     deviation = None
     if current_value is not None and baseline_value not in (None, 0):
@@ -213,7 +215,10 @@ def _evidence(
     return Evidence(
         schema_version="1.0",
         evidence_id=_stable_id("evi-gait", job.job_id, job.resident_id, job.asset_id, evidence_type, observation.observation_id),
-        observation_ids=[observation.observation_id],
+        observation_ids=[
+            observation.observation_id,
+            *(item.observation_id for item in related_observations),
+        ],
         resident_id=job.resident_id,
         timestamp=job.captured_at,
         risk_domain=RiskDomain.FALL,
@@ -267,7 +272,16 @@ def _build_evidences(job: AlgorithmJob, observations: list[Observation]) -> list
         duration = float(stable_duration.feature_value)
         angle = float(stable_angle.feature_value)
         if duration >= 15.0 and angle <= 8.0:
-            evidences.append(_evidence(job, "posture_recovered", stable_duration, min(duration / 30.0, 1.0), duration, 15.0, "稳定姿态持续时间达到恢复观察阈值。"))
+            evidences.append(_evidence(
+                job,
+                "posture_recovered",
+                stable_duration,
+                min(duration / 30.0, 1.0),
+                duration,
+                15.0,
+                "稳定姿态持续时间达到恢复观察阈值。",
+                related_observations=(stable_angle,),
+            ))
 
     valid_ratio = by_feature.get("valid_frame_ratio")
     if valid_ratio and isinstance(valid_ratio.feature_value, (int, float)) and float(valid_ratio.feature_value) < 0.65:
