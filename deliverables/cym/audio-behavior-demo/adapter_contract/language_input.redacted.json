@@ -1,0 +1,13 @@
+{
+  "schema_version": "language-analysis/1.0",
+  "keyword_groups": [
+    "guaranteed_return",
+    "verification_code_like",
+    "immediate_transfer"
+  ],
+  "resident_response": "resident_response_stable",
+  "audio_quality": 0.82,
+  "processing_source": "WHISPER_REDACTED",
+  "model_version": "whisper-tiny-local",
+  "language": "Chinese"
+}
