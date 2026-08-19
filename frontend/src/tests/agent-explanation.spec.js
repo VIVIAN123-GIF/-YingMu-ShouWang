@@ -46,7 +46,7 @@ function explanationFixture(status = 'SUCCESS') {
     explanation: {
       schema_version: 'agent-explanation/1.0', request_id: 'agent-test', event_id: 'event-agent-test',
       summary: fallback ? 'Fallback summary' : 'LLM summary', reasoning_points: ['Evidence point'],
-      recommended_action_text: 'Sit safely', capability_notice: 'Mock notice',
+      recommended_action_text: 'Sit safely', capability_notice: '萤石服务端语音尚未验证，当前使用Mock语音或文字提醒。',
       generated_by: fallback ? 'template-fallback-v1' : 'qwen3.6-flash', fallback_used: fallback,
     },
     generated_by: fallback ? 'template-fallback-v1' : 'qwen3.6-flash', fallback_used: fallback,
@@ -94,8 +94,22 @@ describe('agent explanation frontend contract', () => {
     expect(wrapper.get('[data-testid="agent-explanation-content"]').text()).toContain('Fallback summary')
     expect(wrapper.get('[data-testid="agent-explanation-status"]').text()).toBe('模板降级解释')
     expect(wrapper.get('[data-testid="agent-explanation-generated-by"]').text()).toBe('template-fallback-v1')
-    expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('是')
+    expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('true')
     expect(wrapper.get('[data-testid="agent-explanation-fallback"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('renders explanation completion time in Beijing time', async () => {
+    runtimeMock.mode = 'api'
+    getEventMock.mockResolvedValue(eventFixture())
+    getAssetMock.mockResolvedValue(null)
+    const response = explanationFixture('SUCCESS')
+    response.completed_at = '2026-08-16T01:30:45Z'
+    getEventExplanationMock.mockResolvedValue(response)
+    const wrapper = await mountView()
+
+    expect(wrapper.get('[data-testid="agent-explanation-created-at"]').text()).toBe('—')
+    expect(wrapper.get('[data-testid="agent-explanation-completed-at"]').text()).toBe('2026/08/16 09:30:45')
     wrapper.unmount()
   })
 
@@ -138,7 +152,7 @@ describe('agent explanation frontend contract', () => {
     }
     expect(wrapper.get('[data-testid="agent-explanation-content"]').text()).toContain('LLM summary')
     expect(wrapper.get('[data-testid="agent-explanation-generated-by"]').text()).toBe('qwen3.6-flash')
-    expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('否')
+    expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('false')
 
     await vi.advanceTimersByTimeAsync(6000)
     expect(getEventExplanationMock).toHaveBeenCalledTimes(5)

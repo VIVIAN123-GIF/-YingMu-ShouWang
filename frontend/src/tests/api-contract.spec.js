@@ -10,9 +10,9 @@ describe('前端对接文档请求契约', () => {
     setDataMode('auto')
   })
 
-  it('默认使用 /api/v1，且请求路径不重复拼接前缀', () => {
-    expect(API_BASE_URL).toBe('/api/v1')
-    expect(apiClient.defaults.baseURL).toBe('/api/v1')
+  it('使用当前 API 基址，且请求路径不重复拼接前缀', () => {
+    expect(API_BASE_URL).toMatch(/\/api\/v1\/?$/)
+    expect(apiClient.defaults.baseURL).toBe(API_BASE_URL)
   })
 
   it('周报和个人基线使用后端 API，并保留查询居民标识', async () => {

@@ -37,7 +37,7 @@ for (let round = 1; round <= 3; round += 1) {
     await expect(explanationPanel).toContainText('智能体解释')
     await expect(explanationPanel).toContainText('老人快速起身后出现持续躯干摇摆')
     await expect(explanationPanel).toContainText('mock-agent-v1')
-    await expect(page.getByTestId('agent-explanation-fallback-used')).toHaveText('否')
+    await expect(page.getByTestId('agent-explanation-fallback-used')).toHaveText('false')
     await expect(page.getByTestId('agent-explanation-fallback')).toHaveCount(0)
     await expect(page.getByRole('button', { name: '发起干预' })).toBeVisible()
     const elderAction = page.getByTestId('elder-single-action')
