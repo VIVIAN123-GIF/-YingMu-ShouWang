@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "D11_DEVICE_OFFLINE_CONTROLLED_MOCK",
+  "generated_at": "2026-08-18T11:49:14.025+08:00",
+  "result": "PASS",
+  "business_code": "200",
+  "online": false,
+  "failure_reason": "DEVICE_OFFLINE",
+  "status_request_count": 1,
+  "generic_retry_sleep_count": 0,
+  "snapshot_request_count": 0,
+  "playback_request_count": 0,
+  "latency_ms": 0,
+  "source_mode": "MOCK",
+  "simulated": true,
+  "contains_credentials": false,
+  "contains_media_url": false
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "D11_SENSITIVE_INFORMATION_SCAN",
+  "generated_at": "2026-08-18T11:50:54.106+08:00",
+  "result": "PASS",
+  "scanned_file_count": 5,
+  "scanned_files": [
+    "d11-summary.json",
+    "D11异常场景验收报告.md",
+    "device-offline-mock.json",
+    "qwen-invalid-json-mock.json",
+    "token-invalid-mock.json"
+  ],
+  "findings_count": 0,
+  "findings": [],
+  "contains_credentials": false,
+  "contains_media_url": false
+}

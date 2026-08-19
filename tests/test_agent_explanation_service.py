@@ -107,6 +107,32 @@ def test_provider_success_uses_validated_json_without_sensitive_media():
     assert "不得把未验证的平台能力描述为可用" in system_prompt
 
 
+def test_provider_invalid_json_is_not_exposed_and_uses_fallback():
+    req = request("agent-event-invalid-json")
+
+    async def handler(_request):
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": "not-valid-json-private-content"}}]},
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = OpenAICompatibleLLMProvider(
+        base_url="https://llm.example.test/v1",
+        api_key="test-key",
+        model="test-model",
+        client=client,
+    )
+    service = AgentExplanationService(provider=provider)
+
+    result = asyncio.run(service.explain(req))
+    asyncio.run(client.aclose())
+
+    assert result.generated_by == "template-fallback-v1"
+    assert result.fallback_used is True
+    assert "not-valid-json-private-content" not in result.model_dump_json()
+
+
 @pytest.mark.parametrize("error", [TimeoutError("timeout"), RuntimeError("429"), ValueError("bad json")])
 def test_provider_failures_use_template_fallback(error):
     provider = Provider(error=error)
