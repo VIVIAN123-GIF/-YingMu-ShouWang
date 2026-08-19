@@ -5,7 +5,7 @@
   "resident_id": "resident-demo-001",
   "asset_id": "asset-language-demo-001",
   "media_type": "AUDIO",
-  "media_locator": "adapter_contract/language_input.transcript.txt",
+  "media_locator": "adapter_contract/language_input.redacted.json",
   "captured_at": "2026-08-16T10:01:00+08:00",
   "source_mode": "RECORDED_REPLAY",
   "simulated": true,

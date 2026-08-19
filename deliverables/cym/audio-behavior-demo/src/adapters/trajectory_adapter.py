@@ -95,7 +95,7 @@ def _csv_summary(path: Path, job: AlgorithmJob) -> dict:
     }
 
 
-def _load_json_summary(path: Path, job: AlgorithmJob) -> dict:
+def _load_json_input(path: Path, job: AlgorithmJob) -> tuple[dict, dict | None]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     summary = payload.get("summary", payload) if isinstance(payload, dict) else None
     if not isinstance(summary, dict):
@@ -104,7 +104,20 @@ def _load_json_summary(path: Path, job: AlgorithmJob) -> dict:
     summary["source_mode"] = job.source_mode.value
     summary["simulated"] = job.simulated
     summary["captured_at"] = job.captured_at.isoformat()
-    return summary
+    trend = payload.get("trend") if isinstance(payload, dict) and "summary" in payload else None
+    if trend is not None:
+        if not isinstance(trend, dict) or not isinstance(trend.get("days"), list):
+            raise ValueError("trajectory trend must contain a days array")
+        trend = {
+            **trend,
+            "run_id": job.job_id,
+            "resident_id": job.resident_id,
+            "location": job.location,
+            "source_mode": job.source_mode.value,
+            "simulated": job.simulated,
+            "asset_id": job.asset_id,
+        }
+    return summary, trend
 
 
 def _run_video(path: Path, job: AlgorithmJob) -> dict:
@@ -125,10 +138,11 @@ def _run_video(path: Path, job: AlgorithmJob) -> dict:
             raise RuntimeError("behavior_demo timed out") from exc
         if completed.returncode != 0 or not summary_path.is_file():
             raise RuntimeError("behavior_demo could not process the video")
-        return _load_json_summary(summary_path, job)
+        summary, _ = _load_json_input(summary_path, job)
+        return summary
 
 
-def _load_summary(job: AlgorithmJob) -> tuple[dict, str]:
+def _load_summary(job: AlgorithmJob) -> tuple[dict, str, dict | None]:
     path = _path_from_locator(job.media_locator)
     if not path.is_file():
         raise FileNotFoundError("trajectory input file does not exist")
@@ -136,12 +150,13 @@ def _load_summary(job: AlgorithmJob) -> tuple[dict, str]:
     if suffix in IMAGE_SUFFIXES:
         raise ValueError("image input is unsupported; provide a video or trajectory JSON/CSV")
     if suffix == ".json":
-        return _load_json_summary(path, job), "JSON_SUMMARY"
+        summary, trend = _load_json_input(path, job)
+        return summary, "JSON_SUMMARY", trend
     if suffix == CSV_SUFFIX:
-        return _csv_summary(path, job), "CSV_TRAJECTORY"
+        return _csv_summary(path, job), "CSV_TRAJECTORY", None
     if suffix in VIDEO_SUFFIXES:
         summary = awaitable_video(path, job)
-        return summary, "VIDEO"
+        return summary, "VIDEO", None
     raise ValueError("unsupported trajectory input format")
 
 
@@ -156,22 +171,27 @@ async def run(job: AlgorithmJob) -> AdapterBatch:
         checked_job = validate_job(job)
         if checked_job.requested_modules and AlgorithmModule.TRAJECTORY not in checked_job.requested_modules:
             raise ValueError("TRAJECTORY is not listed in requested_modules")
-        summary, input_format = await asyncio.to_thread(_load_summary, checked_job)
+        summary, input_format, trend_payload = await asyncio.to_thread(
+            _load_summary, checked_job
+        )
         summary["source_mode"] = checked_job.source_mode.value
         summary["simulated"] = checked_job.simulated
         summary["captured_at"] = checked_job.captured_at.isoformat()
+        frames = int(summary.get("frames_processed", 0))
+        detected = int(summary.get("detected_frames", 0))
+        quality = detected / frames if frames else 0.0
         inner = build_behavior_batch(
             job_payload(checked_job), summary,
             resident_id=checked_job.resident_id,
             location=checked_job.location,
+            trend_payload=(
+                trend_payload if quality >= TRACKING_QUALITY_THRESHOLD else None
+            ),
             started_at=started_at,
             completed_at=now_timestamp(),
         )
         observations = inner["observations"]
         evidences = inner["evidences"]
-        frames = int(summary.get("frames_processed", 0))
-        detected = int(summary.get("detected_frames", 0))
-        quality = detected / frames if frames else 0.0
         status = "LOW_QUALITY" if quality < TRACKING_QUALITY_THRESHOLD else ("SUCCESS" if evidences else "NO_EVIDENCE")
         return build_batch(
             checked_job, module="TRAJECTORY", status=status,

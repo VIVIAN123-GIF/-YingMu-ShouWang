@@ -43,6 +43,7 @@
     "source_mode": "RECORDED_REPLAY",
     "simulated": true
   }],
-  "diagnostics": {"input_format": "WHISPER_AUDIO", "audio_quality": 0.2, "quality_reason": "音频质量不足"},
+  "resident_response_candidate": null,
+  "diagnostics": {"input_format": "REDACTED_LANGUAGE_ANALYSIS", "audio_quality": 0.2, "quality_reason": "音频处理质量不足"},
   "error": null
 }

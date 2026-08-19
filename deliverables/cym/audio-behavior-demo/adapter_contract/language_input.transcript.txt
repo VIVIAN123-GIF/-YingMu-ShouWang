@@ -1,1 +1,1 @@
-这是脱敏测试话术，包含保证收益、验证码、马上转账等高风险交互特征。老人回应：我没事。
+LEGACY_SAMPLE_DISABLED_USE_language_input.redacted.json

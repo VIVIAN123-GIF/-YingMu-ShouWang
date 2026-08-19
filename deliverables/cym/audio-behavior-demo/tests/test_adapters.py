@@ -3,6 +3,7 @@ import inspect
 import json
 import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -94,6 +95,94 @@ class AdapterContractTests(unittest.TestCase):
             [item.evidence_id for item in first.evidences],
             [item.evidence_id for item in second.evidences],
         )
+        self.assertEqual(
+            first.resident_response_candidate,
+            second.resident_response_candidate,
+        )
+
+    def test_language_accepts_only_redacted_results_and_emits_frozen_response(self):
+        result = asyncio.run(run_language(self.language_job))
+        self.assertEqual(result.resident_response_candidate.intent, "STABLE")
+        response_values = {
+            item.feature_value
+            for item in result.observations
+            if item.feature_name == "resident_response"
+        }
+        self.assertEqual(response_values, {"resident_response_stable"})
+        serialized = result.model_dump_json()
+        self.assertNotIn(self.language_job["media_locator"], serialized)
+        self.assertNotIn("media_locator", serialized)
+        self.assertNotIn("audio_path", serialized)
+
+    def test_language_rejects_raw_audio_and_raw_transcript_fields(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            audio_path = Path(temp_dir) / "raw.wav"
+            audio_path.write_bytes(b"not-a-real-wave")
+            audio_job = dict(self.language_job, media_locator=str(audio_path))
+            audio_result = asyncio.run(run_language(audio_job))
+            self.assertEqual(audio_result.status.value, "FAILED")
+            self.assertEqual(audio_result.error.code, "LANGUAGE_INPUT_ERROR")
+
+            unsafe_path = Path(temp_dir) / "unsafe.json"
+            unsafe_path.write_text(
+                json.dumps({
+                    "schema_version": "language-analysis/1.0",
+                    "raw_transcript": "forbidden",
+                    "keyword_groups": [],
+                    "resident_response": None,
+                    "audio_quality": 0.9,
+                    "processing_source": "ASR_REDACTED",
+                    "model_version": "test",
+                }),
+                encoding="utf-8",
+            )
+            unsafe_job = dict(self.language_job, media_locator=str(unsafe_path))
+            unsafe_result = asyncio.run(run_language(unsafe_job))
+            self.assertEqual(unsafe_result.status.value, "FAILED")
+            self.assertEqual(unsafe_result.observations, [])
+            self.assertEqual(unsafe_result.evidences, [])
+
+    def test_language_help_is_the_only_other_resident_response(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_path = Path(temp_dir) / "help.json"
+            input_path.write_text(
+                json.dumps({
+                    "schema_version": "language-analysis/1.0",
+                    "keyword_groups": [],
+                    "resident_response": "resident_response_help",
+                    "audio_quality": 0.9,
+                    "processing_source": "MOCK_REDACTED",
+                    "model_version": "test-v1",
+                    "language": "Chinese",
+                }),
+                encoding="utf-8",
+            )
+            job = dict(self.language_job, media_locator=str(input_path))
+            result = asyncio.run(run_language(job))
+            self.assertEqual(result.status.value, "NO_EVIDENCE")
+            self.assertEqual(result.resident_response_candidate.intent, "HELP")
+            response_values = {
+                item.feature_value
+                for item in result.observations
+                if item.feature_name == "resident_response"
+            }
+            self.assertEqual(response_values, {"resident_response_help"})
+            self.assertNotIn("UNCERTAIN", result.model_dump_json())
+
+    def test_trajectory_json_can_join_pacing_and_long_term_trends(self):
+        job = dict(
+            self.trajectory_job,
+            media_locator="adapter_contract/trajectory_input.trends.json",
+        )
+        result = asyncio.run(run_trajectory(job))
+        self.assertEqual(result.status.value, "SUCCESS")
+        evidence_types = {item.evidence_type for item in result.evidences}
+        self.assertTrue({
+            "unusual_pacing",
+            "activity_range_decline",
+            "room_transition_decline",
+        }.issubset(evidence_types))
+        self.assertTrue(all(item.asset_id == job["asset_id"] for item in result.observations))
 
     def test_failed_input_has_no_fabricated_results(self):
         missing = dict(self.trajectory_job, media_locator="does-not-exist.json")
