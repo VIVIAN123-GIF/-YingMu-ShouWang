@@ -350,8 +350,9 @@ onBeforeUnmount(stopEventSession)
     <el-alert v-if="syncWarning" :title="syncWarning" type="warning" show-icon :closable="false" />
 
     <template v-if="event">
-      <section class="event-summary-card">
+      <section class="event-summary-card" data-testid="risk-engine-panel">
         <div class="event-summary-main">
+          <span class="section-kicker">风险引擎结果</span>
           <div class="summary-badges">
             <RiskBadge :level="event.risk_level" />
             <el-tag size="large" effect="plain">{{ statusLabel(event.status) }}</el-tag>
@@ -360,10 +361,10 @@ onBeforeUnmount(stopEventSession)
           <h2>{{ event.title }}</h2>
           <p>{{ event.recommended_action }}</p>
           <div class="meta-line">
-            <span>事件 {{ event.event_id }}</span><span>{{ domainLabel(event.primary_domain) }}</span><span>{{ event.ruleset_version }}</span><span>{{ formatDateTime(event.created_at) }}</span>
+            <span>事件 {{ event.event_id }}</span><span>风险等级 {{ event.risk_level }}</span><span>事件状态 {{ event.status }}</span><span>规则版本 {{ event.ruleset_version }}</span><span>{{ formatDateTime(event.created_at) }}</span>
           </div>
         </div>
-        <div class="event-score"><span>{{ formatRiskScore(event.risk_score) }}</span><small>事件峰值</small></div>
+        <div class="event-score"><span>{{ formatRiskScore(event.risk_score) }}</span><small>风险分数</small></div>
       </section>
 
       <MediaPanel v-if="assetState === 'ready'" :asset="asset" :source-mode="event.source_mode" :simulated="event.simulated" />
@@ -391,8 +392,10 @@ onBeforeUnmount(stopEventSession)
           <p><strong>建议：</strong>{{ explanation.explanation.recommended_action_text }}</p>
           <p class="agent-capability-notice">{{ explanation.explanation.capability_notice }}</p>
           <dl class="detail-list agent-explanation-meta">
-            <div><dt>生成来源</dt><dd data-testid="agent-explanation-generated-by">{{ explanationGeneratedBy }}</dd></div>
-            <div><dt>模板降级</dt><dd data-testid="agent-explanation-fallback-used">{{ explanationFallbackUsed ? '是' : '否' }}</dd></div>
+            <div><dt>generated_by</dt><dd data-testid="agent-explanation-generated-by">{{ explanationGeneratedBy }}</dd></div>
+            <div><dt>fallback_used</dt><dd data-testid="agent-explanation-fallback-used">{{ explanationFallbackUsed }}</dd></div>
+            <div><dt>创建时间（北京时间）</dt><dd data-testid="agent-explanation-created-at">{{ formatDateTime(explanation.created_at) }}</dd></div>
+            <div><dt>完成时间（北京时间）</dt><dd data-testid="agent-explanation-completed-at">{{ formatDateTime(explanation.completed_at) }}</dd></div>
           </dl>
           <el-tag v-if="explanationFallbackUsed" type="warning" effect="plain" data-testid="agent-explanation-fallback">模板降级解释</el-tag>
         </div>
@@ -400,13 +403,15 @@ onBeforeUnmount(stopEventSession)
 
       <section class="event-detail-grid">
         <div class="event-primary-column">
-          <article class="content-card">
+          <article class="content-card" data-testid="evidence-panel">
             <div class="card-heading"><div><span class="section-kicker">Evidence</span><h2>为什么系统建议关注</h2></div><span>{{ event.evidence_summary.length }} 条证据</span></div>
             <div v-if="displayEvidences.length" class="evidence-grid">
               <article v-for="evidence in displayEvidences" :key="evidence.evidence_id" class="evidence-card">
                 <div class="evidence-top"><code>{{ evidence.evidence_type }}</code><span>{{ evidence.time_scale || '摘要' }}</span></div>
                 <h3>{{ evidence.explanation }}</h3>
                 <div class="evidence-metrics">
+                  <span><small>当前值</small><b>{{ evidence.current_value ?? '—' }}</b></span>
+                  <span><small>个人基线</small><b>{{ evidence.baseline_value ?? '—' }}</b></span>
                   <span><small>异常程度</small><b>{{ formatPercent(evidence.severity) }}</b></span>
                   <span><small>置信度</small><b>{{ formatPercent(evidence.confidence) }}</b></span>
                   <span><small>数据质量</small><b>{{ formatPercent(evidence.data_quality) }}</b></span>
@@ -478,7 +483,7 @@ onBeforeUnmount(stopEventSession)
             </el-button>
           </section>
 
-          <section class="content-card tool-card">
+          <section class="content-card tool-card" data-testid="intervention-result-panel">
             <div class="card-heading"><div><span class="section-kicker">工具结果</span><h2>执行记录</h2></div></div>
             <div v-if="event.interventions?.length" class="tool-results">
               <article v-for="result in event.interventions" :key="result.result_id">
@@ -491,6 +496,7 @@ onBeforeUnmount(stopEventSession)
                   <div><dt>老人反馈</dt><dd>{{ result.resident_response || '暂无' }}</dd></div>
                   <div v-if="result.family_feedback"><dt>家属反馈</dt><dd>{{ result.family_feedback }}</dd></div>
                   <div><dt>干预后水位</dt><dd>{{ formatRiskScore(result.risk_after) }}</dd></div>
+                  <div><dt>是否解除</dt><dd>{{ result.resolved }}</dd></div>
                   <div><dt>结果</dt><dd>{{ result.resolution_reason || '等待结果' }}</dd></div>
                 </dl>
                 <el-alert v-if="result.delivery_status === 'FAILED'" title="工具调用失败已如实保留，未标记为干预成功。" type="error" show-icon :closable="false" />
