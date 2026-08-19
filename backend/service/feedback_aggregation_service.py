@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.config import RULESET_VERSION
 from backend.db.models import Evidence, InterventionResult, Observation, RiskEvent
 from backend.service.serialization import aware, dumps, loads
+from backend.service.resident_response import canonical_resident_response
 from contracts.v1.ruleset import load_ruleset
 
 
@@ -55,8 +56,7 @@ async def aggregate_no_response(
     if aware(now) < delivered_at + timedelta(seconds=ruleset.thresholds["no_response_seconds"]):
         return None
     has_later_response = any(
-        item.resident_response
-        and item.resident_response.upper() in {"STABLE", "HELP"}
+        canonical_resident_response(item.resident_response) is not None
         and aware(item.started_at) >= delivered_at
         for item in interventions
     )

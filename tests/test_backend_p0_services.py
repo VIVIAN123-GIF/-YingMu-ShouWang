@@ -239,6 +239,57 @@ def test_internal_evidence_is_idempotent_and_escalates_before_low_quality(tmp_pa
     assert result["next_state"] == "RED"
 
 
+def test_canonical_resident_response_prevents_no_response_escalation(tmp_path):
+    async def operation(db):
+        resident_id = "resident-canonical-response"
+        event = event_row("event-canonical-response", resident_id)
+        delivery = InterventionResult(
+            schema_version="1.0",
+            result_id="result-canonical-delivery",
+            event_id=event.event_id,
+            started_at=NOW - timedelta(seconds=70),
+            completed_at=NOW - timedelta(seconds=70),
+            action_type="voice",
+            tool_name="mock_voice",
+            delivery_status="SUCCESS",
+            resident_response=None,
+            family_feedback=None,
+            risk_after=None,
+            resolved=False,
+            resolution_reason=None,
+            operator="system",
+            source_mode="MOCK",
+            simulated=True,
+        )
+        response = InterventionResult(
+            schema_version="1.0",
+            result_id="result-canonical-response",
+            event_id=event.event_id,
+            started_at=NOW - timedelta(seconds=65),
+            completed_at=NOW - timedelta(seconds=65),
+            action_type="resident_response",
+            tool_name="language_adapter",
+            delivery_status="SUCCESS",
+            resident_response="resident_response_stable",
+            family_feedback=None,
+            risk_after=None,
+            resolved=False,
+            resolution_reason=None,
+            operator="system",
+            source_mode="MOCK",
+            simulated=True,
+        )
+        db.add_all([event, delivery, response])
+        await db.commit()
+        evidence = await aggregate_no_response(db, event, NOW)
+        scheduled = await advance_one_due_event(db, now=NOW)
+        return evidence, scheduled
+
+    evidence, scheduled = asyncio.run(with_database(tmp_path, operation))
+    assert evidence is None
+    assert scheduled is None
+
+
 def test_persistent_instability_uses_three_qualified_source_consistent_items(tmp_path):
     async def operation(db):
         resident_id = "resident-persistent"
@@ -355,7 +406,7 @@ def test_agent_snapshot_includes_only_normalized_resident_help_semantic(tmp_path
             action_type="resident_response",
             tool_name="language_adapter",
             delivery_status="SUCCESS",
-            resident_response="help",
+            resident_response="resident_response_help",
             family_feedback=None,
             risk_after=None,
             resolved=False,
@@ -379,6 +430,65 @@ def test_agent_snapshot_includes_only_normalized_resident_help_semantic(tmp_path
     assert "audio" not in serialized
     assert "media" not in serialized
     assert "token" not in serialized
+
+
+def test_language_candidates_persist_canonical_resident_responses(tmp_path):
+    async def operation(db):
+        resident_id = "resident-language-response"
+        event = event_row("event-language-response", resident_id)
+        task = alarm_task_row("language-response", "asset-language-response")
+        task.resident_id = resident_id
+        db.add_all([event, task])
+        await db.commit()
+
+        responses = []
+        for intent in ("HELP", "STABLE", "UNCERTAIN"):
+            batch = AdapterBatch.model_validate({
+                "schema_version": "adapter-batch/1.0",
+                "job_id": f"job-language-{intent.lower()}",
+                "module": "LANGUAGE",
+                "adapter_version": "language-test-v1",
+                "status": "NO_EVIDENCE",
+                "started_at": NOW,
+                "completed_at": NOW,
+                "observations": [{
+                    "schema_version": "1.0",
+                    "observation_id": f"obs-language-{intent.lower()}",
+                    "resident_id": resident_id,
+                    "timestamp": NOW,
+                    "source": "language_adapter",
+                    "feature_name": "resident_response",
+                    "feature_value": f"resident_response_{intent.lower()}",
+                    "unit": None,
+                    "location": "living_room",
+                    "confidence": 0.9,
+                    "data_quality": 0.9,
+                    "source_mode": "MOCK",
+                    "asset_id": "asset-language-response",
+                    "simulated": True,
+                    "metadata": {},
+                }],
+                "evidences": [],
+                "resident_response_candidate": {
+                    "intent": intent,
+                    "confidence": 0.9,
+                    "transcript_observation_id": f"obs-language-{intent.lower()}",
+                },
+                "diagnostics": {},
+                "error": None,
+            })
+            await algorithm_task_service._persist_resident_responses(db, task, [batch])
+
+        rows = (await db.execute(
+            select(InterventionResult)
+            .where(InterventionResult.event_id == event.event_id)
+            .order_by(InterventionResult.result_id)
+        )).scalars().all()
+        responses.extend(row.resident_response for row in rows)
+        return responses
+
+    responses = asyncio.run(with_database(tmp_path, operation))
+    assert responses == ["resident_response_help", "resident_response_stable"]
 
 
 def test_unregistered_algorithm_adapter_finishes_failed(monkeypatch, tmp_path):

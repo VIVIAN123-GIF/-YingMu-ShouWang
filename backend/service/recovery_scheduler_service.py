@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import InterventionResult, RiskEvent
 from backend.service.risk_service import evaluate, ruleset
+from backend.service.resident_response import canonical_resident_response
 from backend.service.serialization import aware, cn_now_naive
 
 
@@ -34,8 +35,7 @@ async def _is_due(db: AsyncSession, event: RiskEvent, now: datetime) -> bool:
         return False
     delivered_at = aware(delivery.completed_at or delivery.started_at)
     if any(
-        item.resident_response
-        and item.resident_response.upper() in {"STABLE", "HELP"}
+        canonical_resident_response(item.resident_response) is not None
         and aware(item.started_at) >= delivered_at
         for item in rows
     ):
