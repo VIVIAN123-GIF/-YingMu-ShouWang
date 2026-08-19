@@ -21,6 +21,7 @@ from backend.service.adapter_registry import AdapterRegistry, AdapterRegistryErr
 from backend.service.algorithm_gateway import AlgorithmGateway
 from backend.service.evidence_service import create_evidence
 from backend.service.observation_service import create_observation
+from backend.service.resident_response import canonical_resident_response
 from backend.service.serialization import aware, dumps
 from backend.service.snapshot_asset_service import resolve_private_asset_path
 from backend.schemas.intervention_result import InterventionResultCreate
@@ -147,7 +148,10 @@ async def _persist_resident_responses(
         return
     for batch in batches:
         candidate = batch.resident_response_candidate
-        if candidate is None or candidate.intent.value == "UNCERTAIN":
+        response = canonical_resident_response(
+            candidate.intent if candidate is not None else None
+        )
+        if response is None:
             continue
         timestamp = batch.completed_at
         payload = InterventionResultCreate(
@@ -159,7 +163,7 @@ async def _persist_resident_responses(
             action_type="resident_response",
             tool_name="language_adapter",
             delivery_status="SUCCESS",
-            resident_response=candidate.intent.value.lower(),
+            resident_response=response,
             family_feedback=None,
             risk_after=None,
             resolved=False,

@@ -13,7 +13,7 @@ RiskEvent + Evidence
         -> AgentExplanationResponse
 ```
 
-同一事件的 `request_id` 由 `event_id` 和事件版本生成。服务使用有界内存缓存（最多 512 条、默认 15 分钟），重复请求返回原结果，不重复调用模型。持久化由后端事件链路负责，本服务不新增数据库表。
+同一事件的 `request_id` 由 `event_id` 和事件版本生成。服务使用有界内存缓存（最多 512 条、默认 15 分钟），重复请求返回原结果，不重复调用模型。当前后端已使用持久化 Explanation 任务记录事件版本、结构化请求、生成结果、来源、降级标记和脱敏错误码；模型调用在独立 Agent Worker 中执行，不阻塞 RiskEvent 数据库事务。
 
 ## 配置
 
@@ -64,20 +64,30 @@ py -3.14 scripts/validate_agent_llm_live.py
 |---|---|
 | Token 获取 | 已验证 |
 | 设备状态 | 已验证 |
-| WebHook | 已验证 |
-| 真实抓拍 | 已验证 |
+| WebHook真实回调 | 已验证 |
+| 真实抓拍 | 已验证；最新批次10/10成功，历史超时记录保留 |
 | 真实告警自动抓拍 | 已验证 |
 | Asset 私有入库 | 已验证 |
 | 临时播放地址 | 部分验证或未稳定验证 |
-| 文本大模型解释 | 配置 Provider 后可验证 |
-| 模板解释降级 | 已实现 |
+| 萤石 `qwen3.6-flash` | 已验证；真实调用22980 ms |
+| RiskEvent 智能体解释 | 已验证；可持久化并通过事件接口查询 |
+| 模板解释降级 | 已实现并通过测试 |
 | 萤石服务端语音 | 未验证 |
 | Mock 语音/文字提醒 | 已实现 |
+| 授权 MP4 风险闭环 | 已验证；`RECORDED_REPLAY/simulated=true` |
+| 真实设备时序闭环 | 尚未完整验证 |
 
 ## 联调顺序
 
-1. 冷同学提供已持久化的 `RiskEvent` 和 `Evidence` 摘要。
-2. 调用 `AgentExplanationService.explain()`。
-3. 将 `AgentExplanationResponse` 持久化或返回前端。
+1. RiskEvent 在数据库事务提交后创建幂等 Explanation 任务。
+2. Agent Worker 异步调用 `AgentExplanationService.explain()`，成功或模板降级结果均持久化。
+3. 前端通过 `GET /api/v1/events/{event_id}/explanation` 独立轮询，不阻塞事件详情。
 4. 前端分栏展示风险引擎结果、智能体解释、能力提示和降级状态。
 5. 干预由状态机或前端按钮触发，不能由模型自行触发。
+
+## 最终验证证据
+
+- 萤石 Token Switch `qwen3.6-flash`：`deliverables/zhang-d3-agent-llm/ezviz-qwen-live-validation-final.json`，结果 `SUCCESS`，耗时22980 ms，`fallback_used=false`；
+- 授权录像闭环：`deliverables/lyt-mp4-worker-e2e/closed-loop-validation.json`，事件依次命中 `R-FALL-02`、`R-FALL-04`、`R-FALL-05` 并最终 `RESOLVED`；
+- 最新 Explanation：`generated_by=qwen3.6-flash`、`fallback_used=false`，API 时间带 `+08:00`；
+- 干预：当前验证工具为 `mock_voice`，`simulated=true`；萤石服务端语音仍未验证。

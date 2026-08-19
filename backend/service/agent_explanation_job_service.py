@@ -16,6 +16,7 @@ from backend.service.agent_explanation_service import (
     build_default_agent_explanation_service,
 )
 from backend.service.errors import ServiceError
+from backend.service.resident_response import canonical_resident_response
 from backend.service.serialization import aware, dumps, loads, utc_naive_to_cn
 from contracts.v1.agent import (
     AgentBaselineStatus,
@@ -66,8 +67,8 @@ async def _event_snapshot(
     )).scalars().first()
     # Represent a resident response as a normalized semantic instead of a transcript.
     if latest_intervention is not None and latest_intervention.resident_response:
-        semantic = f"resident_response_{latest_intervention.resident_response.lower()}"
-        if semantic in {"resident_response_help", "resident_response_stable"}:
+        semantic = canonical_resident_response(latest_intervention.resident_response)
+        if semantic is not None:
             evidence_items = evidence_items[:11]
             evidence_items.append(AgentEvidenceItem(
                 evidence_type="resident_response",
