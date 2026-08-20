@@ -14,6 +14,16 @@ py -3.14 -m backend.worker.agent_worker
 
 ## 算法适配器
 
+首次在本机或服务器初始化算法运行环境时，使用 Python 3.9-3.12 执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup_algorithm_runtime.ps1 -PythonExe python
+```
+
+脚本会创建仓库 `.venv`、安装后端与视频算法依赖、下载官方
+`pose_landmarker_heavy.task`、校验 SHA-256，并实际初始化 PoseLandmarker。
+模型是部署资产且被 Git 忽略，终端用户不需要下载；服务器构建或初始化时只需执行一次。
+
 算法入口使用 `package.module:callable` 配置：
 
 ```ini

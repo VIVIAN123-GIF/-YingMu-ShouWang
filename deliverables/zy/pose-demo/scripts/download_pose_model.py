@@ -10,6 +10,7 @@ MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/pose_landmarker/"
     "pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task"
 )
+EXPECTED_SHA256 = "64437af838a65d18e5ba7a0d39b465540069bc8aae8308de3e318aad31fcbc7b"
 
 
 def sha256_file(path: pathlib.Path) -> str:
@@ -38,9 +39,19 @@ def main() -> None:
     args = parser.parse_args()
 
     output_path = pathlib.Path(args.output).resolve()
-    download_file(MODEL_URL, output_path)
+    partial_path = output_path.with_name(f"{output_path.name}.part")
+    partial_path.unlink(missing_ok=True)
+    try:
+        download_file(MODEL_URL, partial_path)
+        actual_hash = sha256_file(partial_path)
+        if actual_hash != EXPECTED_SHA256:
+            raise RuntimeError(f"Downloaded model checksum mismatch: {actual_hash}")
+        partial_path.replace(output_path)
+    except Exception:
+        partial_path.unlink(missing_ok=True)
+        raise
     print(f"Downloaded model to: {output_path}")
-    print(f"SHA256: {sha256_file(output_path)}")
+    print(f"SHA256: {EXPECTED_SHA256}")
 
 
 if __name__ == "__main__":
