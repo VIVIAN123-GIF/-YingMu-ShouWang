@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "D11_QWEN_INVALID_JSON_CONTROLLED_MOCK",
+  "generated_at": "2026-08-18T11:49:14.028+08:00",
+  "result": "PASS",
+  "provider_request_count": 1,
+  "generated_by": "template-fallback-v1",
+  "fallback_used": true,
+  "invalid_content_exposed": false,
+  "latency_ms": 1,
+  "source_mode": "MOCK",
+  "simulated": true,
+  "contains_credentials": false,
+  "contains_media_url": false
+}

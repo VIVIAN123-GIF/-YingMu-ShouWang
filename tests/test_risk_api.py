@@ -1086,7 +1086,7 @@ def test_ezviz_alarm_webhook_verifies_signature_redacts_and_is_idempotent():
         assert '\"url\":\"***\"' in saved
 
         processed = asyncio.run(process_queued_alarm())
-        assert processed.status == "WAITING_ALGORITHM"
+        assert processed.status == "CAPTURED"
         assert processed.capture_asset_id == "asset-mock-snapshot-001"
 
         invalid = client.post(

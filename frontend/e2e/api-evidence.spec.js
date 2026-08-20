@@ -148,6 +148,15 @@ for (let round = 1; round <= 3; round += 1) {
     await expect(page.getByText('INTERVENING').first()).toBeVisible()
     await expect(page.getByText(eventId).first()).toBeVisible()
     await expect(page.getByTestId('event-sync-status')).toContainText('自动同步中')
+    const explanationPanel = page.getByTestId('agent-explanation-panel')
+    await expect(explanationPanel.getByTestId('agent-explanation-status')).toHaveText('模板降级解释', { timeout: 10_000 })
+    await expect(explanationPanel.getByTestId('agent-explanation-generated-by')).toHaveText('template-fallback-v1')
+    await expect(explanationPanel.getByTestId('agent-explanation-fallback-used')).toHaveText('true')
+    await expect(explanationPanel).toContainText('检测到跌倒风险前兆')
+    const agentExplanation = await checkedGet(request, `/api/v1/events/${eventId}/explanation`, exchanges)
+    expect(agentExplanation.status).toBe('FALLBACK')
+    expect(agentExplanation.generated_by).toBe('template-fallback-v1')
+    expect(agentExplanation.fallback_used).toBe(true)
     await saveScreenshot(page, artifactDir, deliverableDir, '01-intervening.png')
 
     const intervention = await checkedPost(request, `/api/v1/events/${eventId}/intervene`, {}, exchanges)
@@ -250,6 +259,8 @@ for (let round = 1; round <= 3; round += 1) {
       statuses: ['INTERVENING', 'OBSERVING', 'RESOLVED'],
       ruleset_version: 'ruleset-v1.0',
       feedback_statuses: [firstFeedback.status, repeatedFeedback.status],
+      agent_explanation_status: agentExplanation.status,
+      agent_explanation_generated_by: agentExplanation.generated_by,
       repository_screenshots: ['01-intervening.png', '02-observing.png', '03-resolved-trace.png'],
       local_video: `frontend/artifacts/api-evidence/run-${round}/screen-recording.webm`,
     }

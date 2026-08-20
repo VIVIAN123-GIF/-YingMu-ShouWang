@@ -18,6 +18,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urlparse
+from uuid import uuid4
 
 import httpx
 
@@ -28,9 +29,11 @@ from backend.config import (ENV_MODE, EZVIZ_ACCESS_TOKEN,
                             EZVIZ_APP_SECRET, EZVIZ_BASE_URL,
                             EZVIZ_CAPTURE_TIMEOUT_SECONDS,
                             EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL,
-                            EZVIZ_DEVICE_VERIFY_CODE)
+                            EZVIZ_DEVICE_VERIFY_CODE,
+                            YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS)
 from backend.utils import ezviz_auth as auth_module
 from backend.utils.ezviz_auth import EzvizAuth
+from contracts.v1.platform import PlatformSnapshotResult
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -218,10 +221,14 @@ async def validate_snapshot() -> dict[str, Any]:
         data = body.get("data") if isinstance(body, dict) else None
         image_url = (data.get("picUrl") or data.get("url")) if isinstance(data, dict) else None
         valid_image = isinstance(image_url, str) and urlparse(image_url).scheme in {"http", "https"}
+        captured_at = datetime.now(TZ)
         authorized = False
         image_http_status = None
         if valid_image:
-            async with httpx.AsyncClient(timeout=12.0, follow_redirects=True) as client:
+            async with httpx.AsyncClient(
+                timeout=YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS,
+                follow_redirects=True,
+            ) as client:
                 async with client.stream("GET", image_url) as image_response:
                     image_http_status = image_response.status_code
                     content_type = image_response.headers.get("content-type", "").lower()
@@ -232,6 +239,20 @@ async def validate_snapshot() -> dict[str, Any]:
                         and bool(first_chunk)
                     )
         success = http_status == 200 and code == "200" and valid_image and authorized
+        contract = None
+        if success:
+            contract = PlatformSnapshotResult(
+                schema_version="platform-snapshot/1.0",
+                request_id=f"ezviz-capture-{uuid4().hex}",
+                device_ref=device_alias(),
+                channel_no=EZVIZ_CHANNEL_NO,
+                captured_at=captured_at,
+                source_mode="LIVE_DEVICE",
+                simulated=False,
+                temporary_url=image_url,
+                expires_at=None,
+                provider_latency_ms=elapsed_ms,
+            )
         record.update({
             "result": "SUCCESS" if success else "FAILED",
             "http_status": http_status,
@@ -242,9 +263,15 @@ async def validate_snapshot() -> dict[str, Any]:
             "image_http_status": image_http_status,
             "authorization_status": "AUTHORIZED" if authorized else "NOT_CONFIRMED",
             "image_url_stored": False,
+            "temporary_url_stored": False,
             "source_mode": "LIVE_DEVICE" if success else "MOCK",
+            "simulated": not success,
             "failure_reason": None if success else business_failure_reason(code, "SNAPSHOT_NOT_CONFIRMED"),
         })
+        if contract is not None:
+            safe_contract = contract.model_dump(mode="json", exclude={"temporary_url"})
+            record.update(safe_contract)
+            record["temporary_url_stored"] = False
     except Exception as exc:
         record.update({
             "result": "FAILED", "http_status": None, "business_code": None,
@@ -252,7 +279,8 @@ async def validate_snapshot() -> dict[str, Any]:
             "latency_ms": round((time.perf_counter() - started) * 1000),
             "valid_image_obtained": False, "image_http_status": None,
             "authorization_status": "NOT_CONFIRMED", "image_url_stored": False,
-            "source_mode": "MOCK", "failure_reason": safe_failure(exc),
+            "temporary_url_stored": False, "source_mode": "MOCK",
+            "simulated": True, "failure_reason": safe_failure(exc),
         })
     return record
 
@@ -330,36 +358,46 @@ async def validate_live_address() -> dict[str, Any]:
     return record
 
 
-async def run_once(run_index: int) -> dict[str, Any]:
+async def run_once(run_index: int, capture_only: bool = False) -> dict[str, Any]:
     report: dict[str, Any] = {
         "schema_version": "1.0",
         "test_kind": "EZVIZ_LIVE_ACCEPTANCE",
         "generated_at": now_iso(),
         "run_index": run_index,
+        "acceptance_mode": "CAPTURE_ONLY" if capture_only else "FULL_PLATFORM",
         "token_acquisition_mode": token_acquisition_mode(),
         "device_alias": device_alias() if EZVIZ_DEVICE_SERIAL else None,
         "contains_credentials": False,
         "contains_permanent_public_url": False,
+        "contains_temporary_url": False,
         "stages": [],
     }
     if ENV_MODE != "live" or not EZVIZ_DEVICE_SERIAL:
         report["stages"] = [
             skipped("device_status", "LIVE_CONFIGURATION_REQUIRED"),
             skipped("device_snapshot", "DEVICE_STATUS_NOT_SUCCESSFUL"),
-            skipped("temporary_playback_address", "SNAPSHOT_NOT_SUCCESSFUL"),
         ]
+        if not capture_only:
+            report["stages"].append(
+                skipped("temporary_playback_address", "SNAPSHOT_NOT_SUCCESSFUL")
+            )
     else:
         status = await validate_status()
         report["stages"].append(status)
         if status["result"] != "SUCCESS":
-            report["stages"].extend([
-                skipped("device_snapshot", "DEVICE_STATUS_NOT_SUCCESSFUL"),
-                skipped("temporary_playback_address", "SNAPSHOT_NOT_SUCCESSFUL"),
-            ])
+            report["stages"].append(
+                skipped("device_snapshot", "DEVICE_STATUS_NOT_SUCCESSFUL")
+            )
+            if not capture_only:
+                report["stages"].append(
+                    skipped("temporary_playback_address", "SNAPSHOT_NOT_SUCCESSFUL")
+                )
         else:
             snapshot = await validate_snapshot()
             report["stages"].append(snapshot)
-            if snapshot["result"] != "SUCCESS":
+            if capture_only:
+                pass
+            elif snapshot["result"] != "SUCCESS":
                 report["stages"].append(skipped("temporary_playback_address", "SNAPSHOT_NOT_SUCCESSFUL"))
             else:
                 report["stages"].append(await validate_live_address())
@@ -377,32 +415,69 @@ def semantic_signature(report: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def write_json(path: Path, payload: object) -> None:
+    serialized = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    for secret in known_secrets():
+        if secret in serialized:
+            raise ValueError("acceptance report contains a configured secret")
+    if URL_PATTERN.search(serialized):
+        raise ValueError("acceptance report contains a URL")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.write_text(serialized, encoding="utf-8")
 
 
 async def run_many(runs: int, interval_seconds: float = 2.0,
-                   output_dir: Path = OUTPUT_DIR) -> dict[str, Any]:
+                   output_dir: Path = OUTPUT_DIR,
+                   capture_only: bool = False) -> dict[str, Any]:
     reports: list[dict[str, Any]] = []
     for run_index in range(1, runs + 1):
-        report = await run_once(run_index)
+        report = (
+            await run_once(run_index, capture_only=True)
+            if capture_only else await run_once(run_index)
+        )
         reports.append(report)
         write_json(output_dir / f"ezviz-live-validation-run-{run_index}.json", report)
         if run_index < runs and interval_seconds:
             await asyncio.sleep(interval_seconds)
 
     signatures = [semantic_signature(report) for report in reports]
+    capture_stages = [
+        stage
+        for report in reports
+        for stage in report["stages"]
+        if stage.get("stage") == "device_snapshot"
+    ]
+    capture_latencies = [
+        stage["provider_latency_ms"]
+        for stage in capture_stages
+        if stage.get("result") == "SUCCESS"
+        and isinstance(stage.get("provider_latency_ms"), int)
+    ]
     summary = {
         "schema_version": "1.0",
         "test_kind": "EZVIZ_LIVE_ACCEPTANCE_SUMMARY",
         "generated_at": now_iso(),
         "runs": runs,
+        "acceptance_mode": "CAPTURE_ONLY" if capture_only else "FULL_PLATFORM",
         "token_acquisition_mode": token_acquisition_mode(),
         "successful_runs": sum(report["overall_result"] == "SUCCESS" for report in reports),
+        "capture_records": len(capture_stages),
+        "capture_attempts": sum(stage.get("executed") is True for stage in capture_stages),
+        "capture_successes": sum(stage.get("result") == "SUCCESS" for stage in capture_stages),
+        "capture_failures": sum(stage.get("result") == "FAILED" for stage in capture_stages),
+        "capture_skipped": sum(stage.get("result") == "SKIPPED" for stage in capture_stages),
+        "capture_latency_ms": {
+            "minimum": min(capture_latencies) if capture_latencies else None,
+            "maximum": max(capture_latencies) if capture_latencies else None,
+            "average": (
+                round(sum(capture_latencies) / len(capture_latencies))
+                if capture_latencies else None
+            ),
+        },
         "consistent": all(signature == signatures[0] for signature in signatures),
         "semantic_signature": signatures[0],
         "contains_credentials": False,
         "contains_permanent_public_url": False,
+        "contains_temporary_url": False,
         "overall_result": (
             "SUCCESS" if all(report["overall_result"] == "SUCCESS" for report in reports)
             else "INCOMPLETE"
@@ -422,6 +497,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--runs", type=int, default=1, help="number of sequential retained runs")
     parser.add_argument("--interval-seconds", type=float, default=2.0,
                         help="delay between retained runs")
+    parser.add_argument(
+        "--capture-only", action="store_true",
+        help="validate device status and snapshot only; do not request playback",
+    )
+    parser.add_argument(
+        "--output-dir", type=Path, default=OUTPUT_DIR,
+        help="directory for retained redacted reports",
+    )
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs must be at least 1")
@@ -432,8 +515,15 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    summary = asyncio.run(run_many(args.runs, args.interval_seconds))
-    print(f"reports={OUTPUT_DIR.relative_to(ROOT)} runs={args.runs} "
+    output_dir = args.output_dir if args.output_dir.is_absolute() else ROOT / args.output_dir
+    summary = asyncio.run(run_many(
+        args.runs, args.interval_seconds, output_dir, args.capture_only
+    ))
+    try:
+        display_dir = output_dir.relative_to(ROOT)
+    except ValueError:
+        display_dir = output_dir
+    print(f"reports={display_dir} runs={args.runs} "
           f"overall_result={summary['overall_result']}")
     return exit_code(summary)
 

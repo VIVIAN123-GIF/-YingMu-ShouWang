@@ -115,8 +115,14 @@ def main() -> None:
             cwd=ROOT,
             env=env,
         )
+        agent_worker = None
         try:
             wait_for("http://127.0.0.1:8010/health")
+            agent_worker = subprocess.Popen(
+                [os.environ.get("PYTHON", "python"), "-m", "backend.worker.agent_worker", "--poll-seconds", "0.25"],
+                cwd=ROOT,
+                env=env,
+            )
             npx = "npx.cmd" if os.name == "nt" else "npx"
             result = subprocess.run(
                 [npx, "playwright", "test", "--config", "playwright.api.config.js"],
@@ -127,6 +133,8 @@ def main() -> None:
             if result.returncode:
                 raise SystemExit(result.returncode)
         finally:
+            if agent_worker is not None:
+                stop_process(agent_worker)
             stop_process(backend)
     package_videos()
 

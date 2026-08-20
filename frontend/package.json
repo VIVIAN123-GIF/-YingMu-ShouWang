@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "evidence": "playwright test --config playwright.config.js",
-    "evidence:api": "python scripts/run_api_evidence.py"
+    "evidence:api": "python scripts/run_api_evidence.py",
+    "verify:agent-api": "python scripts/validate_agent_api_frontend.py"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",

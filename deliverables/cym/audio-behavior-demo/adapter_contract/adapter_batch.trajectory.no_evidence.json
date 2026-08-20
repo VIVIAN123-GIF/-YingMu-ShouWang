@@ -1,0 +1,28 @@
+{
+  "schema_version": "adapter-batch/1.0",
+  "job_id": "job-trajectory-sample-no-evidence",
+  "module": "TRAJECTORY",
+  "adapter_version": "behavior-adapter-v3",
+  "status": "NO_EVIDENCE",
+  "started_at": "2026-08-16T10:00:01+08:00",
+  "completed_at": "2026-08-16T10:00:02+08:00",
+  "observations": [{
+    "schema_version": "1.0",
+    "observation_id": "obs-trajectory-sample-no-evidence-activity",
+    "resident_id": "resident-demo-001",
+    "timestamp": "2026-08-16T10:00:00+08:00",
+    "source": "tracking",
+    "feature_name": "dominant_activity_level",
+    "feature_value": "STILL",
+    "unit": null,
+    "location": "living_room",
+    "confidence": 0.7,
+    "data_quality": 0.9,
+    "source_mode": "RECORDED_REPLAY",
+    "asset_id": "asset-trajectory-sample-no-evidence",
+    "simulated": true
+  }],
+  "evidences": [],
+  "diagnostics": {"input_format": "JSON_SUMMARY", "tracking_quality": 0.9},
+  "error": null
+}

@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, String, Text
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, Text
 
 from backend.db.database import Base
 
@@ -25,4 +25,8 @@ class Asset(Base):
     authorization_status = Column(String(32), nullable=False, default="PENDING")
     authorization_record_id = Column(String(128), nullable=True)
     retention_until = Column(DateTime, nullable=True)
+    content_sha256 = Column(String(64), nullable=True, index=True)
+    content_type = Column(String(128), nullable=True)
+    byte_size = Column(BigInteger, nullable=True)
+    storage_key = Column(String(256), nullable=True, unique=True)
     create_time = Column(DateTime, default=datetime.datetime.now, nullable=False)

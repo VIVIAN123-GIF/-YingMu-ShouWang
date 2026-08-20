@@ -17,8 +17,9 @@
     "simulated": true
   },
   "error": {
-    "type": "AlgorithmInputError",
     "code": "MODEL_NOT_FOUND",
-    "message": "model_missing_for_video"
-  }
+    "message": "model_missing_for_video",
+    "retryable": false
+  },
+  "resident_response_candidate": null
 }

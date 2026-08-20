@@ -9,6 +9,17 @@ def aware(value: datetime) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=CN_TZ)
 
 
+def utc_naive_to_cn(value: datetime) -> datetime:
+    """Convert timestamps explicitly stored as naive UTC into Beijing time."""
+    source = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    return source.astimezone(CN_TZ)
+
+
+def cn_now_naive() -> datetime:
+    """Return current Beijing wall time for tables using local naive values."""
+    return datetime.now(CN_TZ).replace(tzinfo=None)
+
+
 def dumps(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 

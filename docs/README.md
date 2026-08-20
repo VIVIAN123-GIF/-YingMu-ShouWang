@@ -5,6 +5,7 @@
 ## 当前技术文档
 
 - [两周冲刺岗位接口规范 v1.0](./两周冲刺岗位接口规范-v1.0.md)：萤石、步态、语言、轨迹、后端、智能体、前端和设备素材之间的冻结接口与验收边界。
+- [D3 智能体解释与干预能力](./agent-explanation-and-intervention.md)：LLM Provider、模板降级、Mock 干预工具和萤石能力矩阵。
 - [算法主动提交联调说明](./algorithm-integration-submission.md)：算法模块向统一后端提交 Observation 和 Evidence 的方式。
 - [部署与验收说明](./stage4-deployment-and-acceptance.md)：部署、运行和验收入口。
 - [萤石对接阶段文档](./萤石对接阶段文档/README.md)：鉴权、能力矩阵和降级方案。

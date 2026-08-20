@@ -1,0 +1,92 @@
+{
+  "additionalProperties": false,
+  "description": "Internal platform-to-backend result; temporary_url is never browser-facing.",
+  "properties": {
+    "schema_version": {
+      "const": "platform-snapshot/1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "request_id": {
+      "maxLength": 128,
+      "minLength": 3,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "device_ref": {
+      "maxLength": 72,
+      "minLength": 8,
+      "pattern": "^device-[A-Za-z0-9_-]+$",
+      "title": "Device Ref",
+      "type": "string"
+    },
+    "channel_no": {
+      "minimum": 1,
+      "title": "Channel No",
+      "type": "integer"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "source_mode": {
+      "enum": [
+        "LIVE_DEVICE",
+        "MOCK"
+      ],
+      "title": "Source Mode",
+      "type": "string"
+    },
+    "simulated": {
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "temporary_url": {
+      "anyOf": [
+        {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Temporary Url",
+      "writeOnly": true
+    },
+    "expires_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Expires At"
+    },
+    "provider_latency_ms": {
+      "minimum": 0,
+      "title": "Provider Latency Ms",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "request_id",
+    "device_ref",
+    "channel_no",
+    "captured_at",
+    "source_mode",
+    "simulated",
+    "temporary_url",
+    "expires_at",
+    "provider_latency_ms"
+  ],
+  "title": "PlatformSnapshotResult",
+  "type": "object"
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "algorithm-job/1.0",
+  "job_id": "job-language-demo-001",
+  "correlation_id": "corr-demo-002",
+  "resident_id": "resident-demo-001",
+  "asset_id": "asset-language-demo-001",
+  "media_type": "AUDIO",
+  "media_locator": "adapter_contract/language_input.redacted.json",
+  "captured_at": "2026-08-16T10:01:00+08:00",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "location": "living_room",
+  "camera_position_id": "audio-capture-local",
+  "scene_config_id": "scene-demo-v1",
+  "requested_modules": ["LANGUAGE"],
+  "deadline_ms": 30000
+}

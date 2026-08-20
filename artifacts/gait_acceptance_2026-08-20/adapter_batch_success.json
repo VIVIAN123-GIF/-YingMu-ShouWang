@@ -24,7 +24,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -46,7 +46,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -68,7 +68,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -90,7 +90,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -112,7 +112,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -134,7 +134,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -156,7 +156,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -184,8 +184,7 @@
       "explanation": "起身时长短于规则基线，提示快速起身。",
       "adapter_version": "gait-adapter-v1",
       "source_mode": "RECORDED_REPLAY",
-      "simulated": true,
-      "asset_id": "asset-accept-004"
+      "simulated": true
     },
     {
       "schema_version": "1.0",
@@ -208,8 +207,7 @@
       "explanation": "躯干摆动角度超过步态稳定阈值。",
       "adapter_version": "gait-adapter-v1",
       "source_mode": "RECORDED_REPLAY",
-      "simulated": true,
-      "asset_id": "asset-accept-004"
+      "simulated": true
     },
     {
       "schema_version": "1.0",
@@ -232,8 +230,7 @@
       "explanation": "相对步速偏离规则基线。",
       "adapter_version": "gait-adapter-v1",
       "source_mode": "RECORDED_REPLAY",
-      "simulated": true,
-      "asset_id": "asset-accept-004"
+      "simulated": true
     }
   ],
   "diagnostics": {
@@ -266,5 +263,6 @@
     "source_mode": "RECORDED_REPLAY",
     "simulated": true
   },
-  "error": null
+  "error": null,
+  "resident_response_candidate": null
 }

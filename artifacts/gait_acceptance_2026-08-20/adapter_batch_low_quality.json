@@ -24,7 +24,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -46,7 +46,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -68,7 +68,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -90,7 +90,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -112,7 +112,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -134,37 +134,13 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
     }
   ],
   "evidences": [
-    {
-      "schema_version": "1.0",
-      "evidence_id": "evi-gait-3b1f9fdddb7ab85f",
-      "observation_ids": [
-        "obs-gait-baa57f689e415059"
-      ],
-      "resident_id": "resident-accept-003",
-      "timestamp": "2026-08-16T09:30:00+08:00",
-      "risk_domain": "FALL",
-      "evidence_type": "relative_speed_change",
-      "severity": 1.0,
-      "confidence": 0.824,
-      "data_quality": 0.417,
-      "baseline_value": 1.0,
-      "current_value": 2.646,
-      "baseline_deviation": 1.646,
-      "time_scale": "SHORT",
-      "location": "bedroom",
-      "explanation": "相对步速偏离规则基线。",
-      "adapter_version": "gait-adapter-v1",
-      "source_mode": "RECORDED_REPLAY",
-      "simulated": true,
-      "asset_id": "asset-accept-003"
-    },
     {
       "schema_version": "1.0",
       "evidence_id": "evi-gait-62012a98c373becf",
@@ -186,8 +162,7 @@
       "explanation": "有效姿态帧比例低于输入质量阈值。",
       "adapter_version": "gait-adapter-v1",
       "source_mode": "RECORDED_REPLAY",
-      "simulated": true,
-      "asset_id": "asset-accept-003"
+      "simulated": true
     }
   ],
   "diagnostics": {
@@ -211,12 +186,12 @@
       "valid_frame_ratio"
     ],
     "evidence_types": [
-      "relative_speed_change",
       "tracking_lost"
     ],
     "quality_threshold": 0.65,
     "source_mode": "RECORDED_REPLAY",
     "simulated": true
   },
-  "error": null
+  "error": null,
+  "resident_response_candidate": null
 }

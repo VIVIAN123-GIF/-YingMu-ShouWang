@@ -7,8 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.db.models import Evidence, InterventionResult, Observation, RiskEvent, RuleTrace
 from backend.service.errors import ServiceError
 from backend.schemas.intervention_result import FamilyFeedbackCreate, InterventionResultCreate
-from backend.config import ENV_MODE, EZVIZ_DEVICE_SERIAL, EZVIZ_VOICE_VERIFIED
-from backend.utils.ezviz_api import EzvizAPI
+from backend.service.intervention_tools import select_intervention_tool
 from backend.service.serialization import (aware, event_dict, evidence_dict, intervention_dict,
                                            loads, observation_dict)
 
@@ -44,7 +43,13 @@ async def create_intervention_result(db: AsyncSession, event_id: str,
     db.add(row)
     await db.commit()
     await db.refresh(row)
-    return intervention_dict(row), False
+    result = intervention_dict(row)
+    try:
+        from backend.service.agent_explanation_job_service import enqueue_event_explanation
+        await enqueue_event_explanation(db, event_id)
+    except Exception:
+        await db.rollback()
+    return result, False
 
 
 async def record_feedback(db: AsyncSession, event_id: str, payload: FamilyFeedbackCreate):
@@ -76,23 +81,17 @@ async def intervene(db: AsyncSession, event_id: str):
     if event.status not in {"OPEN", "INTERVENING"}:
         raise ServiceError(409, "EVENT_NOT_INTERVENABLE", "event is not open for intervention")
     now = datetime.now(timezone(timedelta(hours=8)))
-    delivery_status, tool_name, reason = "SUCCESS", "mock_voice", "Declared Mock fallback"
-    if ENV_MODE == "live" and EZVIZ_VOICE_VERIFIED:
-        try:
-            await EzvizAPI.voice_broadcast(EZVIZ_DEVICE_SERIAL, "请先坐稳并注意安全")
-            tool_name, reason = "ezviz_voice", None
-        except Exception:
-            delivery_status, tool_name = "FAILED", "ezviz_voice"
-            reason = "Verified Ezviz tool call failed; event retained for retry or fallback"
-    elif ENV_MODE == "live":
-        delivery_status, tool_name = "FAILED", "ezviz_voice"
-        reason = "Ezviz voice capability has not been verified; live call was not attempted"
+    execution = await select_intervention_tool().execute(
+        event,
+        "请先坐稳并注意安全",
+    )
     payload = InterventionResultCreate(
         result_id=f"result-{uuid.uuid4().hex}", event_id=event_id, started_at=now,
-        completed_at=now, action_type="voice", tool_name=tool_name,
-        delivery_status=delivery_status, resident_response=None, family_feedback=None,
-        risk_after=None, resolved=False, resolution_reason=reason, operator="system",
-        source_mode=event.source_mode, simulated=event.simulated)
+        completed_at=now, action_type="voice", tool_name=execution.tool_name,
+        delivery_status=execution.delivery_status, resident_response=None,
+        family_feedback=None, risk_after=None, resolved=False,
+        resolution_reason=execution.resolution_reason, operator="system",
+        source_mode=event.source_mode, simulated=execution.simulated)
     result, _ = await create_intervention_result(db, event_id, payload)
     return result
 

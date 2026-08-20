@@ -24,7 +24,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -46,7 +46,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -68,7 +68,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -90,7 +90,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -112,7 +112,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -134,7 +134,7 @@
       "simulated": true,
       "metadata": {
         "adapter_module": "GAIT",
-        "media_type": "video",
+        "media_type": "VIDEO",
         "camera_position_id": null,
         "scene_config_id": null
       }
@@ -166,5 +166,6 @@
     "source_mode": "RECORDED_REPLAY",
     "simulated": true
   },
-  "error": null
+  "error": null,
+  "resident_response_candidate": null
 }

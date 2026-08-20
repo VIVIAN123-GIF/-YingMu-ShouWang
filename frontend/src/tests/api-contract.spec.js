@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import events from '../mocks/events.json'
 import {
-  API_BASE_URL, apiClient, getAsset, getBaseline, getWeeklyReport, normalizeApiError, runtime, setDataMode, submitFamilyFeedback, submitInterventionResult,
+  API_BASE_URL, apiClient, getAsset, getBaseline, getWeeklyReport, interveneEvent, normalizeApiError, runtime, setDataMode, submitFamilyFeedback, submitInterventionResult,
 } from '../services/repository'
 
 describe('前端对接文档请求契约', () => {
@@ -10,9 +10,9 @@ describe('前端对接文档请求契约', () => {
     setDataMode('auto')
   })
 
-  it('默认使用 /api/v1，且请求路径不重复拼接前缀', () => {
-    expect(API_BASE_URL).toBe('/api/v1')
-    expect(apiClient.defaults.baseURL).toBe('/api/v1')
+  it('使用当前 API 基址，且请求路径不重复拼接前缀', () => {
+    expect(API_BASE_URL).toMatch(/\/api\/v1\/?$/)
+    expect(apiClient.defaults.baseURL).toBe(API_BASE_URL)
   })
 
   it('周报和个人基线使用后端 API，并保留查询居民标识', async () => {
@@ -71,8 +71,33 @@ describe('前端对接文档请求契约', () => {
       delivery_status: 'SUCCESS', resident_response: null, family_feedback: null, risk_after: null,
       resolved: false, resolution_reason: null, operator: 'system', source_mode: 'MOCK', simulated: true }
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: response })
-    await submitInterventionResult(structuredClone(events.find((event) => event.event_id === 'event-fall-intervening')))
+    await interveneEvent('event-fall-intervening')
     expect(post).toHaveBeenCalledWith('/events/event-fall-intervening/intervene', null, expect.any(Object))
+    expect(post.mock.calls[0][2].headers['Content-Type']).toBe('application/json; charset=utf-8')
+  })
+
+  it('坐稳确认向 /events/{id}/results 提交完整 InterventionResult', async () => {
+    setDataMode('api')
+    const current = structuredClone(events.find((event) => event.event_id === 'event-fall-intervening'))
+    const response = {
+      schema_version: '1.0', result_id: 'result-stable', event_id: current.event_id,
+      started_at: '2026-08-11T15:00:00+08:00', completed_at: '2026-08-11T15:00:00+08:00',
+      action_type: 'resident_response', tool_name: 'family_console', delivery_status: 'SUCCESS',
+      resident_response: 'stable', family_feedback: null, risk_after: null, resolved: false,
+      resolution_reason: null, operator: 'family', source_mode: 'MOCK', simulated: true,
+    }
+    const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: response })
+
+    await submitInterventionResult(current, 'stable')
+
+    expect(post).toHaveBeenCalledWith(
+      '/events/event-fall-intervening/results',
+      expect.objectContaining({
+        schema_version: '1.0', event_id: current.event_id, action_type: 'resident_response',
+        resident_response: 'stable', resolved: false,
+      }),
+      expect.any(Object),
+    )
     expect(post.mock.calls[0][2].headers['Content-Type']).toBe('application/json; charset=utf-8')
   })
 

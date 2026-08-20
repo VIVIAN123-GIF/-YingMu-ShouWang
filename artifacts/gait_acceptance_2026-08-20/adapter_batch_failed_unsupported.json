@@ -17,8 +17,9 @@
     "simulated": true
   },
   "error": {
-    "type": "AlgorithmInputError",
     "code": "UNSUPPORTED_INPUT",
-    "message": "unsupported_media_locator"
-  }
+    "message": "unsupported_media_locator",
+    "retryable": false
+  },
+  "resident_response_candidate": null
 }

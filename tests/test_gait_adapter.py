@@ -4,7 +4,16 @@ import asyncio
 import json
 from pathlib import Path
 
-from contracts.v1.gait_adapter import AdapterBatch, AlgorithmJob, FROZEN_FEATURES, run
+from contracts.v1.algorithm import (
+    AdapterBatch,
+    AlgorithmJob,
+    AlgorithmModule,
+    MediaType,
+    validate_batch_for_job,
+)
+from contracts.v1.gait_adapter import FROZEN_FEATURES, run
+from contracts.v1.gait_video import _derive_gait_features
+from backend.service.adapter_registry import AdapterRegistry
 
 
 def _write_features(path: Path, valid_frame_ratio: float = 0.91) -> None:
@@ -28,10 +37,12 @@ def _write_features(path: Path, valid_frame_ratio: float = 0.91) -> None:
 
 def _job(path: Path) -> AlgorithmJob:
     return AlgorithmJob(
+        schema_version="algorithm-job/1.0",
         job_id="job-gait-test-001",
+        correlation_id="corr-gait-test-001",
         resident_id="resident-test-001",
         asset_id="asset-gait-test-001",
-        media_type="gait_feature_json",
+        media_type=MediaType.VIDEO,
         media_locator=str(path),
         captured_at="2026-08-16T09:30:00+08:00",
         source_mode="RECORDED_REPLAY",
@@ -39,6 +50,8 @@ def _job(path: Path) -> AlgorithmJob:
         location="bedroom",
         camera_position_id="camera-position-test-001",
         scene_config_id="scene-config-test-001",
+        requested_modules=[AlgorithmModule.GAIT],
+        deadline_ms=8000,
     )
 
 
@@ -47,7 +60,7 @@ def test_gait_adapter_batch_contract_and_references(tmp_path: Path):
     _write_features(feature_path)
 
     batch = asyncio.run(run(_job(feature_path)))
-    AdapterBatch.model_validate(batch.model_dump())
+    validate_batch_for_job(AdapterBatch.model_validate(batch.model_dump()), _job(feature_path))
 
     assert batch.schema_version == "adapter-batch/1.0"
     assert batch.module == "GAIT"
@@ -59,12 +72,11 @@ def test_gait_adapter_batch_contract_and_references(tmp_path: Path):
     assert batch.evidences
     for item in batch.observations:
         assert item.resident_id == "resident-test-001"
-        assert item.asset_id == "asset-gait-test-001"
         assert item.source_mode.value == "RECORDED_REPLAY"
         assert item.simulated is True
     for item in batch.evidences:
         assert item.resident_id == "resident-test-001"
-        assert item.asset_id == "asset-gait-test-001"
+        assert "asset_id" not in item.model_dump()
         assert item.source_mode.value == "RECORDED_REPLAY"
         assert item.simulated is True
         assert set(item.observation_ids).issubset(observation_ids)
@@ -77,6 +89,14 @@ def test_gait_adapter_batch_contract_and_references(tmp_path: Path):
             "posture_recovered",
             "tracking_lost",
         }
+
+    recovered = next(item for item in batch.evidences if item.evidence_type == "posture_recovered")
+    recovered_features = {
+        item.feature_name
+        for item in batch.observations
+        if item.observation_id in recovered.observation_ids
+    }
+    assert recovered_features == {"stable_posture_duration", "stable_trunk_angle_deg"}
 
 
 def test_gait_adapter_ids_are_stable_for_same_input(tmp_path: Path):
@@ -102,6 +122,124 @@ def test_gait_adapter_low_quality(tmp_path: Path):
     assert batch.error is None
 
 
+def test_gait_adapter_invalid_input_is_contract_failed(tmp_path: Path):
+    job = _job(tmp_path / "missing.json")
+
+    batch = asyncio.run(run(job))
+
+    assert batch.status == "FAILED"
+    assert batch.error is not None
+    assert batch.error.code == "FEATURE_INPUT_INVALID"
+    assert batch.observations == []
+    assert batch.evidences == []
+
+
+def test_gait_adapter_image_does_not_emit_temporal_evidence(tmp_path: Path):
+    feature_path = tmp_path / "features.json"
+    _write_features(feature_path)
+    job = _job(feature_path).model_copy(update={"media_type": MediaType.IMAGE})
+
+    batch = asyncio.run(run(job))
+
+    assert batch.status == "NO_EVIDENCE"
+    assert batch.observations
+    assert batch.evidences == []
+
+
+def test_gait_adapter_real_image_is_no_evidence(tmp_path: Path):
+    image_path = tmp_path / "capture.jpg"
+    image_path.write_bytes(b"not-used-by-image-quality-path")
+    job = _job(image_path).model_copy(update={"media_type": MediaType.IMAGE})
+
+    batch = asyncio.run(run(job))
+
+    assert batch.status == "NO_EVIDENCE"
+    assert batch.error is None
+    assert batch.evidences == []
+    assert [item.feature_name for item in batch.observations] == ["valid_frame_ratio"]
+
+
+def test_gait_adapter_registry_invocation(monkeypatch, tmp_path: Path):
+    feature_path = tmp_path / "features.json"
+    _write_features(feature_path)
+    monkeypatch.setenv("YINGMU_GAIT_ADAPTER", "contracts.v1.gait_adapter:run")
+    # Keep this single-module registry test independent of developer-local
+    # trajectory/language adapter settings in .env.
+    monkeypatch.delenv("YINGMU_TRAJECTORY_ADAPTER", raising=False)
+    monkeypatch.delenv("YINGMU_LANGUAGE_ADAPTER", raising=False)
+    registry = AdapterRegistry()
+    registry.load_configured()
+
+    batch = asyncio.run(registry.invoke(AlgorithmModule.GAIT, _job(feature_path)))
+
+    assert batch.module == AlgorithmModule.GAIT
+    assert batch.status == "SUCCESS"
+    assert batch.error is None
+
+
+def test_gait_adapter_extracts_features_from_mp4(monkeypatch, tmp_path: Path):
+    video_path = tmp_path / "authorized-replay.mp4"
+    video_path.write_bytes(b"test-video-placeholder")
+
+    def fake_extract(path: Path):
+        assert path == video_path
+        return (
+            {
+                "rise_duration_s": 1.2,
+                "trunk_sway_angle_deg": 14.0,
+                "step_speed_norm_s": 0.8,
+                "step_asymmetry_ratio": 0.4,
+                "valid_frame_ratio": 0.9,
+            },
+            {
+                "feature_source_type": "video",
+                "frames_processed": 120,
+                "pose_frames": 108,
+            },
+        )
+
+    monkeypatch.setattr("contracts.v1.gait_adapter.extract_gait_features", fake_extract)
+    batch = asyncio.run(run(_job(video_path)))
+
+    assert batch.status == "SUCCESS"
+    assert batch.diagnostics["feature_source_type"] == "video"
+    assert batch.diagnostics["frames_processed"] == 120
+    assert {item.feature_name for item in batch.observations} == {
+        "rise_duration_s",
+        "trunk_sway_angle_deg",
+        "step_speed_norm_s",
+        "step_asymmetry_ratio",
+        "valid_frame_ratio",
+    }
+
+
+def test_video_pose_rows_are_converted_to_frozen_features():
+    rows = [
+        {
+            "timestamp_ms": float(index * 500),
+            "pelvis_x": 0.45 + index * 0.01,
+            "pelvis_y": 0.70 - index * 0.02,
+            "trunk_angle_deg": float(index * 3),
+            "left_stride_extent": 0.12,
+            "right_stride_extent": 0.08,
+            "support_distance": 0.20,
+            "core_visibility_mean": 0.92,
+        }
+        for index in range(8)
+    ]
+
+    features, diagnostics = _derive_gait_features(
+        rows, total_frames=10, fps=2.0, duration_s=5.0,
+    )
+
+    assert set(features).issubset(FROZEN_FEATURES)
+    assert features["valid_frame_ratio"] == 0.8
+    assert features["step_asymmetry_ratio"] > 0
+    assert features["support_distance_norm"] == 0.2
+    assert features["turn_angular_velocity_deg_s"] > 0
+    assert diagnostics["feature_source_type"] == "video"
+
+
 def test_gait_adapter_no_evidence(tmp_path: Path):
     feature_path = tmp_path / "features.json"
     feature_path.write_text(
@@ -125,89 +263,3 @@ def test_gait_adapter_no_evidence(tmp_path: Path):
     assert batch.observations
     assert batch.evidences == []
     assert batch.error is None
-
-
-def test_gait_adapter_live_video_contract_does_not_expose_paths():
-    video_path = Path("data/raw/urfd/samples/adl-01-cam0.mp4")
-    model_path = Path("models/pose_landmarker_heavy.task")
-    if not video_path.exists():
-        pytest.skip("real video sample not present in this checkout")
-
-    job = AlgorithmJob(
-        job_id="job-gait-live-001",
-        resident_id="resident-live-001",
-        asset_id="asset-live-001",
-        media_type="video",
-        media_locator=str(video_path),
-        model_path=str(model_path),
-        captured_at="2026-08-16T09:30:00+08:00",
-        source_mode="LIVE_DEVICE",
-        simulated=False,
-        location="bedroom",
-    )
-
-    batch = asyncio.run(run(job))
-
-    assert batch.job_id == job.job_id
-    assert batch.observations
-    assert batch.evidences or batch.status in {"NO_EVIDENCE", "LOW_QUALITY", "SUCCESS"}
-    assert all(item.resident_id == job.resident_id for item in batch.observations)
-    assert all(item.source_mode.value == "LIVE_DEVICE" for item in batch.observations)
-    assert all(item.simulated is False for item in batch.observations)
-    assert all(item.resident_id == job.resident_id for item in batch.evidences)
-    for evidence in batch.evidences:
-        assert evidence.observation_ids
-        assert all(any(obs.observation_id == obs_id for obs in batch.observations) for obs_id in evidence.observation_ids)
-    payload = batch.model_dump_json()
-    assert str(video_path) not in payload
-    assert str(model_path) not in payload
-    assert "media_locator" not in payload
-
-
-def test_gait_adapter_invalid_video_reports_failed(tmp_path: Path):
-    video_path = tmp_path / "clip.mp4"
-    video_path.write_bytes(b"fake-video-bytes")
-    model_path = Path("models/pose_landmarker_heavy.task")
-
-    job = AlgorithmJob(
-        job_id="job-gait-failed-002",
-        resident_id="resident-live-003",
-        asset_id="asset-live-003",
-        media_type="video",
-        media_locator=str(video_path),
-        model_path=str(model_path),
-        captured_at="2026-08-16T09:30:00+08:00",
-        source_mode="LIVE_DEVICE",
-        simulated=False,
-    )
-
-    batch = asyncio.run(run(job))
-
-    assert batch.status == "FAILED"
-    assert batch.observations == []
-    assert batch.evidences == []
-    assert batch.error is not None
-
-
-def test_gait_adapter_missing_model_reports_failed(tmp_path: Path):
-    video_path = tmp_path / "clip.mp4"
-    video_path.write_bytes(b"fake-video-bytes")
-
-    job = AlgorithmJob(
-        job_id="job-gait-failed-001",
-        resident_id="resident-live-002",
-        asset_id="asset-live-002",
-        media_type="video",
-        media_locator=str(video_path),
-        model_path=str(tmp_path / "missing_mediapipe.tflite"),
-        captured_at="2026-08-16T09:30:00+08:00",
-        source_mode="LIVE_DEVICE",
-        simulated=False,
-    )
-
-    batch = asyncio.run(run(job))
-
-    assert batch.status == "FAILED"
-    assert batch.error is not None
-    assert batch.observations == []
-    assert batch.evidences == []

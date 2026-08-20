@@ -1,5 +1,6 @@
 {
   "ruleset_version": "ruleset-v1.0",
+  "context_policy_version": "env-context-v1.0",
   "engineering_initials": true,
   "windows": {
     "short_seconds": 30,
@@ -12,6 +13,8 @@
     "high_confidence": 0.8,
     "stable_posture_seconds": 15,
     "observation_seconds": 60,
+    "no_response_seconds": 60,
+    "persistent_evidence_count": 3,
     "orange_score": 0.7,
     "red_score": 0.9
   },
@@ -26,7 +29,9 @@
     "low_light": 0.25,
     "repeated_daily_abnormality": 0.20,
     "yellow_state": 0.40,
-    "long_term_deviation": 0.20
+    "long_term_deviation": 0.20,
+    "high_risk_zone": 0.25,
+    "obstacle_interaction": 0.20
   },
   "rules": [
     {"id": "R-FALL-01", "name": "single rapid rise", "result": "GREEN_WAIT"},

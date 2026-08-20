@@ -1,6 +1,15 @@
+import hashlib
+import time
+from datetime import datetime, timedelta, timezone
+from uuid import uuid4
+
 from backend.config import ENV_MODE, EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL
 from backend.service.errors import ServiceError
 from backend.utils.ezviz_api import EzvizAPI
+from contracts.v1.platform import PlatformSnapshotResult, PlatformVideoSource
+
+
+TZ = timezone(timedelta(hours=8))
 
 
 class DeviceAdapter:
@@ -12,6 +21,11 @@ class DeviceAdapter:
         if not EZVIZ_DEVICE_SERIAL:
             raise ServiceError(503, "DEVICE_NOT_CONFIGURED", "EZVIZ_DEVICE_SERIAL is not configured")
         return EZVIZ_DEVICE_SERIAL
+
+    @staticmethod
+    def _device_ref(device_serial: str) -> str:
+        digest = hashlib.sha256(device_serial.encode("utf-8")).hexdigest()[:12]
+        return f"device-{digest}"
 
     async def status(self):
         if ENV_MODE == "mock" and not EZVIZ_DEVICE_SERIAL:
@@ -38,19 +52,87 @@ class DeviceAdapter:
                 "device_alias": "camera-live-001" if live else "camera-mock-001",
                 "simulated": not live, "collection_active": False}
 
-    async def snapshot(self):
+    async def capture_snapshot(
+        self, *, request_id: str | None = None
+    ) -> PlatformSnapshotResult:
+        """Return the frozen internal contract; callers must not serialize its URL."""
+        request_id = request_id or f"ezviz-capture-{uuid4().hex}"
         if ENV_MODE == "mock" and not EZVIZ_DEVICE_SERIAL:
-            return {"source_mode": "MOCK", "simulated": True, "asset_id": "asset-mock-snapshot-001",
-                    "temporary_url": None}
+            return PlatformSnapshotResult(
+                schema_version="platform-snapshot/1.0",
+                request_id=request_id,
+                device_ref="device-mock-001",
+                channel_no=EZVIZ_CHANNEL_NO,
+                captured_at=datetime.now(TZ),
+                source_mode="MOCK",
+                simulated=True,
+                temporary_url=None,
+                expires_at=None,
+                provider_latency_ms=0,
+            )
+        device_serial = self._configured_serial()
+        started = time.perf_counter()
         try:
-            result = await EzvizAPI.capture_device_image(self._configured_serial(), EZVIZ_CHANNEL_NO)
+            result = await EzvizAPI.capture_device_image(device_serial, EZVIZ_CHANNEL_NO)
         except Exception as exc:
             raise ServiceError(503, "EZVIZ_SNAPSHOT_UNAVAILABLE",
                                "Ezviz snapshot is temporarily unavailable") from exc
         data = result.get("data", result)
-        return {"source_mode": "LIVE_DEVICE", "simulated": False,
-                "asset_id": data.get("id", "asset-live-snapshot"),
-                "temporary_url": data.get("picUrl") or data.get("url")}
+        temporary_url = data.get("picUrl") or data.get("url")
+        try:
+            return PlatformSnapshotResult(
+                schema_version="platform-snapshot/1.0",
+                request_id=request_id,
+                device_ref=self._device_ref(device_serial),
+                channel_no=EZVIZ_CHANNEL_NO,
+                captured_at=datetime.now(TZ),
+                source_mode="LIVE_DEVICE",
+                simulated=False,
+                temporary_url=temporary_url,
+                expires_at=None,
+                provider_latency_ms=round((time.perf_counter() - started) * 1000),
+            )
+        except Exception as exc:
+            raise ServiceError(
+                503,
+                "EZVIZ_SNAPSHOT_INVALID",
+                "Ezviz returned an invalid snapshot response",
+            ) from exc
+
+    async def capture_video_source(
+        self, *, request_id: str | None = None
+    ) -> PlatformVideoSource:
+        """Return a short-lived live stream source for private Worker recording."""
+        if ENV_MODE != "live":
+            raise ServiceError(503, "VIDEO_SOURCE_LIVE_REQUIRED", "live video requires live device mode")
+        request_id = request_id or f"ezviz-video-{uuid4().hex}"
+        device_serial = self._configured_serial()
+        started = time.perf_counter()
+        try:
+            result = await EzvizAPI.get_live_address(device_serial, EZVIZ_CHANNEL_NO)
+            data = result.get("data", result)
+            temporary_url = data.get("url") or data.get("liveAddress") or data.get("hls")
+            return PlatformVideoSource(
+                schema_version="platform-video/1.0",
+                request_id=request_id,
+                device_ref=self._device_ref(device_serial),
+                channel_no=EZVIZ_CHANNEL_NO,
+                captured_at=datetime.now(TZ),
+                source_mode="LIVE_DEVICE",
+                simulated=False,
+                temporary_url=temporary_url,
+                expires_at=datetime.now(TZ) + timedelta(seconds=300),
+                provider_latency_ms=round((time.perf_counter() - started) * 1000),
+            )
+        except Exception as exc:
+            raise ServiceError(503, "EZVIZ_VIDEO_SOURCE_UNAVAILABLE", "Ezviz live video source is unavailable") from exc
+
+    async def snapshot(self) -> dict:
+        """Run a capture and return a browser-safe audit view."""
+        result = await self.capture_snapshot()
+        public = result.model_dump(mode="json", exclude={"temporary_url"})
+        public["temporary_url_stored"] = False
+        return public
 
     async def live_address(self):
         try:

@@ -10,7 +10,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Literal, Union
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr, field_validator, model_validator
+
+from .evidence_types import ALL_EVIDENCE_TYPES, INTERNAL_EVIDENCE_TYPES, validate_evidence_type
 
 
 SCHEMA_VERSION = "1.0"
@@ -138,7 +140,13 @@ class Evidence(ContractModel):
     resident_id: str = Field(min_length=1)
     timestamp: datetime
     risk_domain: RiskDomain
-    evidence_type: str = Field(min_length=1)
+    evidence_type: str = Field(
+        min_length=1,
+        json_schema_extra={
+            "enum": ALL_EVIDENCE_TYPES,
+            "x-internal-only": sorted(INTERNAL_EVIDENCE_TYPES),
+        },
+    )
     severity: StrictFloat
     confidence: StrictFloat
     data_quality: StrictFloat
@@ -166,6 +174,11 @@ class Evidence(ContractModel):
         if len(values) != len(set(values)):
             raise ValueError("observation_ids cannot contain duplicates")
         return values
+
+    @model_validator(mode="after")
+    def validate_frozen_evidence_type(self) -> "Evidence":
+        validate_evidence_type(self.risk_domain, self.evidence_type)
+        return self
 
 
 class EvidenceSummary(ContractModel):

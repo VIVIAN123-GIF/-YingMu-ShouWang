@@ -25,6 +25,16 @@ MAX_RETRY_TIMES = 3
 RETRY_INTERVALS = [2, 3, 5]
 
 
+class EzvizTokenInvalidError(RuntimeError):
+    """Raised when one token refresh cannot recover the request."""
+
+    error_code = "EZVIZ_TOKEN_INVALID_AFTER_REFRESH"
+
+    def __init__(self, provider_code: str):
+        self.provider_code = provider_code
+        super().__init__(f"{self.error_code} code={provider_code}")
+
+
 class EzvizAuth:
     @staticmethod
     async def get_valid_token() -> str:
@@ -110,6 +120,7 @@ class EzvizAuth:
         4. Token失效自动清空缓存，下一次请求自动刷新
         """
         retry_count = 0
+        token_refresh_attempted = False
         full_url = f"{EZVIZ_BASE_URL}{path}"
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds must be positive")
@@ -136,10 +147,13 @@ class EzvizAuth:
                     # Token过期/失效，清空缓存，触发重试刷新Token
                     if res_code in ("10002", "10018"):
                         global _TOKEN_STORE, _ENV_TOKEN_REJECTED
+                        if token_refresh_attempted:
+                            raise EzvizTokenInvalidError(str(res_code))
                         _TOKEN_STORE = None
                         _ENV_TOKEN_REJECTED = True
+                        token_refresh_attempted = True
                         logger.warning("Token已失效，清空缓存准备重试")
-                        raise ValueError(f"token失效 code={res_code}")
+                        continue
                     # 无需重试的业务错误（参数缺失、设备不存在、无语音等）直接抛出
                     no_retry_codes = ("10001", "10017", "10030", "20002", "20014")
                     if res_code in no_retry_codes:
@@ -150,6 +164,8 @@ class EzvizAuth:
                 # 请求成功直接返回原始数据
                 return result
 
+            except EzvizTokenInvalidError:
+                raise
             except (ConnectionError, ValueError) as err:
                 retry_count += 1
                 if retry_count > MAX_RETRY_TIMES:
