@@ -13,6 +13,7 @@ import hashlib
 import json
 import re
 import sys
+import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -29,11 +30,18 @@ from backend.config import (ENV_MODE, EZVIZ_ACCESS_TOKEN,
                             EZVIZ_APP_SECRET, EZVIZ_BASE_URL,
                             EZVIZ_CAPTURE_TIMEOUT_SECONDS,
                             EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL,
+                            EZVIZ_LIVE_PROTOCOL,
                             EZVIZ_DEVICE_VERIFY_CODE,
-                            YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS)
+                            YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS,
+                            YINGMU_SNAPSHOT_MAX_BYTES)
+from backend.service.snapshot_asset_service import (
+    SnapshotAssetError,
+    _probe_recorded_video,
+    _record_video_sync,
+)
 from backend.utils import ezviz_auth as auth_module
 from backend.utils.ezviz_auth import EzvizAuth
-from contracts.v1.platform import PlatformSnapshotResult
+from contracts.v1.platform import PlatformSnapshotResult, PlatformVideoSource
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,6 +50,7 @@ REPORT_PATH = OUTPUT_DIR / "ezviz-live-validation.json"
 SUMMARY_PATH = OUTPUT_DIR / "ezviz-live-validation-summary.json"
 TZ = timezone(timedelta(hours=8))
 MAX_BUSINESS_MESSAGE_LENGTH = 160
+PROTOCOL_NAMES = {2: "hls", 4: "flv"}
 
 SENSITIVE_ASSIGNMENT = re.compile(
     r"(?i)\b(access[_-]?token|app[_-]?secret|app[_-]?key|device[_-]?serial|"
@@ -285,7 +294,65 @@ async def validate_snapshot() -> dict[str, Any]:
     return record
 
 
-async def validate_live_address() -> dict[str, Any]:
+async def probe_live_stream(address: str) -> dict[str, Any]:
+    captured_at = datetime.now(TZ)
+    source = PlatformVideoSource(
+        schema_version="platform-video/1.0",
+        request_id=f"ezviz-stream-probe-{uuid4().hex}",
+        device_ref=device_alias(),
+        channel_no=EZVIZ_CHANNEL_NO,
+        captured_at=captured_at,
+        source_mode="LIVE_DEVICE",
+        simulated=False,
+        temporary_url=address,
+        expires_at=captured_at + timedelta(seconds=300),
+        provider_latency_ms=0,
+    )
+    with tempfile.TemporaryDirectory(prefix="yingmu-ezviz-stream-") as directory:
+        output_path = Path(directory) / "probe.mp4"
+        try:
+            digest, byte_size = await asyncio.to_thread(
+                _record_video_sync,
+                source,
+                output_path=output_path,
+                max_bytes=YINGMU_SNAPSHOT_MAX_BYTES * 30,
+            )
+            probe = await asyncio.to_thread(_probe_recorded_video, output_path)
+            return {
+                "result": "SUCCESS",
+                "duration_seconds": round(probe.duration_seconds, 3),
+                "frame_rate": round(probe.frame_rate, 3),
+                "frame_count": probe.frame_count,
+                "byte_size": byte_size,
+                "content_sha256": digest,
+                "media_retained": False,
+                "failure_reason": None,
+            }
+        except SnapshotAssetError as exc:
+            return {
+                "result": "FAILED",
+                "duration_seconds": None,
+                "frame_rate": None,
+                "frame_count": None,
+                "byte_size": None,
+                "content_sha256": None,
+                "media_retained": False,
+                "failure_reason": exc.code,
+            }
+        except Exception as exc:
+            return {
+                "result": "FAILED",
+                "duration_seconds": None,
+                "frame_rate": None,
+                "frame_count": None,
+                "byte_size": None,
+                "content_sha256": None,
+                "media_retained": False,
+                "failure_reason": safe_failure(exc),
+            }
+
+
+async def validate_live_address(stream_probe: bool = False) -> dict[str, Any]:
     record: dict[str, Any] = {
         "stage": "temporary_playback_address", "executed": True,
         "requested_at": now_iso(), "device_alias": device_alias(),
@@ -295,7 +362,7 @@ async def validate_live_address() -> dict[str, Any]:
         request_payload: dict[str, Any] = {
             "deviceSerial": EZVIZ_DEVICE_SERIAL,
             "channelNo": EZVIZ_CHANNEL_NO,
-            "protocol": 2,
+            "protocol": EZVIZ_LIVE_PROTOCOL,
             "expireTime": 3600,
             "quality": 2,
         }
@@ -304,16 +371,16 @@ async def validate_live_address() -> dict[str, Any]:
         body, http_status, elapsed_ms, message = await call_stage(
             "/v2/live/address/get", request_payload)
         code = business_code(body)
-        hls_attempt = {
-            "protocol": "hls",
+        selected_protocol = PROTOCOL_NAMES[EZVIZ_LIVE_PROTOCOL]
+        address_attempt = {
+            "protocol": selected_protocol,
             "http_status": http_status,
             "business_code": code,
             "business_message": message,
             "latency_ms": elapsed_ms,
         }
         fallback_attempted = False
-        selected_protocol = "hls"
-        if code == "60019" and EZVIZ_DEVICE_VERIFY_CODE:
+        if EZVIZ_LIVE_PROTOCOL == 2 and code == "60019" and EZVIZ_DEVICE_VERIFY_CODE:
             fallback_attempted = True
             selected_protocol = "ezopen"
             fallback_payload = {
@@ -331,21 +398,39 @@ async def validate_live_address() -> dict[str, Any]:
         address = (data.get("url") or data.get("hls") or data.get("liveAddress")) if isinstance(data, dict) else None
         valid_schemes = {"ezopen"} if selected_protocol == "ezopen" else {"http", "https"}
         valid_address = isinstance(address, str) and urlparse(address).scheme in valid_schemes
-        success = http_status == 200 and code == "200" and valid_address
+        address_success = http_status == 200 and code == "200" and valid_address
+        stream_result = None
+        if stream_probe and address_success:
+            if selected_protocol == "ezopen":
+                stream_result = {
+                    "result": "FAILED", "failure_reason": "STREAM_PROTOCOL_UNSUPPORTED",
+                    "media_retained": False, "content_sha256": None,
+                }
+            else:
+                stream_result = await probe_live_stream(address)
+        success = address_success and (
+            not stream_probe or bool(stream_result and stream_result["result"] == "SUCCESS")
+        )
         record.update({
             "result": "SUCCESS" if success else "FAILED",
-            "requested_protocol": "hls",
+            "requested_protocol": PROTOCOL_NAMES[EZVIZ_LIVE_PROTOCOL],
             "fallback_attempted": fallback_attempted,
             "selected_protocol": selected_protocol,
-            "hls_attempt": hls_attempt,
+            "address_attempt": address_attempt,
             "http_status": http_status,
             "business_code": code,
             "business_message": message,
             "latency_ms": elapsed_ms,
             "temporary_address_obtained": valid_address,
             "temporary_address_stored": False,
+            "stream_probe_executed": stream_probe and address_success,
+            "stream_probe": stream_result,
             "source_mode": "LIVE_DEVICE" if success else "MOCK",
-            "failure_reason": None if success else business_failure_reason(code, "PLAYBACK_ADDRESS_NOT_CONFIRMED"),
+            "failure_reason": (
+                None if success
+                else stream_result.get("failure_reason") if stream_result
+                else business_failure_reason(code, "PLAYBACK_ADDRESS_NOT_CONFIRMED")
+            ),
         })
     except Exception as exc:
         record.update({
@@ -353,18 +438,27 @@ async def validate_live_address() -> dict[str, Any]:
             "business_message": None,
             "latency_ms": round((time.perf_counter() - started) * 1000),
             "temporary_address_obtained": False, "temporary_address_stored": False,
+            "stream_probe_executed": False, "stream_probe": None,
             "source_mode": "MOCK", "failure_reason": safe_failure(exc),
         })
     return record
 
 
-async def run_once(run_index: int, capture_only: bool = False) -> dict[str, Any]:
+async def run_once(
+    run_index: int,
+    capture_only: bool = False,
+    stream_probe: bool = False,
+) -> dict[str, Any]:
     report: dict[str, Any] = {
         "schema_version": "1.0",
         "test_kind": "EZVIZ_LIVE_ACCEPTANCE",
         "generated_at": now_iso(),
         "run_index": run_index,
-        "acceptance_mode": "CAPTURE_ONLY" if capture_only else "FULL_PLATFORM",
+        "acceptance_mode": (
+            "CAPTURE_ONLY" if capture_only
+            else "STREAM_PROBE" if stream_probe
+            else "FULL_PLATFORM"
+        ),
         "token_acquisition_mode": token_acquisition_mode(),
         "device_alias": device_alias() if EZVIZ_DEVICE_SERIAL else None,
         "contains_credentials": False,
@@ -375,23 +469,39 @@ async def run_once(run_index: int, capture_only: bool = False) -> dict[str, Any]
     if ENV_MODE != "live" or not EZVIZ_DEVICE_SERIAL:
         report["stages"] = [
             skipped("device_status", "LIVE_CONFIGURATION_REQUIRED"),
-            skipped("device_snapshot", "DEVICE_STATUS_NOT_SUCCESSFUL"),
         ]
-        if not capture_only:
+        if capture_only:
             report["stages"].append(
-                skipped("temporary_playback_address", "SNAPSHOT_NOT_SUCCESSFUL")
+                skipped("device_snapshot", "DEVICE_STATUS_NOT_SUCCESSFUL")
             )
+        elif stream_probe:
+            report["stages"].append(
+                skipped("temporary_playback_address", "LIVE_CONFIGURATION_REQUIRED")
+            )
+        else:
+            report["stages"].extend([
+                skipped("device_snapshot", "DEVICE_STATUS_NOT_SUCCESSFUL"),
+                skipped("temporary_playback_address", "SNAPSHOT_NOT_SUCCESSFUL"),
+            ])
     else:
         status = await validate_status()
         report["stages"].append(status)
         if status["result"] != "SUCCESS":
-            report["stages"].append(
-                skipped("device_snapshot", "DEVICE_STATUS_NOT_SUCCESSFUL")
-            )
-            if not capture_only:
+            if capture_only:
                 report["stages"].append(
-                    skipped("temporary_playback_address", "SNAPSHOT_NOT_SUCCESSFUL")
+                    skipped("device_snapshot", "DEVICE_STATUS_NOT_SUCCESSFUL")
                 )
+            elif stream_probe:
+                report["stages"].append(
+                    skipped("temporary_playback_address", "DEVICE_STATUS_NOT_SUCCESSFUL")
+                )
+            else:
+                report["stages"].extend([
+                    skipped("device_snapshot", "DEVICE_STATUS_NOT_SUCCESSFUL"),
+                    skipped("temporary_playback_address", "SNAPSHOT_NOT_SUCCESSFUL"),
+                ])
+        elif stream_probe:
+            report["stages"].append(await validate_live_address(stream_probe=True))
         else:
             snapshot = await validate_snapshot()
             report["stages"].append(snapshot)
@@ -400,7 +510,7 @@ async def run_once(run_index: int, capture_only: bool = False) -> dict[str, Any]
             elif snapshot["result"] != "SUCCESS":
                 report["stages"].append(skipped("temporary_playback_address", "SNAPSHOT_NOT_SUCCESSFUL"))
             else:
-                report["stages"].append(await validate_live_address())
+                report["stages"].append(await validate_live_address(stream_probe=stream_probe))
     report["overall_result"] = (
         "SUCCESS" if all(stage.get("result") == "SUCCESS" for stage in report["stages"])
         else "INCOMPLETE"
@@ -427,13 +537,16 @@ def write_json(path: Path, payload: object) -> None:
 
 async def run_many(runs: int, interval_seconds: float = 2.0,
                    output_dir: Path = OUTPUT_DIR,
-                   capture_only: bool = False) -> dict[str, Any]:
+                   capture_only: bool = False,
+                   stream_probe: bool = False) -> dict[str, Any]:
     reports: list[dict[str, Any]] = []
     for run_index in range(1, runs + 1):
-        report = (
-            await run_once(run_index, capture_only=True)
-            if capture_only else await run_once(run_index)
-        )
+        if capture_only:
+            report = await run_once(run_index, capture_only=True)
+        elif stream_probe:
+            report = await run_once(run_index, stream_probe=True)
+        else:
+            report = await run_once(run_index)
         reports.append(report)
         write_json(output_dir / f"ezviz-live-validation-run-{run_index}.json", report)
         if run_index < runs and interval_seconds:
@@ -452,12 +565,35 @@ async def run_many(runs: int, interval_seconds: float = 2.0,
         if stage.get("result") == "SUCCESS"
         and isinstance(stage.get("provider_latency_ms"), int)
     ]
+    stream_stages = [
+        stage
+        for report in reports
+        for stage in report["stages"]
+        if stage.get("stage") == "temporary_playback_address"
+        and stage.get("stream_probe_executed") is True
+    ]
+    stream_hashes = [
+        stage["stream_probe"]["content_sha256"]
+        for stage in stream_stages
+        if isinstance(stage.get("stream_probe"), dict)
+        and stage["stream_probe"].get("result") == "SUCCESS"
+        and stage["stream_probe"].get("content_sha256")
+    ]
+    stream_continuous = (
+        len(stream_stages) == runs
+        and len(stream_hashes) == runs
+        and (runs == 1 or len(set(stream_hashes)) == runs)
+    ) if stream_probe else None
     summary = {
         "schema_version": "1.0",
         "test_kind": "EZVIZ_LIVE_ACCEPTANCE_SUMMARY",
         "generated_at": now_iso(),
         "runs": runs,
-        "acceptance_mode": "CAPTURE_ONLY" if capture_only else "FULL_PLATFORM",
+        "acceptance_mode": (
+            "CAPTURE_ONLY" if capture_only
+            else "STREAM_PROBE" if stream_probe
+            else "FULL_PLATFORM"
+        ),
         "token_acquisition_mode": token_acquisition_mode(),
         "successful_runs": sum(report["overall_result"] == "SUCCESS" for report in reports),
         "capture_records": len(capture_stages),
@@ -473,13 +609,20 @@ async def run_many(runs: int, interval_seconds: float = 2.0,
                 if capture_latencies else None
             ),
         },
+        "stream_probe_runs": len(stream_stages),
+        "stream_probe_successes": len(stream_hashes),
+        "stream_unique_recordings": len(set(stream_hashes)),
+        "stream_continuous": stream_continuous,
         "consistent": all(signature == signatures[0] for signature in signatures),
         "semantic_signature": signatures[0],
         "contains_credentials": False,
         "contains_permanent_public_url": False,
         "contains_temporary_url": False,
         "overall_result": (
-            "SUCCESS" if all(report["overall_result"] == "SUCCESS" for report in reports)
+            "SUCCESS" if (
+                all(report["overall_result"] == "SUCCESS" for report in reports)
+                and (not stream_probe or stream_continuous)
+            )
             else "INCOMPLETE"
         ),
     }
@@ -497,9 +640,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--runs", type=int, default=1, help="number of sequential retained runs")
     parser.add_argument("--interval-seconds", type=float, default=2.0,
                         help="delay between retained runs")
-    parser.add_argument(
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
         "--capture-only", action="store_true",
         help="validate device status and snapshot only; do not request playback",
+    )
+    mode_group.add_argument(
+        "--stream-probe", action="store_true",
+        help="record and validate a temporary live stream without retaining media",
     )
     parser.add_argument(
         "--output-dir", type=Path, default=OUTPUT_DIR,
@@ -517,7 +665,8 @@ def main() -> int:
     args = parse_args()
     output_dir = args.output_dir if args.output_dir.is_absolute() else ROOT / args.output_dir
     summary = asyncio.run(run_many(
-        args.runs, args.interval_seconds, output_dir, args.capture_only
+        args.runs, args.interval_seconds, output_dir,
+        args.capture_only, args.stream_probe,
     ))
     try:
         display_dir = output_dir.relative_to(ROOT)

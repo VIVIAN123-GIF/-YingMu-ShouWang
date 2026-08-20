@@ -3,7 +3,13 @@ import time
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from backend.config import ENV_MODE, EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL
+from backend.config import (
+    ENV_MODE,
+    EZVIZ_CHANNEL_NO,
+    EZVIZ_DEVICE_SERIAL,
+    EZVIZ_DEVICE_VERIFY_CODE,
+    EZVIZ_LIVE_PROTOCOL,
+)
 from backend.service.errors import ServiceError
 from backend.utils.ezviz_api import EzvizAPI
 from contracts.v1.platform import PlatformSnapshotResult, PlatformVideoSource
@@ -109,7 +115,12 @@ class DeviceAdapter:
         device_serial = self._configured_serial()
         started = time.perf_counter()
         try:
-            result = await EzvizAPI.get_live_address(device_serial, EZVIZ_CHANNEL_NO)
+            result = await EzvizAPI.get_live_address(
+                device_serial,
+                EZVIZ_CHANNEL_NO,
+                protocol=EZVIZ_LIVE_PROTOCOL,
+                code=EZVIZ_DEVICE_VERIFY_CODE,
+            )
             data = result.get("data", result)
             temporary_url = data.get("url") or data.get("liveAddress") or data.get("hls")
             return PlatformVideoSource(

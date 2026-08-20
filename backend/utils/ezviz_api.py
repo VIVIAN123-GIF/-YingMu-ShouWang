@@ -45,7 +45,8 @@ class EzvizAPI:
         channel_no: int = 1,
         protocol: int = 2,
         expire_time: int = 3600,
-        quality: int = 2
+        quality: int = 2,
+        code: str = "",
     ) -> Dict[str, Any]:
         """
         获取设备直播播放地址
@@ -53,15 +54,18 @@ class EzvizAPI:
         quality: 1高清（主码流）/ 2流畅（子码流）
         expire_time: 链接有效期，单位秒
         """
+        body = {
+            "deviceSerial": device_serial,
+            "channelNo": channel_no,
+            "protocol": protocol,
+            "expireTime": expire_time,
+            "quality": quality,
+        }
+        if code:
+            body["code"] = code
         return await EzvizAuth.request(
             path="/v2/live/address/get",
-            body={
-                "deviceSerial": device_serial,
-                "channelNo": channel_no,
-                "protocol": protocol,
-                "expireTime": expire_time,
-                "quality": quality
-            }
+            body=body,
         )
 
     # ===================== 设备截图接口 =====================

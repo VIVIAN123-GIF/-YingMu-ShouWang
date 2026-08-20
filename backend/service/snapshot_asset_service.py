@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import asyncio
+import json
+import math
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
@@ -55,6 +57,17 @@ class StoredSnapshot:
     content_sha256: str
     content_type: str
     byte_size: int
+
+
+@dataclass(frozen=True)
+class VideoProbe:
+    duration_seconds: float
+    frame_rate: float
+    frame_count: int
+
+
+VIDEO_MIN_DURATION_RATIO = 0.75
+VIDEO_MIN_FRAME_RATE = 5.0
 
 
 def _private_root(value: str) -> Path:
@@ -365,17 +378,99 @@ def _record_video_sync(
             timeout=max(30, YINGMU_VIDEO_CAPTURE_SECONDS + 30),
         )
     except (OSError, subprocess.SubprocessError) as exc:
+        output_path.unlink(missing_ok=True)
         raise SnapshotAssetError(
             "VIDEO_RECORDING_UNAVAILABLE", "The live video could not be recorded", retryable=True
         ) from exc
     if not output_path.is_file() or output_path.stat().st_size <= 0:
+        output_path.unlink(missing_ok=True)
         raise SnapshotAssetError("VIDEO_RECORDING_EMPTY", "The recorded video is empty", retryable=True)
+
+    try:
+        _validate_recorded_video(
+            _probe_recorded_video(output_path),
+            expected_seconds=YINGMU_VIDEO_CAPTURE_SECONDS,
+        )
+    except SnapshotAssetError:
+        output_path.unlink(missing_ok=True)
+        raise
+
     byte_size = output_path.stat().st_size
     if byte_size > max_bytes:
         output_path.unlink(missing_ok=True)
         raise SnapshotAssetError("VIDEO_TOO_LARGE", "The recorded video exceeds the configured byte limit", retryable=False)
     digest = hashlib.sha256(output_path.read_bytes()).hexdigest()
     return digest, byte_size
+
+
+def _ffprobe_binary() -> str:
+    configured = Path(YINGMU_FFMPEG_BINARY)
+    suffix = configured.suffix if configured.name.lower().startswith("ffmpeg") else ""
+    if configured.name.lower().startswith("ffmpeg"):
+        return str(configured.with_name(f"ffprobe{suffix}"))
+    return "ffprobe"
+
+
+def _parse_frame_rate(value: object) -> float:
+    try:
+        numerator, denominator = str(value).split("/", 1)
+        denominator_value = float(denominator)
+        return float(numerator) / denominator_value if denominator_value else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _probe_recorded_video(output_path: Path) -> VideoProbe:
+    command = [
+        _ffprobe_binary(), "-v", "error", "-count_frames", "-select_streams", "v:0",
+        "-show_entries", "format=duration:stream=avg_frame_rate,nb_read_frames",
+        "-of", "json", str(output_path),
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=max(30, YINGMU_VIDEO_CAPTURE_SECONDS + 30),
+        )
+        payload = json.loads(completed.stdout)
+        streams = payload.get("streams") or []
+        stream = streams[0]
+        return VideoProbe(
+            duration_seconds=float((payload.get("format") or {}).get("duration", 0)),
+            frame_rate=_parse_frame_rate(stream.get("avg_frame_rate")),
+            frame_count=int(stream.get("nb_read_frames", 0)),
+        )
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError, IndexError, TypeError, ValueError) as exc:
+        raise SnapshotAssetError(
+            "VIDEO_VALIDATION_UNAVAILABLE",
+            "The recorded video could not be validated",
+            retryable=False,
+        ) from exc
+
+
+def _validate_recorded_video(probe: VideoProbe, *, expected_seconds: int) -> None:
+    minimum_duration = expected_seconds * VIDEO_MIN_DURATION_RATIO
+    if not math.isfinite(probe.duration_seconds) or probe.duration_seconds < minimum_duration:
+        raise SnapshotAssetError(
+            "VIDEO_DURATION_INSUFFICIENT",
+            "The provider video ended before the required capture window",
+            retryable=True,
+        )
+    if not math.isfinite(probe.frame_rate) or probe.frame_rate < VIDEO_MIN_FRAME_RATE:
+        raise SnapshotAssetError(
+            "VIDEO_FRAME_RATE_INSUFFICIENT",
+            "The provider video does not contain enough temporal detail for analysis",
+            retryable=True,
+        )
+    minimum_frames = math.ceil(minimum_duration * VIDEO_MIN_FRAME_RATE)
+    if probe.frame_count < minimum_frames:
+        raise SnapshotAssetError(
+            "VIDEO_FRAME_COUNT_INSUFFICIENT",
+            "The provider video does not contain enough decodable frames for analysis",
+            retryable=True,
+        )
 
 
 async def persist_live_video_asset(
