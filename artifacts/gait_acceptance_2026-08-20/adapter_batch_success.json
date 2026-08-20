@@ -1,0 +1,270 @@
+{
+  "schema_version": "adapter-batch/1.0",
+  "job_id": "job-gait-success-check",
+  "module": "GAIT",
+  "adapter_version": "gait-adapter-v1",
+  "status": "SUCCESS",
+  "started_at": "2026-08-20T09:13:55.533485+08:00",
+  "completed_at": "2026-08-20T09:14:53.563342+08:00",
+  "observations": [
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-1b9f16d31b6f635f",
+      "resident_id": "resident-accept-004",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "rise_duration_s",
+      "feature_value": 0.4,
+      "unit": "second",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-004",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-1f19e1500f110b86",
+      "resident_id": "resident-accept-004",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "trunk_sway_angle_deg",
+      "feature_value": 12.315,
+      "unit": "degree",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-004",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-34fa01fd1eeb083f",
+      "resident_id": "resident-accept-004",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "step_speed_norm_s",
+      "feature_value": 0.313,
+      "unit": "norm_per_second",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-004",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-be3102d5ace2ee57",
+      "resident_id": "resident-accept-004",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "step_asymmetry_ratio",
+      "feature_value": 0.327,
+      "unit": "ratio",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-004",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-2bfb7a607c27154f",
+      "resident_id": "resident-accept-004",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "stable_posture_duration",
+      "feature_value": 0.0,
+      "unit": "second",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-004",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-547f4d070728bbd7",
+      "resident_id": "resident-accept-004",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "stable_trunk_angle_deg",
+      "feature_value": 0.613,
+      "unit": "degree",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-004",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-41f7b300eac6ec8b",
+      "resident_id": "resident-accept-004",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "valid_frame_ratio",
+      "feature_value": 1.0,
+      "unit": "ratio",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-004",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    }
+  ],
+  "evidences": [
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-gait-4c5ff375766d8df4",
+      "observation_ids": [
+        "obs-gait-1b9f16d31b6f635f"
+      ],
+      "resident_id": "resident-accept-004",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "rapid_rise",
+      "severity": 0.733,
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "baseline_value": 2.5,
+      "current_value": 0.4,
+      "baseline_deviation": -0.84,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "起身时长短于规则基线，提示快速起身。",
+      "adapter_version": "gait-adapter-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "asset_id": "asset-accept-004"
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-gait-7a5843d2b2324a85",
+      "observation_ids": [
+        "obs-gait-1f19e1500f110b86"
+      ],
+      "resident_id": "resident-accept-004",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "trunk_sway",
+      "severity": 0.017,
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "baseline_value": 8.0,
+      "current_value": 12.315,
+      "baseline_deviation": 0.539,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "躯干摆动角度超过步态稳定阈值。",
+      "adapter_version": "gait-adapter-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "asset_id": "asset-accept-004"
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-gait-6ecb34c804fc2189",
+      "observation_ids": [
+        "obs-gait-34fa01fd1eeb083f"
+      ],
+      "resident_id": "resident-accept-004",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "relative_speed_change",
+      "severity": 0.687,
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "baseline_value": 1.0,
+      "current_value": 0.313,
+      "baseline_deviation": -0.687,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "相对步速偏离规则基线。",
+      "adapter_version": "gait-adapter-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "asset_id": "asset-accept-004"
+    }
+  ],
+  "diagnostics": {
+    "feature_source": "video_mediapipe",
+    "input_kind": "video",
+    "fps": 15.0,
+    "total_frames": 339,
+    "detected_frames": 339,
+    "valid_frame_ratio": 1.0,
+    "quality_reason": "ok",
+    "error_code": null,
+    "module": "GAIT",
+    "module_status": "SUCCESS",
+    "elapsed_ms": 58031,
+    "feature_names": [
+      "rise_duration_s",
+      "trunk_sway_angle_deg",
+      "step_speed_norm_s",
+      "step_asymmetry_ratio",
+      "stable_posture_duration",
+      "stable_trunk_angle_deg",
+      "valid_frame_ratio"
+    ],
+    "evidence_types": [
+      "rapid_rise",
+      "trunk_sway",
+      "relative_speed_change"
+    ],
+    "quality_threshold": 0.65,
+    "source_mode": "RECORDED_REPLAY",
+    "simulated": true
+  },
+  "error": null
+}

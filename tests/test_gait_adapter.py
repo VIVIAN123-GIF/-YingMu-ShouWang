@@ -127,11 +127,11 @@ def test_gait_adapter_no_evidence(tmp_path: Path):
     assert batch.error is None
 
 
-def test_gait_adapter_live_video_contract_does_not_expose_paths(tmp_path: Path):
-    video_path = tmp_path / "clip.mp4"
-    video_path.write_bytes(b"fake-video-bytes")
-    model_path = tmp_path / "mediapipe_pose.tflite"
-    model_path.write_bytes(b"model")
+def test_gait_adapter_live_video_contract_does_not_expose_paths():
+    video_path = Path("data/raw/urfd/samples/adl-01-cam0.mp4")
+    model_path = Path("models/pose_landmarker_heavy.task")
+    if not video_path.exists():
+        pytest.skip("real video sample not present in this checkout")
 
     job = AlgorithmJob(
         job_id="job-gait-live-001",
@@ -162,6 +162,31 @@ def test_gait_adapter_live_video_contract_does_not_expose_paths(tmp_path: Path):
     assert str(video_path) not in payload
     assert str(model_path) not in payload
     assert "media_locator" not in payload
+
+
+def test_gait_adapter_invalid_video_reports_failed(tmp_path: Path):
+    video_path = tmp_path / "clip.mp4"
+    video_path.write_bytes(b"fake-video-bytes")
+    model_path = Path("models/pose_landmarker_heavy.task")
+
+    job = AlgorithmJob(
+        job_id="job-gait-failed-002",
+        resident_id="resident-live-003",
+        asset_id="asset-live-003",
+        media_type="video",
+        media_locator=str(video_path),
+        model_path=str(model_path),
+        captured_at="2026-08-16T09:30:00+08:00",
+        source_mode="LIVE_DEVICE",
+        simulated=False,
+    )
+
+    batch = asyncio.run(run(job))
+
+    assert batch.status == "FAILED"
+    assert batch.observations == []
+    assert batch.evidences == []
+    assert batch.error is not None
 
 
 def test_gait_adapter_missing_model_reports_failed(tmp_path: Path):

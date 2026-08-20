@@ -1,0 +1,14 @@
+{
+  "job_id": "job-gait-acceptance-001",
+  "resident_id": "resident-accept-001",
+  "asset_id": "asset-accept-001",
+  "media_type": "video",
+  "media_locator": "<redacted>",
+  "model_path": "<redacted>",
+  "captured_at": "2026-08-16T09:30:00+08:00",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "location": "bedroom",
+  "camera_position_id": null,
+  "scene_config_id": null
+}

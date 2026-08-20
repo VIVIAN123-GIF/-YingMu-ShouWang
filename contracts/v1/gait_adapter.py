@@ -9,14 +9,21 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import math
 import json
 import re
 import time
 from datetime import datetime, timezone
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+import cv2
+import mediapipe as mp
+import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
 from contracts.v1.models import Evidence, Observation, RiskDomain, SourceMode, TimeScale
 
@@ -24,6 +31,7 @@ from contracts.v1.models import Evidence, Observation, RiskDomain, SourceMode, T
 ADAPTER_BATCH_SCHEMA_VERSION = "adapter-batch/1.0"
 ADAPTER_VERSION = "gait-adapter-v1"
 MODULE = "GAIT"
+VIDEO_STEP_SPEED_SCALE = 25.0
 
 SUPPORTED_VIDEO_INPUTS = (".mp4", ".avi", ".mov", ".webm")
 SUPPORTED_MODEL_INPUTS = (".task", ".tflite", ".onnx", ".pb")
@@ -119,6 +127,19 @@ class AdapterEvidence(Evidence):
         return value
 
 
+class AlgorithmInputError(RuntimeError):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+@dataclass
+class FramePacket:
+    frame_bgr: np.ndarray
+    frame_index: int
+    timestamp_ms: int
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc).astimezone()
 
@@ -153,21 +174,224 @@ def _redact_reference(value: str | None) -> str | None:
     return re.sub(r"[A-Za-z]:\\[^\s]+|[A-Za-z]:/[^\s]+|[/\\][^\s]+$", "<redacted>", stripped)
 
 
-def _fallback_video_features(video_path: Path, model_path: Path | None = None) -> dict[str, Any]:
-    digest = hashlib.sha1(f"{video_path.name}|{model_path.name if model_path else 'default'}".encode("utf-8")).hexdigest()
-    seed = int(digest[:8], 16)
-    return {
-        "rise_duration_s": round(1.1 + (seed % 9) * 0.21, 3),
-        "hip_vertical_speed_norm_s": round(0.65 + (seed % 7) * 0.07, 3),
-        "trunk_sway_angle_deg": round(10.0 + (seed % 18) * 0.9, 3),
-        "com_offset_norm": round(0.18 + (seed % 8) * 0.04, 3),
-        "step_speed_norm_s": round(0.75 + (seed % 11) * 0.09, 3),
-        "step_asymmetry_ratio": round(0.12 + (seed % 17) * 0.018, 3),
-        "turn_angular_velocity_deg_s": round(25.0 + (seed % 13) * 2.4, 3),
-        "support_distance_norm": round(0.52 + (seed % 9) * 0.05, 3),
-        "stable_posture_duration": round(12.0 + (seed % 10) * 2.0, 3),
-        "stable_trunk_angle_deg": round(6.0 + (seed % 8) * 0.7, 3),
-        "valid_frame_ratio": round(0.82 + (seed % 12) * 0.01, 3),
+def _build_landmarker(model_path: Path) -> vision.PoseLandmarker:
+    base_options = python.BaseOptions(model_asset_buffer=model_path.read_bytes())
+    options = vision.PoseLandmarkerOptions(
+        base_options=base_options,
+        running_mode=vision.RunningMode.VIDEO,
+        num_poses=1,
+        min_pose_detection_confidence=0.5,
+        min_pose_presence_confidence=0.5,
+        min_tracking_confidence=0.5,
+    )
+    return vision.PoseLandmarker.create_from_options(options)
+
+
+def _iter_video_frames(video_path: Path, fps_hint: float = 30.0) -> tuple[list[FramePacket], float]:
+    capture = cv2.VideoCapture(str(video_path))
+    if not capture.isOpened():
+        raise ValueError(f"Unable to open video: {video_path}")
+
+    fps = capture.get(cv2.CAP_PROP_FPS) or fps_hint
+    frames: list[FramePacket] = []
+    frame_index = 0
+    while True:
+        ok, frame = capture.read()
+        if not ok:
+            break
+        timestamp_ms = int(frame_index * 1000 / fps)
+        frames.append(FramePacket(frame_bgr=frame, frame_index=frame_index, timestamp_ms=timestamp_ms))
+        frame_index += 1
+    capture.release()
+    return frames, fps
+
+
+def _safe_mean(values: list[float]) -> float:
+    return float(np.mean(np.asarray(values, dtype=np.float64))) if values else 0.0
+
+
+def _smooth(values: list[float], window: int = 5) -> list[float]:
+    if len(values) <= 2 or window <= 1:
+        return values[:]
+    radius = max(window // 2, 1)
+    smoothed: list[float] = []
+    for index in range(len(values)):
+        start = max(0, index - radius)
+        end = min(len(values), index + radius + 1)
+        smoothed.append(float(np.mean(values[start:end])))
+    return smoothed
+
+
+def _dominant_frequency_hz(signal_values: list[float], timestamps_ms: list[int]) -> float:
+    if len(signal_values) < 8 or len(timestamps_ms) < 8:
+        return 0.0
+    durations = np.diff(np.asarray(timestamps_ms, dtype=np.float64)) / 1000.0
+    if np.any(durations <= 0):
+        return 0.0
+    sample_spacing = float(np.mean(durations))
+    centered = np.asarray(signal_values, dtype=np.float64) - float(np.mean(signal_values))
+    freqs = np.fft.rfftfreq(len(centered), d=sample_spacing)
+    power = np.abs(np.fft.rfft(centered)) ** 2
+    mask = (freqs >= 0.1) & (freqs <= 3.0)
+    if not np.any(mask):
+        return 0.0
+    masked_freqs = freqs[mask]
+    masked_power = power[mask]
+    if masked_power.size == 0:
+        return 0.0
+    return float(masked_freqs[int(np.argmax(masked_power))])
+
+
+def _asymmetry_ratio(left_series: list[float], right_series: list[float]) -> float:
+    left = np.asarray(left_series, dtype=np.float64)
+    right = np.asarray(right_series, dtype=np.float64)
+    if left.size == 0 or right.size == 0:
+        return 0.0
+    left_mean = float(np.mean(left))
+    right_mean = float(np.mean(right))
+    denom = max(left_mean, right_mean, 1e-6)
+    return abs(left_mean - right_mean) / denom
+
+
+def _find_upward_window(
+    rows: list[dict[str, Any]],
+    min_duration_s: float,
+    max_duration_s: float,
+    min_upward_displacement: float,
+) -> tuple[float, float] | None:
+    best: tuple[float, float] | None = None
+    for start_index in range(len(rows)):
+        for end_index in range(start_index + 1, len(rows)):
+            duration_s = (int(rows[end_index]["timestamp_ms"]) - int(rows[start_index]["timestamp_ms"])) / 1000.0
+            if duration_s < min_duration_s:
+                continue
+            if duration_s > max_duration_s:
+                break
+            upward_displacement = float(rows[start_index]["pelvis_y"]) - float(rows[end_index]["pelvis_y"])
+            if upward_displacement < min_upward_displacement:
+                continue
+            upward_speed = upward_displacement / max(duration_s, 1e-6)
+            if best is None or upward_speed > best[1]:
+                best = (duration_s, upward_speed)
+    return best
+
+
+def _detect_video_features(video_path: Path, model_path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    try:
+        frames, fps = _iter_video_frames(video_path)
+    except Exception as exc:
+        return {}, {"quality_reason": "video_unreadable", "error_code": "INPUT_NOT_FOUND", "message": _redact_reference(str(exc))}
+    if not frames:
+        return {}, {"quality_reason": "empty_video", "error_code": "EMPTY_FEATURES"}
+
+    detector = _build_landmarker(model_path)
+    frame_rows: list[dict[str, Any]] = []
+    try:
+        for packet in frames:
+            frame_rgb = cv2.cvtColor(packet.frame_bgr, cv2.COLOR_BGR2RGB)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+            detection_result = detector.detect_for_video(mp_image, packet.timestamp_ms)
+            if not detection_result.pose_landmarks:
+                continue
+            pose = detection_result.pose_landmarks[0]
+            if len(pose) < 33:
+                continue
+
+            left_shoulder = pose[11]
+            right_shoulder = pose[12]
+            left_hip = pose[23]
+            right_hip = pose[24]
+            left_ankle = pose[27]
+            right_ankle = pose[28]
+            core_visibility = [float(getattr(pose[idx], "visibility", 0.0)) for idx in (11, 12, 23, 24, 27, 28)]
+            pelvis_x = (left_hip.x + right_hip.x) / 2.0
+            pelvis_y = (left_hip.y + right_hip.y) / 2.0
+            shoulder_x = (left_shoulder.x + right_shoulder.x) / 2.0
+            shoulder_y = (left_shoulder.y + right_shoulder.y) / 2.0
+            trunk_dx = shoulder_x - pelvis_x
+            trunk_dy = shoulder_y - pelvis_y
+            trunk_angle_deg = math.degrees(math.atan2(trunk_dx, -trunk_dy))
+
+            frame_rows.append(
+                {
+                    "timestamp_ms": int(packet.timestamp_ms),
+                    "pelvis_x": pelvis_x,
+                    "pelvis_y": pelvis_y,
+                    "trunk_angle_deg": trunk_angle_deg,
+                    "left_stride_extent": abs(left_ankle.x - pelvis_x),
+                    "right_stride_extent": abs(right_ankle.x - pelvis_x),
+                    "core_visibility_mean": _safe_mean(core_visibility),
+                    "frame_quality": min(core_visibility),
+                }
+            )
+    finally:
+        detector.close()
+
+    if not frame_rows:
+        return {}, {
+            "feature_source": "video_mediapipe",
+            "input_kind": "video",
+            "fps": round(float(fps), 3),
+            "detected_frames": 0,
+            "total_frames": len(frames),
+            "valid_frame_ratio": 0.0,
+            "error_code": "EMPTY_FEATURES",
+            "quality_reason": "no_pose_detected",
+        }
+
+    pelvis_x_series = _smooth([float(row["pelvis_x"]) for row in frame_rows])
+    pelvis_y_series = _smooth([float(row["pelvis_y"]) for row in frame_rows])
+    trunk_angle_series = _smooth([float(row["trunk_angle_deg"]) for row in frame_rows])
+    left_extent_series = _smooth([float(row["left_stride_extent"]) for row in frame_rows])
+    right_extent_series = _smooth([float(row["right_stride_extent"]) for row in frame_rows])
+    timestamps_ms_series = [int(row["timestamp_ms"]) for row in frame_rows]
+
+    for index, row in enumerate(frame_rows):
+        row["pelvis_x_smooth"] = pelvis_x_series[index]
+        row["pelvis_y_smooth"] = pelvis_y_series[index]
+        row["trunk_angle_deg_smooth"] = trunk_angle_series[index]
+        row["left_stride_extent_smooth"] = left_extent_series[index]
+        row["right_stride_extent_smooth"] = right_extent_series[index]
+
+    if len(frame_rows) > 1:
+        path_length = 0.0
+        for idx in range(1, len(frame_rows)):
+            dx = pelvis_x_series[idx] - pelvis_x_series[idx - 1]
+            dy = pelvis_y_series[idx] - pelvis_y_series[idx - 1]
+            path_length += math.hypot(dx, dy)
+        duration_seconds = max((timestamps_ms_series[-1] - timestamps_ms_series[0]) / 1000.0, 1e-6)
+        step_speed = path_length / duration_seconds
+    else:
+        step_speed = 0.0
+
+    rapid_window = _find_upward_window(frame_rows, 0.4, 1.5, 0.05)
+    rise_duration_s = None if rapid_window is None else round(rapid_window[0], 3)
+    valid_frame_ratio = len(frame_rows) / max(len(frames), 1)
+    summary = {
+        "feature_source": "video_mediapipe",
+        "input_kind": "video",
+        "fps": round(float(fps), 3),
+        "total_frames": len(frames),
+        "detected_frames": len(frame_rows),
+        "valid_frame_ratio": round(float(valid_frame_ratio), 3),
+        "step_speed_norm_s": round(float(step_speed) * VIDEO_STEP_SPEED_SCALE, 3),
+        "trunk_sway_angle_deg": round(max(abs(value) for value in trunk_angle_series), 3),
+        "step_asymmetry_ratio": round(_asymmetry_ratio(left_extent_series, right_extent_series), 3),
+        "stable_posture_duration": 0.0,
+        "stable_trunk_angle_deg": round(min(abs(value) for value in trunk_angle_series), 3),
+        "mean_core_visibility": round(_safe_mean([float(row["core_visibility_mean"]) for row in frame_rows]), 3),
+    }
+    if rise_duration_s is not None:
+        summary["rise_duration_s"] = rise_duration_s
+    return summary, {
+        "feature_source": "video_mediapipe",
+        "input_kind": "video",
+        "fps": round(float(fps), 3),
+        "total_frames": len(frames),
+        "detected_frames": len(frame_rows),
+        "valid_frame_ratio": round(float(valid_frame_ratio), 3),
+        "quality_reason": "ok",
+        "error_code": None,
     }
 
 
@@ -198,8 +422,7 @@ def _read_feature_payload(media_locator: str | None, model_path: str | None = No
         if not model.is_file():
             return {}, {"quality_reason": "model_missing_for_video", "error_code": "MODEL_NOT_FOUND"}
         try:
-            features = _fallback_video_features(path, model)
-            return features, {"feature_source": "video_model", "input_kind": "video", "error_code": None}
+            return _detect_video_features(path, model)
         except Exception as exc:
             return {}, {"quality_reason": "video_analysis_failed", "error_code": "VIDEO_ANALYSIS_FAILED", "message": _redact_reference(str(exc))}
 
@@ -371,7 +594,7 @@ async def run(job: AlgorithmJob | dict[str, Any] | object) -> AdapterBatch:
         features, diagnostics = _read_feature_payload(parsed_job.media_locator, parsed_job.model_path)
         error_code = diagnostics.get("error_code")
         if error_code in {"MODEL_NOT_FOUND", "INPUT_MISSING", "INPUT_NOT_FOUND", "UNSUPPORTED_INPUT", "VIDEO_ANALYSIS_FAILED", "EMPTY_FEATURES"}:
-            raise RuntimeError(diagnostics.get("quality_reason") or "algorithm_input_invalid")
+            raise AlgorithmInputError(str(error_code), diagnostics.get("quality_reason") or "algorithm_input_invalid")
 
         data_quality = _quality(features)
         observations = [

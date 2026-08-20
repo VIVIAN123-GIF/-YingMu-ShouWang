@@ -1,0 +1,170 @@
+{
+  "schema_version": "adapter-batch/1.0",
+  "job_id": "job-gait-noevidence-check",
+  "module": "GAIT",
+  "adapter_version": "gait-adapter-v1",
+  "status": "NO_EVIDENCE",
+  "started_at": "2026-08-20T09:14:53.574344+08:00",
+  "completed_at": "2026-08-20T09:15:05.601760+08:00",
+  "observations": [
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-876d80e7009c5043",
+      "resident_id": "resident-accept-002",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "trunk_sway_angle_deg",
+      "feature_value": 8.336,
+      "unit": "degree",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-002",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-3c6f6fc9d6abe186",
+      "resident_id": "resident-accept-002",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "step_speed_norm_s",
+      "feature_value": 0.688,
+      "unit": "norm_per_second",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-002",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-1610ab81f96f0bc1",
+      "resident_id": "resident-accept-002",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "step_asymmetry_ratio",
+      "feature_value": 0.164,
+      "unit": "ratio",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-002",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-97e205cf86cfe78a",
+      "resident_id": "resident-accept-002",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "stable_posture_duration",
+      "feature_value": 0.0,
+      "unit": "second",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-002",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-5c1daf538a7dc6ca",
+      "resident_id": "resident-accept-002",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "stable_trunk_angle_deg",
+      "feature_value": 3.047,
+      "unit": "degree",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-002",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-95a14b26d317342c",
+      "resident_id": "resident-accept-002",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "valid_frame_ratio",
+      "feature_value": 1.0,
+      "unit": "ratio",
+      "location": "bedroom",
+      "confidence": 0.97,
+      "data_quality": 1.0,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-accept-002",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "video",
+        "camera_position_id": null,
+        "scene_config_id": null
+      }
+    }
+  ],
+  "evidences": [],
+  "diagnostics": {
+    "feature_source": "video_mediapipe",
+    "input_kind": "video",
+    "fps": 15.0,
+    "total_frames": 60,
+    "detected_frames": 60,
+    "valid_frame_ratio": 1.0,
+    "quality_reason": "ok",
+    "error_code": null,
+    "module": "GAIT",
+    "module_status": "NO_EVIDENCE",
+    "elapsed_ms": 12031,
+    "feature_names": [
+      "trunk_sway_angle_deg",
+      "step_speed_norm_s",
+      "step_asymmetry_ratio",
+      "stable_posture_duration",
+      "stable_trunk_angle_deg",
+      "valid_frame_ratio"
+    ],
+    "evidence_types": [],
+    "quality_threshold": 0.65,
+    "source_mode": "RECORDED_REPLAY",
+    "simulated": true
+  },
+  "error": null
+}
