@@ -1,0 +1,25 @@
+{
+  "schema_version": "adapter-batch/1.0",
+  "job_id": "job-gait-failed-check",
+  "module": "GAIT",
+  "adapter_version": "gait-adapter-v1",
+  "status": "FAILED",
+  "started_at": "2026-08-20T09:15:12.649756+08:00",
+  "completed_at": "2026-08-20T09:15:12.650766+08:00",
+  "observations": [],
+  "evidences": [],
+  "diagnostics": {
+    "module": "GAIT",
+    "module_status": "FAILED",
+    "elapsed_ms": 0,
+    "error_code": "MODEL_NOT_FOUND",
+    "source_mode": "RECORDED_REPLAY",
+    "simulated": true
+  },
+  "error": {
+    "code": "MODEL_NOT_FOUND",
+    "message": "model_missing_for_video",
+    "retryable": false
+  },
+  "resident_response_candidate": null
+}

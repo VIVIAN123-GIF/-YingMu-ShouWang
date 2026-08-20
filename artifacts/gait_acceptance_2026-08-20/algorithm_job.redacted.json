@@ -1,0 +1,19 @@
+{
+  "schema_version": "algorithm-job/1.0",
+  "job_id": "job-gait-acceptance-001",
+  "correlation_id": "corr-gait-acceptance-001",
+  "resident_id": "resident-accept-001",
+  "asset_id": "asset-accept-001",
+  "media_type": "VIDEO",
+  "media_locator": "<redacted_authorized_video>",
+  "captured_at": "2026-08-16T09:30:00+08:00",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "location": "bedroom",
+  "camera_position_id": "camera-position-acceptance-001",
+  "scene_config_id": "scene-config-acceptance-001",
+  "requested_modules": [
+    "GAIT"
+  ],
+  "deadline_ms": 120000
+}
