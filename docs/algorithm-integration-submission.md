@@ -69,3 +69,28 @@ python scripts/validate_voice_behavior_package.py
 ## 待补充内容
 
 各模块提供真实样例后，放入 `deliverables/algorithm-integration/` 对应目录，并使用上述脚本完成首次联调。当前不填写任何未由算法或智能体负责人确认的特征、Evidence 或决策规则。
+
+## 步态联调验收归档
+
+步态适配器和后端整链验收统一使用以下命令生成证据，禁止手工拼接请求与响应 JSON：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_gait_integration_acceptance.py `
+  --media D:\private\authorized-c6c-replay.mp4 `
+  --captured-at 2026-08-20T09:30:00+08:00 `
+  --resident-id resident-redacted-001 `
+  --camera-position-id living-room-fixed-001 `
+  --scene-config-id scene-config-v1 `
+  --backend-url http://127.0.0.1:8000 `
+  --authorization-record-id auth-redacted-001 `
+  --retention-until 2026-09-30T23:59:59+08:00
+```
+
+脚本不归档私有媒体路径或视频副本，只保存 SHA-256、字节数和格式。判定等级如下：
+
+- `CONTRACT_PASS`：预计算 JSON/CSV 通过合同，不能称为真实视频联调。
+- `ADAPTER_PASS`：真实视频通过 MediaPipe 和适配器合同，但未验证后端。
+- `BACKEND_E2E_PASS`：在 `ADAPTER_PASS` 基础上，Asset、Observation、Evidence 首次写入均为 `201`，相同内容重试均为 `200`，且事件详情包含提交证据和 RuleTrace。该等级不包含前端视觉验收。
+- `FAIL`：任一必需门禁失败。没有后端回执时绝不输出系统级通过。
+
+验收目录中的 `algorithm_job.redacted.json` 与 `adapter_batch.json` 保留相同任务、居民和资产 ID，可直接用 `validate_batch_for_job` 复核。历史材料若无法完成该配对，不得通过修改归档文件补写为成功。
