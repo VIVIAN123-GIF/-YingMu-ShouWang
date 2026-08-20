@@ -14,6 +14,7 @@ from backend.db.models import Asset as AssetRow
 from backend.service.alarm_task_service import process_claimed_task
 from backend.service.snapshot_asset_service import (
     SnapshotAssetError,
+    VideoProbe,
     download_snapshot,
     persist_snapshot_asset,
 )
@@ -246,3 +247,29 @@ def test_worker_classifies_snapshot_asset_failures(retryable, expected_status):
     assert result.capture_asset_id is None
     assert result.error_code == "SNAPSHOT_TEST_FAILURE"
     assert PRIVATE_URL not in result.error_message
+
+
+@pytest.mark.parametrize(
+    ("probe", "error_code"),
+    [
+        (VideoProbe(duration_seconds=4.0, frame_rate=2.0, frame_count=8),
+         "VIDEO_DURATION_INSUFFICIENT"),
+        (VideoProbe(duration_seconds=8.0, frame_rate=2.0, frame_count=16),
+         "VIDEO_FRAME_RATE_INSUFFICIENT"),
+        (VideoProbe(duration_seconds=8.0, frame_rate=15.0, frame_count=12),
+         "VIDEO_FRAME_COUNT_INSUFFICIENT"),
+    ],
+)
+def test_provider_placeholder_or_incomplete_video_is_rejected(probe, error_code):
+    with pytest.raises(SnapshotAssetError) as caught:
+        snapshot_service._validate_recorded_video(probe, expected_seconds=8)
+
+    assert caught.value.code == error_code
+    assert caught.value.retryable is True
+
+
+def test_video_with_sufficient_duration_and_frames_is_accepted():
+    snapshot_service._validate_recorded_video(
+        VideoProbe(duration_seconds=8.0, frame_rate=15.0, frame_count=120),
+        expected_seconds=8,
+    )
