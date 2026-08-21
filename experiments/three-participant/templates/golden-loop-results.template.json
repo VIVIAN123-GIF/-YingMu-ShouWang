@@ -1,0 +1,9 @@
+{
+  "schema_version": "golden-loop-results/1.0",
+  "status": "INCOMPLETE",
+  "reproductions": [
+    {"participant_id": "P01", "status": "PENDING", "source_mode": "RECORDED_REPLAY", "simulated": true, "final_state": ""},
+    {"participant_id": "P02", "status": "PENDING", "source_mode": "RECORDED_REPLAY", "simulated": true, "final_state": ""},
+    {"participant_id": "P03", "status": "PENDING", "source_mode": "RECORDED_REPLAY", "simulated": true, "final_state": ""}
+  ]
+}

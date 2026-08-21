@@ -1,0 +1,10 @@
+{
+  "schema_version": "urfd-review/1.0",
+  "status": "INCOMPLETE",
+  "source_mode": "PUBLIC_DATASET",
+  "dataset_id": "URFD",
+  "sample_count": 0,
+  "mixed_with_self_collected": false,
+  "metrics": {},
+  "notes": "完成公开数据复核后填写真实计数与指标；不得与自采数据混算。"
+}

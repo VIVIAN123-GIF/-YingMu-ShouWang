@@ -1,0 +1,10 @@
+{
+  "schema_version": "video-verification/1.0",
+  "status": "INCOMPLETE",
+  "duration_seconds": 0,
+  "privacy_review": "PENDING",
+  "source_labels_verified": false,
+  "live_replay_chain_separated": false,
+  "p03_metrics_match": false,
+  "reviewer": ""
+}

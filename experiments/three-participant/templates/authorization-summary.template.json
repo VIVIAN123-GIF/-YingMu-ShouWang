@@ -1,0 +1,10 @@
+{
+  "schema_version": "authorization-summary/1.0",
+  "status": "INCOMPLETE",
+  "contains_names_or_signatures": false,
+  "participants": [
+    {"participant_id": "P01", "adult_confirmed": false, "signed": false, "authorization_record_id": ""},
+    {"participant_id": "P02", "adult_confirmed": false, "signed": false, "authorization_record_id": ""},
+    {"participant_id": "P03", "adult_confirmed": false, "signed": false, "authorization_record_id": ""}
+  ]
+}
