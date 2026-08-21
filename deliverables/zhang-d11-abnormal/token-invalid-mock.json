@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "D11_TOKEN_INVALID_CONTROLLED_MOCK",
+  "generated_at": "2026-08-18T11:49:14.025+08:00",
+  "result": "PASS",
+  "refresh_then_success": {
+    "result": "PASS",
+    "initial_business_code": "10002",
+    "final_business_code": "200",
+    "token_refresh_count": 1,
+    "request_count": 2,
+    "generic_retry_sleep_count": 0,
+    "latency_ms": 2
+  },
+  "refresh_then_invalid": {
+    "result": "PASS",
+    "initial_business_code": "10002",
+    "final_business_code": "10018",
+    "error_code": "EZVIZ_TOKEN_INVALID_AFTER_REFRESH",
+    "token_refresh_count": 1,
+    "request_count": 2,
+    "generic_retry_sleep_count": 0,
+    "latency_ms": 0
+  },
+  "source_mode": "MOCK",
+  "simulated": true,
+  "contains_credentials": false,
+  "contains_media_url": false
+}

@@ -3,7 +3,8 @@ import { EVENT_STATUSES, RISK_DOMAINS } from '../domain/constants'
 export function formatDateTime(value) {
   if (!value) return '—'
   return new Intl.DateTimeFormat('zh-CN', {
-    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    timeZone: 'Asia/Shanghai',
   }).format(new Date(value))
 }
 

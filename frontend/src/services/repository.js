@@ -4,38 +4,54 @@ import dashboardMock from '../mocks/dashboard.json'
 import eventsMock from '../mocks/events.json'
 import weeklyMock from '../mocks/weekly.json'
 import deviceMock from '../mocks/device.json'
-import assetsMock from '../mocks/assets.json'
 import observationsMock from '../mocks/observations.json'
 import baselineMock from '../mocks/baseline.json'
 import { DATA_MODES } from '../domain/constants'
-import { validateDashboard, validateEventList, validateEventViewModel } from '../domain/validation'
+import {
+  validateAgentExplanationJob, validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceStatus, validateEventList, validateEventViewModel, validateInterventionResult,
+} from '../domain/validation'
 import {
   normalizeBaseline, normalizeDashboard, normalizeDevice, normalizeEvent, normalizeWeeklyReport,
 } from './viewModel'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
-const AUTHORIZED_CLIP_URL = import.meta.env.VITE_AUTHORIZED_CLIP_URL || ''
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 const RESIDENT_ID = import.meta.env.VITE_RESIDENT_ID || 'resident-001'
-const configuredMode = import.meta.env.VITE_DATA_MODE || 'auto'
+// API is the safe default: mock fallback must be explicitly enabled for demos.
+const configuredMode = import.meta.env.VITE_DATA_MODE || 'api'
 const initialMode = sessionStorage.getItem('yingmu-data-mode') || configuredMode
 
-const client = axios.create({
+export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 2800,
-  headers: { Accept: 'application/json' },
+  headers: { Accept: 'application/json', 'Content-Type': 'application/json; charset=utf-8' },
 })
+
+export function normalizeApiError(error) {
+  const body = error?.response?.data
+  const detail = body?.error || body?.detail
+  if (detail && typeof detail === 'object') {
+    const requestId = detail.request_id || body?.request_id
+    const message = detail.message || error.message
+    error.api = { code: detail.code || 'API_ERROR', message, request_id: requestId || null }
+    error.message = `${message}${requestId ? ` (request_id: ${requestId})` : ''}`
+  }
+  return error
+}
+
+apiClient.interceptors.response.use((response) => response, (error) => Promise.reject(normalizeApiError(error)))
 
 const mocks = {
   dashboard: structuredClone(dashboardMock),
   events: structuredClone(eventsMock),
   weekly: structuredClone(weeklyMock),
   device: structuredClone(deviceMock),
-  assets: structuredClone(assetsMock),
   observations: structuredClone(observationsMock),
   baseline: structuredClone(baselineMock),
 }
 
 const feedbackCache = new Map()
+const interventionResultCache = new Map()
+const assetRequestCache = new Map()
 
 export const runtime = reactive({
   mode: DATA_MODES[initialMode] ? initialMode : 'auto',
@@ -151,71 +167,169 @@ function hydrateMockEvent(event) {
   return { ...event, observations: observationsFor(event) }
 }
 
-function withAuthorizedClip(asset) {
-  if (!AUTHORIZED_CLIP_URL || asset.asset_id !== 'asset-fall-authorized') return asset
-  return {
-    ...asset,
-    fallback_url: AUTHORIZED_CLIP_URL,
-    available: true,
-    verification_status: 'PROVIDED_UNVERIFIED',
-    notice: '已配置授权片段，页面将在成功加载后标记为可播放。',
-  }
-}
-
 export async function getDashboard(residentId = RESIDENT_ID) {
   return resolveData('dashboard.read', async () => {
     const [eventsResponse, deviceResponse, baselineResponse] = await Promise.all([
-      client.get('/api/v1/events', { params: { resident_id: residentId } }),
-      client.get('/api/v1/device/status'),
-      client.get(`/api/v1/residents/${residentId}/baseline`),
+      apiClient.get('/events', { params: { resident_id: residentId } }),
+      apiClient.get('/device/status'),
+      apiClient.get(`/residents/${encodeURIComponent(residentId)}/baseline`),
     ])
     const events = validateEventList(listFrom(payload(eventsResponse)))
     const baseline = payload(baselineResponse)
-    return normalizeDashboard({ events, device: payload(deviceResponse), baseline, residentId })
-  }, () => mocks.dashboard, validateDashboard)
+    return normalizeDashboard({ events, device: validateDeviceStatus(payload(deviceResponse)), baseline, residentId })
+  }, () => normalizeDashboard({
+    events: mocks.events, device: validateDeviceStatus(mocks.device), baseline: mocks.baseline, residentId,
+  }), validateDashboard)
 }
 
 export async function getEvents(residentId = RESIDENT_ID) {
   return resolveData('events.list', async () => {
-    const response = await client.get('/api/v1/events', { params: { resident_id: residentId } })
+    const response = await apiClient.get('/events', { params: { resident_id: residentId } })
     return validateEventList(listFrom(payload(response))).map(normalizeEvent)
   }, () => mocks.events.map(normalizeEvent), validateEventList)
 }
 
 export async function getEvent(eventId) {
   return resolveData('event.detail', async () => {
-    const event = payload(await client.get(`/api/v1/events/${eventId}`))
+    const event = payload(await apiClient.get(`/events/${eventId}`))
     validateEventViewModel(event)
     return normalizeEvent(event)
   }, () => normalizeEvent(hydrateMockEvent(mocks.events.find((event) => event.event_id === eventId) || mocks.events[0])), validateEventViewModel)
 }
 
+export async function getEventExplanation(eventId) {
+  try {
+    const result = validateAgentExplanationJob(payload(await apiClient.get(
+      `/events/${encodeURIComponent(eventId)}/explanation`,
+    )))
+    recordAudit('event.explanation.read', 'SUCCESS', {
+      event_id: result.event_id,
+      detail: `status=${result.status}`,
+    })
+    return result
+  } catch (error) {
+    recordAudit('event.explanation.read', 'FAILED', {
+      event_id: eventId,
+      detail: 'explanation-read-failed',
+    })
+    throw error
+  }
+}
+
+export async function interveneEvent(eventId) {
+  const encodedEventId = encodeURIComponent(eventId)
+  if (runtime.mode !== 'mock') {
+    try {
+      const result = validateInterventionResult(payload(await apiClient.post(
+        `/events/${encodedEventId}/intervene`, null,
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } },
+      )))
+      runtime.activeSource = 'api'
+      runtime.degraded = false
+      runtime.message = ''
+      recordAudit('intervention.trigger', 'SUCCESS', { event_id: eventId, detail: result.result_id })
+      return result
+    } catch (error) {
+      if (!(runtime.mode === 'auto' && shouldFallback(error))) {
+        recordAudit('intervention.trigger', 'FAILED', { event_id: eventId, detail: error?.message })
+        throw error
+      }
+      runtime.activeSource = 'mock'
+      runtime.degraded = true
+      runtime.message = '后端干预接口暂不可用，本次仅展示 Mock 干预结果'
+      recordAudit('intervention.trigger', 'DEGRADED', { event_id: eventId, detail: error?.message })
+    }
+  }
+
+  const timestamp = new Date().toISOString()
+  const result = validateInterventionResult({
+    schema_version: '1.0',
+    result_id: `result-${eventId}-mock-intervention`,
+    event_id: eventId,
+    started_at: timestamp,
+    completed_at: timestamp,
+    action_type: 'voice',
+    tool_name: 'mock_voice',
+    delivery_status: 'SUCCESS',
+    resident_response: null,
+    family_feedback: null,
+    risk_after: null,
+    resolved: false,
+    resolution_reason: 'Declared Mock fallback',
+    operator: 'system',
+    source_mode: 'MOCK',
+    simulated: true,
+  })
+  recordAudit('intervention.trigger', 'MOCK', { event_id: eventId, detail: result.result_id })
+  return result
+}
+
 export async function getWeeklyReport(residentId = RESIDENT_ID) {
-  return resolveData('weekly.read', async () => normalizeWeeklyReport(
-    payload(await client.get('/api/v1/reports/weekly', { params: { resident_id: residentId } })),
-  ), () => normalizeWeeklyReport(mocks.weekly))
+  return resolveData('reports.weekly', async () => normalizeWeeklyReport(payload(await apiClient.get(
+    '/reports/weekly', { params: { resident_id: residentId } },
+  ))), () => normalizeWeeklyReport(mocks.weekly))
+}
+
+export async function getAsset(assetId) {
+  if (!assetId) return null
+
+  const cacheKey = `${runtime.mode}:${assetId}`
+  if (assetRequestCache.has(cacheKey)) return assetRequestCache.get(cacheKey)
+
+  if (runtime.mode === 'mock') {
+    const result = validateAsset({
+      asset_id: assetId,
+      title: '固定 JSON 演示素材',
+      source_mode: 'MOCK',
+      simulated: true,
+      stream_url: null,
+      fallback_url: null,
+      fallback_kind: 'unavailable',
+      available: false,
+      verification_status: 'MOCK_ONLY',
+      captured_at: new Date().toISOString(),
+      notice: `固定演示数据仅保留素材标识（${assetId}）`,
+    })
+    recordAudit('asset.read', 'MOCK', { detail: assetId })
+    assetRequestCache.set(cacheKey, Promise.resolve(result))
+    return result
+  }
+
+  const request = (async () => {
+    try {
+      const result = validateAsset(payload(await apiClient.get(`/assets/${encodeURIComponent(assetId)}`)))
+      recordAudit('asset.read', 'SUCCESS', { detail: assetId })
+      return result
+    } catch (error) {
+      recordAudit('asset.read', 'FAILED', { detail: error?.message || assetId })
+      const missing = error?.response?.status === 404 || error?.api?.code === 'ASSET_NOT_FOUND'
+      if (!missing) assetRequestCache.delete(cacheKey)
+      throw error
+    }
+  })()
+  assetRequestCache.set(cacheKey, request)
+  return request
 }
 
 export async function getBaseline(residentId = RESIDENT_ID) {
-  return resolveData('baseline.read', async () => normalizeBaseline(
-    payload(await client.get(`/api/v1/residents/${residentId}/baseline`)),
-  ), () => normalizeBaseline(mocks.baseline))
+  return resolveData('residents.baseline', async () => normalizeBaseline(payload(await apiClient.get(
+    `/residents/${encodeURIComponent(residentId)}/baseline`,
+  ))), () => normalizeBaseline(mocks.baseline))
 }
 
 export async function getDeviceStatus() {
   return resolveData('device.status', async () => normalizeDevice(
-    payload(await client.get('/api/v1/device/status')),
-  ), () => normalizeDevice(mocks.device))
+    validateDeviceStatus(payload(await apiClient.get('/device/status'))),
+  ), () => normalizeDevice(validateDeviceStatus(mocks.device)))
 }
 
-export async function getSnapshot() {
-  return resolveData('device.snapshot', async () => payload(await client.get('/api/v1/device/snapshot')), () => withAuthorizedClip(mocks.assets[0]))
-}
-
-export async function getAsset(assetId) {
-  return resolveData('asset.read', async () => payload(await client.get(`/api/v1/assets/${assetId}`)), () => withAuthorizedClip(
-    mocks.assets.find((asset) => asset.asset_id === assetId) || mocks.assets[0],
-  ))
+export async function getAlarmProcessingTasks({ residentId = null, limit = 20 } = {}) {
+  return resolveData('alarms.processing', async () => {
+    const params = { limit }
+    if (residentId) params.resident_id = residentId
+    const response = await apiClient.get('/alarms/processing', { params })
+    return validateAlarmProcessingTasks(listFrom(payload(response)))
+  }, () => [], validateAlarmProcessingTasks)
 }
 
 function stableFeedbackId(eventId, feedback) {
@@ -228,9 +342,80 @@ function stableFeedbackId(eventId, feedback) {
   return `feedback-${eventId}-${(hash >>> 0).toString(16)}`
 }
 
+export function stableInterventionResultId(eventId, residentResponse) {
+  const source = `${eventId}|resident_response|${residentResponse}`
+  let hash = 2166136261
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return `result-${eventId}-${(hash >>> 0).toString(16)}`
+}
+
+function interventionResultPayload(event, residentResponse) {
+  const timestamp = new Date().toISOString()
+  return {
+    schema_version: '1.0',
+    result_id: stableInterventionResultId(event.event_id, residentResponse),
+    event_id: event.event_id,
+    started_at: timestamp,
+    completed_at: timestamp,
+    action_type: 'resident_response',
+    tool_name: 'family_console',
+    delivery_status: 'SUCCESS',
+    resident_response: residentResponse,
+    family_feedback: null,
+    risk_after: null,
+    resolved: false,
+    resolution_reason: null,
+    operator: 'family',
+    source_mode: event.source_mode,
+    simulated: event.simulated,
+  }
+}
+
+export async function submitInterventionResult(event, residentResponse = 'stable') {
+  const requestBody = interventionResultPayload(event, residentResponse)
+  const resultId = requestBody.result_id
+
+  if (interventionResultCache.has(resultId)) {
+    recordAudit('intervention-result.write', 'IDEMPOTENT_REPLAY', { event_id: event.event_id, detail: resultId })
+    return structuredClone(interventionResultCache.get(resultId))
+  }
+
+  if (runtime.mode !== 'mock') {
+    try {
+      const result = validateInterventionResult(payload(await apiClient.post(
+        `/events/${encodeURIComponent(event.event_id)}/results`, requestBody,
+        { headers: { 'Idempotency-Key': resultId, 'Content-Type': 'application/json; charset=utf-8' } },
+      )))
+      runtime.activeSource = 'api'
+      runtime.degraded = false
+      interventionResultCache.set(resultId, result)
+      recordAudit('intervention-result.write', 'SUCCESS', { event_id: event.event_id, detail: resultId })
+      return structuredClone(result)
+    } catch (error) {
+      if (!(runtime.mode === 'auto' && shouldFallback(error))) {
+        recordAudit('intervention-result.write', 'FAILED', { event_id: event.event_id, detail: error?.message })
+        throw error
+      }
+      runtime.activeSource = 'mock'
+      runtime.degraded = true
+      runtime.message = '干预结果接口暂不可用，确认结果仅保存在本次演示中'
+      recordAudit('intervention-result.write', 'DEGRADED', { event_id: event.event_id, detail: error?.message })
+    }
+  }
+
+  const result = { ...requestBody, saved_in_demo: true }
+  interventionResultCache.set(resultId, result)
+  recordAudit('intervention-result.write', 'MOCK', { event_id: event.event_id, detail: resultId })
+  return structuredClone(result)
+}
+
 export async function submitFamilyFeedback(eventId, feedback) {
-  const feedbackId = feedback.feedback_id || stableFeedbackId(eventId, feedback)
-  const requestBody = { ...feedback, feedback_id: feedbackId }
+  const feedbackBody = { ...feedback, feedback_type: 'confirm' }
+  const feedbackId = feedbackBody.feedback_id || stableFeedbackId(eventId, feedbackBody)
+  const requestBody = { ...feedbackBody, feedback_id: feedbackId }
 
   if (feedbackCache.has(feedbackId)) {
     recordAudit('feedback.write', 'IDEMPOTENT_REPLAY', { event_id: eventId, detail: feedbackId })
@@ -239,8 +424,8 @@ export async function submitFamilyFeedback(eventId, feedback) {
 
   if (runtime.mode !== 'mock') {
     try {
-      const response = await client.post(`/api/v1/events/${eventId}/feedback`, requestBody, {
-        headers: { 'Idempotency-Key': feedbackId },
+      const response = await apiClient.post(`/events/${eventId}/feedback`, requestBody, {
+        headers: { 'Idempotency-Key': feedbackId, 'Content-Type': 'application/json; charset=utf-8' },
       })
       runtime.activeSource = 'api'
       runtime.degraded = false
@@ -266,4 +451,4 @@ export async function submitFamilyFeedback(eventId, feedback) {
   return structuredClone(result)
 }
 
-export { RESIDENT_ID, shouldFallback, stableFeedbackId }
+export { API_BASE_URL, RESIDENT_ID, shouldFallback, stableFeedbackId }

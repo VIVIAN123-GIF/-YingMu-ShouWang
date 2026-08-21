@@ -25,6 +25,14 @@ python -m backend.db.init_db
 python -m uvicorn backend.main:app --reload
 ```
 
+萤石 WebHook 的慢处理独立于 HTTP 服务运行。开发时在第二个终端执行：
+
+```powershell
+python -m backend.worker.alarm_worker
+```
+
+回调接口只会完成验签、去重、告警入库和任务入队，然后立即返回 `messageId`。Worker 会为每条新告警抓取一次平台快照，并在算法适配器接入前将任务标记为 `WAITING_ALGORITHM`；它不会伪造 Observation、Evidence 或 RiskEvent。可通过 `GET /api/v1/alarms/processing` 查看脱敏后的处理状态。
+
 - Swagger：<http://127.0.0.1:8000/docs>
 - 健康检查：<http://127.0.0.1:8000/health>
 
@@ -38,6 +46,21 @@ python -m uvicorn backend.main:app --reload
 - `schemas`：冻结接口的 Pydantic 契约。
 
 调用链为：`HTTP 请求 → api → service → SQLAlchemy models → SQLite`。
+
+## 决策规则来源
+
+后端不维护第二套风险阈值。张薇已合并的
+`contracts/v1/rulesets/ruleset-v1.0.json` 是规则版本、短中长时间窗和
+观察阈值的唯一来源；`contracts/v1/engine.py` 是对应的确定性 Mock
+状态机。`backend/service/risk_service.py` 负责把该规则集适配到持久化
+RiskEvent、Evidence 和 RuleTrace。
+
+常易铭的语音/行为算法只提交 Observation 与 Evidence，不提交最终风险
+等级。可用下面的隔离验收命令验证其 2026-08-03 原始交付物：
+
+```powershell
+python scripts/validate_voice_behavior_package.py
+```
 
 ## 验证
 

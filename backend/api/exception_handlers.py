@@ -25,9 +25,16 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 
 async def service_error_handler(request: Request, exc: ServiceError):
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
-    return JSONResponse(status_code=exc.status_code,
-                        content={"error": {"code": exc.code, "message": exc.message,
-                                           "request_id": request_id}})
+    error = {"code": exc.code, "message": exc.message, "request_id": request_id}
+    if exc.debug is not None:
+        error["debug"] = exc.debug
+        logger.warning(
+            "service_error_debug request_id=%s code=%s debug=%s",
+            request_id,
+            exc.code,
+            exc.debug,
+        )
+    return JSONResponse(status_code=exc.status_code, content={"error": error})
 
 
 async def unexpected_error_handler(request: Request, exc: Exception):

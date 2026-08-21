@@ -1,6 +1,6 @@
 # 萤目守望统一家属端
 
-基于 Vue 3、Element Plus 与 ECharts 的统一家属端。项目完成九个一级入口，其中四个核心页面完成，其余为低保真骨架。
+基于 Vue 3、Element Plus 与 ECharts 的统一家属端。九个一级入口均已具备可运行页面：核心页面提供完整风险交互，档案、关怀、系统和回放页面提供对应的数据读取、来源标识和反馈能力。
 
 ## 启动
 
@@ -42,7 +42,7 @@ HTML 测试报告生成于 `artifacts/evidence/report`，同样不会随原 PR �
 复制 `frontend/.env.example` 为 `frontend/.env.local` 可配置：
 
 ```text
-VITE_API_BASE_URL=http://127.0.0.1:8000
+VITE_API_BASE_URL=/api/v1
 VITE_DATA_MODE=auto
 VITE_RESIDENT_ID=resident-001
 VITE_AUTHORIZED_CLIP_URL=
@@ -54,11 +54,15 @@ VITE_AUTHORIZED_CLIP_URL=
 
 `VITE_RESIDENT_ID` 用于统一首页、事件、周报和基线查询的居民标识；API 验收脚本会覆盖为隔离的验收居民。
 
+周报和个人基线在 `api`/`auto` 模式下会分别请求 `GET /api/v1/reports/weekly?resident_id=...` 与 `GET /api/v1/residents/{resident_id}/baseline`。后端尚未提供趋势、活动热力图、关怀选项或访客核验数据时，页面会显示明确空状态；不会用 Mock 数据伪装为 API 结果。
+
 页面右上角可在运行时切换模式。演示数据覆盖绿色日常、黄色心理趋势、橙色跌倒干预与回落、诈骗核验和工具失败。
 
 ## 接口边界
 
-前端对接 `/api/v1/events`、事件详情、个人基线、周报、设备状态、截图、授权片段和家属反馈接口。页面不持有萤石账号、AccessToken 或永久公开视频地址。
+前端仅对接设备状态、告警处理任务、风险事件、事件详情、干预和家属反馈接口。
+
+事件详情的智能体解释只读取 `GET /api/v1/events/{event_id}/explanation`。解释在所有数据模式下均以后端结果为准，不使用前端固定 JSON 降级；浏览器不会调用同路径的补偿 POST，也不配置或发送 `X-Control-Token`。解释响应会先投影为展示所需字段，未知扩展字段不会进入组件状态或浏览器存储。
 
 每个事件和回放必须显示 `LIVE_DEVICE`、`RECORDED_REPLAY`、`PUBLIC_DATASET` 或 `MOCK`；模拟内容必须带“模拟实验回放”水印。
 
@@ -84,9 +88,9 @@ npm run evidence:api
 |---|---|
 | GET | `/api/v1/events` |
 | GET | `/api/v1/events/{id}` |
-| GET | `/api/v1/reports/weekly` |
+| GET | `/api/v1/alarms/processing?limit=20` |
 | GET | `/api/v1/device/status` |
-| GET | `/api/v1/assets/{id}` |
+| POST | `/api/v1/events/{id}/intervene` |
 | POST | `/api/v1/events/{id}/feedback` |
 
 截至 2026-07-30，三轮均已验证页面无需刷新即可自动同步 `INTERVENING → OBSERVING → RESOLVED`，并完成 Evidence/Observation 追溯、InterventionResult 同步和反馈幂等 `201 → 200`。每轮仓库材料包含完整脱敏请求/响应、事件快照、RuleTrace、状态迁移、工具结果、审计日志和关键截图；这里的 `data_mode=api` 只表示前端真实调用 FastAPI，Evidence 与工具仍标记为 `source_mode=MOCK`、`simulated=true`，不宣称真实设备闭环。
@@ -94,6 +98,37 @@ npm run evidence:api
 ## 个人基线与活动热力图
 
 `/baseline` 展示后端中位数、MAD、样本数、有效天数和基线状态。固定 Mock 数据额外提供“日期 × 时段”近七日活动热力图，并显示“模拟实验回放”。当前后端未提供活动时序接口，因此 API 模式只展示真实基线统计和明确空状态，不使用 Mock 趋势补位。
+
+## 8 月 13 日周报与核验卡验收
+
+`/weekly` 在固定 Mock 模式下提供黄色趋势周报、家属关怀确认和诈骗访客核验卡。`/care` 提供独立的关怀工作台；关怀与核验反馈都通过统一的 `submitFamilyFeedback` 写入，并使用稳定反馈 ID 保障重复提交幂等；页面只更新提交结果文案，不自行改变风险状态。
+
+`/resident`、`/system`、`/replay` 分别提供老人档案、设备状态与事件场景回放。事件详情的干预操作通过 `POST /api/v1/events/{event_id}/intervene` 返回 `InterventionResult`。
+
+- 周报：展示趋势 Evidence、低打扰原则和一次性关怀建议；文案不作医学诊断。
+- 关怀确认：提交后显示“关怀反馈已记录”，来源和模拟状态沿用报告数据。
+- 诈骗核验卡：展示访客、停留时长和高风险组合词三类 Evidence，提交后显示“身份核验已记录”。
+- API 模式：后端未返回趋势、关怀选项或 `visitor_case` 时显示明确空状态，不用 Mock 数据补位。
+
+生成 8 月 13 日前端演示证据：
+
+```powershell
+npm run evidence -- --grep "8月13日前端周报"
+```
+
+材料输出到 `artifacts/weekly-evidence-2026-08-13` 和仓库交付目录 `deliverables/frontend-2026-08-13`。其中内容均为 `MOCK`/`RECORDED_REPLAY` 模拟演示，不代表真实诈骗识别或真实设备闭环。
+
+## 陈硕任务看板验收
+
+新增入口和离线备用页的验收命令：
+
+```powershell
+npm run evidence -- --grep "陈硕前端任务看板入口"
+```
+
+材料输出到 `artifacts/cs-completion-2026-08-09` 和 `deliverables/frontend-cs-2026-08-09`，包含老人档案、关怀工作台、系统状态、100 天场景回放、坐稳确认和离线备用页截图、审计日志及 `summary.json`。该验收明确标注 `source_mode=MOCK`、`simulated=true`，不宣称真实设备结果。
+
+`public/offline.html` 是后端不可用时的静态备用页；进入应用后可切换 `MOCK` 模式查看脱敏演示数据。`frontend/.env.example` 提供 API 地址、数据模式、居民标识和授权片段配置模板。
 
 ## 依赖审计说明
 

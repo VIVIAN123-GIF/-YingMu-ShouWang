@@ -1,0 +1,64 @@
+{
+  "schema_version": "adapter-batch/1.0",
+  "job_id": "job-gait-demo-001",
+  "module": "GAIT",
+  "adapter_version": "gait-adapter-v1",
+  "status": "SUCCESS",
+  "started_at": "2026-08-16T09:30:01+08:00",
+  "completed_at": "2026-08-16T09:30:01+08:00",
+  "observations": [
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-gait-demo-rise",
+      "resident_id": "resident-demo-001",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "source": "gait_adapter",
+      "feature_name": "rise_duration_s",
+      "feature_value": 1.24,
+      "unit": "second",
+      "location": "bedroom",
+      "confidence": 0.948,
+      "data_quality": 0.91,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-gait-demo-001",
+      "simulated": true,
+      "metadata": {
+        "adapter_module": "GAIT",
+        "media_type": "VIDEO",
+        "camera_position_id": "camera-position-demo-001",
+        "scene_config_id": "scene-config-demo-001"
+      }
+    }
+  ],
+  "evidences": [
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-gait-demo-rise",
+      "observation_ids": ["obs-gait-demo-rise"],
+      "resident_id": "resident-demo-001",
+      "timestamp": "2026-08-16T09:30:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "rapid_rise",
+      "severity": 0.173,
+      "confidence": 0.948,
+      "data_quality": 0.91,
+      "baseline_value": 2.5,
+      "current_value": 1.24,
+      "baseline_deviation": -0.504,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "Rise duration is shorter than the baseline and indicates a rapid rise.",
+      "adapter_version": "gait-adapter-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    }
+  ],
+  "diagnostics": {
+    "feature_source_type": "json",
+    "example_note": "The adapter returns all recognized features for the batch.",
+    "feature_names": ["rise_duration_s"],
+    "evidence_types": ["rapid_rise"],
+    "quality_threshold": 0.65
+  },
+  "error": null
+}

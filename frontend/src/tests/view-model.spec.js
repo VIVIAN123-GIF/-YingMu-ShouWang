@@ -39,20 +39,30 @@ describe('API ViewModel 适配', () => {
   })
 
   it('API 无事件时不混入 Mock 风险、今日统计或趋势', () => {
+    const preFallSummary = {
+      risk_level: 'GREEN', instant_risk: 0.1, risk_30s: 0.08, trend_3min: 0.05,
+      trend_direction: 'STABLE', personal_deviation: 0, environment_risk: 0,
+      quality_penalty: 0, dominant_factors: ['normal_fluctuation'], evidence_ids: [],
+      recommended_intervention: '仅记录为日常波动，不打扰老人。',
+    }
     const dashboard = normalizeDashboard({
-      residentId: 'resident-api', events: [], baseline: {},
-      device: { online: true, device_alias: 'camera-mock-001', adapter_mode: 'MOCK', source_mode: 'MOCK', simulated: true },
+      residentId: 'resident-api', events: [], baseline: { pre_fall_summary: preFallSummary },
+      device: { online: true, device_alias: 'camera-mock-001', adapter_mode: 'MOCK', source_mode: 'MOCK', simulated: true, collection_active: true },
     })
     expect(dashboard.current_risk).toBeNull()
     expect(dashboard.today.activity_minutes).toBeNull()
     expect(dashboard.risk_trend).toEqual([])
+    expect(dashboard.pre_fall_summary).toEqual(preFallSummary)
     expect(dashboard.device.name).toBe('camera-mock-001')
     expect(dashboard.device.data_quality).toBeNull()
+    expect(dashboard.device.collection_active).toBe(true)
   })
 
   it('规范化设备、空周报与基线状态', () => {
-    expect(normalizeDevice({ device_alias: 'A', adapter_mode: 'EZVIZ_CLOUD' })).toMatchObject({ name: 'A', adapter: 'EZVIZ_CLOUD' })
-    expect(normalizeWeeklyReport({ trend: [], visitor_case: null, care: { options: [] } })).toMatchObject({ trend: [], visitor_case: null, care: { options: [] } })
+    expect(normalizeDevice({ online: true, device_alias: 'A', adapter_mode: 'EZVIZ_CLOUD', source_mode: 'LIVE_DEVICE', simulated: false, collection_active: true }))
+      .toMatchObject({ name: 'A', adapter: 'EZVIZ_CLOUD', collection_active: true })
+    expect(normalizeWeeklyReport({ trend: [], visitor_case: null, care: { event_id: 'event-mental-week', options: [] } }))
+      .toMatchObject({ trend: [], visitor_case: null, care: { event_id: 'event-mental-week', options: [] } })
     const baseline = normalizeBaseline({ baselines: {
       rise_duration: { median: 3.5, mad: 0.4, sample_count: 12, distinct_days: 3, status: 'PROVISIONAL' },
       custom_metric: { median: 1, mad: 0.1, sample_count: 2, distinct_days: 1, status: 'INSUFFICIENT' },

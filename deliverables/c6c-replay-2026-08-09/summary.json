@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "C6C_RECORDED_REPLAY_ACCEPTANCE",
+  "checks": {
+    "video_sha256": "26838EA4C2D2EC84BCAEB4A1C3AB79C1DAD135172D70513D10FCDCD6B8F71D76",
+    "result_sha256": "CA6067483C7F7E568C4290C41EC76659C7EAD26EDD5958EA252696E733397F85"
+  },
+  "contains_credentials": false,
+  "contains_raw_media": false,
+  "reports": [
+    {
+      "scenario_id": "take-c6c-pos01-20260802-141141-golden-01",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "baseline_status": "INSUFFICIENT",
+      "http_submission_passed": true,
+      "duplicate_idempotent": true,
+      "decision_eligible": false,
+      "state_machine_result": "NOT_ELIGIBLE",
+      "event_ids": [],
+      "evaluations": [
+        {
+          "risk_level": "GREEN",
+          "event_created": false,
+          "event_id": null,
+          "matched_rule": "R-FALL-01",
+          "ruleset_version": "ruleset-v1.0",
+          "system_evidence_id": null
+        },
+        {
+          "risk_level": "GREEN",
+          "event_created": false,
+          "event_id": null,
+          "matched_rule": "R-FALL-01",
+          "ruleset_version": "ruleset-v1.0",
+          "system_evidence_id": null
+        },
+        {
+          "risk_level": "GREEN",
+          "event_created": false,
+          "event_id": null,
+          "matched_rule": "NO_MATCH",
+          "ruleset_version": "ruleset-v1.0",
+          "system_evidence_id": null
+        }
+      ],
+      "events": [],
+      "passed": true
+    },
+    {
+      "scenario_id": "take-c6c-pos01-20260802-141635-rapid-only-01",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "baseline_status": "INSUFFICIENT",
+      "http_submission_passed": true,
+      "duplicate_idempotent": true,
+      "decision_eligible": false,
+      "state_machine_result": "NOT_ELIGIBLE",
+      "event_ids": [],
+      "evaluations": [
+        {
+          "risk_level": "GREEN",
+          "event_created": false,
+          "event_id": null,
+          "matched_rule": "R-FALL-01",
+          "ruleset_version": "ruleset-v1.0",
+          "system_evidence_id": null
+        }
+      ],
+      "events": [],
+      "passed": true
+    },
+    {
+      "scenario_id": "take-c6c-pos01-20260802-141708-under15-01",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "baseline_status": "INSUFFICIENT",
+      "http_submission_passed": true,
+      "duplicate_idempotent": true,
+      "decision_eligible": false,
+      "state_machine_result": "NOT_ELIGIBLE",
+      "event_ids": [],
+      "evaluations": [
+        {
+          "risk_level": "GREEN",
+          "event_created": false,
+          "event_id": null,
+          "matched_rule": "NO_MATCH",
+          "ruleset_version": "ruleset-v1.0",
+          "system_evidence_id": null
+        },
+        {
+          "risk_level": "GREEN",
+          "event_created": false,
+          "event_id": null,
+          "matched_rule": "NO_MATCH",
+          "ruleset_version": "ruleset-v1.0",
+          "system_evidence_id": null
+        }
+      ],
+      "events": [],
+      "passed": true
+    }
+  ],
+  "recorded_replay_submission_verified": true,
+  "risk_state_machine_closed": false,
+  "automatic_live_device_chain_verified": false,
+  "overall_result": "PARTIAL"
+}

@@ -37,24 +37,29 @@ response_by_intent = {
 使用 `candidate.intent`。也不应仅执行 `.lower()`，否则会得到不符合新口径的
 `help/stable`。
 
-### 2. AgentExplanation 输入白名单
+## 已核对的后端能力
 
-AgentExplanation 只能接收后端整理后的 Observation/Evidence 摘要和
-InterventionResult。禁止透传：
+### 1. AgentExplanation 输入白名单
+
+当前 `AgentExplanationRequest` 使用 `extra=forbid` 的结构化合同，只接收后端整理后
+的 Evidence、基线、干预状态和能力信息，不包含以下字段：
 
 - `media_locator`
 - 原始转写
 - 音频路径或媒体路径
 - 平台 Token、Secret 或其他凭证
 
-### 3. request_id 幂等
+### 2. request_id 幂等
 
-`request_id` 不属于 `AlgorithmJob/AdapterBatch`，应由后端按“事件 ID + 事件版本”
-确定性生成或持久化复用。重复查询时应先查询已完成的 AgentExplanation 作业，命中后
-直接返回结果，不再次调用模型。
+`request_id` 不属于 `AlgorithmJob/AdapterBatch`。最新主分支已按“事件 ID + 事件
+版本哈希”稳定生成 `request_id`，并按 `request_id` 复用缓存或持久化作业；同内容
+重复查询不会再次调用模型，不同内容复用同一 ID 会返回冲突。
 
 算法侧只保证：相同 `job_id` 和相同输入产生相同 Observation/Evidence ID；算法适配器
 自身不调用 AgentExplanation 模型。
+
+已执行 `tests/test_agent_explanation_service.py`，7 个测试全部通过，其中包含稳定
+`request_id` 和重复请求只调用一次 Provider 的用例。
 
 ## 联调入口
 

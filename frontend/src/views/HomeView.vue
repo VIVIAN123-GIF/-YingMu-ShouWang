@@ -13,6 +13,19 @@ const router = useRouter()
 const loading = ref(true)
 const error = ref('')
 const data = ref(null)
+const factorLabels = {
+  fall_precursor_evidence: '跌倒前兆证据',
+  personal_baseline_deviation: '偏离个人基线',
+  environment_interaction_risk: '人-环境交互风险',
+  data_quality_downgrade: '数据质量降级',
+  multi_scale_accumulation: '多时标累积',
+  normal_fluctuation: '日常波动',
+}
+const trendLabels = {
+  RISING: '上升',
+  STABLE: '平稳',
+  FALLING: '回落',
+}
 
 const chartOption = computed(() => ({
   grid: { left: 46, right: 24, top: 32, bottom: 42 },
@@ -67,9 +80,9 @@ function metric(value, suffix = '') {
 }
 
 function onlineLabel(value) {
-  if (value === true) return '在线'
-  if (value === false) return '离线'
-  return '状态未知'
+  if (value === true) return '设备在线'
+  if (value === false) return '设备离线'
+  return '设备状态未知'
 }
 </script>
 
@@ -147,16 +160,57 @@ function onlineLabel(value) {
           <div class="card-heading"><div><span class="section-kicker">设备与来源</span><h2>采集链路</h2></div></div>
           <div class="device-status-line">
             <span class="online-dot" :class="{ offline: data.device.online === false, unknown: data.device.online === null }"></span>
-            <div><strong>{{ onlineLabel(data.device.online) }}</strong><span>最后更新 {{ formatDateTime(data.device.last_seen) }}</span></div>
+            <div><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ data.device.collection_active ? '采集运行中' : '采集已停止' }}</span></div>
           </div>
           <dl class="detail-list">
-            <div><dt>设备</dt><dd>{{ data.device.name }}</dd></div>
-            <div><dt>适配器</dt><dd>{{ data.device.adapter }}</dd></div>
-            <div><dt>数据质量</dt><dd>{{ formatPercent(data.device.data_quality) }}</dd></div>
+            <div><dt>设备别名</dt><dd>{{ data.device.device_alias }}</dd></div>
+            <div><dt>适配器模式</dt><dd>{{ data.device.adapter_mode }}</dd></div>
+            <div><dt>采集状态</dt><dd>{{ data.device.collection_active ? '运行中' : '已停止' }}</dd></div>
           </dl>
           <SourceBadge :mode="data.device.source_mode" :simulated="data.device.simulated" />
-          <p class="privacy-note">前端仅读取后端状态和授权片段，不保存设备账号或 AccessToken。</p>
+          <p class="privacy-note">前端仅展示文档约定的设备状态和事件数据。</p>
         </article>
+      </section>
+
+      <section v-if="data.pre_fall_summary" class="content-card prefall-card">
+        <div class="card-heading">
+          <div><span class="section-kicker">跌倒前兆</span><h2>个体记忆驱动的多时间尺度预警</h2></div>
+          <RiskBadge :level="data.pre_fall_summary.risk_level" />
+        </div>
+        <div class="prefall-grid">
+          <div class="prefall-meter">
+            <small>当前数秒</small>
+            <strong>{{ formatRiskScore(data.pre_fall_summary.instant_risk) }}</strong>
+            <span>即时失稳</span>
+          </div>
+          <div class="prefall-meter">
+            <small>未来30秒</small>
+            <strong>{{ formatRiskScore(data.pre_fall_summary.risk_30s) }}</strong>
+            <span>短时恶化</span>
+          </div>
+          <div class="prefall-meter">
+            <small>最近3分钟</small>
+            <strong>{{ formatRiskScore(data.pre_fall_summary.trend_3min) }}</strong>
+            <span>{{ trendLabels[data.pre_fall_summary.trend_direction] || data.pre_fall_summary.trend_direction }}</span>
+          </div>
+          <div class="prefall-fusion">
+            <dl class="detail-list compact">
+              <div><dt>个人偏离</dt><dd>{{ formatRiskScore(data.pre_fall_summary.personal_deviation) }}</dd></div>
+              <div><dt>环境交互</dt><dd>{{ formatRiskScore(data.pre_fall_summary.environment_risk) }}</dd></div>
+              <div><dt>质量降级</dt><dd>{{ formatRiskScore(data.pre_fall_summary.quality_penalty) }}</dd></div>
+            </dl>
+            <div class="factor-list">
+              <el-tag
+                v-for="factor in data.pre_fall_summary.dominant_factors"
+                :key="factor"
+                effect="plain"
+              >
+                {{ factorLabels[factor] || factor }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <p class="intervention-line">{{ data.pre_fall_summary.recommended_intervention }}</p>
       </section>
 
       <section class="content-card events-card">

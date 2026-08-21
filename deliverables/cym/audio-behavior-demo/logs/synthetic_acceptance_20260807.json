@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "acceptance_date": "2026-08-07",
+  "status": "PASS",
+  "claim_scope": "SYNTHETIC_INPUT_PIPELINE_ONLY",
+  "audio": {
+    "artifact_type": "WINDOWS_TTS_SYNTHETIC_WAV",
+    "source_mode": "RECORDED_REPLAY",
+    "simulated": true,
+    "media_included_in_package": false,
+    "model": "tiny",
+    "language": "Chinese",
+    "transcribe_seconds": 2.064,
+    "observation_count": 4,
+    "fraud_keyword_match_count": 3,
+    "matched_labels": [
+      "guaranteed_return",
+      "verification_code_like",
+      "immediate_transfer"
+    ],
+    "transcript": "您好,我是社區健康服務人員現在有一個免費的楊老投資項目可以保證收益請把驗證馬告訴我並馬上完成轉帳",
+    "observed_errors": [
+      "养老被识别为杨老",
+      "验证码被识别为验证马"
+    ],
+    "validated": [
+      "Windows TTS WAV generation",
+      "local file replay",
+      "Whisper transcription",
+      "Freeze v1.0 Observation generation"
+    ],
+    "not_validated": [
+      "live microphone monitoring",
+      "real home acoustic robustness",
+      "real scam detection"
+    ]
+  },
+  "behavior": {
+    "artifact_type": "GENERATED_MOVING_SHAPE_MP4",
+    "source_mode": "RECORDED_REPLAY",
+    "simulated": true,
+    "media_included_in_package": false,
+    "frames_processed": 60,
+    "detected_frames": 0,
+    "track_points": 0,
+    "stop_reason": "video_eof",
+    "validated": [
+      "generated MP4 input",
+      "OpenCV frame processing",
+      "automatic EOF exit",
+      "Freeze v1.0 Observation generation"
+    ],
+    "not_validated": [
+      "person detection accuracy",
+      "person tracking accuracy",
+      "real behavior risk detection"
+    ]
+  },
+  "mock_statistics": {
+    "source_mode": "MOCK",
+    "simulated": true,
+    "purpose": "statistics, Evidence contract and backend integration only"
+  },
+  "conclusion": "合成输入链路验收通过；不得描述为真实音频监测、真实人物行为监测或真实风险识别"
+}

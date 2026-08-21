@@ -1,0 +1,280 @@
+[
+  {
+    "video": "视频\\视频\\b3b3487709275f969390fccaf409d3ab.mp4",
+    "fps": 15.0,
+    "frames": 162,
+    "duration_sec": 10.8,
+    "pose_detected_frames": 162,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.767,
+    "stable_duration_sec": 6.133,
+    "torso_angle_mean_deg": 3.964,
+    "torso_angle_max_deg": 6.905,
+    "algorithm_output": [
+      "no_threshold_event"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\b3b3487709275f969390fccaf409d3ab_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\人物逐步出画.mp4",
+    "fps": 15.0,
+    "frames": 213,
+    "duration_sec": 14.2,
+    "pose_detected_frames": 190,
+    "pose_detection_rate": 0.892,
+    "confidence": 0.766,
+    "stable_duration_sec": 5.933,
+    "torso_angle_mean_deg": 5.359,
+    "torso_angle_max_deg": 158.114,
+    "algorithm_output": [
+      "rapid_rise",
+      "trunk_sway"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\人物逐步出画_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\单侧步幅不对称模拟.mp4",
+    "fps": 15.0,
+    "frames": 179,
+    "duration_sec": 11.933,
+    "pose_detected_frames": 179,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.801,
+    "stable_duration_sec": 11.933,
+    "torso_angle_mean_deg": 3.484,
+    "torso_angle_max_deg": 6.039,
+    "algorithm_output": [
+      "no_threshold_event"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\单侧步幅不对称模拟_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\完整黄金闭环视频.mp4",
+    "fps": 15.0,
+    "frames": 1911,
+    "duration_sec": 127.4,
+    "pose_detected_frames": 1911,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.903,
+    "stable_duration_sec": 97.467,
+    "torso_angle_mean_deg": 1.397,
+    "torso_angle_max_deg": 17.706,
+    "algorithm_output": [
+      "rapid_rise",
+      "trunk_sway"
+    ],
+    "status": "PASS",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\完整黄金闭环视频_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\快速起身单独样本.mp4",
+    "fps": 15.0,
+    "frames": 339,
+    "duration_sec": 22.6,
+    "pose_detected_frames": 339,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.839,
+    "stable_duration_sec": 12.0,
+    "torso_angle_mean_deg": 4.697,
+    "torso_angle_max_deg": 12.958,
+    "algorithm_output": [
+      "rapid_rise",
+      "trunk_sway"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\快速起身单独样本_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\恢复不足 15 秒边界样本.mp4",
+    "fps": 15.0,
+    "frames": 322,
+    "duration_sec": 21.467,
+    "pose_detected_frames": 322,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.905,
+    "stable_duration_sec": 11.533,
+    "torso_angle_mean_deg": 3.731,
+    "torso_angle_max_deg": 14.491,
+    "algorithm_output": [
+      "trunk_sway"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\恢复不足 15 秒边界样本_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\控制样本一：快速起身单独出现.mp4",
+    "fps": 15.0,
+    "frames": 287,
+    "duration_sec": 19.133,
+    "pose_detected_frames": 287,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.798,
+    "stable_duration_sec": 14.467,
+    "torso_angle_mean_deg": 3.986,
+    "torso_angle_max_deg": 27.332,
+    "algorithm_output": [
+      "rapid_rise",
+      "trunk_sway"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\控制样本一：快速起身单独出现_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\控制样本二：稳定不足15秒.mp4",
+    "fps": 15.0,
+    "frames": 308,
+    "duration_sec": 20.533,
+    "pose_detected_frames": 308,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.746,
+    "stable_duration_sec": 7.6,
+    "torso_angle_mean_deg": 3.765,
+    "torso_angle_max_deg": 16.372,
+    "algorithm_output": [
+      "trunk_sway"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\控制样本二：稳定不足15秒_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\正常步行（右到左）.mp4",
+    "fps": 15.0,
+    "frames": 153,
+    "duration_sec": 10.2,
+    "pose_detected_frames": 118,
+    "pose_detection_rate": 0.771,
+    "confidence": 0.78,
+    "stable_duration_sec": 5.2,
+    "torso_angle_mean_deg": 4.444,
+    "torso_angle_max_deg": 15.501,
+    "algorithm_output": [
+      "trunk_sway"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\正常步行（右到左）_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\正常步行（左到右）.mp4",
+    "fps": 15.0,
+    "frames": 957,
+    "duration_sec": 63.8,
+    "pose_detected_frames": 957,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.806,
+    "stable_duration_sec": 10.4,
+    "torso_angle_mean_deg": 4.632,
+    "torso_angle_max_deg": 19.671,
+    "algorithm_output": [
+      "rapid_rise",
+      "trunk_sway"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\正常步行（左到右）_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\缓慢小步行走.mp4",
+    "fps": 15.0,
+    "frames": 216,
+    "duration_sec": 14.4,
+    "pose_detected_frames": 216,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.785,
+    "stable_duration_sec": 14.4,
+    "torso_angle_mean_deg": 3.4,
+    "torso_angle_max_deg": 7.601,
+    "algorithm_output": [
+      "no_threshold_event"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\缓慢小步行走_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\缓慢起身样本.mp4",
+    "fps": 15.0,
+    "frames": 368,
+    "duration_sec": 24.533,
+    "pose_detected_frames": 368,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.788,
+    "stable_duration_sec": 12.067,
+    "torso_angle_mean_deg": 4.906,
+    "torso_angle_max_deg": 18.715,
+    "algorithm_output": [
+      "rapid_rise",
+      "trunk_sway"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\缓慢起身样本_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\缓慢转身.mp4",
+    "fps": 15.0,
+    "frames": 297,
+    "duration_sec": 19.8,
+    "pose_detected_frames": 297,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.782,
+    "stable_duration_sec": 18.4,
+    "torso_angle_mean_deg": 3.237,
+    "torso_angle_max_deg": 7.73,
+    "algorithm_output": [
+      "no_threshold_event"
+    ],
+    "status": "PASS",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\缓慢转身_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\脚踝短暂遮挡.mp4",
+    "fps": 15.0,
+    "frames": 234,
+    "duration_sec": 15.6,
+    "pose_detected_frames": 234,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.737,
+    "stable_duration_sec": 8.6,
+    "torso_angle_mean_deg": 3.084,
+    "torso_angle_max_deg": 6.186,
+    "algorithm_output": [
+      "no_threshold_event"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\脚踝短暂遮挡_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\行走 - 停步 - 继续.mp4",
+    "fps": 15.0,
+    "frames": 268,
+    "duration_sec": 17.867,
+    "pose_detected_frames": 267,
+    "pose_detection_rate": 0.996,
+    "confidence": 0.751,
+    "stable_duration_sec": 15.0,
+    "torso_angle_mean_deg": 3.308,
+    "torso_angle_max_deg": 6.988,
+    "algorithm_output": [
+      "no_threshold_event"
+    ],
+    "status": "PASS",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\行走 - 停步 - 继续_landmarks.csv"
+  },
+  {
+    "video": "视频\\视频\\行走躯干左右摇摆.mp4",
+    "fps": 15.0,
+    "frames": 209,
+    "duration_sec": 13.933,
+    "pose_detected_frames": 209,
+    "pose_detection_rate": 1.0,
+    "confidence": 0.772,
+    "stable_duration_sec": 12.667,
+    "torso_angle_mean_deg": 3.093,
+    "torso_angle_max_deg": 6.136,
+    "algorithm_output": [
+      "no_threshold_event"
+    ],
+    "status": "STABILITY INSUFFICIENT",
+    "landmarks_csv": "outputs\\c6c_pose_review_20260808\\行走躯干左右摇摆_landmarks.csv"
+  }
+]

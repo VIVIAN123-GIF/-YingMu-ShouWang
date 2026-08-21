@@ -13,6 +13,21 @@
 - `ruleset.py`与`rulesets/ruleset-v1.0.json`：规则、门槛、权重和`RuleTrace`的唯一来源；
 - `examples/mock_memory_history.json`：明确标注为模拟的7天安全历史。
 
+## 两周冲刺 D1 扩展合同
+
+张同学的平台与智能体交接对象同样以本目录为单一来源：
+
+- `platform.py`：内部 `PlatformSnapshotResult`，临时图片地址只允许传给后端下载器；
+- `agent.py`：`AgentExplanationRequest/Response`、能力枚举和基线/干预状态；
+- `schemas/platform_snapshot_result.schema.json`：平台抓拍归一化 JSON Schema；
+- `schemas/agent_explanation_*.schema.json`：智能体请求和响应 JSON Schema；
+- `schemas/algorithm_job.schema.json` 与 `schemas/adapter_batch.schema.json`：后端到算法适配器的严格边界；
+- `examples/platform_snapshot_result.json` 与 `examples/agent_explanation_*.json`：D1 冻结样例。
+
+智能体请求只接受结构化事件和 Evidence 摘要，不接受视频、音频、平台 Token、
+设备序列号或临时 URL。智能体响应未知字段一律拒绝，因此不能新增或修改
+`risk_level`、`risk_score`、`resolved` 或规则 ID。
+
 重新导出Schema和样例：
 
 ```powershell

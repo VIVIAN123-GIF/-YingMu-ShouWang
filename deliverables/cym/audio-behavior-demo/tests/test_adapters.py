@@ -19,7 +19,13 @@ from adapters.trajectory_adapter import (  # noqa: E402
     _resolve_scene_config,
     run as run_trajectory,
 )
-from contracts.v1.algorithm import AdapterBatch, AlgorithmJob  # noqa: E402
+from backend.service.adapter_registry import AdapterRegistry  # noqa: E402
+from contracts.v1.algorithm import (  # noqa: E402
+    AdapterBatch,
+    AlgorithmJob,
+    AlgorithmModule,
+    validate_batch_for_job,
+)
 
 
 class AdapterContractTests(unittest.TestCase):
@@ -36,28 +42,51 @@ class AdapterContractTests(unittest.TestCase):
         self.assertTrue(inspect.iscoroutinefunction(run_language))
         self.assertIs(inspect.signature(run_trajectory).parameters["job"].annotation, AlgorithmJob)
         self.assertIs(inspect.signature(run_language).parameters["job"].annotation, AlgorithmJob)
-        trajectory = asyncio.run(run_trajectory(self.trajectory_job))
-        language = asyncio.run(run_language(self.language_job))
+        trajectory_job = AlgorithmJob.model_validate(self.trajectory_job)
+        language_job = AlgorithmJob.model_validate(self.language_job)
+        trajectory = asyncio.run(run_trajectory(trajectory_job))
+        language = asyncio.run(run_language(language_job))
         self.assertEqual(trajectory.module.value, "TRAJECTORY")
         self.assertEqual(language.module.value, "LANGUAGE")
         self.assertIn(trajectory.status.value, {"SUCCESS", "NO_EVIDENCE", "LOW_QUALITY"})
         self.assertEqual(language.status.value, "SUCCESS")
         self.assertIsInstance(trajectory, AdapterBatch)
         self.assertIsInstance(language, AdapterBatch)
-        for batch, job in ((trajectory, self.trajectory_job), (language, self.language_job)):
+        for batch, job in ((trajectory, trajectory_job), (language, language_job)):
             self.assertEqual(batch.schema_version, "adapter-batch/1.0")
             self.assertFalse(hasattr(batch, "risk_level"))
             for observation in batch.observations:
                 for field in ("resident_id", "asset_id", "source_mode", "simulated"):
-                    expected = job[field]
-                    actual = getattr(observation, field)
-                    actual = actual.value if hasattr(actual, "value") else actual
-                    self.assertEqual(actual, expected)
+                    self.assertEqual(getattr(observation, field), getattr(job, field))
             observation_ids = {item.observation_id for item in batch.observations}
             for evidence in batch.evidences:
                 self.assertFalse(hasattr(evidence, "asset_id"))
                 self.assertTrue(set(evidence.observation_ids).issubset(observation_ids))
-                self.assertEqual(evidence.resident_id, job["resident_id"])
+                self.assertEqual(evidence.resident_id, job.resident_id)
+            validate_batch_for_job(batch, job)
+
+    def test_registry_loads_canonical_entrypoints(self):
+        configured = {
+            "YINGMU_TRAJECTORY_ADAPTER": "adapters.trajectory_adapter:run",
+            "YINGMU_LANGUAGE_ADAPTER": "adapters.language_adapter:run",
+        }
+        with patch.dict(os.environ, configured, clear=False):
+            registry = AdapterRegistry()
+            registry.load_configured()
+
+        for module in (AlgorithmModule.TRAJECTORY, AlgorithmModule.LANGUAGE):
+            adapter = registry.get(module)
+            self.assertTrue(inspect.iscoroutinefunction(adapter))
+            signature = inspect.signature(adapter)
+            self.assertIs(signature.parameters["job"].annotation, AlgorithmJob)
+            self.assertIs(signature.return_annotation, AdapterBatch)
+
+        trajectory_job = AlgorithmJob.model_validate(self.trajectory_job)
+        language_job = AlgorithmJob.model_validate(self.language_job)
+        trajectory = asyncio.run(registry.invoke(AlgorithmModule.TRAJECTORY, trajectory_job))
+        language = asyncio.run(registry.invoke(AlgorithmModule.LANGUAGE, language_job))
+        self.assertIsInstance(trajectory, AdapterBatch)
+        self.assertIsInstance(language, AdapterBatch)
 
     def test_ids_are_stable_for_retries(self):
         first = asyncio.run(run_language(self.language_job))

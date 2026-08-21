@@ -115,6 +115,7 @@ export function normalizeDashboard({ events = [], device = {}, baseline = {}, re
     },
     device: normalizeDevice(device),
     risk_trend: asArray(baseline?.risk_trend),
+    pre_fall_summary: baseline?.pre_fall_summary || null,
     recent_events: normalizedEvents,
   }
 }
@@ -126,6 +127,7 @@ export function normalizeWeeklyReport(report = {}) {
     evidence: asArray(report.evidence),
     recommendations: asArray(report.recommendations),
     care: {
+      event_id: report.care?.event_id || null,
       status: report.care?.status || 'PENDING',
       last_contact: report.care?.last_contact || null,
       options: asArray(report.care?.options),

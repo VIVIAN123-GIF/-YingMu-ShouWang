@@ -5,7 +5,7 @@
 | 负责人 | 常易铭 |
 | 更新日期 | 2026年8月14日 |
 | 分支 | `feature/cym/audio-behavior-demo` |
-| 当前状态 | 8月14日语音/行为/趋势适配器与后端样例已完成；实景标定和正式阈值仍待统一素材验证 |
+| 当前状态 | 已完成语音/行为/趋势适配器、后端样例及合成来源验收；实景长期数据和正式阈值仍待统一素材验证 |
 
 ## 1. 项目边界
 
@@ -16,7 +16,9 @@
 
 本模块只生成感知结果和Evidence，不直接输出GREEN、YELLOW、ORANGE或RED风险等级，也不作诈骗或心理疾病诊断。
 
-### 2.1 真实视频检测边界
+当前公开验收使用TTS合成音频、移动图形MP4和MOCK统计。它们只验证处理链路、契约和接口，不是实际老人音频/行为连续监测。来源分类与允许表述见`docs/8月7日合成音频与行为验收说明.md`。
+
+### 1.1 真实视频检测边界
 
 视频分析保持原始宽高比，并在 `640x480` 画布中加黑边，避免将 C6c 常见的
 16:9 画面拉伸为4:3。HOG `detection_quality` 与 HOG 加短时 KCF 的
@@ -64,7 +66,8 @@
 │  ├─ evidence.py
 │  ├─ generate_evidence_samples.py
 │  ├─ generate_behavior_evidence.py
-│  └─ submit_to_backend.py
+│  ├─ submit_to_backend.py
+│  └─ generate_trend_samples.py
 ├─ scripts/
 │  ├─ generate_test_video.py
 │  └─ generate_test_audio.ps1
@@ -74,6 +77,7 @@
 │  ├─ test_regions.py
 │  ├─ test_behavior_evidence.py
 │  ├─ test_backend_submission.py
+│  ├─ test_trend_analysis.py
 │  ├─ test_evidence.py
 │  ├─ test_observation.py
 │  ├─ test_whisper_demo.py
@@ -92,18 +96,23 @@
 │  ├─ behavior_bundle.c6c-replay.example.json
 │  ├─ trend_evidence_bundle.example.json
 │  ├─ behavior_evidence_bundle.example.json
+│  ├─ mock_daily_activity.json
+│  ├─ trend_evidence_bundle.example.json
 │  ├─ test_scam_script.txt
 │  └─ test_scam_transcript.txt
 ├─ logs/
 │  ├─ behavior_test_20260724.md
 │  ├─ whisper_test_20260725.json
-│  └─ reproduction_fix_20260725.md
+│  ├─ reproduction_fix_20260725.md
+│  ├─ trend_backend_submission_20260806.json
+│  └─ synthetic_acceptance_20260807.json
 └─ docs/
    ├─ 常易铭-7月24日调研交付.md
    ├─ 脱敏测试素材说明.md
    ├─ 降级规则.md
    ├─ 7月31日前任务拆分.md
    ├─ 8月7日前趋势交付.md
+   ├─ 8月7日合成音频与行为验收说明.md
    └─ 8.14后常易铭-后端联调交付.md
 ```
 
@@ -152,7 +161,7 @@ winget install --id Gyan.FFmpeg -e
 python -m unittest discover -s .\tests -v
 ```
 
-预期：当前36项测试全部`OK`，其中Observation样例还会通过仓库
+预期：全部测试`OK`，其中Observation样例还会通过仓库
 `contracts.v1.models.Observation`官方模型校验。
 
 ### 5.2 生成本地MP4链路测试视频
@@ -267,6 +276,8 @@ Windows PowerShell可执行：
 
 输出为`output\synthetic_test.wav`。它读取`samples\test_scam_script.txt`并调用Windows本地语音合成，不包含真人录音；发音效果取决于本机语音包。
 
+该文件必须使用`source_mode: RECORDED_REPLAY`和`simulated: true`。它只用于合成文件回放验收，不得描述为实时收音或真实老人音频监测。
+
 ### 7.2 执行转写
 
 ```powershell
@@ -348,9 +359,12 @@ python .\src\generate_behavior_evidence.py `
 `unusual_dwell_time`。它们都引用联调包内真实存在的Observation ID，且整个包统一为
 `source_mode: MOCK`、`simulated: true`。访客结果只表达“授权信息未匹配，建议家属核验身份”；停留结果使用`DEMO_UNCALIBRATED`阈值，二者均不构成诈骗判断。
 
-### 8.2 多日趋势适配器
+### 8.2 8月5日多日趋势与昼夜节律
 
-趋势适配器把每天的区域访问、房间转换和昼夜活动汇总转换为标准Observation，
+趋势适配器以“前N日为个人基线、最后一日为当前日”的日汇总JSON为输入，把每天的
+区域访问、房间转换和昼夜活动汇总转换为标准Observation，并采用冻结方案规定的
+滚动中位数和MAD输出可解释Evidence。
+
 前7天形成滚动中位数/MAD个人基线，第8天作为当前日。历史不足时只输出
 Observation，不生成长期Evidence；稳定基线时才允许生成
 `activity_range_decline`、`room_transition_decline`和
@@ -361,6 +375,14 @@ python .\src\generate_trend_samples.py `
   --input .\samples\mock_daily_activity.json `
   --output .\output\trend_evidence_bundle.json
 ```
+
+当历史日少于3天时标记`INSUFFICIENT`，3至6天标记`PROVISIONAL`，均只输出Observation；达到7个历史日后才标记`STABLE`并允许生成长期Evidence。示例包含7个历史日加1个当前日，会输出：
+
+- `activity_range_decline`；
+- `room_transition_decline`；
+- `day_night_rhythm_change`。
+
+该功能只提示长期活动或作息变化，不作心理疾病诊断。多日数据和阈值当前均为明确标记的`MOCK`/`DEMO_UNCALIBRATED`接口样例。完整验收见`docs/8月7日前趋势交付.md`。
 
 ### 8.3 后端调用行为适配器
 
@@ -405,6 +427,8 @@ python .\src\submit_to_backend.py `
 ```
 
 客户端固定先提交Observation，再提交Evidence；某项失败后停止后续提交并返回非零退出码。日志只记录ID、接口、HTTP状态和幂等状态，不保存后端计算的最终风险等级。7月30日本机联调9项均返回HTTP 201，见`logs/backend_submission_success_20260730.json`；服务未启动的降级格式见对应failure日志。
+
+8月6日趋势联调样例同样完成6条Observation和3条Evidence入库，全部返回HTTP 201，见`logs/trend_backend_submission_20260806.json`。
 
 ## 10. 行为摘要隐私边界
 

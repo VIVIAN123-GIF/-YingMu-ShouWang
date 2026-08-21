@@ -1,0 +1,19 @@
+# 技术文档索引
+
+本目录保存当前项目的技术规范、部署说明、会议材料和外部平台对接记录。历史草案、验收原始材料和运行产物分别保留在仓库根目录的 `draft/`、`deliverables/` 与 `artifacts/`，避免把不同用途的文件混在一起。
+
+## 当前技术文档
+
+- [两周冲刺岗位接口规范 v1.0](./两周冲刺岗位接口规范-v1.0.md)：萤石、步态、语言、轨迹、后端、智能体、前端和设备素材之间的冻结接口与验收边界。
+- [D3 智能体解释与干预能力](./agent-explanation-and-intervention.md)：LLM Provider、模板降级、Mock 干预工具和萤石能力矩阵。
+- [算法主动提交联调说明](./algorithm-integration-submission.md)：算法模块向统一后端提交 Observation 和 Evidence 的方式。
+- [部署与验收说明](./stage4-deployment-and-acceptance.md)：部署、运行和验收入口。
+- [萤石对接阶段文档](./萤石对接阶段文档/README.md)：鉴权、能力矩阵和降级方案。
+- [预警与 SQLite 说明](./warning/sqlite.md)：本地存储相关说明。
+
+
+## 使用约定
+
+- 新的长期有效技术规范放在本目录；文件名使用 `主题.md` 或 `YYYY-MM-DD_主题.md`。
+- 一次性运行输出、截图、日志和验收原始结果放在 `artifacts/` 或 `deliverables/`，不要放入本目录。
+- 文档移动前必须同步更新引用链接；因此现有文件暂不批量改名或迁移。

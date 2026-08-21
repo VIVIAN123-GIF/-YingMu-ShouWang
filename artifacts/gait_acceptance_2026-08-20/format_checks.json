@@ -1,0 +1,86 @@
+[
+  {
+    "input": "adl_01_cam0.avi",
+    "status": "LOW_QUALITY",
+    "elapsed_ms": 17078,
+    "valid_frame_ratio": 0.58,
+    "feature_names": [
+      "trunk_sway_angle_deg",
+      "step_speed_norm_s",
+      "step_asymmetry_ratio",
+      "stable_posture_duration",
+      "stable_trunk_angle_deg",
+      "valid_frame_ratio"
+    ],
+    "evidence_types": [
+      "trunk_sway",
+      "relative_speed_change",
+      "tracking_lost"
+    ],
+    "error_code": null
+  },
+  {
+    "input": "adl_01_cam0.mov",
+    "status": "LOW_QUALITY",
+    "elapsed_ms": 16094,
+    "valid_frame_ratio": 0.58,
+    "feature_names": [
+      "trunk_sway_angle_deg",
+      "step_speed_norm_s",
+      "step_asymmetry_ratio",
+      "stable_posture_duration",
+      "stable_trunk_angle_deg",
+      "valid_frame_ratio"
+    ],
+    "evidence_types": [
+      "trunk_sway",
+      "relative_speed_change",
+      "tracking_lost"
+    ],
+    "error_code": null
+  },
+  {
+    "input": "adl_01_cam0.webm",
+    "status": "LOW_QUALITY",
+    "elapsed_ms": 22188,
+    "valid_frame_ratio": 0.64,
+    "feature_names": [
+      "rise_duration_s",
+      "trunk_sway_angle_deg",
+      "step_speed_norm_s",
+      "step_asymmetry_ratio",
+      "stable_posture_duration",
+      "stable_trunk_angle_deg",
+      "valid_frame_ratio"
+    ],
+    "evidence_types": [
+      "rapid_rise",
+      "trunk_sway",
+      "relative_speed_change",
+      "tracking_lost"
+    ],
+    "error_code": null
+  },
+  {
+    "input": "adl-01-cam0.mp4",
+    "status": "LOW_QUALITY",
+    "elapsed_ms": 18484,
+    "valid_frame_ratio": 0.613,
+    "feature_names": [
+      "rise_duration_s",
+      "trunk_sway_angle_deg",
+      "step_speed_norm_s",
+      "step_asymmetry_ratio",
+      "stable_posture_duration",
+      "stable_trunk_angle_deg",
+      "valid_frame_ratio"
+    ],
+    "evidence_types": [
+      "rapid_rise",
+      "trunk_sway",
+      "relative_speed_change",
+      "tracking_lost"
+    ],
+    "error_code": null
+  }
+]

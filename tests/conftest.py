@@ -1,0 +1,13 @@
+"""Keep every test process isolated from local live-device configuration."""
+
+import os
+
+
+os.environ["YINGMU_DB_PATH"] = "test_risk_api.db"
+os.environ["YINGMU_ENV"] = "mock"
+os.environ["YINGMU_CONTROL_TOKEN"] = "test-control-token"
+os.environ["EZVIZ_WEBHOOK_SECRET"] = "test-webhook-secret"
+os.environ["EZVIZ_WEBHOOK_ALLOW_UNSIGNED_TEST"] = "false"
+os.environ["EZVIZ_VOICE_VERIFIED"] = "false"
+os.environ["MIN_EVIDENCE_QUALITY"] = "0.7"
+os.environ["MIN_EVIDENCE_CONFIDENCE"] = "0.8"

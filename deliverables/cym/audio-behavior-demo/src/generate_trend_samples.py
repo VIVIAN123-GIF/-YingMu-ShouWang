@@ -1,6 +1,7 @@
 import argparse
 import json
 from pathlib import Path
+
 from trend_analysis import build_trend_bundle
 
 

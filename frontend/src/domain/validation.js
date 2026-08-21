@@ -4,7 +4,17 @@ const SCHEMA_VERSION = '1.0'
 const TIME_SCALES = new Set(['SHORT', 'MEDIUM', 'LONG'])
 const TIME_HORIZONS = new Set(['TREND', 'TODAY', 'IMMINENT'])
 const OPERATORS = new Set(['system', 'family', 'staff'])
+const ALARM_TASK_STATUSES = new Set(['PENDING', 'PROCESSING', 'WAITING_ALGORITHM', 'RETRY', 'FAILED'])
+const AGENT_EXPLANATION_STATUSES = new Set(['NOT_REQUESTED', 'PENDING', 'PROCESSING', 'RETRY', 'SUCCESS', 'FALLBACK', 'FAILED'])
 const SUMMARY_FIELDS = new Set(['evidence_id', 'evidence_type', 'explanation'])
+const PRE_FALL_FACTORS = new Set([
+  'fall_precursor_evidence',
+  'personal_baseline_deviation',
+  'environment_interaction_risk',
+  'data_quality_downgrade',
+  'multi_scale_accumulation',
+  'normal_fluctuation',
+])
 
 export class DataContractError extends Error {
   constructor(message, field = null) {
@@ -156,6 +166,19 @@ export function validateObservation(observation, index = 0) {
   return observation
 }
 
+export function validateAsset(asset) {
+  const label = 'Asset'
+  assertObject(asset, label)
+  ;['asset_id', 'title', 'fallback_kind', 'verification_status', 'notice']
+    .forEach((field) => assertString(assertRequired(asset, field, label), `${label}.${field}`))
+  ;['stream_url', 'fallback_url'].forEach((field) =>
+    assertNullableString(assertRequired(asset, field, label), `${label}.${field}`))
+  assertBoolean(assertRequired(asset, 'available', label), `${label}.available`)
+  assertIsoTime(assertRequired(asset, 'captured_at', label), `${label}.captured_at`)
+  assertSource(asset, label)
+  return asset
+}
+
 export function validateInterventionResult(result, index = 0) {
   const label = `interventions[${index}]`
   assertObject(result, label)
@@ -233,10 +256,108 @@ export function validateEventList(events) {
   return events.map(validateEventViewModel)
 }
 
+export function validateDeviceStatus(device) {
+  const label = 'DeviceStatus'
+  assertObject(device, label)
+  assertBoolean(assertRequired(device, 'online', label), `${label}.online`)
+  assertOneOf(assertRequired(device, 'adapter_mode', label), new Set(['EZVIZ_CLOUD', 'MOCK']), `${label}.adapter_mode`)
+  assertOneOf(assertRequired(device, 'source_mode', label), new Set(['LIVE_DEVICE', 'MOCK']), `${label}.source_mode`)
+  assertString(assertRequired(device, 'device_alias', label), `${label}.device_alias`)
+  assertBoolean(assertRequired(device, 'simulated', label), `${label}.simulated`)
+  assertBoolean(assertRequired(device, 'collection_active', label), `${label}.collection_active`)
+  return device
+}
+
+export function validateAlarmProcessingTask(task, index = 0) {
+  const label = `alarm_processing[${index}]`
+  assertObject(task, label)
+  ;['task_id', 'alarm_ref', 'resident_id', 'device_ref', 'available_at', 'create_time', 'update_time']
+    .forEach((field) => assertString(assertRequired(task, field, label), `${label}.${field}`))
+  assertOneOf(assertRequired(task, 'status', label), ALARM_TASK_STATUSES, `${label}.status`)
+  ;['attempt_count', 'max_attempts'].forEach((field) => {
+    const value = assertRequired(task, field, label)
+    if (!Number.isInteger(value) || value < 0) fail(`${label}.${field} 必须是非负整数`, `${label}.${field}`)
+  })
+  ;['capture_asset_id', 'error_code', 'error_message', 'started_at', 'finished_at'].forEach((field) =>
+    assertNullableString(assertRequired(task, field, label), `${label}.${field}`))
+  return task
+}
+
+export function validateAlarmProcessingTasks(tasks) {
+  if (!Array.isArray(tasks)) fail('告警处理任务必须是数组', 'alarm_processing')
+  return tasks.map(validateAlarmProcessingTask)
+}
+
+export function validateAgentExplanationJob(job) {
+  const label = 'AgentExplanation'
+  assertObject(job, label)
+  assertString(assertRequired(job, 'event_id', label), `${label}.event_id`)
+  assertOneOf(assertRequired(job, 'status', label), AGENT_EXPLANATION_STATUSES, `${label}.status`)
+  ;['request_id', 'event_version_hash', 'generated_by', 'error_code', 'created_at', 'completed_at']
+    .forEach((field) => assertNullableString(assertRequired(job, field, label), `${label}.${field}`))
+  const attemptCount = assertRequired(job, 'attempt_count', label)
+  if (!Number.isInteger(attemptCount) || attemptCount < 0) fail(`${label}.attempt_count must be a non-negative integer`, `${label}.attempt_count`)
+  const fallbackUsed = assertRequired(job, 'fallback_used', label)
+  if (fallbackUsed !== null && typeof fallbackUsed !== 'boolean') fail(`${label}.fallback_used must be boolean or null`, `${label}.fallback_used`)
+  const explanation = assertRequired(job, 'explanation', label)
+  if (explanation === null) {
+    if (['SUCCESS', 'FALLBACK'].includes(job.status)) fail(`${label}.explanation is required for completed status`, `${label}.explanation`)
+    return {
+      event_id: job.event_id,
+      status: job.status,
+      explanation: null,
+      attempt_count: job.attempt_count,
+      created_at: job.created_at,
+      completed_at: job.completed_at,
+    }
+  }
+  assertObject(explanation, `${label}.explanation`)
+  if (explanation.schema_version !== 'agent-explanation/1.0') fail(`${label}.explanation.schema_version is invalid`, `${label}.explanation.schema_version`)
+  ;['request_id', 'event_id', 'summary', 'recommended_action_text', 'capability_notice', 'generated_by']
+    .forEach((field) => assertString(assertRequired(explanation, field, `${label}.explanation`), `${label}.explanation.${field}`))
+  const points = assertRequired(explanation, 'reasoning_points', `${label}.explanation`)
+  if (!Array.isArray(points) || points.length === 0 || points.some((point) => typeof point !== 'string' || point.length === 0)) {
+    fail(`${label}.explanation.reasoning_points must be a non-empty string array`, `${label}.explanation.reasoning_points`)
+  }
+  assertBoolean(assertRequired(explanation, 'fallback_used', `${label}.explanation`), `${label}.explanation.fallback_used`)
+  if (fallbackUsed !== null) assertBoolean(fallbackUsed, `${label}.fallback_used`)
+  return {
+    event_id: job.event_id,
+    status: job.status,
+    explanation: {
+      summary: explanation.summary,
+      reasoning_points: [...explanation.reasoning_points],
+      recommended_action_text: explanation.recommended_action_text,
+      capability_notice: explanation.capability_notice,
+      generated_by: explanation.generated_by,
+      fallback_used: explanation.fallback_used,
+    },
+    attempt_count: job.attempt_count,
+    created_at: job.created_at,
+    completed_at: job.completed_at,
+  }
+}
+
 export function validateDashboard(dashboard) {
   if (dashboard?.current_risk) assertRiskScore(dashboard.current_risk.risk_score, 'current_risk.risk_score')
   assertSource(dashboard?.device, 'device')
   ;(dashboard?.risk_trend || []).forEach((point, index) => assertRiskScore(point.score, `risk_trend[${index}].score`))
+  if (dashboard?.pre_fall_summary) {
+    const summary = assertObject(dashboard.pre_fall_summary, 'pre_fall_summary')
+    assertKnown(assertRequired(summary, 'risk_level', 'pre_fall_summary'), RISK_LEVELS, 'pre_fall_summary.risk_level')
+    ;['instant_risk', 'risk_30s', 'trend_3min', 'personal_deviation', 'environment_risk', 'quality_penalty']
+      .forEach((field) => assertRiskScore(assertRequired(summary, field, 'pre_fall_summary'), `pre_fall_summary.${field}`))
+    assertOneOf(assertRequired(summary, 'trend_direction', 'pre_fall_summary'), new Set(['RISING', 'STABLE', 'FALLING']), 'pre_fall_summary.trend_direction')
+    const factors = assertRequired(summary, 'dominant_factors', 'pre_fall_summary')
+    if (!Array.isArray(factors) || factors.some((factor) => !PRE_FALL_FACTORS.has(factor))) {
+      fail('pre_fall_summary.dominant_factors 包含未知项', 'pre_fall_summary.dominant_factors')
+    }
+    const evidenceIds = assertRequired(summary, 'evidence_ids', 'pre_fall_summary')
+    if (!Array.isArray(evidenceIds) || evidenceIds.some((id) => typeof id !== 'string' || !id)) {
+      fail('pre_fall_summary.evidence_ids 必须是字符串数组', 'pre_fall_summary.evidence_ids')
+    }
+    assertString(assertRequired(summary, 'recommended_intervention', 'pre_fall_summary'), 'pre_fall_summary.recommended_intervention')
+  }
   ;(dashboard?.recent_events || []).forEach((event, index) => {
     assertRiskScore(event.risk_score, `recent_events[${index}].risk_score`)
     assertKnown(event.risk_level, RISK_LEVELS, `recent_events[${index}].risk_level`)

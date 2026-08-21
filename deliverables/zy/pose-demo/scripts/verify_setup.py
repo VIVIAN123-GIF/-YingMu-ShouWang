@@ -19,7 +19,10 @@ def main() -> None:
     if not model_path.exists():
         raise FileNotFoundError(f"Model not found: {model_path}")
 
-    base_options = python.BaseOptions(model_asset_path=str(model_path))
+    # MediaPipe's native path bridge is not reliable when the workspace path
+    # contains non-ASCII characters.  Keep the model local, but pass bytes so
+    # setup verification behaves the same as the recorded-replay adapter.
+    base_options = python.BaseOptions(model_asset_buffer=model_path.read_bytes())
     options = vision.PoseLandmarkerOptions(base_options=base_options, running_mode=vision.RunningMode.VIDEO)
     detector = vision.PoseLandmarker.create_from_options(options)
     detector.close()

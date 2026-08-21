@@ -239,6 +239,7 @@ ezviz_system.db
 /models/*.task
 /outputs/
 /data/private/
+/private-media/
 *.local.json
 *.mp4
 *.mov
