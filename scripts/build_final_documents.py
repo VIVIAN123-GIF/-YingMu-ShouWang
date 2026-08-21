@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from dataclasses import dataclass
 from datetime import date
@@ -71,6 +72,8 @@ DOCUMENT_PRESETS = {
     "06": "standard_business_brief",
     "08": "standard_business_brief",
 }
+
+REQUIRED_MARKERS = ("PENDING_REAL_DATA", "[[REQUIRED:")
 
 
 def _set_font(run, *, latin: str = LATIN_FONT, east_asia: str = EAST_ASIA_FONT, size=None,
@@ -417,6 +420,8 @@ def _add_table(document: Document, rows: list[list[str]], preset: Preset) -> Non
     table = document.add_table(rows=len(rows), cols=len(rows[0]))
     table.style = "Table Grid"
     table.rows[0]._tr.get_or_add_trPr().append(OxmlElement("w:tblHeader"))
+    for table_row in table.rows:
+        table_row._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))
     widths = _table_widths(rows)
     _set_table_geometry(table, widths)
     for row_index, row in enumerate(rows):
@@ -457,6 +462,7 @@ def _render_markdown(document: Document, lines: list[str], preset: Preset, numbe
                 code_lines.append(lines[index].rstrip())
                 index += 1
             paragraph = document.add_paragraph(style="Yingmu Code Block")
+            paragraph.paragraph_format.keep_together = True
             _shade(paragraph._p, LIGHT_GRAY)
             run = paragraph.add_run("\n".join(code_lines))
             _set_font(run, latin=CODE_FONT, east_asia=EAST_ASIA_FONT, size=9.2, color=INK)
@@ -517,13 +523,19 @@ def _render_markdown(document: Document, lines: list[str], preset: Preset, numbe
         index += 1
 
 
-def build_document(source: Path, output: Path) -> None:
-    lines = source.read_text(encoding="utf-8").splitlines()
+def build_document_from_lines(
+    lines: list[str],
+    output: Path,
+    *,
+    preset_name: str | None = None,
+    cover: bool | None = None,
+) -> None:
     if not lines or not lines[0].startswith("# "):
-        raise ValueError(f"missing document title: {source}")
+        raise ValueError(f"missing document title for {output}")
     title = lines[0][2:].strip()
-    prefix = source.name[:2]
-    preset = PRESETS[DOCUMENT_PRESETS.get(prefix, "compact_reference_guide")]
+    prefix = output.name.removeprefix("DRAFT_")[:2]
+    selected_preset = preset_name or DOCUMENT_PRESETS.get(prefix, "compact_reference_guide")
+    preset = PRESETS[selected_preset]
     document = Document()
     numbering = _configure_document(document, preset, title)
     lead_lines = []
@@ -532,23 +544,129 @@ def build_document(source: Path, output: Path) -> None:
         if lines[body_start].strip():
             lead_lines.append(lines[body_start].strip())
         body_start += 1
-    _add_title_block(document, title, lead_lines, cover=prefix == "01")
+    _add_title_block(document, title, lead_lines, cover=(prefix == "01" if cover is None else cover))
     _render_markdown(document, lines[body_start:], preset, numbering)
     output.parent.mkdir(parents=True, exist_ok=True)
     document.save(output)
 
 
+def build_document(
+    source: Path,
+    output: Path,
+    *,
+    preset_name: str | None = None,
+    cover: bool | None = None,
+) -> None:
+    build_document_from_lines(
+        source.read_text(encoding="utf-8").splitlines(),
+        output,
+        preset_name=preset_name,
+        cover=cover,
+    )
+
+
+def load_profile(path: Path) -> dict[str, str]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    required = {
+        "school", "contact_name", "mobile", "submission_deadline", "retention_until",
+        "online_url", "online_username",
+    }
+    missing = sorted(field for field in required if not str(payload.get(field, "")).strip())
+    if missing:
+        raise ValueError(f"submission profile is missing: {', '.join(missing)}")
+    if not re.fullmatch(r"1\d{10}", str(payload["mobile"])):
+        raise ValueError("submission profile mobile must be an 11-digit Chinese mobile number")
+    return {key: str(value).strip() for key, value in payload.items()}
+
+
+def official_stem(document_id: str, label: str, profile: dict[str, str], mode: str) -> str:
+    identity = f"{profile['school']}—{profile['contact_name']}—{profile['mobile']}"
+    prefix = "DRAFT_" if mode == "draft" else ""
+    return f"{prefix}{document_id}_{label}_{identity}"
+
+
+def _demote_headings(lines: list[str]) -> list[str]:
+    demoted = []
+    for line in lines:
+        match = re.match(r"^(#{2,4})(\s+.+)$", line)
+        if match:
+            demoted.append("#" + match.group(1) + match.group(2))
+        else:
+            demoted.append(line)
+    return demoted
+
+
+def compose_document_lines(
+    root: Path,
+    entry: dict[str, object],
+    profile: dict[str, str],
+    mode: str,
+) -> list[str]:
+    source_paths = [root / Path(value) for value in entry["sources"]]
+    for path in source_paths:
+        if not path.is_file():
+            raise ValueError(f"document source is missing: {path}")
+    source_lines = [path.read_text(encoding="utf-8").splitlines() for path in source_paths]
+    if mode == "final":
+        pending = [
+            path.as_posix()
+            for path, lines in zip(source_paths, source_lines)
+            if any(marker in "\n".join(lines) for marker in REQUIRED_MARKERS)
+        ]
+        if pending:
+            raise ValueError(f"final document sources still contain required markers: {', '.join(pending)}")
+
+    title = str(entry.get("title") or source_lines[0][0].removeprefix("# "))
+    state = "DRAFT / 实验结果待完成，不得提交" if mode == "draft" else "FINAL"
+    metadata = [
+        f"参赛学校：{profile['school']}  |  联系人：{profile['contact_name']}",
+        f"材料状态：{state}",
+    ]
+    if len(source_lines) == 1:
+        body = source_lines[0][1:]
+    else:
+        body = []
+        for lines in source_lines:
+            source_title = lines[0].removeprefix("# ").strip()
+            body.extend(["", f"## {source_title}", "", *_demote_headings(lines[1:])])
+    return [f"# {title}", "", *metadata, "", *body]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source-dir", type=Path, default=Path("final-delivery/docs"))
-    parser.add_argument("--output-dir", type=Path, default=Path("final-delivery/output/docx"))
+    parser.add_argument("--root", type=Path, default=Path.cwd())
+    parser.add_argument("--mode", choices=("draft", "final"), default="draft")
+    parser.add_argument(
+        "--manifest", type=Path, default=Path("final-delivery/submission-documents.json")
+    )
+    parser.add_argument(
+        "--profile", type=Path, default=Path("final-delivery/private-input/submission-profile.json")
+    )
+    parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args()
-    sources = sorted(args.source_dir.glob("*.md"))
-    if len(sources) != 8:
-        raise SystemExit(f"expected 8 Markdown sources, found {len(sources)}")
-    for source in sources:
-        output = args.output_dir / f"{source.stem}.docx"
-        build_document(source, output)
+    root = args.root.resolve()
+    manifest_path = args.manifest if args.manifest.is_absolute() else root / args.manifest
+    profile_path = args.profile if args.profile.is_absolute() else root / args.profile
+    output_dir = args.output_dir or Path(f"output/submission-work/{args.mode}/docx")
+    output_dir = output_dir if output_dir.is_absolute() else root / output_dir
+    profile = load_profile(profile_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    entries = manifest.get("documents", [])
+    if not entries:
+        raise SystemExit("submission document manifest contains no documents")
+    for entry in entries:
+        if args.mode == "final" and entry.get("draft_template"):
+            continue
+        document_id = str(entry["id"])
+        label = str(entry["label"])
+        lines = compose_document_lines(root, entry, profile, args.mode)
+        output = output_dir / f"{official_stem(document_id, label, profile, args.mode)}.docx"
+        build_document_from_lines(
+            lines,
+            output,
+            preset_name=str(entry.get("preset") or "compact_reference_guide"),
+            cover=document_id == "01",
+        )
         print(f"BUILT {output}")
     return 0
 

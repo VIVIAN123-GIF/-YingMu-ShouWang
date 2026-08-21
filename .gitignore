@@ -246,6 +246,8 @@ ezviz_system.db
 /experiments/three-participant/signed-consent/
 /experiments/three-participant/TEST_LOCKED/
 /experiments/three-participant/results/private/
+/final-delivery/private-input/
+/final-delivery/private-output/
 *.local.json
 *.mp4
 *.mov

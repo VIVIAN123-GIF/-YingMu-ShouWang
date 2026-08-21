@@ -18,8 +18,8 @@ $inputPath = (Resolve-Path -LiteralPath $InputDir).Path
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 $outputPath = (Resolve-Path -LiteralPath $OutputDir).Path
 $documents = @(Get-ChildItem -LiteralPath $inputPath -Filter "*.docx" -File | Sort-Object Name)
-if ($documents.Count -ne 8) {
-    throw "Expected 8 DOCX files, found $($documents.Count)."
+if ($documents.Count -lt 1) {
+    throw "No DOCX files found in $inputPath."
 }
 
 $profilePath = Join-Path ([IO.Path]::GetTempPath()) ("yingmu-libreoffice-" + [guid]::NewGuid().ToString("N"))

@@ -13,13 +13,16 @@ from scripts.release_integrity import IGNORED_PARTS, scan_files, sha256_file
 
 
 RECURSIVE_ROOTS = (
+    ".github/workflows",
     "backend",
     "contracts",
     "deliverables/cym/audio-behavior-demo/src",
     "experiments/three-participant/templates",
     "final-delivery/docs",
+    "final-delivery/official-docs",
     "final-delivery/video",
     "frontend/e2e",
+    "frontend/e2e-pages",
     "frontend/public",
     "frontend/scripts",
     "frontend/src",
@@ -34,6 +37,10 @@ EXACT_FILES = (
     "pytest.ini",
     "experiments/three-participant/README.md",
     "final-delivery/README.md",
+    "final-delivery/online-entry-verification.template.json",
+    "final-delivery/submission-documents.json",
+    "final-delivery/submission-profile.example.json",
+    "frontend/.env.pages",
     "frontend/.env.example",
     "frontend/.gitignore",
     "frontend/README.md",
@@ -42,6 +49,7 @@ EXACT_FILES = (
     "frontend/package.json",
     "frontend/playwright.api.config.js",
     "frontend/playwright.config.js",
+    "frontend/playwright.pages.config.js",
     "frontend/vite.config.js",
     "models/pose_landmarker_heavy.task",
 )

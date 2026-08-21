@@ -64,8 +64,10 @@ def main() -> int:
     args = parser.parse_args()
     docx_files = sorted(args.docx_dir.glob("*.docx"))
     pdf_files = sorted(args.pdf_dir.glob("*.pdf"))
-    if len(docx_files) != 8 or len(pdf_files) != 8:
-        raise SystemExit(f"expected 8 DOCX and 8 PDF files, found {len(docx_files)} and {len(pdf_files)}")
+    if not docx_files or len(docx_files) != len(pdf_files):
+        raise SystemExit(
+            f"expected matching non-empty DOCX/PDF sets, found {len(docx_files)} and {len(pdf_files)}"
+        )
     report = {"status": "PASS", "documents": {}}
     for docx_path, pdf_path in zip(docx_files, pdf_files):
         if docx_path.stem != pdf_path.stem:

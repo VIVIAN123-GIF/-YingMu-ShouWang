@@ -16,6 +16,17 @@ npm test
 npm run build
 ```
 
+## GitHub Pages 脱敏演示
+
+Pages 构建读取 `.env.pages`，固定使用 Mock 数据、Hash 路由和会话级演示登录。它不会启动或请求后端、数据库、Worker 和萤石接口。登录仅用于评审走查，不是生产级认证；站点中不得放置手机号、AppKey、设备信息、真实平台截图、原始视频或签字扫描件。
+
+```powershell
+npm run build:pages
+npm run test:pages
+```
+
+`test:pages` 在本地自动启动 `http://127.0.0.1:4173/-YingMu-ShouWang/`。设置 `PAGES_BASE_URL` 后会直接复验已部署的公网地址，并检查正确/错误密码、九个 Hash 页面、刷新、移动端布局、来源标签以及无 `/api` 请求。GitHub Actions 只有在部署后的公网复验通过后才生成可供最终材料门禁使用的 `online-entry-verification.json`。
+
 ## 端到端复现
 
 首次端到端测试因缺少 Playwright 录屏组件失败，需先安装 ffmpeg：

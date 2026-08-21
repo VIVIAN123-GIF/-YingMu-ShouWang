@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:pages": "vite build --mode pages",
     "preview": "vite preview",
+    "preview:pages": "vite preview --mode pages",
     "test": "vitest run",
     "test:watch": "vitest",
     "evidence": "playwright test --config playwright.config.js",
+    "test:pages": "playwright test --config playwright.pages.config.js",
     "evidence:api": "python scripts/run_api_evidence.py",
     "verify:agent-api": "python scripts/validate_agent_api_frontend.py"
   },

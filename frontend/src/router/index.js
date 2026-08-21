@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 const HomeView = () => import('../views/HomeView.vue')
 const EventsView = () => import('../views/EventsView.vue')
 const EventDetailView = () => import('../views/EventDetailView.vue')
@@ -22,8 +22,13 @@ const routes = [
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
+const routerMode = import.meta.env.VITE_ROUTER_MODE || 'history'
+const history = routerMode === 'hash'
+  ? createWebHashHistory(import.meta.env.BASE_URL)
+  : createWebHistory(import.meta.env.BASE_URL)
+
 const router = createRouter({
-  history: createWebHistory(),
+  history,
   routes,
   scrollBehavior: () => ({ top: 0 }),
 })
@@ -33,4 +38,4 @@ router.afterEach((to) => {
 })
 
 export default router
-export { routes }
+export { routerMode, routes }

@@ -2,11 +2,40 @@ from __future__ import annotations
 
 import json
 import zipfile
+from pathlib import Path
 
+import fitz
 import pytest
 
 from scripts import assemble_submission, build_source_release
 from scripts.release_integrity import scan_text, scan_zip
+
+
+PROFILE = {
+    "school": "吉林大学",
+    "contact_name": "张薇",
+    "mobile": "".join(("139", "0000", "0000")),
+    "submission_deadline": "2026-09-04",
+    "retention_until": "2027-03-31",
+    "online_url": "https://example.github.io/demo/",
+    "online_username": "judge",
+}
+
+
+def write_submission_profile(root: Path) -> None:
+    path = root / assemble_submission.PROFILE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(PROFILE, ensure_ascii=False), encoding="utf-8")
+
+
+def write_pdf(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    document = fitz.open()
+    for _ in range(3):
+        page = document.new_page()
+        page.insert_text((72, 72), text)
+    document.save(path)
+    document.close()
 
 
 def test_sensitive_scan_allows_blank_template_and_rejects_real_secret():
@@ -21,6 +50,14 @@ def test_sensitive_scan_rejects_personal_absolute_path():
     findings = scan_text("guide.md", "Run C:\\Users\\Alice\\private\\tool.exe")
 
     assert [item.kind for item in findings] == ["absolute_local_path"]
+
+
+def test_sensitive_scan_rejects_unmasked_mobile_number():
+    mobile = "".join(("139", "0000", "0000"))
+
+    findings = scan_text("profile.json", json.dumps({"mobile": mobile}))
+
+    assert [item.kind for item in findings] == ["mainland_mobile"]
 
 
 def test_source_release_uses_allowlist_and_excludes_dot_env(tmp_path, monkeypatch):
@@ -97,27 +134,78 @@ def test_stability_gate_requires_three_four_hour_runs():
     assert assemble_submission.validate_stability(payload) == []
 
 
+def test_code_program_package_has_official_root_structure(tmp_path):
+    source_zip = tmp_path / "source.zip"
+    windows_zip = tmp_path / "windows.zip"
+    output = tmp_path / "official.zip"
+    with zipfile.ZipFile(source_zip, "w") as archive:
+        archive.writestr("src/app.py", "print('ok')\n")
+    with zipfile.ZipFile(windows_zip, "w") as archive:
+        archive.writestr("YingMuShouWang.exe", b"MZ")
+
+    assemble_submission.build_code_program_package(source_zip, windows_zip, output, PROFILE)
+
+    with zipfile.ZipFile(output) as archive:
+        names = set(archive.namelist())
+    assert "01_源码/src/app.py" in names
+    assert "02_Windows程序/YingMuShouWang.exe" in names
+    assert "README-先读.txt" in names
+    assert "MANIFEST-SHA256.txt" in names
+
+
+def test_final_pdf_gate_rejects_pending_markers(tmp_path):
+    path = tmp_path / "report.pdf"
+    write_pdf(path, "PENDING_REAL_DATA " + "draft evidence " * 200)
+
+    errors = assemble_submission._validate_pdf(path, reject_markers=True)
+
+    assert any("draft or required markers" in error for error in errors)
+
+
+def test_online_entry_gate_requires_all_acceptance_fields(tmp_path):
+    path = tmp_path / "online-entry-verification.json"
+    payload = {
+        "status": "COMPLETE",
+        "url": PROFILE["online_url"],
+        "correct_login_passed": True,
+        "wrong_login_rejected": True,
+        "routes_passed": True,
+        "mobile_passed": True,
+        "mock_only": True,
+        "privacy_scan_passed": True,
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    assert assemble_submission._validate_online_verification(path, PROFILE) == []
+    payload["mock_only"] = False
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    assert "mock_only" in " ".join(assemble_submission._validate_online_verification(path, PROFILE))
+
+
 def test_draft_assembly_is_explicitly_incomplete_when_real_evidence_is_missing(tmp_path):
     root = tmp_path / "repo"
     root.mkdir()
+    write_submission_profile(root)
     output = tmp_path / "output"
 
     report = assemble_submission.assemble(root, output, "draft")
 
     assert report["status"] == "INCOMPLETE"
-    status_path = output / "萤目守望-提交包-draft/SUBMISSION_STATUS.json"
+    status_path = output / "SUBMISSION_STATUS-draft.json"
     persisted = json.loads(status_path.read_text(encoding="utf-8"))
     assert persisted["status"] == "INCOMPLETE"
     assert any(gate["gate"] == "experiment" for gate in persisted["gates"])
+    assert not (output / "萤目守望-提交材料-draft/SUBMISSION_STATUS.json").exists()
 
 
 def test_final_assembly_refuses_to_create_package_when_gates_are_incomplete(tmp_path):
     root = tmp_path / "repo"
     root.mkdir()
+    write_submission_profile(root)
     output = tmp_path / "output"
 
     report = assemble_submission.assemble(root, output, "final")
 
     assert report["status"] == "INCOMPLETE"
     assert (output / "SUBMISSION_STATUS-final.json").is_file()
-    assert not (output / "萤目守望-提交包-final.zip").exists()
+    assert not (output / "萤目守望-正式提交材料.zip").exists()
