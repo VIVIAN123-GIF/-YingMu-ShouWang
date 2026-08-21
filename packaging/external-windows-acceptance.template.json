@@ -1,0 +1,11 @@
+{
+  "schema_version": "external-windows-acceptance/1.0",
+  "status": "INCOMPLETE",
+  "tested_at": "",
+  "package_sha256": "",
+  "clean_machine": false,
+  "launch_passed": false,
+  "shutdown_clean": false,
+  "privacy_scan_passed": false,
+  "notes": "在另一台未安装项目Python/Node依赖的Windows电脑验收后填写。"
+}

@@ -1,0 +1,3 @@
+change_id,changed_at,phase,reason,old_ruleset_version,new_ruleset_version,field,old_value,new_value,approved_by,p01_rerun,p02_rerun,notes
+CHANGE-001,,P01_CALIBRATION,,,,,,,,false,false,
+CHANGE-002,,P02_SINGLE_ALLOWED_UPDATE,,,,,,,,false,false,

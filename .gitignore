@@ -238,8 +238,14 @@ ezviz_system.db
 # manifests containing absolute paths, and private outputs must never enter Git.
 /models/*.task
 /outputs/
+/output/
+/tmp/
 /data/private/
 /private-media/
+/experiments/three-participant/private/
+/experiments/three-participant/signed-consent/
+/experiments/three-participant/TEST_LOCKED/
+/experiments/three-participant/results/private/
 *.local.json
 *.mp4
 *.mov

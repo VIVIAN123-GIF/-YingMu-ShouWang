@@ -10,6 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from backend.api.v1.router import router
 from backend.db.init_db import init_default_config, init_tables
 from backend.service.errors import ServiceError
+from backend.static_frontend import mount_frontend
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
@@ -38,3 +39,4 @@ async def health():
     return {"status": "ok", "schema_version": "1.0", "ruleset_version": "ruleset-v1.0"}
 
 app.include_router(router)
+mount_frontend(app)

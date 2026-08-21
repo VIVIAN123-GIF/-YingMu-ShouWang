@@ -1,0 +1,9 @@
+萤目守望第三方资源说明（构建时随发布包分发）
+
+主要运行依赖：FastAPI、Starlette、Uvicorn、SQLAlchemy、Pydantic、HTTPX、
+Vue、Vite、Element Plus、ECharts、Axios、MediaPipe Pose Landmarker。
+
+MediaPipe Pose Landmarker Heavy模型由官方模型存储桶获取，模型文件校验值见
+models/README.md。URFD公开数据只用于独立公开数据复核，不打包进Windows程序。
+
+完整版本、许可证和源码链接以最终提交包中的《第三方数据、模型和开源软件清单》为准。
