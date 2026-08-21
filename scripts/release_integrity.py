@@ -44,6 +44,7 @@ SENSITIVE_URL = re.compile(
 )
 ASSIGNMENT = re.compile(r"(?m)^[ \t]*([A-Z][A-Z0-9_]+)[ \t]*=[ \t]*([^#\r\n]*)$")
 PRIVATE_KEY = re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")
+MAINLAND_MOBILE = re.compile(r"(?<![0-9A-Za-z])1[3-9]\d{9}(?![0-9A-Za-z])")
 
 
 @dataclass(frozen=True)
@@ -93,6 +94,8 @@ def scan_text(name: str, text: str) -> list[Finding]:
         findings.append(Finding(name, "absolute_local_path", "contains a user-specific absolute path"))
     if PRIVATE_KEY.search(text):
         findings.append(Finding(name, "private_key", "contains a private key block"))
+    if PurePosixPath(name).suffix.lower() != ".csv" and MAINLAND_MOBILE.search(text):
+        findings.append(Finding(name, "mainland_mobile", "contains an unmasked 11-digit mobile number"))
     for match in ASSIGNMENT.finditer(text):
         key, raw_value = match.groups()
         if key not in SENSITIVE_KEYS:

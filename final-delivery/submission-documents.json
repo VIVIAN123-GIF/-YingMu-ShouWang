@@ -1,0 +1,45 @@
+{
+  "schema_version": "yingmu-submission-documents/2.0",
+  "documents": [
+    {
+      "id": "01",
+      "label": "研究报告",
+      "sources": ["final-delivery/docs/01-专项研究报告.md"],
+      "preset": "narrative_proposal",
+      "final_required": true
+    },
+    {
+      "id": "04",
+      "label": "部署与技术文档",
+      "title": "“萤目守望”部署与运行说明及系统设计与技术开发文档",
+      "sources": [
+        "final-delivery/docs/03-部署与运行说明.md",
+        "final-delivery/docs/02-系统设计与技术开发文档.md"
+      ],
+      "preset": "standard_business_brief",
+      "final_required": true
+    },
+    {
+      "id": "05",
+      "label": "测试报告",
+      "sources": ["final-delivery/docs/06-功能与性能测试报告.md"],
+      "preset": "standard_business_brief",
+      "final_required": true
+    },
+    {
+      "id": "07",
+      "label": "验证设计",
+      "sources": ["final-delivery/official-docs/07-验证设计.md"],
+      "preset": "standard_business_brief",
+      "final_required": true
+    },
+    {
+      "id": "08",
+      "label": "平台调用证据",
+      "sources": ["final-delivery/official-docs/08-平台调用证据框架.md"],
+      "preset": "standard_business_brief",
+      "final_required": false,
+      "draft_template": true
+    }
+  ]
+}

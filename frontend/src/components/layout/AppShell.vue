@@ -4,12 +4,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   ChatLineRound, Clock, DataAnalysis, DocumentChecked, Expand, Fold, House,
-  InfoFilled, Monitor, TrendCharts, User, VideoPlay, Warning,
+  InfoFilled, Monitor, SwitchButton, TrendCharts, User, VideoPlay, Warning,
 } from '@element-plus/icons-vue'
 import { routes } from '../../router'
 import { DATA_MODES } from '../../domain/constants'
 import { getEvents, runtime, setDataMode } from '../../services/repository'
+import { demoLoginConfig, logoutOfDemo } from '../../services/demoAuth'
 
+const emit = defineEmits(['logout'])
 const route = useRoute()
 const router = useRouter()
 const collapsed = ref(false)
@@ -17,6 +19,12 @@ const openingEventDetail = ref(false)
 const navRoutes = routes.filter((item) => item.meta?.nav)
 const iconMap = { ChatLineRound, Clock, DataAnalysis, DocumentChecked, House, Monitor, TrendCharts, User, VideoPlay }
 const activePath = computed(() => route.name === 'event-detail' ? '/events/:eventId' : route.path)
+const pagesBuild = import.meta.env.VITE_PAGES_BUILD === 'true'
+
+function logout() {
+  logoutOfDemo()
+  emit('logout')
+}
 
 function createdAtTimestamp(event) {
   const timestamp = Date.parse(event?.created_at || '')
@@ -85,6 +93,12 @@ async function handleSelect(path) {
     </aside>
 
     <div class="workspace">
+      <div v-if="pagesBuild" class="public-demo-banner" role="status">
+        <strong>脱敏演示数据</strong>
+        <span>MOCK / RECORDED_REPLAY</span>
+        <span>非实时设备</span>
+        <span>非老年人实测</span>
+      </div>
       <header class="topbar">
         <div class="resident-identity">
           <el-avatar :size="46" class="resident-avatar">张</el-avatar>
@@ -99,12 +113,18 @@ async function handleSelect(path) {
             <el-icon><Warning /></el-icon>
             后端降级
           </div>
-          <label class="mode-picker">
+          <label v-if="!pagesBuild" class="mode-picker">
             <span>数据模式</span>
             <el-select :model-value="runtime.mode" aria-label="选择数据模式" @change="setDataMode">
               <el-option v-for="(label, value) in DATA_MODES" :key="value" :label="label" :value="value" />
             </el-select>
           </label>
+          <span v-else class="pages-mode-label">固定 Mock</span>
+          <el-tooltip v-if="demoLoginConfig.enabled" content="退出评审入口" placement="bottom">
+            <el-button class="logout-button" circle aria-label="退出评审入口" @click="logout">
+              <el-icon><SwitchButton /></el-icon>
+            </el-button>
+          </el-tooltip>
         </div>
       </header>
 

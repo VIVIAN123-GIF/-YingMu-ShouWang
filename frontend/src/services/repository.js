@@ -16,9 +16,10 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 const RESIDENT_ID = import.meta.env.VITE_RESIDENT_ID || 'resident-001'
+const PAGES_BUILD = import.meta.env.VITE_PAGES_BUILD === 'true'
 // API is the safe default: mock fallback must be explicitly enabled for demos.
 const configuredMode = import.meta.env.VITE_DATA_MODE || 'api'
-const initialMode = sessionStorage.getItem('yingmu-data-mode') || configuredMode
+const initialMode = PAGES_BUILD ? 'mock' : (sessionStorage.getItem('yingmu-data-mode') || configuredMode)
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -101,6 +102,7 @@ if (typeof window !== 'undefined') {
 }
 
 export function setDataMode(mode) {
+  if (PAGES_BUILD && mode !== 'mock') return
   if (!DATA_MODES[mode]) return
   runtime.mode = mode
   runtime.activeSource = mode === 'mock' ? 'mock' : 'api'
@@ -198,6 +200,33 @@ export async function getEvent(eventId) {
 }
 
 export async function getEventExplanation(eventId) {
+  if (PAGES_BUILD) {
+    const result = validateAgentExplanationJob({
+      event_id: eventId,
+      status: 'FALLBACK',
+      request_id: `static-${eventId}`,
+      event_version_hash: 'static-pages-v1',
+      generated_by: 'static-demo',
+      fallback_used: true,
+      attempt_count: 1,
+      error_code: null,
+      created_at: null,
+      completed_at: null,
+      explanation: {
+        schema_version: 'agent-explanation/1.0',
+        request_id: `static-${eventId}`,
+        event_id: eventId,
+        summary: '基于固定 Evidence 的脱敏解释',
+        reasoning_points: ['当前页面仅回放预置证据，不连接后端或外部模型。'],
+        recommended_action_text: '按演示事件中的分级干预流程继续查看。',
+        capability_notice: 'MOCK / RECORDED_REPLAY，仅用于赛事评审走查。',
+        generated_by: 'static-demo',
+        fallback_used: true,
+      },
+    })
+    recordAudit('event.explanation.read', 'MOCK', { event_id: eventId, detail: 'static-pages' })
+    return result
+  }
   try {
     const result = validateAgentExplanationJob(payload(await apiClient.get(
       `/events/${encodeURIComponent(eventId)}/explanation`,
@@ -451,4 +480,4 @@ export async function submitFamilyFeedback(eventId, feedback) {
   return structuredClone(result)
 }
 
-export { API_BASE_URL, RESIDENT_ID, shouldFallback, stableFeedbackId }
+export { API_BASE_URL, PAGES_BUILD, RESIDENT_ID, shouldFallback, stableFeedbackId }

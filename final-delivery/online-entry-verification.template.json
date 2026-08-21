@@ -1,0 +1,13 @@
+{
+  "schema_version": "yingmu-online-entry-verification/1.0",
+  "status": "PENDING",
+  "verified_at": null,
+  "url": "https://vivian123-gif.github.io/-YingMu-ShouWang/",
+  "correct_login_passed": false,
+  "wrong_login_rejected": false,
+  "routes_passed": false,
+  "mobile_passed": false,
+  "mock_only": false,
+  "privacy_scan_passed": false,
+  "notes": "Run the Pages Playwright suite before marking this record COMPLETE."
+}
