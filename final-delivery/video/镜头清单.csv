@@ -1,0 +1,10 @@
+shot_id,time_start,time_end,content,source_label,owner,status,privacy_check,asset_path,notes
+S01,00:00,00:30,问题场景与首页安全水位,系统概念说明,,PENDING,false,,
+S02,00:30,01:10,系统数据流与家属端时间轴,SOFTWARE,,PENDING,false,,不使用PPT
+S03,01:10,01:50,C6c实物设备状态Webhook与抓拍汇总,LIVE_DEVICE,,PENDING,false,,遮挡凭证和序列号
+S04,01:50,03:40,P03授权录像黄金闭环,RECORDED_REPLAY,,PENDING,false,,常驻受控模拟标签
+S05,03:40,04:05,心理趋势与家属关怀,RECORDED_REPLAY,,PENDING,false,,标记模拟实验回放
+S06,04:05,04:30,诈骗核验与事件回落,RECORDED_REPLAY,,PENDING,false,,标记模拟实验回放
+S07,04:30,05:30,P03指标混淆矩阵与消融,EXPERIMENT_RESULT,,BLOCKED_REAL_DATA,true,,只用最终统计JSON
+S08,05:30,06:10,隐私审计Windows启动与离线页,SOFTWARE,,PENDING,false,,
+S09,06:10,06:30,绿色回落与结尾,SOFTWARE,,PENDING,false,,
