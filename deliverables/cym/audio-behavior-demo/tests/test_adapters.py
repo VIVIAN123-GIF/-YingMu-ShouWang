@@ -14,7 +14,11 @@ sys.path.insert(0, str(SRC))
 
 from adapters.contract import build_batch, validate_job  # noqa: E402
 from adapters.language_adapter import run as run_language  # noqa: E402
-from adapters.trajectory_adapter import run as run_trajectory  # noqa: E402
+from adapters.trajectory_adapter import (  # noqa: E402
+    SceneConfigMismatchError,
+    _resolve_scene_config,
+    run as run_trajectory,
+)
 from backend.service.adapter_registry import AdapterRegistry  # noqa: E402
 from contracts.v1.algorithm import (  # noqa: E402
     AdapterBatch,
@@ -200,6 +204,27 @@ class AdapterContractTests(unittest.TestCase):
         low = asyncio.run(run_trajectory(low_job))
         self.assertEqual(low.status.value, "LOW_QUALITY")
         self.assertEqual(low.evidences[0].evidence_type, "tracking_lost")
+
+    def test_scene_config_must_match_camera_position(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "scene-demo-v1.json"
+            config_path.write_text(json.dumps({
+                "scene_config_id": "scene-demo-v1",
+                "camera_position_id": "another-camera",
+                "frame_size": [640, 480],
+                "regions": [{
+                    "id": "all",
+                    "polygon": [[0, 0], [640, 0], [640, 480]],
+                }],
+            }), encoding="utf-8")
+            job = AlgorithmJob.model_validate(self.trajectory_job)
+            with patch.dict(
+                os.environ,
+                {"YINGMU_SCENE_CONFIG_DIR": temp_dir},
+                clear=False,
+            ):
+                with self.assertRaises(SceneConfigMismatchError):
+                    _resolve_scene_config(job)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "source_mode": "MOCK",
+  "simulated": true,
+  "frames_processed": 900,
+  "detected_frames": 810,
+  "max_person_count": 1,
+  "max_motion_area": 6200,
+  "activity_counts": {
+    "LOW": 120,
+    "MEDIUM": 780
+  },
+  "track_points": 80,
+  "travel_distance_px": 1850.0,
+  "elapsed_seconds": 60.0,
+  "stop_reason": "video_eof",
+  "threshold_status": "DEMO_UNCALIBRATED",
+  "region_statistics": {
+    "visited_region_count": 2,
+    "visited_regions": [
+      "living_room_left",
+      "living_room_right"
+    ],
+    "dwell_seconds": {
+      "living_room_left": 30.0,
+      "living_room_right": 30.0
+    },
+    "transition_count": 4,
+    "transitions": {
+      "living_room_left->living_room_right": 2,
+      "living_room_right->living_room_left": 2
+    },
+    "region_sequence": [
+      "living_room_left",
+      "living_room_right",
+      "living_room_left",
+      "living_room_right",
+      "living_room_left"
+    ],
+    "threshold_status": "DEMO_UNCALIBRATED",
+    "distance_unit": "pixel_not_meter"
+  }
+}

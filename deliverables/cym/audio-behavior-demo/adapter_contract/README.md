@@ -113,6 +113,11 @@ TRAJECTORY 的边界是：`unusual_pacing` 可由单段视频的区域往返序�
 `activity_range_decline`、`room_transition_decline` 必须依赖至少 7 天稳定个人基线，
 不能由单段视频直接推断。日聚合数据应由后端生成后通过 `trend.days` 传入。
 
+视频入口保持原始宽高比并分别输出 HOG `detection_quality` 和 HOG+KCF 短时
+`tracking_quality`；KCF 最多桥接12帧，质量门槛仍为 `0.65`。固定机位视频必须
+解析匹配 `scene_config_id` 的区域标定，缺失或摄像头位置不一致时返回
+`FAILED/SCENE_CONFIG_MISSING` 或 `FAILED/SCENE_CONFIG_MISMATCH`，不猜测区域。
+
 ## 示例文件
 
 `algorithm_job.trajectory.json` 和 `algorithm_job.language.json` 是脱敏输入；

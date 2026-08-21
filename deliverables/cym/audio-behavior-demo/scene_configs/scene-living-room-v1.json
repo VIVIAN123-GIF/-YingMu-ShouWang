@@ -1,0 +1,24 @@
+{
+  "schema_version": "trajectory-scene/1.0",
+  "scene_config_id": "scene-living-room-v1",
+  "camera_position_id": "living-room-c6c-v1",
+  "frame_size": [640, 480],
+  "regions": [
+    {
+      "id": "doorway",
+      "label": "Doorway",
+      "polygon_norm": [[0.0, 0.0], [0.28125, 0.0], [0.28125, 1.0], [0.0, 1.0]]
+    },
+    {
+      "id": "living_room",
+      "label": "Living room",
+      "polygon_norm": [[0.28125, 0.0], [0.78125, 0.0], [0.78125, 1.0], [0.28125, 1.0]]
+    },
+    {
+      "id": "corridor",
+      "label": "Corridor",
+      "polygon_norm": [[0.78125, 0.0], [1.0, 0.0], [1.0, 1.0], [0.78125, 1.0]]
+    }
+  ],
+  "threshold_status": "DEMO_UNCALIBRATED"
+}

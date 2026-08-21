@@ -50,6 +50,7 @@ REQUIRED_FIELDS = {
     "source_mode",
     "simulated",
 }
+ALLOWED_FIELDS = REQUIRED_FIELDS
 
 
 class EvidenceValidationError(ValueError):
@@ -87,6 +88,11 @@ def validate_evidence(evidence):
     if missing_fields:
         raise EvidenceValidationError(
             f"Evidence缺少必填字段：{', '.join(missing_fields)}"
+        )
+    unexpected_fields = sorted(evidence.keys() - ALLOWED_FIELDS)
+    if unexpected_fields:
+        raise EvidenceValidationError(
+            f"Evidence包含未知字段：{', '.join(unexpected_fields)}"
         )
 
     if evidence["schema_version"] != SCHEMA_VERSION:

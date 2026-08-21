@@ -37,7 +37,13 @@ def build_behavior_observations(
         if frame_count
         else 0.0
     )
-    detection_quality = round(min(1.0, max(0.0, detected_ratio)), 4)
+    tracking_ratio = (
+        float(summary.get("tracked_frames", summary.get("detected_frames", 0)))
+        / frame_count
+        if frame_count
+        else 0.0
+    )
+    detection_quality = round(min(1.0, max(0.0, tracking_ratio)), 4)
     activity_counts = summary.get("activity_counts") or {}
     dominant_activity = (
         max(activity_counts, key=activity_counts.get) if activity_counts else "UNKNOWN"
@@ -61,6 +67,10 @@ def build_behavior_observations(
             "score_status": "DEMO_UNCALIBRATED",
             "detection_status": "OK" if detection_quality >= 0.50 else "LOW_DETECTION",
             "missing_frame_ratio": round(1.0 - detection_quality, 4),
+            "hog_detection_quality": round(
+                min(1.0, max(0.0, detected_ratio)), 4
+            ),
+            "scene_config_id": summary.get("scene_config_id"),
         },
     }
     feature_specs = [
@@ -71,6 +81,11 @@ def build_behavior_observations(
         ("track_point_count", summary.get("track_points", 0), "count"),
         ("travel_distance", summary.get("travel_distance_px", 0.0), "pixel"),
     ]
+    if "tracked_frames" in summary:
+        feature_specs.insert(
+            2,
+            ("person_tracked_frame_ratio", round(tracking_ratio, 4), "ratio"),
+        )
     region_statistics = summary.get("region_statistics")
     if region_statistics:
         max_dwell = max(region_statistics.get("dwell_seconds", {}).values(), default=0.0)

@@ -13,18 +13,27 @@ from trend_analysis import build_trend_bundle
 TRACKING_QUALITY_THRESHOLD = 0.65
 
 
+def tracking_quality(summary):
+    frames = int(summary.get("frames_processed", 0))
+    tracked = summary.get("tracked_frames")
+    if tracked is not None:
+        return float(tracked) / frames if frames else 0.0
+    return float(summary.get("detected_frames", 0)) / frames if frames else 0.0
+
+
 def _timestamp(value, summary):
     return value or summary.get("captured_at") or datetime.now().astimezone().isoformat(timespec="seconds")
 
 
 def _tracking_lost_evidence(summary, observations, *, resident_id, location, timestamp):
     frames = int(summary.get("frames_processed", 0))
-    detected = int(summary.get("detected_frames", 0))
-    ratio = detected / frames if frames else 0.0
+    ratio = tracking_quality(summary)
     if ratio >= TRACKING_QUALITY_THRESHOLD:
         return []
     by_name = {item["feature_name"]: item["observation_id"] for item in observations}
-    links = [by_name["person_detected_frame_ratio"]]
+    links = [
+        by_name.get("person_tracked_frame_ratio", by_name["person_detected_frame_ratio"])
+    ]
     if "max_person_count" in by_name:
         links.append(by_name["max_person_count"])
     return [
@@ -56,9 +65,7 @@ def _unusual_pacing_evidence(summary, observations, *, resident_id, location, ti
     region_statistics = summary.get("region_statistics")
     if not region_statistics:
         return []
-    frames = int(summary.get("frames_processed", 0))
-    detected = int(summary.get("detected_frames", 0))
-    quality = detected / frames if frames else 0.0
+    quality = tracking_quality(summary)
     pacing = analyze_pacing(region_statistics)
     if quality < TRACKING_QUALITY_THRESHOLD or not pacing["triggered"]:
         return []

@@ -3,17 +3,56 @@ import json
 import math
 import time
 from collections import Counter, deque
-from datetime import datetime
 from pathlib import Path
-from uuid import uuid4
 
 import cv2
 
-from observation import build_observation, validate_observation_collection
+from behavior_observations import build_behavior_observations
 from regions import RegionConfigError, RegionTracker, draw_regions, load_region_config
 
 
 FRAME_SIZE = (640, 480)
+
+
+def analysis_content_rect(source_size, target_size=FRAME_SIZE):
+    """Return the letterboxed content rectangle as x, y, width, height."""
+    source_width, source_height = source_size
+    target_width, target_height = target_size
+    if source_width <= 0 or source_height <= 0:
+        raise ValueError("输入帧尺寸无效")
+    scale = min(target_width / source_width, target_height / source_height)
+    content_width = max(1, int(round(source_width * scale)))
+    content_height = max(1, int(round(source_height * scale)))
+    return (
+        (target_width - content_width) // 2,
+        (target_height - content_height) // 2,
+        content_width,
+        content_height,
+    )
+
+
+def resize_for_analysis(frame, target_size=FRAME_SIZE):
+    """Resize without distorting person proportions; pad unused pixels."""
+    target_width, target_height = target_size
+    source_height, source_width = frame.shape[:2]
+    if source_width <= 0 or source_height <= 0:
+        raise ValueError("输入帧尺寸无效")
+
+    pad_left, pad_top, resized_width, resized_height = analysis_content_rect(
+        (source_width, source_height), target_size
+    )
+    resized = cv2.resize(frame, (resized_width, resized_height))
+    pad_right = target_width - resized_width - pad_left
+    pad_bottom = target_height - resized_height - pad_top
+    return cv2.copyMakeBorder(
+        resized,
+        pad_top,
+        pad_bottom,
+        pad_left,
+        pad_right,
+        cv2.BORDER_CONSTANT,
+        value=(0, 0, 0),
+    )
 
 
 def parse_args():
@@ -78,6 +117,11 @@ def parse_args():
         help="人工多边形区域JSON；坐标会自动缩放到640x480分析帧",
     )
     parser.add_argument(
+        "--scene-config-id",
+        default=None,
+        help="区域配置必须匹配的脱敏scene_config_id",
+    )
+    parser.add_argument(
         "--region-events-output",
         type=Path,
         help="可选的ENTER/EXIT区域事件JSON输出路径",
@@ -140,6 +184,102 @@ class BehaviorAnalyzer:
         self.recent_steps = deque(maxlen=40)
         self.smoothed_point = None
         self.travel_distance = 0.0
+        self.tracker = None
+        self.tracker_initial_box = None
+        self.tracker_missed_frames = 0
+        self.max_tracker_missed_frames = 12
+
+    @staticmethod
+    def _box_area(box):
+        return max(0, int(box[2])) * max(0, int(box[3]))
+
+    @classmethod
+    def _deduplicate_detections(cls, detections):
+        """Remove HOG part-boxes that belong to one person's body column."""
+        ordered = sorted(detections, key=lambda item: item["area"], reverse=True)
+        kept = []
+        for candidate in ordered:
+            cx, cy, cw, ch = candidate["box"]
+            candidate_area = cls._box_area(candidate["box"])
+            duplicate = False
+            for existing in kept:
+                ex, ey, ew, eh = existing["box"]
+                intersection_width = max(0, min(cx + cw, ex + ew) - max(cx, ex))
+                intersection_height = max(0, min(cy + ch, ey + eh) - max(cy, ey))
+                intersection = intersection_width * intersection_height
+                horizontal_overlap = intersection_width / max(1, min(cw, ew))
+                vertical_gap = max(0, max(cy, ey) - min(cy + ch, ey + eh))
+                same_body_column = (
+                    horizontal_overlap >= 0.55
+                    and (
+                        intersection_height / max(1, min(ch, eh)) >= 0.12
+                        or vertical_gap <= 0.20 * max(ch, eh)
+                    )
+                )
+                if (
+                    candidate_area
+                    and intersection / candidate_area >= 0.80
+                ) or same_body_column:
+                    duplicate = True
+                    break
+            if not duplicate:
+                kept.append(candidate)
+        return kept
+
+    def _reset_tracker(self, analysis_frame, box):
+        """Start a short-lived tracker from a verified HOG detection."""
+        tracker = cv2.TrackerKCF_create()
+        try:
+            # OpenCV Python bindings return None on successful init in some versions.
+            tracker.init(analysis_frame, tuple(int(value) for value in box))
+            self.tracker = tracker
+            self.tracker_initial_box = tuple(int(value) for value in box)
+            self.tracker_missed_frames = 0
+        except cv2.error:
+            self.tracker = None
+            self.tracker_initial_box = None
+
+    def _clear_tracker(self):
+        self.tracker = None
+        self.tracker_initial_box = None
+        self.tracker_missed_frames = 0
+
+    def _fallback_detection(self, analysis_frame):
+        """Bridge brief HOG misses without turning long misses into detections."""
+        if self.tracker is None:
+            return None
+        ok, box = self.tracker.update(analysis_frame)
+        if not ok:
+            self._clear_tracker()
+            return None
+        x, y, w, h = (int(round(value)) for value in box)
+        frame_height, frame_width = analysis_frame.shape[:2]
+        initial_area = self._box_area(self.tracker_initial_box or (x, y, w, h))
+        current_area = self._box_area((x, y, w, h))
+        visible_width = max(0, min(frame_width, x + w) - max(0, x))
+        visible_height = max(0, min(frame_height, y + h) - max(0, y))
+        visible_area = visible_width * visible_height
+        if (
+            w < 20
+            or h < 40
+            or self.tracker_missed_frames >= self.max_tracker_missed_frames
+            or x >= frame_width
+            or y >= frame_height
+            or x + w <= 0
+            or y + h <= 0
+            or current_area < initial_area * 0.35
+            or current_area > initial_area * 3.0
+            or visible_area < current_area * 0.45
+        ):
+            self._clear_tracker()
+            return None
+        self.tracker_missed_frames += 1
+        return {
+            "box": (x, y, w, h),
+            "confidence": 0.0,
+            "area": int(w * h),
+            "source": "KCF_TRACKER",
+        }
 
     def analyze(self, analysis_frame):
         boxes, weights = self.hog.detectMultiScale(
@@ -159,27 +299,35 @@ class BehaviorAnalyzer:
                     "box": (int(x), int(y), int(w), int(h)),
                     "confidence": confidence,
                     "area": int(w * h),
+                    "source": "HOG",
                 }
             )
 
+        detections = self._deduplicate_detections(detections)
+
+        hog_detected = bool(detections)
         if detections:
             largest = max(detections, key=lambda item: item["area"])
             x, y, w, h = largest["box"]
+            self._reset_tracker(analysis_frame, (x, y, w, h))
             target_point = (x + w // 2, y + h // 2)
+        else:
+            fallback = self._fallback_detection(analysis_frame)
+            if fallback is not None:
+                detections = [fallback]
+                x, y, w, h = fallback["box"]
+                target_point = (x + w // 2, y + h // 2)
+            else:
+                target_point = None
 
+        if target_point is not None:
             if self.smoothed_point is None:
                 self.smoothed_point = target_point
             else:
-                alpha = 0.35
+                alpha = 0.35 if hog_detected else 0.20
                 self.smoothed_point = (
-                    int(
-                        (1 - alpha) * self.smoothed_point[0]
-                        + alpha * target_point[0]
-                    ),
-                    int(
-                        (1 - alpha) * self.smoothed_point[1]
-                        + alpha * target_point[1]
-                    ),
+                    int((1 - alpha) * self.smoothed_point[0] + alpha * target_point[0]),
+                    int((1 - alpha) * self.smoothed_point[1] + alpha * target_point[1]),
                 )
 
             step_distance = 0.0
@@ -232,6 +380,8 @@ class BehaviorAnalyzer:
             "motion_area": motion_area,
             "activity_level": activity_level,
             "tracked_point": self.smoothed_point if detections else None,
+            "hog_detected": hog_detected,
+            "tracked": bool(detections),
         }
 
 
@@ -338,81 +488,6 @@ def write_json(path, payload, label):
     print(f"{label}：{output_path}")
 
 
-def build_behavior_observations(
-    summary,
-    *,
-    resident_id,
-    location=None,
-    asset_id=None,
-):
-    """把一次行为Demo运行摘要转换为可校验的直接观测。"""
-    frame_count = summary["frames_processed"]
-    detected_ratio = (
-        summary["detected_frames"] / frame_count if frame_count else 0.0
-    )
-    activity_counts = summary["activity_counts"]
-    dominant_activity = (
-        max(activity_counts, key=activity_counts.get)
-        if activity_counts
-        else "UNKNOWN"
-    )
-
-    timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
-    common = {
-        "resident_id": resident_id,
-        "timestamp": timestamp,
-        "source": "tracking",
-        "location": location,
-        "confidence": 0.50,
-        "data_quality": 0.60 if frame_count else 0.0,
-        "source_mode": summary["source_mode"],
-        "asset_id": asset_id,
-        "simulated": summary["simulated"],
-        "metadata": {
-            "adapter_version": "behavior-adapter-v1",
-            "threshold_status": summary["threshold_status"],
-            "frames_processed": frame_count,
-            "score_status": "DEMO_UNCALIBRATED",
-        },
-    }
-
-    feature_specs = [
-        ("max_person_count", summary["max_person_count"], "count"),
-        ("person_detected_frame_ratio", round(detected_ratio, 4), "ratio"),
-        ("dominant_activity_level", dominant_activity, None),
-        ("max_motion_area", summary["max_motion_area"], "pixel"),
-        ("track_point_count", summary["track_points"], "count"),
-        ("travel_distance", summary["travel_distance_px"], "pixel"),
-    ]
-    region_statistics = summary.get("region_statistics")
-    if region_statistics:
-        max_dwell = max(region_statistics["dwell_seconds"].values(), default=0.0)
-        feature_specs.extend(
-            [
-                ("visited_region_count", region_statistics["visited_region_count"], "count"),
-                ("region_transition_count", region_statistics["transition_count"], "count"),
-                ("max_region_dwell_seconds", max_dwell, "second"),
-                (
-                    "visited_region_sequence",
-                    ">".join(region_statistics["region_sequence"]) or "NONE",
-                    None,
-                ),
-            ]
-        )
-
-    observations = [
-        build_observation(
-            observation_id=f"obs-behavior-{uuid4().hex}",
-            feature_name=feature_name,
-            feature_value=feature_value,
-            unit=unit,
-            **common,
-        )
-        for feature_name, feature_value, unit in feature_specs
-    ]
-    return validate_observation_collection(observations)
-
-
 def write_observations(path, observations):
     output_path = path.expanduser().resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -438,11 +513,22 @@ def main():
         return 2
 
     analyzer = BehaviorAnalyzer()
+    source_width = int(round(cap.get(cv2.CAP_PROP_FRAME_WIDTH)))
+    source_height = int(round(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    try:
+        content_rect = analysis_content_rect((source_width, source_height))
+    except ValueError:
+        content_rect = (0, 0, FRAME_SIZE[0], FRAME_SIZE[1])
     regions = []
     region_tracker = None
     if args.region_config:
         try:
-            regions = load_region_config(args.region_config, FRAME_SIZE)
+            regions = load_region_config(
+                args.region_config,
+                FRAME_SIZE,
+                expected_scene_config_id=args.scene_config_id,
+                content_rect=content_rect,
+            )
         except RegionConfigError as error:
             print(error)
             cap.release()
@@ -450,6 +536,7 @@ def main():
         region_tracker = RegionTracker(regions)
     frame_count = 0
     detected_frame_count = 0
+    tracked_frame_count = 0
     max_person_count = 0
     max_motion_area = 0
     activity_counts = Counter()
@@ -484,12 +571,15 @@ def main():
                 break
 
             # analysis_frame在整个分析阶段保持未绘制状态。
-            analysis_frame = cv2.resize(frame, FRAME_SIZE)
+            # 保持原始宽高比，避免16:9视频被拉伸为4:3后影响HOG人体检测。
+            analysis_frame = resize_for_analysis(frame)
             result = analyzer.analyze(analysis_frame)
 
             frame_count += 1
-            if result["person_count"] > 0:
+            if result["hog_detected"]:
                 detected_frame_count += 1
+            if result["tracked"]:
+                tracked_frame_count += 1
             max_person_count = max(max_person_count, result["person_count"])
             max_motion_area = max(max_motion_area, result["motion_area"])
             activity_counts[result["activity_level"]] += 1
@@ -534,6 +624,9 @@ def main():
         "simulated": bool(args.simulated),
         "frames_processed": frame_count,
         "detected_frames": detected_frame_count,
+        "tracked_frames": tracked_frame_count,
+        "detection_quality": round(detected_frame_count / frame_count, 4) if frame_count else 0.0,
+        "tracking_quality": round(tracked_frame_count / frame_count, 4) if frame_count else 0.0,
         "max_person_count": max_person_count,
         "max_motion_area": max_motion_area,
         "activity_counts": dict(activity_counts),
@@ -542,15 +635,21 @@ def main():
         "elapsed_seconds": round(elapsed_seconds, 3),
         "stop_reason": stop_reason,
         "threshold_status": "DEMO_UNCALIBRATED",
+        "scene_config_id": args.scene_config_id,
+        "analysis_resize_mode": "LETTERBOX",
+        "analysis_content_rect": list(content_rect),
     }
     if region_statistics is not None:
-        detected_ratio = detected_frame_count / frame_count if frame_count else 0.0
+        detected_ratio = tracked_frame_count / frame_count if frame_count else 0.0
         region_statistics.update(
             {
                 "source_mode": input_info["source_mode"],
                 "simulated": bool(args.simulated),
                 "confidence": 0.50,
                 "data_quality": round(min(1.0, detected_ratio), 4),
+                "detection_quality": round(
+                    detected_frame_count / frame_count, 4
+                ) if frame_count else 0.0,
             }
         )
         summary["region_statistics"] = region_statistics

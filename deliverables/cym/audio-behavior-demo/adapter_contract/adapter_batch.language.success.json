@@ -45,7 +45,6 @@
     "simulated": true
   }],
   "resident_response_candidate": {"intent": "STABLE", "confidence": 0.7, "transcript_observation_id": "obs-language-sample-success-transcript"},
-  "resident_response_candidate": {"intent": "STABLE", "confidence": 0.7, "transcript_observation_id": "obs-language-sample-success-transcript"},
   "diagnostics": {"input_format": "REDACTED_LANGUAGE_ANALYSIS", "processing_source": "WHISPER_REDACTED", "model_version": "whisper-tiny-local"},
   "error": null
 }
