@@ -3,9 +3,9 @@
 | 项目 | 内容 |
 |---|---|
 | 负责人 | 常易铭 |
-| 更新日期 | 2026年7月30日 |
+| 更新日期 | 2026年8月14日 |
 | 分支 | `feature/cym/audio-behavior-demo` |
-| 当前状态 | 7月31日前代码交付完成；区域实景效果和正式阈值仍待统一素材验证 |
+| 当前状态 | 8月14日语音/行为/趋势适配器与后端样例已完成；实景标定和正式阈值仍待统一素材验证 |
 
 ## 1. 项目边界
 
@@ -15,6 +15,20 @@
 2. 摄像头或本地MP4通过OpenCV生成人员框、活动量和人物中心轨迹。
 
 本模块只生成感知结果和Evidence，不直接输出GREEN、YELLOW、ORANGE或RED风险等级，也不作诈骗或心理疾病诊断。
+
+### 2.1 真实视频检测边界
+
+视频分析保持原始宽高比，并在 `640x480` 画布中加黑边，避免将 C6c 常见的
+16:9 画面拉伸为4:3。HOG `detection_quality` 与 HOG 加短时 KCF 的
+`tracking_quality` 分开记录；KCF 只在已确认的 HOG 框后最多桥接12帧，质量门槛
+仍为 `0.65`，不会把长期失踪帧伪装成检测结果。
+
+固定机位视频必须解析 `AlgorithmJob.scene_config_id` 对应的区域标定。默认从
+`scene_configs/<scene_config_id>.json` 读取，也可用 `YINGMU_SCENE_CONFIG_DIR`
+指向 Worker 的只读目录。配置的 `scene_config_id` 和 `camera_position_id`
+必须与 Job 一致；缺失或错配时返回 `SCENE_CONFIG_MISSING` 或
+`SCENE_CONFIG_MISMATCH`。区域切换至少连续3次更新且持续0.4秒才确认，避免边界
+抖动制造虚假 `unusual_pacing`。
 
 ## 2. 7月25日复现反馈修复
 
@@ -40,6 +54,12 @@
 │  ├─ behavior_demo.py
 │  ├─ regions.py
 │  ├─ behavior_evidence.py
+│  ├─ behavior_adapter.py
+│  ├─ generate_behavior_bundle.py
+│  ├─ audio_evidence.py
+│  ├─ generate_audio_bundle.py
+│  ├─ trend_analysis.py
+│  ├─ generate_trend_samples.py
 │  ├─ observation.py
 │  ├─ evidence.py
 │  ├─ generate_evidence_samples.py
@@ -50,16 +70,27 @@
 │  └─ generate_test_audio.ps1
 ├─ tests/
 │  ├─ test_behavior.py
+│  ├─ test_behavior_adapter.py
 │  ├─ test_regions.py
 │  ├─ test_behavior_evidence.py
 │  ├─ test_backend_submission.py
 │  ├─ test_evidence.py
 │  ├─ test_observation.py
-│  └─ test_whisper_demo.py
+│  ├─ test_whisper_demo.py
+│  ├─ test_audio_evidence.py
+│  ├─ test_behavior_adapter.py
+│  └─ test_trend_analysis.py
 ├─ samples/
 │  ├─ evidence_samples.json
 │  ├─ regions.example.json
 │  ├─ mock_behavior_statistics.json
+│  ├─ mock_daily_activity.json
+│  ├─ audio_quality_good.json
+│  ├─ audio_quality_low.json
+│  ├─ asset-c6c-golden.example.json
+│  ├─ audio_bundle.example.json
+│  ├─ behavior_bundle.c6c-replay.example.json
+│  ├─ trend_evidence_bundle.example.json
 │  ├─ behavior_evidence_bundle.example.json
 │  ├─ test_scam_script.txt
 │  └─ test_scam_transcript.txt
@@ -71,7 +102,9 @@
    ├─ 常易铭-7月24日调研交付.md
    ├─ 脱敏测试素材说明.md
    ├─ 降级规则.md
-   └─ 7月31日前任务拆分.md
+   ├─ 7月31日前任务拆分.md
+   ├─ 8月7日前趋势交付.md
+   └─ 8.14后常易铭-后端联调交付.md
 ```
 
 原始录音、人物视频、Whisper模型、`.venv`、`output`和缓存不进入Git。
@@ -119,7 +152,7 @@ winget install --id Gyan.FFmpeg -e
 python -m unittest discover -s .\tests -v
 ```
 
-预期：当前26项测试全部`OK`，其中Observation样例还会通过仓库
+预期：当前36项测试全部`OK`，其中Observation样例还会通过仓库
 `contracts.v1.models.Observation`官方模型校验。
 
 ### 5.2 生成本地MP4链路测试视频
@@ -242,6 +275,7 @@ python .\src\whisper_demo.py .\output\synthetic_test.wav `
   --language Chinese `
   --output-dir .\output `
   --observation-output .\output\audio_observations.json `
+  --bundle-output .\output\audio_bundle.json `
   --resident-id resident-001 `
   --asset-id asset-synthetic-audio-0001 `
   --simulated
@@ -250,6 +284,27 @@ python .\src\whisper_demo.py .\output\synthetic_test.wav `
 也可以换成经过授权的自备音频。输出JSON只记录输入文件名，不记录绝对路径。
 提供`--observation-output`后还会生成转写可用状态、转写文本、关键词命中数量和
 命中标签Observation。关键词命中只表示高风险交互特征，不直接判断诈骗。
+
+`--bundle-output`会额外生成`fraud_keyword`和/或`audio_quality_low` Evidence：
+单一关键词被限制为低置信交互特征；音频质量低于0.45时明确输出不可判定证据。
+质量指标只能使用脱敏比例字段，例如：
+
+```powershell
+python .\src\whisper_demo.py .\output\synthetic_test.wav `
+  --bundle-output .\output\audio_bundle.json `
+  --quality-metrics .\samples\audio_quality_good.json `
+  --simulated
+```
+
+没有音频文件时也可用脱敏转写文本复现后端输入：
+
+```powershell
+python .\src\generate_audio_bundle.py `
+  --transcript .\samples\test_scam_transcript.txt `
+  --output .\output\audio_bundle.json `
+  --source-mode RECORDED_REPLAY `
+  --simulated
+```
 
 ## 8. Evidence自动生成与校验
 
@@ -292,6 +347,34 @@ python .\src\generate_behavior_evidence.py `
 三条Evidence为`activity_range_decline`、`unauthorized_visitor`和
 `unusual_dwell_time`。它们都引用联调包内真实存在的Observation ID，且整个包统一为
 `source_mode: MOCK`、`simulated: true`。访客结果只表达“授权信息未匹配，建议家属核验身份”；停留结果使用`DEMO_UNCALIBRATED`阈值，二者均不构成诈骗判断。
+
+### 8.2 多日趋势适配器
+
+趋势适配器把每天的区域访问、房间转换和昼夜活动汇总转换为标准Observation，
+前7天形成滚动中位数/MAD个人基线，第8天作为当前日。历史不足时只输出
+Observation，不生成长期Evidence；稳定基线时才允许生成
+`activity_range_decline`、`room_transition_decline`和
+`day_night_rhythm_change`。当前样例为`MOCK`，不能替代真实长期数据。
+
+```powershell
+python .\src\generate_trend_samples.py `
+  --input .\samples\mock_daily_activity.json `
+  --output .\output\trend_evidence_bundle.json
+```
+
+### 8.3 后端调用行为适配器
+
+OpenCV运行结束后，使用摘要生成后端Bundle。单段视频不会凭空生成长期Evidence；
+只有额外提供稳定的多日趋势输入时才会附加长期Evidence：
+
+```powershell
+python .\src\generate_behavior_bundle.py `
+  --summary .\output\behavior_summary.json `
+  --output .\output\behavior_bundle.json `
+  --resident-id resident-001 `
+  --asset-id asset-c6c-demo-0001 `
+  --timestamp 2026-08-08T14:11:55+08:00
+```
 
 ## 9. FastAPI Mock接口提交
 
@@ -366,3 +449,75 @@ git status --short --untracked-files=all
 ```
 
 确认待提交文件与`上传清单.md`一致。未验证的真实效果保持“待统一素材复测”或“待标定”表述。
+
+## 13. AlgorithmJob / AdapterBatch（后端冻结口径）
+
+算法 Worker 的输入是完整 `AlgorithmJob`：`job_id`、`asset_id`、内部
+`media_locator` 和带时区的 `captured_at`。行为适配器使用
+`build_behavior_batch()`，语音适配器使用 `build_audio_batch()`，返回完整
+`AdapterBatch`，其中证据字段统一为复数 `evidences`。`media_locator` 只在
+算法进程内使用，不会写入返回 JSON。
+
+Observation 和 Evidence 的 ID 都由稳定 `job_id` 派生，同一窗口重试不会产生
+随机 ID。Observation 的时间使用素材采集时间 `captured_at`；算法运行耗时只写
+入 `started_at` 和 `completed_at`。
+
+语音结果只保存 `asr_transcript_redacted`、关键词计数、意图、质量分数和模型
+版本。原始 Whisper 转写只在进程内参与匹配，不会写入文件、metadata、日志或
+Evidence explanation。低质量音频输出 `audio_quality_low`；行为检出比例低时
+输出 `tracking_lost`，正常无风险证据时允许 `evidences=[]`。
+
+## 14. 老人回应识别与异常徘徊
+
+### 14.1 老人回应识别
+
+`audio_evidence.py` 在 Worker 的 `job_id` 路径中额外输出：
+
+- `resident_response_intent`：`stable`、`help_requested`、`uncertain`、`no_response` 或 `unavailable`；
+- `resident_response_match_count`：命中的回应规则组数量。
+
+同时命中“没事”和“需要帮助”时保守输出 `uncertain`；音频质量低于 0.45
+时输出 `unavailable` 和 `audio_quality_low`。回应结果只作为干预反馈特征，
+不直接生成风险 Evidence，也不能由算法直接关闭事件。原始转写仍不会写入输出。
+
+使用构造话术验证：
+
+```powershell
+python .\src\generate_audio_bundle.py `
+  --transcript .\samples\resident_response_stable.txt `
+  --output .\output\resident_response_batch.json `
+  --resident-id resident-001 `
+  --asset-id asset-response-demo-001 `
+  --job-id job-response-demo-001 `
+  --media-locator mock://resident-response-stable `
+  --captured-at 2026-08-15T10:00:00+08:00 `
+  --started-at 2026-08-15T10:00:01+08:00 `
+  --completed-at 2026-08-15T10:00:02+08:00 `
+  --source-mode MOCK `
+  --simulated
+```
+
+### 14.2 异常徘徊
+
+`pacing.py` 使用区域进入序列计算重复访问数、A-B-A 交替次数和演示级模式分数。
+当前规则要求序列长度至少 5、区域转换至少 4 次、A-B-A 模式至少 3 次。
+追踪质量低于 0.65 时禁止生成 `unusual_pacing`，改为保留 `tracking_lost`。
+
+该规则只表示反复往返活动模式，不构成心理疾病诊断，阈值固定标记为
+`DEMO_UNCALIBRATED`。运行 MOCK 样例：
+
+```powershell
+python .\src\generate_behavior_bundle.py `
+  --summary .\samples\unusual_pacing_summary.example.json `
+  --output .\output\unusual_pacing_batch.json `
+  --resident-id resident-001 `
+  --asset-id asset-pacing-demo-001 `
+  --job-id job-pacing-demo-001 `
+  --media-locator mock://unusual-pacing `
+  --captured-at 2026-08-15T10:00:00+08:00 `
+  --started-at 2026-08-15T10:00:01+08:00 `
+  --completed-at 2026-08-15T10:00:02+08:00
+```
+
+真实视频验证仍需固定机位和人工区域标定，并准备正常通行、单次往返、反复
+往返三类对照素材。

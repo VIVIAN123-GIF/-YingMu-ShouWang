@@ -32,6 +32,11 @@ class EvidenceValidationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvidenceValidationError, "risk_domain"):
             validate_evidence(self.valid_evidence)
 
+    def test_unknown_field_is_rejected(self):
+        self.valid_evidence["risk_level"] = "RED"
+        with self.assertRaisesRegex(EvidenceValidationError, "未知字段"):
+            validate_evidence(self.valid_evidence)
+
     def test_out_of_range_score_is_rejected(self):
         self.valid_evidence["severity"] = 1.01
         with self.assertRaisesRegex(EvidenceValidationError, "severity"):

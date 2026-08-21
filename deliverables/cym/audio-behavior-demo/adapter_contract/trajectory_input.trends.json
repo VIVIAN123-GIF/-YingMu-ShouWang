@@ -1,0 +1,45 @@
+{
+  "summary": {
+    "schema_version": "1.0",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "frames_processed": 900,
+    "detected_frames": 810,
+    "max_person_count": 1,
+    "max_motion_area": 6200,
+    "activity_counts": {
+      "LOW": 120,
+      "MEDIUM": 780
+    },
+    "track_points": 80,
+    "travel_distance_px": 1850.0,
+    "threshold_status": "DEMO_UNCALIBRATED",
+    "region_statistics": {
+      "visited_region_count": 2,
+      "dwell_seconds": {
+        "living_room_left": 30.0,
+        "living_room_right": 30.0
+      },
+      "transition_count": 4,
+      "region_sequence": [
+        "living_room_left",
+        "living_room_right",
+        "living_room_left",
+        "living_room_right",
+        "living_room_left"
+      ]
+    }
+  },
+  "trend": {
+    "days": [
+      {"date": "2026-08-09", "visited_region_count": 4, "region_transition_count": 9, "daytime_active_minutes": 240, "nighttime_active_minutes": 20, "data_quality": 0.86},
+      {"date": "2026-08-10", "visited_region_count": 5, "region_transition_count": 10, "daytime_active_minutes": 250, "nighttime_active_minutes": 30, "data_quality": 0.83},
+      {"date": "2026-08-11", "visited_region_count": 4, "region_transition_count": 9, "daytime_active_minutes": 230, "nighttime_active_minutes": 20, "data_quality": 0.85},
+      {"date": "2026-08-12", "visited_region_count": 4, "region_transition_count": 10, "daytime_active_minutes": 260, "nighttime_active_minutes": 25, "data_quality": 0.84},
+      {"date": "2026-08-13", "visited_region_count": 5, "region_transition_count": 9, "daytime_active_minutes": 240, "nighttime_active_minutes": 20, "data_quality": 0.82},
+      {"date": "2026-08-14", "visited_region_count": 4, "region_transition_count": 8, "daytime_active_minutes": 220, "nighttime_active_minutes": 25, "data_quality": 0.86},
+      {"date": "2026-08-15", "visited_region_count": 3, "region_transition_count": 8, "daytime_active_minutes": 210, "nighttime_active_minutes": 25, "data_quality": 0.86},
+      {"date": "2026-08-16", "visited_region_count": 2, "region_transition_count": 3, "daytime_active_minutes": 100, "nighttime_active_minutes": 100, "data_quality": 0.80}
+    ]
+  }
+}

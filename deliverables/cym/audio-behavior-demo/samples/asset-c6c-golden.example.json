@@ -1,0 +1,19 @@
+{
+  "asset_id": "asset-c6c-pos01-20260808-141155-complete-golden-local-01",
+  "title": "Authorized C6c staged behavior replay",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "stream_url": null,
+  "fallback_url": null,
+  "fallback_kind": "LOCAL_AUTHORIZED_FILE",
+  "available": false,
+  "verification_status": "PROCESSED_LOCAL",
+  "captured_at": "2026-08-08T14:11:55+08:00",
+  "notice": "Raw video stays on the authorized local device. Trace it by asset_id; no permanent public URL is provided.",
+  "device_ref": "device-ref-c6c-001",
+  "device_model": "EZVIZ_C6C",
+  "camera_position_id": "camera-position-c6c-pos01",
+  "authorization_status": "AUTHORIZED",
+  "authorization_record_id": "auth-ref-team-member-20260802-001",
+  "retention_until": "2026-08-31T23:59:59+08:00"
+}

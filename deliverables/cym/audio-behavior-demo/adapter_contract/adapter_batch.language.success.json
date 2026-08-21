@@ -21,7 +21,7 @@
     "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-language-sample-success",
     "simulated": true,
-    "metadata": {"model": "tiny", "interpretation": "INTERACTION_FEATURE_ONLY"}
+    "metadata": {"model_version": "whisper-tiny-local", "interpretation": "REDACTED_INTERACTION_FEATURE_ONLY"}
   }],
   "evidences": [{
     "schema_version": "1.0",
@@ -44,6 +44,7 @@
     "source_mode": "RECORDED_REPLAY",
     "simulated": true
   }],
-  "diagnostics": {"input_format": "WHISPER_AUDIO", "resident_response": {"intent": "STABLE", "confidence": 0.7, "transcript_observation_id": "obs-language-sample-success-transcript"}},
+  "resident_response_candidate": {"intent": "STABLE", "confidence": 0.7, "transcript_observation_id": "obs-language-sample-success-transcript"},
+  "diagnostics": {"input_format": "REDACTED_LANGUAGE_ANALYSIS", "processing_source": "WHISPER_REDACTED", "model_version": "whisper-tiny-local"},
   "error": null
 }

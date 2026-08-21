@@ -7,6 +7,7 @@ from urllib.request import Request, urlopen
 
 from evidence import validate_evidence_collection
 from observation import validate_observation_collection
+from adapter_batch import _parse_timestamp
 
 
 class SubmissionError(RuntimeError):
@@ -17,8 +18,29 @@ def load_bundle(path):
     bundle = json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
     if not isinstance(bundle, dict):
         raise ValueError("联调包必须是JSON对象")
+    if bundle.get("schema_version") != "1.0":
+        raise ValueError("联调包schema_version必须是1.0")
+    forbidden = {"risk_level", "decision", "final_risk_level"} & bundle.keys()
+    if forbidden:
+        raise ValueError(f"算法联调包不得包含最终风险字段：{sorted(forbidden)}")
     observations = validate_observation_collection(bundle.get("observations"))
-    evidence_items = validate_evidence_collection(bundle.get("evidence"))
+    evidence_items = validate_evidence_collection(
+        bundle.get("evidences", bundle.get("evidence"))
+    )
+    if "job_id" in bundle:
+        for field in ("job_id", "asset_id", "started_at", "completed_at"):
+            if field not in bundle:
+                raise ValueError(f"AdapterBatch missing {field}")
+        # AdapterBatch has no media_locator in its public response. The job
+        # itself is validated by the algorithm process before this client.
+        if not isinstance(bundle["job_id"], str) or not bundle["job_id"].strip():
+            raise ValueError("job_id must be a non-empty string")
+        if not isinstance(bundle["asset_id"], str) or not bundle["asset_id"].strip():
+            raise ValueError("asset_id must be a non-empty string")
+        started = _parse_timestamp(bundle["started_at"], "started_at")
+        completed = _parse_timestamp(bundle["completed_at"], "completed_at")
+        if completed < started:
+            raise ValueError("completed_at cannot be earlier than started_at")
     observation_ids = {item["observation_id"] for item in observations}
     for item in evidence_items:
         missing = sorted(set(item["observation_ids"]) - observation_ids)
@@ -79,7 +101,7 @@ def submit_bundle(bundle, base_url, timeout=10.0, opener=urlopen, dry_run=False)
         for item in bundle["observations"]
     ] + [
         ("evidence", "/api/v1/evidence", item, item["evidence_id"])
-        for item in bundle["evidence"]
+        for item in bundle.get("evidences", bundle.get("evidence", []))
     ]
 
     for item_type, endpoint, payload, item_id in queue:

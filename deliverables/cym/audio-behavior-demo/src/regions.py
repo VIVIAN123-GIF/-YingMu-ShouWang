@@ -10,12 +10,24 @@ class RegionConfigError(ValueError):
     pass
 
 
-def load_region_config(path, target_frame_size):
+def load_region_config(
+    path,
+    target_frame_size,
+    expected_scene_config_id=None,
+    content_rect=None,
+):
     config_path = Path(path).expanduser().resolve()
     try:
         payload = json.loads(config_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise RegionConfigError(f"无法读取区域配置：{error}") from error
+
+    scene_config_id = payload.get("scene_config_id")
+    if (
+        expected_scene_config_id is not None
+        and scene_config_id != expected_scene_config_id
+    ):
+        raise RegionConfigError("区域配置的scene_config_id与AlgorithmJob不一致")
 
     frame_size = payload.get("frame_size")
     regions = payload.get("regions")
@@ -30,8 +42,21 @@ def load_region_config(path, target_frame_size):
 
     source_width, source_height = frame_size
     target_width, target_height = target_frame_size
-    scale_x = target_width / source_width
-    scale_y = target_height / source_height
+    if content_rect is None:
+        offset_x, offset_y = 0, 0
+        content_width, content_height = target_width, target_height
+    else:
+        offset_x, offset_y, content_width, content_height = content_rect
+        if (
+            min(offset_x, offset_y) < 0
+            or content_width <= 0
+            or content_height <= 0
+            or offset_x + content_width > target_width
+            or offset_y + content_height > target_height
+        ):
+            raise RegionConfigError("content_rect超出目标分析帧")
+    scale_x = content_width / source_width
+    scale_y = content_height / source_height
     normalized = []
     region_ids = set()
     for item in regions:
@@ -39,26 +64,46 @@ def load_region_config(path, target_frame_size):
             raise RegionConfigError("每个区域必须是对象")
         region_id = item.get("id")
         polygon = item.get("polygon")
+        polygon_norm = item.get("polygon_norm")
         if not isinstance(region_id, str) or not region_id.strip():
             raise RegionConfigError("区域id必须是非空字符串")
         if region_id in region_ids:
             raise RegionConfigError(f"区域id重复：{region_id}")
+        selected_polygon = polygon_norm if polygon_norm is not None else polygon
         if (
-            not isinstance(polygon, list)
-            or len(polygon) < 3
+            not isinstance(selected_polygon, list)
+            or len(selected_polygon) < 3
             or not all(
                 isinstance(point, list)
                 and len(point) == 2
                 and all(isinstance(value, (int, float)) for value in point)
-                for point in polygon
+                for point in selected_polygon
             )
         ):
             raise RegionConfigError(f"区域{region_id}的polygon至少需要3个二维坐标")
 
-        points = [
-            (int(round(point[0] * scale_x)), int(round(point[1] * scale_y)))
-            for point in polygon
-        ]
+        if polygon_norm is not None:
+            if any(
+                coordinate < 0 or coordinate > 1
+                for point in polygon_norm
+                for coordinate in point
+            ):
+                raise RegionConfigError(f"区域{region_id}的polygon_norm必须在0到1")
+            points = [
+                (
+                    offset_x + int(round(point[0] * content_width)),
+                    offset_y + int(round(point[1] * content_height)),
+                )
+                for point in polygon_norm
+            ]
+        else:
+            points = [
+                (
+                    offset_x + int(round(point[0] * scale_x)),
+                    offset_y + int(round(point[1] * scale_y)),
+                )
+                for point in polygon
+            ]
         normalized.append(
             {
                 "id": region_id,
@@ -84,11 +129,22 @@ def find_region(point, regions):
 class RegionTracker:
     """Track deterministic region transitions from center points and relative time."""
 
-    def __init__(self, regions):
+    def __init__(
+        self,
+        regions,
+        *,
+        min_confirmation_updates=3,
+        min_confirmation_seconds=0.4,
+    ):
         self.regions = regions
+        self.min_confirmation_updates = max(1, int(min_confirmation_updates))
+        self.min_confirmation_seconds = max(0.0, float(min_confirmation_seconds))
         self.current_region = None
         self.entered_at = None
         self.last_timestamp = 0.0
+        self.candidate_region = None
+        self.candidate_since = None
+        self.candidate_updates = 0
         self.events = []
         self.visited_regions = []
         self.dwell_seconds = Counter()
@@ -102,7 +158,28 @@ class RegionTracker:
             return []
         next_region = find_region(point, self.regions)
         if next_region == self.current_region:
+            self.candidate_region = None
+            self.candidate_since = None
+            self.candidate_updates = 0
             return []
+
+        if not close_missing:
+            if next_region != self.candidate_region:
+                self.candidate_region = next_region
+                self.candidate_since = timestamp
+                self.candidate_updates = 1
+            else:
+                self.candidate_updates += 1
+            candidate_age = timestamp - self.candidate_since
+            if (
+                self.candidate_updates < self.min_confirmation_updates
+                or candidate_age < self.min_confirmation_seconds
+            ):
+                return []
+
+        self.candidate_region = None
+        self.candidate_since = None
+        self.candidate_updates = 0
 
         new_events = []
         previous_region = self.current_region

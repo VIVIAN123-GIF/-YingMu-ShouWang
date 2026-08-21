@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "job_id": "job-behavior-demo-20260815-001",
+  "asset_id": "asset-c6c-demo-20260815-001",
+  "adapter_version": "behavior-adapter-v3",
+  "started_at": "2026-08-15T10:00:01+08:00",
+  "completed_at": "2026-08-15T10:00:08+08:00",
+  "observations": [],
+  "evidences": []
+}

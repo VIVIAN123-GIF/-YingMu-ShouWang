@@ -9,6 +9,8 @@ to the unchanged ``behavior_demo.py`` in a temporary summary file.
 import asyncio
 import csv
 import json
+import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -34,6 +36,51 @@ VIDEO_SUFFIXES = {".mp4", ".avi", ".mov", ".mkv", ".webm"}
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".gif"}
 CSV_SUFFIX = ".csv"
 TRACKING_QUALITY_THRESHOLD = 0.65
+
+
+def _tracking_quality(summary: dict) -> float:
+    """Prefer verified short-track coverage; fall back to legacy HOG coverage."""
+    frames = int(summary.get("frames_processed", 0))
+    tracked = summary.get("tracked_frames")
+    if tracked is not None:
+        return float(tracked) / frames if frames else 0.0
+    return float(summary.get("detected_frames", 0)) / frames if frames else 0.0
+
+
+class SceneConfigMissingError(ValueError):
+    """Raised when a video job cannot resolve its fixed-camera calibration."""
+
+
+class SceneConfigMismatchError(ValueError):
+    """Raised when calibration provenance does not match the video job."""
+
+
+def _resolve_scene_config(job: AlgorithmJob) -> Path:
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", job.scene_config_id):
+        raise SceneConfigMissingError("scene_config_id contains unsupported characters")
+    configured_dir = os.getenv("YINGMU_SCENE_CONFIG_DIR")
+    scene_dir = (
+        Path(configured_dir).expanduser()
+        if configured_dir
+        else Path(__file__).resolve().parents[2] / "scene_configs"
+    )
+    candidate = scene_dir / f"{job.scene_config_id}.json"
+    if not candidate.is_file():
+        raise SceneConfigMissingError(
+            f"scene config is not available for {job.scene_config_id}"
+        )
+    try:
+        payload = json.loads(candidate.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SceneConfigMismatchError("scene config is not valid JSON") from exc
+    if payload.get("scene_config_id") != job.scene_config_id:
+        raise SceneConfigMismatchError("scene config ID does not match AlgorithmJob")
+    configured_camera = payload.get("camera_position_id")
+    if configured_camera and configured_camera != job.camera_position_id:
+        raise SceneConfigMismatchError(
+            "scene config camera_position_id does not match AlgorithmJob"
+        )
+    return candidate
 
 
 def _path_from_locator(locator: str) -> Path:
@@ -95,7 +142,7 @@ def _csv_summary(path: Path, job: AlgorithmJob) -> dict:
     }
 
 
-def _load_json_summary(path: Path, job: AlgorithmJob) -> dict:
+def _load_json_input(path: Path, job: AlgorithmJob) -> tuple[dict, dict | None]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     summary = payload.get("summary", payload) if isinstance(payload, dict) else None
     if not isinstance(summary, dict):
@@ -104,7 +151,20 @@ def _load_json_summary(path: Path, job: AlgorithmJob) -> dict:
     summary["source_mode"] = job.source_mode.value
     summary["simulated"] = job.simulated
     summary["captured_at"] = job.captured_at.isoformat()
-    return summary
+    trend = payload.get("trend") if isinstance(payload, dict) and "summary" in payload else None
+    if trend is not None:
+        if not isinstance(trend, dict) or not isinstance(trend.get("days"), list):
+            raise ValueError("trajectory trend must contain a days array")
+        trend = {
+            **trend,
+            "run_id": job.job_id,
+            "resident_id": job.resident_id,
+            "location": job.location,
+            "source_mode": job.source_mode.value,
+            "simulated": job.simulated,
+            "asset_id": job.asset_id,
+        }
+    return summary, trend
 
 
 def _run_video(path: Path, job: AlgorithmJob) -> dict:
@@ -115,7 +175,10 @@ def _run_video(path: Path, job: AlgorithmJob) -> dict:
             sys.executable,
             str(Path(__file__).resolve().parents[1] / "behavior_demo.py"),
             "--input", str(path), "--headless", "--summary-output", str(summary_path),
+            "--scene-config-id", job.scene_config_id,
         ]
+        scene_config = _resolve_scene_config(job)
+        command.extend(["--region-config", str(scene_config)])
         if job.simulated:
             command.append("--simulated")
         timeout = max(30.0, job.deadline_ms / 1000 + 5) if job.deadline_ms else 120.0
@@ -125,10 +188,11 @@ def _run_video(path: Path, job: AlgorithmJob) -> dict:
             raise RuntimeError("behavior_demo timed out") from exc
         if completed.returncode != 0 or not summary_path.is_file():
             raise RuntimeError("behavior_demo could not process the video")
-        return _load_json_summary(summary_path, job)
+        summary, _ = _load_json_input(summary_path, job)
+        return summary
 
 
-def _load_summary(job: AlgorithmJob) -> tuple[dict, str]:
+def _load_summary(job: AlgorithmJob) -> tuple[dict, str, dict | None]:
     path = _path_from_locator(job.media_locator)
     if not path.is_file():
         raise FileNotFoundError("trajectory input file does not exist")
@@ -136,12 +200,13 @@ def _load_summary(job: AlgorithmJob) -> tuple[dict, str]:
     if suffix in IMAGE_SUFFIXES:
         raise ValueError("image input is unsupported; provide a video or trajectory JSON/CSV")
     if suffix == ".json":
-        return _load_json_summary(path, job), "JSON_SUMMARY"
+        summary, trend = _load_json_input(path, job)
+        return summary, "JSON_SUMMARY", trend
     if suffix == CSV_SUFFIX:
-        return _csv_summary(path, job), "CSV_TRAJECTORY"
+        return _csv_summary(path, job), "CSV_TRAJECTORY", None
     if suffix in VIDEO_SUFFIXES:
         summary = awaitable_video(path, job)
-        return summary, "VIDEO"
+        return summary, "VIDEO", None
     raise ValueError("unsupported trajectory input format")
 
 
@@ -156,22 +221,29 @@ async def run(job: AlgorithmJob) -> AdapterBatch:
         checked_job = validate_job(job)
         if checked_job.requested_modules and AlgorithmModule.TRAJECTORY not in checked_job.requested_modules:
             raise ValueError("TRAJECTORY is not listed in requested_modules")
-        summary, input_format = await asyncio.to_thread(_load_summary, checked_job)
+        summary, input_format, trend_payload = await asyncio.to_thread(
+            _load_summary, checked_job
+        )
         summary["source_mode"] = checked_job.source_mode.value
         summary["simulated"] = checked_job.simulated
         summary["captured_at"] = checked_job.captured_at.isoformat()
+        summary["scene_config_id"] = checked_job.scene_config_id
+        frames = int(summary.get("frames_processed", 0))
+        detected = int(summary.get("detected_frames", 0))
+        tracked = int(summary.get("tracked_frames", detected))
+        quality = _tracking_quality(summary)
         inner = build_behavior_batch(
             job_payload(checked_job), summary,
             resident_id=checked_job.resident_id,
             location=checked_job.location,
+            trend_payload=(
+                trend_payload if quality >= TRACKING_QUALITY_THRESHOLD else None
+            ),
             started_at=started_at,
             completed_at=now_timestamp(),
         )
         observations = inner["observations"]
         evidences = inner["evidences"]
-        frames = int(summary.get("frames_processed", 0))
-        detected = int(summary.get("detected_frames", 0))
-        quality = detected / frames if frames else 0.0
         status = "LOW_QUALITY" if quality < TRACKING_QUALITY_THRESHOLD else ("SUCCESS" if evidences else "NO_EVIDENCE")
         return build_batch(
             checked_job, module="TRAJECTORY", status=status,
@@ -181,10 +253,32 @@ async def run(job: AlgorithmJob) -> AdapterBatch:
                 "input_format": input_format,
                 "frames_processed": frames,
                 "detected_frames": detected,
+                "tracked_frames": tracked,
+                "detection_quality": round(
+                    detected / frames, 4
+                ) if frames else 0.0,
                 "tracking_quality": round(quality, 4),
                 "threshold_status": summary.get("threshold_status", "DEMO_UNCALIBRATED"),
+                "scene_config_id": checked_job.scene_config_id,
+                "scene_config_status": (
+                    "RESOLVED" if input_format == "VIDEO" else "UPSTREAM_SUMMARY"
+                ),
                 "core_algorithm": "behavior_demo.py",
             },
+        )
+    except SceneConfigMissingError as exc:
+        return build_batch(
+            job, module="TRAJECTORY", status="FAILED", adapter_version=ADAPTER_VERSION,
+            started_at=started_at, completed_at=now_timestamp(), observations=[], evidences=[],
+            diagnostics={"input_format": "VIDEO", "scene_config_id": job.scene_config_id},
+            batch_error=error("SCENE_CONFIG_MISSING", str(exc), retryable=False),
+        )
+    except SceneConfigMismatchError as exc:
+        return build_batch(
+            job, module="TRAJECTORY", status="FAILED", adapter_version=ADAPTER_VERSION,
+            started_at=started_at, completed_at=now_timestamp(), observations=[], evidences=[],
+            diagnostics={"input_format": "VIDEO", "scene_config_id": job.scene_config_id},
+            batch_error=error("SCENE_CONFIG_MISMATCH", str(exc), retryable=False),
         )
     except (ContractValidationError, FileNotFoundError, ValueError, json.JSONDecodeError, OSError, RuntimeError) as exc:
         return build_batch(

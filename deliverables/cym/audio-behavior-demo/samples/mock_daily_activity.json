@@ -1,0 +1,18 @@
+{
+  "run_id": "20260805-trend-demo-0001",
+  "resident_id": "resident-001",
+  "location": "living_room",
+  "source_mode": "MOCK",
+  "simulated": true,
+  "asset_id": null,
+  "days": [
+    {"date": "2026-07-29", "visited_region_count": 3, "region_transition_count": 8, "daytime_active_minutes": 220, "nighttime_active_minutes": 25, "data_quality": 0.84},
+    {"date": "2026-07-30", "visited_region_count": 4, "region_transition_count": 9, "daytime_active_minutes": 240, "nighttime_active_minutes": 20, "data_quality": 0.86},
+    {"date": "2026-07-31", "visited_region_count": 5, "region_transition_count": 10, "daytime_active_minutes": 250, "nighttime_active_minutes": 30, "data_quality": 0.83},
+    {"date": "2026-08-01", "visited_region_count": 4, "region_transition_count": 9, "daytime_active_minutes": 230, "nighttime_active_minutes": 20, "data_quality": 0.85},
+    {"date": "2026-08-02", "visited_region_count": 4, "region_transition_count": 10, "daytime_active_minutes": 260, "nighttime_active_minutes": 25, "data_quality": 0.84},
+    {"date": "2026-08-03", "visited_region_count": 5, "region_transition_count": 9, "daytime_active_minutes": 240, "nighttime_active_minutes": 20, "data_quality": 0.82},
+    {"date": "2026-08-04", "visited_region_count": 3, "region_transition_count": 8, "daytime_active_minutes": 210, "nighttime_active_minutes": 25, "data_quality": 0.86},
+    {"date": "2026-08-05", "visited_region_count": 2, "region_transition_count": 3, "daytime_active_minutes": 100, "nighttime_active_minutes": 100, "data_quality": 0.80}
+  ]
+}

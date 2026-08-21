@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 sys.path.insert(0, str(SRC))
 
-from behavior_demo import build_behavior_observations, render_frame  # noqa: E402
+from behavior_demo import BehaviorAnalyzer, build_behavior_observations, render_frame  # noqa: E402
 from observation import validate_observation_collection  # noqa: E402
 
 
@@ -40,6 +40,32 @@ class RenderFrameTests(unittest.TestCase):
         self.assertTrue(np.array_equal(analysis_frame, original))
         self.assertFalse(np.array_equal(display_frame, original))
         self.assertIsNot(display_frame, analysis_frame)
+
+    def test_hog_part_box_is_not_counted_as_second_person(self):
+        detections = [
+            {
+                "box": (346, 82, 166, 332),
+                "area": 166 * 332,
+                "confidence": 1.1,
+                "source": "HOG",
+            },
+            {
+                "box": (404, 222, 84, 167),
+                "area": 84 * 167,
+                "confidence": 0.48,
+                "source": "HOG",
+            },
+        ]
+
+        self.assertEqual(len(BehaviorAnalyzer._deduplicate_detections(detections)), 1)
+
+    def test_overlapping_upper_and_lower_windows_are_one_person(self):
+        detections = [
+            {"box": (479, 56, 113, 227), "area": 113 * 227, "confidence": 0.465, "source": "HOG"},
+            {"box": (472, 207, 92, 185), "area": 92 * 185, "confidence": 0.561, "source": "HOG"},
+        ]
+
+        self.assertEqual(len(BehaviorAnalyzer._deduplicate_detections(detections)), 1)
 
 
 class BehaviorObservationTests(unittest.TestCase):

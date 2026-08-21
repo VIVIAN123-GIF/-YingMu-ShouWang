@@ -23,6 +23,7 @@
     "simulated": true
   }],
   "evidences": [],
-  "diagnostics": {"input_format": "REDACTED_TEXT", "audio_quality": 0.8},
+  "resident_response_candidate": null,
+  "diagnostics": {"input_format": "REDACTED_LANGUAGE_ANALYSIS", "audio_quality": 0.8},
   "error": null
 }
