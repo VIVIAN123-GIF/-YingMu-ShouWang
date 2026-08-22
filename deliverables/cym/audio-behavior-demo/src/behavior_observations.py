@@ -6,7 +6,7 @@ from observation import build_observation, validate_observation_collection
 from pacing import analyze_pacing
 
 
-ADAPTER_VERSION = "behavior-adapter-v3"
+ADAPTER_VERSION = "behavior-adapter-v4-sensitive-demo"
 
 
 def _timestamp(value):
