@@ -18,6 +18,12 @@ from collections import Counter
 from pathlib import Path
 
 from behavior_adapter import ADAPTER_VERSION, build_behavior_batch
+from pacing import (
+    MIN_ALTERNATING_PATTERNS,
+    MIN_SEQUENCE_LENGTH,
+    MIN_TRANSITIONS,
+    TRACKING_QUALITY_THRESHOLD,
+)
 
 from .contract import (
     AdapterBatch,
@@ -35,9 +41,6 @@ from .contract import (
 VIDEO_SUFFIXES = {".mp4", ".avi", ".mov", ".mkv", ".webm"}
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".gif"}
 CSV_SUFFIX = ".csv"
-TRACKING_QUALITY_THRESHOLD = 0.65
-
-
 def _tracking_quality(summary: dict) -> float:
     """Prefer verified short-track coverage; fall back to legacy HOG coverage."""
     frames = int(summary.get("frames_processed", 0))
@@ -258,6 +261,11 @@ async def run(job: AlgorithmJob) -> AdapterBatch:
                     detected / frames, 4
                 ) if frames else 0.0,
                 "tracking_quality": round(quality, 4),
+                "tracking_quality_threshold": TRACKING_QUALITY_THRESHOLD,
+                "pacing_min_sequence_length": MIN_SEQUENCE_LENGTH,
+                "pacing_min_transitions": MIN_TRANSITIONS,
+                "pacing_min_alternating_patterns": MIN_ALTERNATING_PATTERNS,
+                "sensitivity_profile": "SENSITIVE_DEMO_UNCALIBRATED",
                 "threshold_status": summary.get("threshold_status", "DEMO_UNCALIBRATED"),
                 "scene_config_id": checked_job.scene_config_id,
                 "scene_config_status": (

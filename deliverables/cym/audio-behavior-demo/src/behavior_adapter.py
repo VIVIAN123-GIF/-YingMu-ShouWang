@@ -6,11 +6,8 @@ from adapter_batch import build_adapter_batch, validate_algorithm_job
 from behavior_observations import ADAPTER_VERSION, build_behavior_observations
 from evidence import build_evidence, validate_evidence_collection
 from observation import validate_observation_collection
-from pacing import analyze_pacing
+from pacing import TRACKING_QUALITY_THRESHOLD, analyze_pacing
 from trend_analysis import build_trend_bundle
-
-
-TRACKING_QUALITY_THRESHOLD = 0.65
 
 
 def tracking_quality(summary):
@@ -61,7 +58,7 @@ def _tracking_lost_evidence(summary, observations, *, resident_id, location, tim
 
 
 def _unusual_pacing_evidence(summary, observations, *, resident_id, location, timestamp):
-    """Emit a conservative demo Evidence for repeated region alternation."""
+    """Emit sensitive, uncalibrated demo Evidence for region alternation."""
     region_statistics = summary.get("region_statistics")
     if not region_statistics:
         return []
