@@ -1,0 +1,37 @@
+{
+  "schema_version": "gait-upstream-e2e/1.0-redacted",
+  "scope": "ADAPTER_TO_RISK_ENGINE",
+  "adapter": {
+    "status": "SUCCESS",
+    "evidence": ["rapid_rise", "trunk_sway", "relative_speed_change"]
+  },
+  "rule_trace": {
+    "matched_rule": "R-FALL-02",
+    "previous_state": "GREEN",
+    "next_state": "ORANGE",
+    "event_created": true,
+    "reason": "rapid_rise and trunk_sway are within the 30-second window with usable quality and high confidence",
+    "quality": {
+      "rapid_rise": {"confidence": 0.97, "data_quality": 1.0, "usable": true},
+      "trunk_sway": {"confidence": 0.97, "data_quality": 1.0, "usable": true},
+      "relative_speed_change": {"confidence": 0.97, "data_quality": 1.0, "usable": true}
+    }
+  },
+  "risk_event": {
+    "risk_level": "ORANGE",
+    "risk_score": 0.77,
+    "status": "INTERVENING",
+    "source_mode": "RECORDED_REPLAY",
+    "simulated": true,
+    "evidence_types": ["rapid_rise", "trunk_sway"]
+  },
+  "limitations": [
+    "This upstream snapshot does not prove Worker persistence or idempotency.",
+    "Agent Job creation and execution are covered by backend_worker_e2e_result.json."
+  ],
+  "redaction": {
+    "contains_credentials": false,
+    "contains_absolute_paths": false,
+    "contains_media": false
+  }
+}
