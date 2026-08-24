@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "profile_version": "modified-video-gait-baseline-v1",
+  "built_at": "2026-08-22T17:16:44+08:00",
+  "resident_id": "resident-modified-video-001",
+  "source_mode": "RECORDED_REPLAY",
+  "source_dataset": "修改后视频/视频/D1-D3",
+  "device_model": "EZVIZ_C6C",
+  "camera_position_id": "camera-position-modified-video-001",
+  "sample_policy": {
+    "asset_count": 18,
+    "walk_clips": 9,
+    "rise_clips": 6,
+    "stable_clips": 3,
+    "min_confidence": 0.7,
+    "min_data_quality": 0.7
+  },
+  "metrics": {
+    "relative_gait_speed": {
+      "count": 9,
+      "distinct_days": 3,
+      "median": 0.067732,
+      "mad": 0.006961,
+      "min": 0.056391,
+      "max": 0.074786
+    },
+    "rise_duration": {
+      "count": 6,
+      "distinct_days": 3,
+      "median": 0.5665,
+      "mad": 0.1,
+      "min": 0.4,
+      "max": 0.733
+    },
+    "stable_trunk_angle_deg": {
+      "count": 3,
+      "distinct_days": 3,
+      "median": 1.052,
+      "mad": 0.112,
+      "min": 0.94,
+      "max": 1.664
+    }
+  },
+  "status": "READY_FOR_THREE_DAY_PROVISIONAL",
+  "expected_backend_baseline_status": "PROVISIONAL"
+}

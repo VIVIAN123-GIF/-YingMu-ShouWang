@@ -1,0 +1,1472 @@
+{
+  "schema_version": "1.0",
+  "package_kind": "MODIFIED_VIDEO_THREE_DAY_BASELINE_CANDIDATE",
+  "package_status": "READY_FOR_BACKEND_ADMISSION",
+  "backend_baseline_status_before_submission": "INSUFFICIENT",
+  "resident_id": "resident-modified-video-001",
+  "device_ref": "device-ref-c6c-modified-video-001",
+  "camera_position_id": "camera-position-modified-video-001",
+  "adapter_version": "modified-video-gait-baseline-v1",
+  "asset_manifest": [
+    {
+      "asset_id": "asset-modified-d1-rise-d1-rise-01-chair-c",
+      "title": "三天基线 D1 RISE D1_RISE_01_chair_C.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-19T09:30:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d1-rise-d1-rise-02-chair-c",
+      "title": "三天基线 D1 RISE D1_RISE_02_chair_C.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-19T09:35:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d1-stable-d1-stable-01-stable-s",
+      "title": "三天基线 D1 STABLE D1_STABLE_01_stable_S.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-19T10:00:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d1-walk-d1-walk-01-left-to-right",
+      "title": "三天基线 D1 WALK D1_WALK_01_left_to_right.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-19T09:00:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d1-walk-d1-walk-02-right-to-left",
+      "title": "三天基线 D1 WALK D1_WALK_02_right_to_left.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-19T09:05:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d1-walk-d1-walk-03-left-to-right",
+      "title": "三天基线 D1 WALK D1_WALK_03_left_to_right.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-19T09:10:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d2-rise-d2-rise-01-chair-c",
+      "title": "三天基线 D2 RISE D2_RISE_01_chair_C.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-20T09:30:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d2-rise-d2-rise-02-chair-c",
+      "title": "三天基线 D2 RISE D2_RISE_02_chair_C.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-20T09:35:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d2-stable-d2-stable-01-stable-s",
+      "title": "三天基线 D2 STABLE D2_STABLE_01_stable_S.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-20T10:00:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d2-walk-d2-walk-01-left-to-right",
+      "title": "三天基线 D2 WALK D2_WALK_01_left_to_right.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-20T09:00:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d2-walk-d2-walk-02-right-to-left",
+      "title": "三天基线 D2 WALK D2_WALK_02_right_to_left.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-20T09:05:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d2-walk-d2-walk-03-left-to-right",
+      "title": "三天基线 D2 WALK D2_WALK_03_left_to_right.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-20T09:10:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d3-rise-d3-rise-01-chair-c",
+      "title": "三天基线 D3 RISE D3_RISE_01_chair_C.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-21T09:30:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d3-rise-d3-rise-02-chair-c-1",
+      "title": "三天基线 D3 RISE D3_RISE_02_chair_C(1).mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-21T09:35:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d3-stable-d3-stable-01-stable-s",
+      "title": "三天基线 D3 STABLE D3_STABLE_01_stable_S.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-21T10:00:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d3-walk-d3-walk-01-left-to-right",
+      "title": "三天基线 D3 WALK D3_WALK_01_left_to_right.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-21T09:00:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d3-walk-d3-walk-02-right-to-left",
+      "title": "三天基线 D3 WALK D3_WALK_02_right_to_left.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-21T09:05:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    },
+    {
+      "asset_id": "asset-modified-d3-walk-d3-walk-03-left-to-right",
+      "title": "三天基线 D3 WALK D3_WALK_03_left_to_right.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "stream_url": null,
+      "fallback_url": null,
+      "fallback_kind": "LOCAL_AUTHORIZED_CLIP",
+      "available": true,
+      "verification_status": "VERIFIED",
+      "captured_at": "2026-08-21T09:10:00+08:00",
+      "notice": "本包只保存脱敏资产引用；原视频、本地路径和授权原件不写入包。",
+      "device_ref": "device-ref-c6c-modified-video-001",
+      "device_model": "EZVIZ_C6C",
+      "camera_position_id": "camera-position-modified-video-001",
+      "authorization_status": "AUTHORIZED",
+      "authorization_record_id": "auth-modified-video-local-20260822",
+      "retention_until": "2026-09-30T23:59:59+08:00"
+    }
+  ],
+  "observations": [
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d1-rise-d1-rise-01-chair-c-sit-to-stand-duration",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T09:30:00+08:00",
+      "source": "pose",
+      "feature_name": "sit_to_stand_duration",
+      "feature_value": 0.6,
+      "unit": "seconds",
+      "location": "living_room",
+      "confidence": 0.987,
+      "data_quality": 0.987,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d1-rise-d1-rise-01-chair-c",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D1_RISE_01_chair_C.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d1-rise-d1-rise-02-chair-c-sit-to-stand-duration",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T09:35:00+08:00",
+      "source": "pose",
+      "feature_name": "sit_to_stand_duration",
+      "feature_value": 0.733,
+      "unit": "seconds",
+      "location": "living_room",
+      "confidence": 0.985,
+      "data_quality": 0.985,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d1-rise-d1-rise-02-chair-c",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D1_RISE_02_chair_C.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d1-stable-d1-stable-01-stable-s-stable-trunk-angle-deg",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T10:00:00+08:00",
+      "source": "pose",
+      "feature_name": "stable_trunk_angle_deg",
+      "feature_value": 0.94,
+      "unit": "degree",
+      "location": "living_room",
+      "confidence": 0.977,
+      "data_quality": 0.977,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d1-stable-d1-stable-01-stable-s",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D1_STABLE_01_stable_S.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d1-walk-d1-walk-01-left-to-right-relative-gait-speed",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T09:00:00+08:00",
+      "source": "pose",
+      "feature_name": "relative_gait_speed",
+      "feature_value": 0.07,
+      "unit": "frame_height_per_second",
+      "location": "living_room",
+      "confidence": 0.954,
+      "data_quality": 0.954,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d1-walk-d1-walk-01-left-to-right",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D1_WALK_01_left_to_right.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d1-walk-d1-walk-02-right-to-left-relative-gait-speed",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T09:05:00+08:00",
+      "source": "pose",
+      "feature_name": "relative_gait_speed",
+      "feature_value": 0.072,
+      "unit": "frame_height_per_second",
+      "location": "living_room",
+      "confidence": 0.913,
+      "data_quality": 0.913,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d1-walk-d1-walk-02-right-to-left",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D1_WALK_02_right_to_left.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d1-walk-d1-walk-03-left-to-right-relative-gait-speed",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T09:10:00+08:00",
+      "source": "pose",
+      "feature_name": "relative_gait_speed",
+      "feature_value": 0.075,
+      "unit": "frame_height_per_second",
+      "location": "living_room",
+      "confidence": 0.945,
+      "data_quality": 0.945,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d1-walk-d1-walk-03-left-to-right",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D1_WALK_03_left_to_right.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d2-rise-d2-rise-01-chair-c-sit-to-stand-duration",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T09:30:00+08:00",
+      "source": "pose",
+      "feature_name": "sit_to_stand_duration",
+      "feature_value": 0.6,
+      "unit": "seconds",
+      "location": "living_room",
+      "confidence": 0.99,
+      "data_quality": 0.99,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d2-rise-d2-rise-01-chair-c",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D2_RISE_01_chair_C.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d2-rise-d2-rise-02-chair-c-sit-to-stand-duration",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T09:35:00+08:00",
+      "source": "pose",
+      "feature_name": "sit_to_stand_duration",
+      "feature_value": 0.533,
+      "unit": "seconds",
+      "location": "living_room",
+      "confidence": 0.985,
+      "data_quality": 0.985,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d2-rise-d2-rise-02-chair-c",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D2_RISE_02_chair_C.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d2-stable-d2-stable-01-stable-s-stable-trunk-angle-deg",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T10:00:00+08:00",
+      "source": "pose",
+      "feature_name": "stable_trunk_angle_deg",
+      "feature_value": 1.664,
+      "unit": "degree",
+      "location": "living_room",
+      "confidence": 0.988,
+      "data_quality": 0.988,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d2-stable-d2-stable-01-stable-s",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D2_STABLE_01_stable_S.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d2-walk-d2-walk-01-left-to-right-relative-gait-speed",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T09:00:00+08:00",
+      "source": "pose",
+      "feature_name": "relative_gait_speed",
+      "feature_value": 0.063,
+      "unit": "frame_height_per_second",
+      "location": "living_room",
+      "confidence": 0.941,
+      "data_quality": 0.941,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d2-walk-d2-walk-01-left-to-right",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D2_WALK_01_left_to_right.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d2-walk-d2-walk-02-right-to-left-relative-gait-speed",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T09:05:00+08:00",
+      "source": "pose",
+      "feature_name": "relative_gait_speed",
+      "feature_value": 0.056,
+      "unit": "frame_height_per_second",
+      "location": "living_room",
+      "confidence": 0.928,
+      "data_quality": 0.928,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d2-walk-d2-walk-02-right-to-left",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D2_WALK_02_right_to_left.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d2-walk-d2-walk-03-left-to-right-relative-gait-speed",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T09:10:00+08:00",
+      "source": "pose",
+      "feature_name": "relative_gait_speed",
+      "feature_value": 0.075,
+      "unit": "frame_height_per_second",
+      "location": "living_room",
+      "confidence": 0.957,
+      "data_quality": 0.957,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d2-walk-d2-walk-03-left-to-right",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D2_WALK_03_left_to_right.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d3-rise-d3-rise-01-chair-c-sit-to-stand-duration",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T09:30:00+08:00",
+      "source": "pose",
+      "feature_name": "sit_to_stand_duration",
+      "feature_value": 0.4,
+      "unit": "seconds",
+      "location": "living_room",
+      "confidence": 0.989,
+      "data_quality": 0.989,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d3-rise-d3-rise-01-chair-c",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D3_RISE_01_chair_C.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d3-rise-d3-rise-02-chair-c-1-sit-to-stand-duration",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T09:35:00+08:00",
+      "source": "pose",
+      "feature_name": "sit_to_stand_duration",
+      "feature_value": 0.4,
+      "unit": "seconds",
+      "location": "living_room",
+      "confidence": 0.99,
+      "data_quality": 0.99,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d3-rise-d3-rise-02-chair-c-1",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D3_RISE_02_chair_C(1).mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d3-stable-d3-stable-01-stable-s-stable-trunk-angle-deg",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T10:00:00+08:00",
+      "source": "pose",
+      "feature_name": "stable_trunk_angle_deg",
+      "feature_value": 1.052,
+      "unit": "degree",
+      "location": "living_room",
+      "confidence": 0.995,
+      "data_quality": 0.995,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d3-stable-d3-stable-01-stable-s",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D3_STABLE_01_stable_S.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d3-walk-d3-walk-01-left-to-right-relative-gait-speed",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T09:00:00+08:00",
+      "source": "pose",
+      "feature_name": "relative_gait_speed",
+      "feature_value": 0.058,
+      "unit": "frame_height_per_second",
+      "location": "living_room",
+      "confidence": 0.958,
+      "data_quality": 0.958,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d3-walk-d3-walk-01-left-to-right",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D3_WALK_01_left_to_right.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d3-walk-d3-walk-02-right-to-left-relative-gait-speed",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T09:05:00+08:00",
+      "source": "pose",
+      "feature_name": "relative_gait_speed",
+      "feature_value": 0.058,
+      "unit": "frame_height_per_second",
+      "location": "living_room",
+      "confidence": 0.935,
+      "data_quality": 0.935,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d3-walk-d3-walk-02-right-to-left",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D3_WALK_02_right_to_left.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-asset-modified-d3-walk-d3-walk-03-left-to-right-relative-gait-speed",
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T09:10:00+08:00",
+      "source": "pose",
+      "feature_name": "relative_gait_speed",
+      "feature_value": 0.068,
+      "unit": "frame_height_per_second",
+      "location": "living_room",
+      "confidence": 0.952,
+      "data_quality": 0.952,
+      "source_mode": "RECORDED_REPLAY",
+      "asset_id": "asset-modified-d3-walk-d3-walk-03-left-to-right",
+      "simulated": true,
+      "metadata": {
+        "baseline_kind": "THREE_DAY_PROVISIONAL_CANDIDATE",
+        "camera_position_id": "camera-position-modified-video-001",
+        "source_video": "D3_WALK_03_left_to_right.mp4",
+        "adapter_version": "modified-video-gait-baseline-v1"
+      }
+    }
+  ],
+  "evidences": [
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d1-rise-d1-rise-01-chair-c-sit-to-stand-duration",
+      "observation_ids": [
+        "obs-asset-modified-d1-rise-d1-rise-01-chair-c-sit-to-stand-duration"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T09:30:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "rise_duration_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.987,
+      "data_quality": 0.987,
+      "baseline_value": null,
+      "current_value": 0.6,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：sit_to_stand_duration=0.6 seconds",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d1-rise-d1-rise-02-chair-c-sit-to-stand-duration",
+      "observation_ids": [
+        "obs-asset-modified-d1-rise-d1-rise-02-chair-c-sit-to-stand-duration"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T09:35:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "rise_duration_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.985,
+      "data_quality": 0.985,
+      "baseline_value": null,
+      "current_value": 0.733,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：sit_to_stand_duration=0.733 seconds",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d1-stable-d1-stable-01-stable-s-stable-trunk-angle-deg",
+      "observation_ids": [
+        "obs-asset-modified-d1-stable-d1-stable-01-stable-s-stable-trunk-angle-deg"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T10:00:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "trunk_sway_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.977,
+      "data_quality": 0.977,
+      "baseline_value": null,
+      "current_value": 0.94,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：stable_trunk_angle_deg=0.94 degree",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d1-walk-d1-walk-01-left-to-right-relative-gait-speed",
+      "observation_ids": [
+        "obs-asset-modified-d1-walk-d1-walk-01-left-to-right-relative-gait-speed"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T09:00:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "gait_stability_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.954,
+      "data_quality": 0.954,
+      "baseline_value": null,
+      "current_value": 0.07,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：relative_gait_speed=0.07 frame_height_per_second",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d1-walk-d1-walk-02-right-to-left-relative-gait-speed",
+      "observation_ids": [
+        "obs-asset-modified-d1-walk-d1-walk-02-right-to-left-relative-gait-speed"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T09:05:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "gait_stability_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.913,
+      "data_quality": 0.913,
+      "baseline_value": null,
+      "current_value": 0.072,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：relative_gait_speed=0.072 frame_height_per_second",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d1-walk-d1-walk-03-left-to-right-relative-gait-speed",
+      "observation_ids": [
+        "obs-asset-modified-d1-walk-d1-walk-03-left-to-right-relative-gait-speed"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-19T09:10:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "gait_stability_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.945,
+      "data_quality": 0.945,
+      "baseline_value": null,
+      "current_value": 0.075,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：relative_gait_speed=0.075 frame_height_per_second",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d2-rise-d2-rise-01-chair-c-sit-to-stand-duration",
+      "observation_ids": [
+        "obs-asset-modified-d2-rise-d2-rise-01-chair-c-sit-to-stand-duration"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T09:30:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "rise_duration_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.99,
+      "data_quality": 0.99,
+      "baseline_value": null,
+      "current_value": 0.6,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：sit_to_stand_duration=0.6 seconds",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d2-rise-d2-rise-02-chair-c-sit-to-stand-duration",
+      "observation_ids": [
+        "obs-asset-modified-d2-rise-d2-rise-02-chair-c-sit-to-stand-duration"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T09:35:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "rise_duration_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.985,
+      "data_quality": 0.985,
+      "baseline_value": null,
+      "current_value": 0.533,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：sit_to_stand_duration=0.533 seconds",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d2-stable-d2-stable-01-stable-s-stable-trunk-angle-deg",
+      "observation_ids": [
+        "obs-asset-modified-d2-stable-d2-stable-01-stable-s-stable-trunk-angle-deg"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T10:00:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "trunk_sway_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.988,
+      "data_quality": 0.988,
+      "baseline_value": null,
+      "current_value": 1.664,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：stable_trunk_angle_deg=1.664 degree",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d2-walk-d2-walk-01-left-to-right-relative-gait-speed",
+      "observation_ids": [
+        "obs-asset-modified-d2-walk-d2-walk-01-left-to-right-relative-gait-speed"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T09:00:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "gait_stability_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.941,
+      "data_quality": 0.941,
+      "baseline_value": null,
+      "current_value": 0.063,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：relative_gait_speed=0.063 frame_height_per_second",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d2-walk-d2-walk-02-right-to-left-relative-gait-speed",
+      "observation_ids": [
+        "obs-asset-modified-d2-walk-d2-walk-02-right-to-left-relative-gait-speed"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T09:05:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "gait_stability_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.928,
+      "data_quality": 0.928,
+      "baseline_value": null,
+      "current_value": 0.056,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：relative_gait_speed=0.056 frame_height_per_second",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d2-walk-d2-walk-03-left-to-right-relative-gait-speed",
+      "observation_ids": [
+        "obs-asset-modified-d2-walk-d2-walk-03-left-to-right-relative-gait-speed"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-20T09:10:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "gait_stability_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.957,
+      "data_quality": 0.957,
+      "baseline_value": null,
+      "current_value": 0.075,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：relative_gait_speed=0.075 frame_height_per_second",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d3-rise-d3-rise-01-chair-c-sit-to-stand-duration",
+      "observation_ids": [
+        "obs-asset-modified-d3-rise-d3-rise-01-chair-c-sit-to-stand-duration"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T09:30:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "rise_duration_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.989,
+      "data_quality": 0.989,
+      "baseline_value": null,
+      "current_value": 0.4,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：sit_to_stand_duration=0.4 seconds",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d3-rise-d3-rise-02-chair-c-1-sit-to-stand-duration",
+      "observation_ids": [
+        "obs-asset-modified-d3-rise-d3-rise-02-chair-c-1-sit-to-stand-duration"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T09:35:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "rise_duration_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.99,
+      "data_quality": 0.99,
+      "baseline_value": null,
+      "current_value": 0.4,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：sit_to_stand_duration=0.4 seconds",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d3-stable-d3-stable-01-stable-s-stable-trunk-angle-deg",
+      "observation_ids": [
+        "obs-asset-modified-d3-stable-d3-stable-01-stable-s-stable-trunk-angle-deg"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T10:00:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "trunk_sway_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.995,
+      "data_quality": 0.995,
+      "baseline_value": null,
+      "current_value": 1.052,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：stable_trunk_angle_deg=1.052 degree",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d3-walk-d3-walk-01-left-to-right-relative-gait-speed",
+      "observation_ids": [
+        "obs-asset-modified-d3-walk-d3-walk-01-left-to-right-relative-gait-speed"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T09:00:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "gait_stability_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.958,
+      "data_quality": 0.958,
+      "baseline_value": null,
+      "current_value": 0.058,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：relative_gait_speed=0.058 frame_height_per_second",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d3-walk-d3-walk-02-right-to-left-relative-gait-speed",
+      "observation_ids": [
+        "obs-asset-modified-d3-walk-d3-walk-02-right-to-left-relative-gait-speed"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T09:05:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "gait_stability_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.935,
+      "data_quality": 0.935,
+      "baseline_value": null,
+      "current_value": 0.058,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：relative_gait_speed=0.058 frame_height_per_second",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-asset-modified-d3-walk-d3-walk-03-left-to-right-relative-gait-speed",
+      "observation_ids": [
+        "obs-asset-modified-d3-walk-d3-walk-03-left-to-right-relative-gait-speed"
+      ],
+      "resident_id": "resident-modified-video-001",
+      "timestamp": "2026-08-21T09:10:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "gait_stability_baseline_sample",
+      "severity": 0.05,
+      "confidence": 0.952,
+      "data_quality": 0.952,
+      "baseline_value": null,
+      "current_value": 0.068,
+      "baseline_deviation": null,
+      "time_scale": "LONG",
+      "location": "living_room",
+      "explanation": "同一机位正常基线样本：relative_gait_speed=0.068 frame_height_per_second",
+      "adapter_version": "modified-video-gait-baseline-v1",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true
+    }
+  ],
+  "metrics_summary": {
+    "relative_gait_speed": {
+      "count": 9,
+      "distinct_days": 3,
+      "median": 0.067732,
+      "mad": 0.006961,
+      "min": 0.056391,
+      "max": 0.074786
+    },
+    "rise_duration": {
+      "count": 6,
+      "distinct_days": 3,
+      "median": 0.5665,
+      "mad": 0.1,
+      "min": 0.4,
+      "max": 0.733
+    },
+    "stable_trunk_angle_deg": {
+      "count": 3,
+      "distinct_days": 3,
+      "median": 1.052,
+      "mad": 0.112,
+      "min": 0.94,
+      "max": 1.664
+    }
+  },
+  "submission_timeline": [
+    {
+      "order": 1,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d1-rise-d1-rise-01-chair-c"
+    },
+    {
+      "order": 2,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d1-rise-d1-rise-02-chair-c"
+    },
+    {
+      "order": 3,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d1-stable-d1-stable-01-stable-s"
+    },
+    {
+      "order": 4,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d1-walk-d1-walk-01-left-to-right"
+    },
+    {
+      "order": 5,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d1-walk-d1-walk-02-right-to-left"
+    },
+    {
+      "order": 6,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d1-walk-d1-walk-03-left-to-right"
+    },
+    {
+      "order": 7,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d2-rise-d2-rise-01-chair-c"
+    },
+    {
+      "order": 8,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d2-rise-d2-rise-02-chair-c"
+    },
+    {
+      "order": 9,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d2-stable-d2-stable-01-stable-s"
+    },
+    {
+      "order": 10,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d2-walk-d2-walk-01-left-to-right"
+    },
+    {
+      "order": 11,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d2-walk-d2-walk-02-right-to-left"
+    },
+    {
+      "order": 12,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d2-walk-d2-walk-03-left-to-right"
+    },
+    {
+      "order": 13,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d3-rise-d3-rise-01-chair-c"
+    },
+    {
+      "order": 14,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d3-rise-d3-rise-02-chair-c-1"
+    },
+    {
+      "order": 15,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d3-stable-d3-stable-01-stable-s"
+    },
+    {
+      "order": 16,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d3-walk-d3-walk-01-left-to-right"
+    },
+    {
+      "order": 17,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d3-walk-d3-walk-02-right-to-left"
+    },
+    {
+      "order": 18,
+      "action": "POST /api/v1/assets",
+      "id": "asset-modified-d3-walk-d3-walk-03-left-to-right"
+    },
+    {
+      "order": 19,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d1-rise-d1-rise-01-chair-c-sit-to-stand-duration"
+    },
+    {
+      "order": 20,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d1-rise-d1-rise-02-chair-c-sit-to-stand-duration"
+    },
+    {
+      "order": 21,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d1-stable-d1-stable-01-stable-s-stable-trunk-angle-deg"
+    },
+    {
+      "order": 22,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d1-walk-d1-walk-01-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 23,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d1-walk-d1-walk-02-right-to-left-relative-gait-speed"
+    },
+    {
+      "order": 24,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d1-walk-d1-walk-03-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 25,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d2-rise-d2-rise-01-chair-c-sit-to-stand-duration"
+    },
+    {
+      "order": 26,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d2-rise-d2-rise-02-chair-c-sit-to-stand-duration"
+    },
+    {
+      "order": 27,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d2-stable-d2-stable-01-stable-s-stable-trunk-angle-deg"
+    },
+    {
+      "order": 28,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d2-walk-d2-walk-01-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 29,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d2-walk-d2-walk-02-right-to-left-relative-gait-speed"
+    },
+    {
+      "order": 30,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d2-walk-d2-walk-03-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 31,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d3-rise-d3-rise-01-chair-c-sit-to-stand-duration"
+    },
+    {
+      "order": 32,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d3-rise-d3-rise-02-chair-c-1-sit-to-stand-duration"
+    },
+    {
+      "order": 33,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d3-stable-d3-stable-01-stable-s-stable-trunk-angle-deg"
+    },
+    {
+      "order": 34,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d3-walk-d3-walk-01-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 35,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d3-walk-d3-walk-02-right-to-left-relative-gait-speed"
+    },
+    {
+      "order": 36,
+      "action": "POST /api/v1/observations",
+      "id": "obs-asset-modified-d3-walk-d3-walk-03-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 37,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d1-rise-d1-rise-01-chair-c-sit-to-stand-duration"
+    },
+    {
+      "order": 38,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d1-rise-d1-rise-02-chair-c-sit-to-stand-duration"
+    },
+    {
+      "order": 39,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d1-stable-d1-stable-01-stable-s-stable-trunk-angle-deg"
+    },
+    {
+      "order": 40,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d1-walk-d1-walk-01-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 41,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d1-walk-d1-walk-02-right-to-left-relative-gait-speed"
+    },
+    {
+      "order": 42,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d1-walk-d1-walk-03-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 43,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d2-rise-d2-rise-01-chair-c-sit-to-stand-duration"
+    },
+    {
+      "order": 44,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d2-rise-d2-rise-02-chair-c-sit-to-stand-duration"
+    },
+    {
+      "order": 45,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d2-stable-d2-stable-01-stable-s-stable-trunk-angle-deg"
+    },
+    {
+      "order": 46,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d2-walk-d2-walk-01-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 47,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d2-walk-d2-walk-02-right-to-left-relative-gait-speed"
+    },
+    {
+      "order": 48,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d2-walk-d2-walk-03-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 49,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d3-rise-d3-rise-01-chair-c-sit-to-stand-duration"
+    },
+    {
+      "order": 50,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d3-rise-d3-rise-02-chair-c-1-sit-to-stand-duration"
+    },
+    {
+      "order": 51,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d3-stable-d3-stable-01-stable-s-stable-trunk-angle-deg"
+    },
+    {
+      "order": 52,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d3-walk-d3-walk-01-left-to-right-relative-gait-speed"
+    },
+    {
+      "order": 53,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d3-walk-d3-walk-02-right-to-left-relative-gait-speed"
+    },
+    {
+      "order": 54,
+      "action": "POST /api/v1/evidence",
+      "id": "evi-asset-modified-d3-walk-d3-walk-03-left-to-right-relative-gait-speed"
+    }
+  ],
+  "privacy_notice": "本包不包含本地路径、原视频与授权原件；仅保留脱敏资产引用。",
+  "limitations": [
+    "18 段视频覆盖三天同机位素材，行走 9 段、起身 6 段、站稳 3 段。",
+    "样本数与天数满足 PROVISIONAL 门槛，但仍不能替代长期 STABLE 基线。",
+    "低置信度或未检测到起身候选的片段已被自动排除。"
+  ]
+}

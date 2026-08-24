@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "resident_id": "resident-modified-video-001",
+  "as_of": "2026-08-21T16:00:00+08:00",
+  "overall_status": "PROVISIONAL",
+  "observed_days": 3,
+  "provisional_target_days": 3,
+  "http": {
+    "assets": [
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201
+    ],
+    "observations": [
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201
+    ],
+    "evidence": [
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201,
+      201
+    ]
+  },
+  "baselines": {
+    "rise_duration": {
+      "median": 0.5665,
+      "mad": 0.09999999999999998,
+      "sample_count": 6,
+      "distinct_days": 3,
+      "status": "PROVISIONAL"
+    },
+    "relative_gait_speed": {
+      "median": 0.068,
+      "mad": 0.006999999999999992,
+      "sample_count": 9,
+      "distinct_days": 3,
+      "status": "PROVISIONAL"
+    },
+    "stable_trunk_angle_deg": {
+      "median": 1.052,
+      "mad": 0.1120000000000001,
+      "sample_count": 3,
+      "distinct_days": 3,
+      "status": "PROVISIONAL"
+    }
+  },
+  "provenance": {
+    "device_ref": "device-ref-c6c-modified-video-001",
+    "device_model": "EZVIZ_C6C",
+    "camera_position_id": "camera-position-modified-video-001"
+  },
+  "passed": true
+}
