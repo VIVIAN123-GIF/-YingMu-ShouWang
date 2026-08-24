@@ -1,0 +1,62 @@
+{
+  "schema_version": "gait-backend-worker-acceptance/1.0",
+  "executed_at": "2026-08-24T20:03:00+08:00",
+  "scope": "GAIT_ONLY_BACKEND_WORKER",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "workspace_identity": {
+    "executed_head": "f0ba39155c2f7a91fdafb8fa927098524183c129",
+    "accepted_main": "3ddc53905ef07a8306e539d5b183a0b17e51c3d2",
+    "executed_tree": "5dffebf62ea414544439c83a165b54e73721f109",
+    "accepted_main_tree": "5dffebf62ea414544439c83a165b54e73721f109",
+    "tree_equivalent": true,
+    "python_version": "3.11.9",
+    "adapter_sha256": "fa0ae1bb74bb5eb828b464dc4775d524d4d4e225da1c3e888d33067dfacde235",
+    "gait_video_sha256": "261f4a67682f2e816a4911f37c98a49c249f7f459902844d647723b1ea49becd",
+    "decision_sha256": "ca7c41b39bae75b018ac7fbb34afadc3bd65aa970850946e51af9ec019849b41"
+  },
+  "input": {
+    "file": "golden_20s_720p_h264.mp4",
+    "sha256": "a4f1239001724678ec4936aca48b7e4b2686885cd05238074f8a930c0d86b17c",
+    "requested_modules": ["GAIT"]
+  },
+  "first_run": {
+    "worker_status": "COMPLETED",
+    "adapter_status": "SUCCESS",
+    "adapter_version": "gait-adapter-v1",
+    "observation_count": 11,
+    "evidence_count": 3,
+    "evidence_types": ["rapid_rise", "trunk_sway", "relative_speed_change"],
+    "rule_trace_count": 3,
+    "matched_rules": ["R-FALL-01", "R-FALL-02", "NO_MATCH"],
+    "risk_event_count": 1,
+    "risk_event": {"risk_level": "ORANGE", "status": "INTERVENING"},
+    "agent_job_count": 1
+  },
+  "agent_execution": {
+    "status": "FALLBACK",
+    "accepted": true,
+    "reason": "The external model provider was intentionally disabled; the durable Agent Job completed with the configured fallback explanation."
+  },
+  "idempotent_retry": {
+    "worker_status": "COMPLETED",
+    "before": {"observations": 11, "evidence": 3, "risk_events": 1, "agent_jobs": 1, "rule_traces": 3},
+    "after": {"observations": 11, "evidence": 3, "risk_events": 1, "agent_jobs": 1, "rule_traces": 6},
+    "business_rows_unchanged": true,
+    "rule_trace_behavior": "A duplicate evaluation appends an R-SYSTEM-01 audit trace for each replayed Evidence."
+  },
+  "acceptance": {
+    "result": "PASSED",
+    "gait_to_backend_complete": true,
+    "r_fall_02_created_event": true,
+    "agent_job_completed": true,
+    "idempotency_passed": true
+  },
+  "redaction": {
+    "contains_credentials": false,
+    "contains_absolute_paths": false,
+    "contains_database_path": false,
+    "contains_media": false,
+    "contains_device_serial_number": false
+  }
+}

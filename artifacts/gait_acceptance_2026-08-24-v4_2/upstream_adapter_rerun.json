@@ -1,0 +1,71 @@
+{
+  "schema_version": "gait-rerun-evidence/1.2-redacted",
+  "generated_at": "2026-08-24T19:30:58+08:00",
+  "source_archive": "GAIT_integration_v4_2_supplement.zip",
+  "archive_sha256": "291abee3f01ab0ccdfacbcdcb82fe5be428b50cdc4eb3ea1ac5912ce034f95d4",
+  "scope": "GAIT_ONLY",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "upstream_identity": {
+    "head": "3fd834296299dd911d950a178a1155de9f020508",
+    "python_version": "3.9.25",
+    "adapter_last_commit": "f0788d5a3c2f8adc9f47af394f01d2523cc07941",
+    "gait_video_last_commit": "922c18a4f3cce3d70df4d6d7163c444442399398",
+    "decision_last_commit": "0584d53a8be3e5aa4caa838b18cf9e7155ba8dda",
+    "adapter_sha256": "fa0ae1bb74bb5eb828b464dc4775d524d4d4e225da1c3e888d33067dfacde235",
+    "gait_video_sha256": "261f4a67682f2e816a4911f37c98a49c249f7f459902844d647723b1ea49becd"
+  },
+  "samples": [
+    {
+      "group": "normal",
+      "file": "D1_WALK_02_right_to_left.mp4",
+      "sha256": "b7badb6620b290b6bd099b9e83e6d71557016ab400d944037f57276fc4a6b2f1",
+      "resolution": "1280x720",
+      "codec": "HEVC",
+      "status": "SUCCESS",
+      "evidence": ["relative_speed_change"],
+      "expected_rule_id": "NO_MATCH",
+      "expected_backend_risk": "GREEN"
+    },
+    {
+      "group": "controlled_risk",
+      "file": "5_rapid_rise_720p.mp4",
+      "sha256": "990e5e10ff56a8665ad83a9a4d12aee94b74db2f7cfad88775f24431ce9abcea",
+      "resolution": "1280x720",
+      "codec": "H.264 High",
+      "status": "SUCCESS",
+      "evidence": [
+        "rapid_rise",
+        "gait_instability",
+        "relative_speed_change",
+        "posture_recovered"
+      ],
+      "expected_rule_id": "R-FALL-01",
+      "expected_backend_risk": "GREEN"
+    },
+    {
+      "group": "controlled_risk_golden",
+      "file": "golden_20s_720p_h264.mp4",
+      "sha256": "a4f1239001724678ec4936aca48b7e4b2686885cd05238074f8a930c0d86b17c",
+      "resolution": "1270x720",
+      "codec": "H.264 High",
+      "fps": 15.0,
+      "duration_seconds": 20.0,
+      "status": "SUCCESS",
+      "evidence": ["rapid_rise", "trunk_sway", "relative_speed_change"],
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 17.772,
+        "valid_frame_ratio": 1.0
+      },
+      "expected_rule_id": "R-FALL-02",
+      "expected_backend_risk": "ORANGE"
+    }
+  ],
+  "redaction": {
+    "contains_credentials": false,
+    "contains_absolute_paths": false,
+    "contains_media": false,
+    "contains_device_serial_number": false
+  }
+}
