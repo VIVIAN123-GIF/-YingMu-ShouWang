@@ -118,6 +118,26 @@ class UnusualPacingTests(unittest.TestCase):
             {item["evidence_type"] for item in batch["evidences"]},
         )
 
+    def test_sensitive_four_region_alternation_emits_unusual_pacing(self):
+        batch = self.build(self.summary(["room_a", "room_b", "room_a", "room_b"]))
+        self.assertIn(
+            "unusual_pacing",
+            {item["evidence_type"] for item in batch["evidences"]},
+        )
+
+    def test_single_return_remains_no_evidence(self):
+        batch = self.build(self.summary(["room_a", "room_b", "room_a"], detected_frames=40))
+        evidence_types = {item["evidence_type"] for item in batch["evidences"]}
+        self.assertNotIn("unusual_pacing", evidence_types)
+        self.assertNotIn("tracking_lost", evidence_types)
+
+    def test_quality_below_sensitive_floor_still_reports_tracking_loss(self):
+        batch = self.build(self.summary(["room_a", "room_b"], detected_frames=34))
+        self.assertIn(
+            "tracking_lost",
+            {item["evidence_type"] for item in batch["evidences"]},
+        )
+
     def test_low_tracking_quality_suppresses_pacing_and_reports_loss(self):
         batch = self.build(
             self.summary(

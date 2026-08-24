@@ -22,8 +22,9 @@
 
 视频分析保持原始宽高比，并在 `640x480` 画布中加黑边，避免将 C6c 常见的
 16:9 画面拉伸为4:3。HOG `detection_quality` 与 HOG 加短时 KCF 的
-`tracking_quality` 分开记录；KCF 只在已确认的 HOG 框后最多桥接12帧，质量门槛
-仍为 `0.65`，不会把长期失踪帧伪装成检测结果。
+`tracking_quality` 分开记录；KCF 只在已确认的 HOG 框后最多桥接12帧。为提高
+专项真实视频演示的召回率，敏感演示门槛调整为 `0.35`；低于该值仍返回
+`LOW_QUALITY/tracking_lost`，不会把长期失踪帧伪装成检测结果。
 
 固定机位视频必须解析 `AlgorithmJob.scene_config_id` 对应的区域标定。默认从
 `scene_configs/<scene_config_id>.json` 读取，也可用 `YINGMU_SCENE_CONFIG_DIR`
@@ -524,8 +525,11 @@ python .\src\generate_audio_bundle.py `
 ### 14.2 异常徘徊
 
 `pacing.py` 使用区域进入序列计算重复访问数、A-B-A 交替次数和演示级模式分数。
-当前规则要求序列长度至少 5、区域转换至少 4 次、A-B-A 模式至少 3 次。
-追踪质量低于 0.65 时禁止生成 `unusual_pacing`，改为保留 `tracking_lost`。
+敏感演示规则要求序列长度至少 4、区域转换至少 3 次、A-B-A 模式至少 2 次。
+追踪质量低于 0.35 时禁止生成 `unusual_pacing`，改为保留 `tracking_lost`。
+
+该配置优先提高召回率，可能增加误报。`A-B-A` 单次往返和 `A-B-C` 单向路线
+仍不触发；输出 diagnostics 固定标记 `SENSITIVE_DEMO_UNCALIBRATED`。
 
 该规则只表示反复往返活动模式，不构成心理疾病诊断，阈值固定标记为
 `DEMO_UNCALIBRATED`。运行 MOCK 样例：

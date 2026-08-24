@@ -1,9 +1,12 @@
 """Interpretable region-alternation features for the pacing demo rule."""
 
 
-MIN_TRANSITIONS = 4
-MIN_ALTERNATING_PATTERNS = 3
-MIN_SEQUENCE_LENGTH = 5
+# Sensitive demo thresholds favor recall for staged real-video validation.
+# They remain uncalibrated and must not be presented as production accuracy.
+TRACKING_QUALITY_THRESHOLD = 0.35
+MIN_TRANSITIONS = 3
+MIN_ALTERNATING_PATTERNS = 2
+MIN_SEQUENCE_LENGTH = 4
 
 
 def analyze_pacing(region_statistics):
