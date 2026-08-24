@@ -1,0 +1,100 @@
+{
+  "schema_version": "h264-normal-compatibility/1.0",
+  "executed_at": "2026-08-24T22:47:00+08:00",
+  "scope": "RECORDED_REPLAY",
+  "simulated": true,
+  "purpose": "Verify that authorized normal-action material remains compatible after standardizing backend video inputs on H.264/AVC.",
+  "zhao_native_h264_normal": {
+    "source_package": "GAIT_material_v3",
+    "file_alias": "D2_WALK_02_right_to_left.mp4",
+    "sha256": "f444d65cd9d90ad9f91b366ba0790daea06c7cc148ca4fe5ba8c03e30763b76b",
+    "media": {
+      "codec": "H.264",
+      "codec_tag": "avc1",
+      "resolution": "568x320",
+      "fps": 15.0,
+      "duration_seconds": 16.866
+    },
+    "requested_modules": ["GAIT"],
+    "first_run": {
+      "worker_status": "COMPLETED",
+      "module_status": {"GAIT": "SUCCESS"},
+      "observation_count": 9,
+      "evidence_count": 2,
+      "evidence_types": ["relative_speed_change", "posture_recovered"],
+      "risk_event_count": 0,
+      "agent_job_count": 0
+    },
+    "idempotent_retry": {
+      "worker_status": "COMPLETED",
+      "observation_count": 9,
+      "evidence_count": 2,
+      "risk_event_count": 0,
+      "agent_job_count": 0,
+      "business_counts_unchanged": true
+    },
+    "result": "PASSED"
+  },
+  "chang_derived_h264_normal": {
+    "source_package": "GAIT_TRAJECTORY_owner_private_delivery_v2",
+    "source_file_alias": "tracking_control_full_body_01.mp4",
+    "source_sha256": "eb13668c2ec71ca98626acd8680a16acb6833d14a26ff46bc81c935a37e4471b",
+    "source_codec": "H.265/HEVC",
+    "derived_file_alias": "tracking_control_full_body_01_h264_720p.mp4",
+    "derived_sha256": "e6f657c8b41d21f5b86dd0d527c64ddf26f158ded4aee9f26d9f576b83d107f0",
+    "transcode": {
+      "video_codec": "libx264",
+      "profile": "High",
+      "level": "4.0",
+      "codec_tag": "avc1",
+      "pixel_format": "yuv420p",
+      "resolution": "1280x720",
+      "fps": 15.0,
+      "duration_seconds": 35.266667,
+      "audio_removed": true,
+      "faststart": true
+    },
+    "requested_modules": ["GAIT", "TRAJECTORY"],
+    "first_run": {
+      "worker_status": "COMPLETED",
+      "module_status": {
+        "GAIT": "LOW_QUALITY",
+        "TRAJECTORY": "NO_EVIDENCE"
+      },
+      "observation_count": 23,
+      "evidence_count": 2,
+      "evidence_types": ["tracking_lost", "quality_gate_failed"],
+      "risk_event_count": 0,
+      "agent_job_count": 0
+    },
+    "idempotent_retry": {
+      "worker_status": "COMPLETED",
+      "observation_count": 23,
+      "evidence_count": 2,
+      "risk_event_count": 0,
+      "agent_job_count": 0,
+      "business_counts_unchanged": true
+    },
+    "result": "PASSED"
+  },
+  "acceptance": {
+    "result": "PASSED",
+    "h264_decode_compatible": true,
+    "gait_normal_regression_passed": true,
+    "trajectory_normal_regression_passed": true,
+    "normal_samples_created_no_orange_or_red_event": true,
+    "idempotency_passed": true
+  },
+  "limitations": [
+    "The Zhao sample is native H.264 but has a resolution of 568x320.",
+    "The Chang 1280x720 sample is an authorized derived H.264 transcode, not a native EZVIZ standard-stream recording.",
+    "A short authorized recording captured from the recovered EZVIZ H.264 standard stream is still required to close real capture-pipeline compatibility."
+  ],
+  "redaction": {
+    "contains_credentials": false,
+    "contains_absolute_paths": false,
+    "contains_database_path": false,
+    "contains_media": false,
+    "contains_device_serial_number": false
+  }
+}

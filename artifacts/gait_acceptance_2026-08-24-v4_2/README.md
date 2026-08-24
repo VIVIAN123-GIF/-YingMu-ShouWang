@@ -38,5 +38,7 @@
 - `upstream_adapter_rerun.json`：赵勇侧 adapter 预检结果的脱敏副本。
 - `upstream_r_fall_02_result.json`：赵勇侧 `R-FALL-02` 规则结果的脱敏副本。
 - `backend_worker_e2e_result.json`：负责人机器上正式 Worker、持久化、Agent 与幂等验收结果。
+- `h264_normal_compatibility_result.json`：赵勇原生 H.264 与常一鸣 720p H.264 派生正常样本的机器可读回归结果。
+- `h264_normal_compatibility.md`：H.264 正常样本兼容性回归结论与真实标准流验收边界。
 
 最终验收以 `backend_worker_e2e_result.json` 为准。
