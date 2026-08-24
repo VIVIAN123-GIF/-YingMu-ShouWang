@@ -1,0 +1,110 @@
+{
+  "schema_version": "gait-rerun-evidence/1.0",
+  "generated_at": "2026-08-24T16:56:07+08:00",
+  "source_archive": "GAIT_联调_v4_supplement.zip",
+  "scope": "GAIT_ONLY",
+  "execution_mode": "DIRECT_ADAPTER_RERUN",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "contains_credentials": false,
+  "trajectory_executed": false,
+  "adapter_identity": {
+    "rerun_workspace_head": "89f641e435b288c3f7c9ebee8bc9b71443dde25f",
+    "rerun_adapter_file_last_commit": "f0788d5a3c2f8adc9f47af394f01d2523cc07941",
+    "rerun_video_feature_module": "contracts/v1/gait_video.py",
+    "comparison_branch": "origin/feature/zy/modified-video-baseline",
+    "comparison_adapter_file_last_commit": "f068b2104af1f2d70a1db4b2c198fe594245a561",
+    "identity_consistent": false,
+    "identity_difference": "main uses gait_video extraction with computed stable posture; feature branch uses an in-file video extractor with stable_posture_duration fixed at 0.0"
+  },
+  "hash_verification": {
+    "files_checked": 2,
+    "files_passed": 2,
+    "files_failed": 0
+  },
+  "runs": [
+    {
+      "group": "normal",
+      "file_relpath": "normal/D2_WALK_02_right_to_left.mp4",
+      "job_id": "job-v4-e31709fab04543dd",
+      "asset_id": "asset-v4-e31709fab04543dd",
+      "captured_at": "2026-08-18T15:07:35+08:00",
+      "resolution": "568x320",
+      "fps": 15.0,
+      "duration_seconds": 16.867,
+      "content_sha256": "f444d65cd9d90ad9f91b366ba0790daea06c7cc148ca4fe5ba8c03e30763b76b",
+      "expected": {
+        "status": "NO_EVIDENCE",
+        "evidence": []
+      },
+      "actual": {
+        "status": "SUCCESS",
+        "evidence": ["posture_recovered", "relative_speed_change"],
+        "features": {
+          "trunk_sway_angle_deg": 10.487,
+          "com_offset_norm": 0.853,
+          "step_speed_norm_s": 0.055,
+          "step_asymmetry_ratio": 0.212,
+          "turn_angular_velocity_deg_s": 14.214,
+          "support_distance_norm": 0.031,
+          "stable_posture_duration": 16.8,
+          "stable_trunk_angle_deg": 7.104,
+          "valid_frame_ratio": 1.0
+        },
+        "error": null
+      },
+      "comparison": {
+        "status_match": false,
+        "evidence_match": false,
+        "feature_extraction_completed": true,
+        "blocking_reasons": [
+          "v4 expected snapshot was generated before the current posture_recovered rule output",
+          "normal input resolution is below the 720p acceptance target"
+        ]
+      }
+    },
+    {
+      "group": "controlled_risk",
+      "file_relpath": "controlled_risk/5_rapid_rise_720p.mp4",
+      "job_id": "job-v4-9e890dde196e1147",
+      "asset_id": "asset-v4-9e890dde196e1147",
+      "captured_at": "2026-08-15T20:25:09+08:00",
+      "resolution": "1280x720",
+      "fps": 15.0,
+      "duration_seconds": 19.2,
+      "content_sha256": "d0282ae9a6c1fc01b102898ad323fe41dbfe5f4ec6aaff8f8900ff25aa94caa5",
+      "expected": {
+        "status": "SUCCESS",
+        "evidence": ["rapid_rise", "gait_instability", "relative_speed_change"]
+      },
+      "actual": {
+        "status": "SUCCESS",
+        "evidence": ["gait_instability", "posture_recovered", "rapid_rise", "relative_speed_change"],
+        "features": {
+          "rise_duration_s": 0.934,
+          "hip_vertical_speed_norm_s": 0.056,
+          "trunk_sway_angle_deg": 5.368,
+          "com_offset_norm": 0.012,
+          "step_speed_norm_s": 0.009,
+          "step_asymmetry_ratio": 0.523,
+          "turn_angular_velocity_deg_s": 7.877,
+          "support_distance_norm": 0.043,
+          "stable_posture_duration": 19.133,
+          "stable_trunk_angle_deg": 4.879,
+          "valid_frame_ratio": 1.0
+        },
+        "error": null
+      },
+      "comparison": {
+        "status_match": true,
+        "evidence_match": false,
+        "feature_extraction_completed": true,
+        "blocking_reasons": [
+          "actual output includes posture_recovered, which is absent from the v4 expected snapshot"
+        ]
+      }
+    }
+  ],
+  "overall_result": "BLOCKED_ADAPTER_IDENTITY_MISMATCH",
+  "acceptance_note": "The rerun is reproducible for workspace HEAD 89f641e, but it cannot be compared to Zhao's f068b21 feature-branch output as if they were the same adapter. Select one canonical commit, rerun the supplement there, and retain the 568x320 normal-resolution warning. No RiskEvent or TRAJECTORY result is inferred from this GAIT-only rerun."
+}
