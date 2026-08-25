@@ -1,0 +1,77 @@
+{
+  "validation_kind": "ENGINEERING_RULE_AND_CLOSURE",
+  "source_mode": "MOCK",
+  "simulated": true,
+  "scenario_kind": "STRUCTURED_SYNTHETIC",
+  "generator_version": "extension-scenarios-v1.0",
+  "disclaimer": "This is structured synthetic engineering validation. It is not clinical accuracy, real fraud-case accuracy, real elderly validation, visitor identity recognition, or real continuous multi-day monitoring.",
+  "scenario_count": 24,
+  "passed_scenarios": 24,
+  "verdict": "PASS",
+  "domains": {
+    "MENTAL": {
+      "risk_domain": "MENTAL",
+      "scenario_count": 12,
+      "passed_scenarios": 12,
+      "expected_evidence_match": {
+        "matched": 16,
+        "expected": 16,
+        "percent": 100.0
+      },
+      "scenario_trigger_rate": {
+        "triggered": 9,
+        "expected": 9,
+        "percent": 100.0
+      },
+      "false_trigger_count": 0,
+      "false_escalation_count": 0,
+      "evidence_traceability": {
+        "complete": 16,
+        "total": 16,
+        "percent": 100.0
+      },
+      "closure_success": {
+        "successful": 3,
+        "required": 3,
+        "percent": 100.0
+      },
+      "idempotent_scenarios": 12,
+      "processing_latency_ms": {
+        "scenario_p50": 28.716,
+        "scenario_p95": 181.07
+      }
+    },
+    "FRAUD": {
+      "risk_domain": "FRAUD",
+      "scenario_count": 12,
+      "passed_scenarios": 12,
+      "expected_evidence_match": {
+        "matched": 19,
+        "expected": 19,
+        "percent": 100.0
+      },
+      "scenario_trigger_rate": {
+        "triggered": 10,
+        "expected": 10,
+        "percent": 100.0
+      },
+      "false_trigger_count": 0,
+      "false_escalation_count": 0,
+      "evidence_traceability": {
+        "complete": 19,
+        "total": 19,
+        "percent": 100.0
+      },
+      "closure_success": {
+        "successful": 2,
+        "required": 2,
+        "percent": 100.0
+      },
+      "idempotent_scenarios": 12,
+      "processing_latency_ms": {
+        "scenario_p50": 28.593,
+        "scenario_p95": 41.3
+      }
+    }
+  }
+}
