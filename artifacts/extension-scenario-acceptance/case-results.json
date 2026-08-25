@@ -1,0 +1,1196 @@
+[
+  {
+    "scenario_id": "MENTAL-NORMAL-01",
+    "risk_domain": "MENTAL",
+    "category": "normal_baseline",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [],
+      "event_created": false,
+      "peak_risk_level": "GREEN",
+      "final_status": null,
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [],
+      "event_created": false,
+      "peak_risk_level": "GREEN",
+      "final_status": null,
+      "matched_rules": []
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 0,
+      "events": 0,
+      "rule_traces": 0
+    },
+    "latency_ms": {
+      "samples": 0,
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-NORMAL-02",
+    "risk_domain": "MENTAL",
+    "category": "normal_baseline",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [],
+      "event_created": false,
+      "peak_risk_level": "GREEN",
+      "final_status": null,
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [],
+      "event_created": false,
+      "peak_risk_level": "GREEN",
+      "final_status": null,
+      "matched_rules": []
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 0,
+      "events": 0,
+      "rule_traces": 0
+    },
+    "latency_ms": {
+      "samples": 0,
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-NORMAL-03",
+    "risk_domain": "MENTAL",
+    "category": "normal_baseline",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [],
+      "event_created": false,
+      "peak_risk_level": "GREEN",
+      "final_status": null,
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [],
+      "event_created": false,
+      "peak_risk_level": "GREEN",
+      "final_status": null,
+      "matched_rules": []
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 0,
+      "events": 0,
+      "rule_traces": 0
+    },
+    "latency_ms": {
+      "samples": 0,
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-DECLINE-01",
+    "risk_domain": "MENTAL",
+    "category": "activity_decline",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "activity_range_decline"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "activity_range_decline"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-MENTAL-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 1,
+      "events": 1,
+      "rule_traces": 2
+    },
+    "latency_ms": {
+      "samples": 1,
+      "p50": 181.07,
+      "p95": 181.07
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-DECLINE-02",
+    "risk_domain": "MENTAL",
+    "category": "activity_decline",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "room_transition_decline"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "room_transition_decline"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-MENTAL-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 1,
+      "events": 1,
+      "rule_traces": 2
+    },
+    "latency_ms": {
+      "samples": 1,
+      "p50": 32.354,
+      "p95": 32.354
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-DECLINE-03",
+    "risk_domain": "MENTAL",
+    "category": "activity_decline",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "activity_range_decline",
+        "room_transition_decline"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "activity_range_decline",
+        "room_transition_decline"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-MENTAL-01",
+        "R-MENTAL-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 2,
+      "evidence": 2,
+      "events": 1,
+      "rule_traces": 4
+    },
+    "latency_ms": {
+      "samples": 2,
+      "p50": 28.202,
+      "p95": 31.247
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-RHYTHM-01",
+    "risk_domain": "MENTAL",
+    "category": "rhythm_shift",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "day_night_rhythm_change"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "day_night_rhythm_change"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-MENTAL-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 1,
+      "events": 1,
+      "rule_traces": 2
+    },
+    "latency_ms": {
+      "samples": 1,
+      "p50": 32.074,
+      "p95": 32.074
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-RHYTHM-02",
+    "risk_domain": "MENTAL",
+    "category": "rhythm_shift",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "day_night_rhythm_change"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "day_night_rhythm_change"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-MENTAL-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 1,
+      "events": 1,
+      "rule_traces": 2
+    },
+    "latency_ms": {
+      "samples": 1,
+      "p50": 28.196,
+      "p95": 28.196
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-RHYTHM-03",
+    "risk_domain": "MENTAL",
+    "category": "rhythm_shift",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "day_night_rhythm_change"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "day_night_rhythm_change"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-MENTAL-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 1,
+      "events": 1,
+      "rule_traces": 2
+    },
+    "latency_ms": {
+      "samples": 1,
+      "p50": 35.28,
+      "p95": 35.28
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-RECOVERY-01",
+    "risk_domain": "MENTAL",
+    "category": "trend_recovery",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "activity_range_decline",
+        "family_contact_completed",
+        "trend_recovered"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "RESOLVED",
+      "closure_required": true
+    },
+    "actual": {
+      "evidence_types": [
+        "activity_range_decline",
+        "family_contact_completed",
+        "trend_recovered"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "RESOLVED",
+      "matched_rules": [
+        "R-MENTAL-01",
+        "R-MENTAL-02",
+        "R-MENTAL-03"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 3,
+      "evidence": 3,
+      "events": 1,
+      "rule_traces": 6
+    },
+    "latency_ms": {
+      "samples": 3,
+      "p50": 28.716,
+      "p95": 33.167
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-RECOVERY-02",
+    "risk_domain": "MENTAL",
+    "category": "trend_recovery",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "room_transition_decline",
+        "family_contact_completed",
+        "trend_recovered"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "RESOLVED",
+      "closure_required": true
+    },
+    "actual": {
+      "evidence_types": [
+        "room_transition_decline",
+        "family_contact_completed",
+        "trend_recovered"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "RESOLVED",
+      "matched_rules": [
+        "R-MENTAL-01",
+        "R-MENTAL-02",
+        "R-MENTAL-03"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 3,
+      "evidence": 3,
+      "events": 1,
+      "rule_traces": 6
+    },
+    "latency_ms": {
+      "samples": 3,
+      "p50": 30.917,
+      "p95": 32.973
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "MENTAL-RECOVERY-03",
+    "risk_domain": "MENTAL",
+    "category": "trend_recovery",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "day_night_rhythm_change",
+        "family_contact_completed",
+        "trend_recovered"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "RESOLVED",
+      "closure_required": true
+    },
+    "actual": {
+      "evidence_types": [
+        "day_night_rhythm_change",
+        "family_contact_completed",
+        "trend_recovered"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "RESOLVED",
+      "matched_rules": [
+        "R-MENTAL-01",
+        "R-MENTAL-02",
+        "R-MENTAL-03"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 3,
+      "evidence": 3,
+      "events": 1,
+      "rule_traces": 6
+    },
+    "latency_ms": {
+      "samples": 3,
+      "p50": 37.93,
+      "p95": 38.278
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-AUTH-NORMAL-01",
+    "risk_domain": "FRAUD",
+    "category": "authorized_normal",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [],
+      "event_created": false,
+      "peak_risk_level": "GREEN",
+      "final_status": null,
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [],
+      "event_created": false,
+      "peak_risk_level": "GREEN",
+      "final_status": null,
+      "matched_rules": []
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 0,
+      "events": 0,
+      "rule_traces": 0
+    },
+    "latency_ms": {
+      "samples": 0,
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-AUTH-NORMAL-02",
+    "risk_domain": "FRAUD",
+    "category": "authorized_normal",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [],
+      "event_created": false,
+      "peak_risk_level": "GREEN",
+      "final_status": null,
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [],
+      "event_created": false,
+      "peak_risk_level": "GREEN",
+      "final_status": null,
+      "matched_rules": []
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 0,
+      "events": 0,
+      "rule_traces": 0
+    },
+    "latency_ms": {
+      "samples": 0,
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-UNKNOWN-BRIEF-01",
+    "risk_domain": "FRAUD",
+    "category": "unknown_brief",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "unauthorized_visitor"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "unauthorized_visitor"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-FRAUD-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 1,
+      "events": 1,
+      "rule_traces": 2
+    },
+    "latency_ms": {
+      "samples": 1,
+      "p50": 41.3,
+      "p95": 41.3
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-UNKNOWN-BRIEF-02",
+    "risk_domain": "FRAUD",
+    "category": "unknown_brief",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "unauthorized_visitor"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "unauthorized_visitor"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-FRAUD-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 1,
+      "events": 1,
+      "rule_traces": 2
+    },
+    "latency_ms": {
+      "samples": 1,
+      "p50": 36.353,
+      "p95": 36.353
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-AUTH-WORD-01",
+    "risk_domain": "FRAUD",
+    "category": "authorized_risk_words",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "fraud_keyword"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "fraud_keyword"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-FRAUD-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 1,
+      "events": 1,
+      "rule_traces": 2
+    },
+    "latency_ms": {
+      "samples": 1,
+      "p50": 30.596,
+      "p95": 30.596
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-AUTH-WORD-02",
+    "risk_domain": "FRAUD",
+    "category": "authorized_risk_words",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "fraud_keyword"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "fraud_keyword"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-FRAUD-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 1,
+      "evidence": 1,
+      "events": 1,
+      "rule_traces": 2
+    },
+    "latency_ms": {
+      "samples": 1,
+      "p50": 30.31,
+      "p95": 30.31
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-UNKNOWN-LONG-01",
+    "risk_domain": "FRAUD",
+    "category": "unknown_long_no_words",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "unauthorized_visitor",
+        "unusual_dwell_time"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "unauthorized_visitor",
+        "unusual_dwell_time"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-FRAUD-01",
+        "R-FRAUD-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 2,
+      "evidence": 2,
+      "events": 1,
+      "rule_traces": 4
+    },
+    "latency_ms": {
+      "samples": 2,
+      "p50": 26.052,
+      "p95": 30.971
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-UNKNOWN-LONG-02",
+    "risk_domain": "FRAUD",
+    "category": "unknown_long_no_words",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "unauthorized_visitor",
+        "unusual_dwell_time"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "unauthorized_visitor",
+        "unusual_dwell_time"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "OPEN",
+      "matched_rules": [
+        "R-FRAUD-01",
+        "R-FRAUD-01"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 2,
+      "evidence": 2,
+      "events": 1,
+      "rule_traces": 4
+    },
+    "latency_ms": {
+      "samples": 2,
+      "p50": 28.593,
+      "p95": 30.605
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-COMBINATION-01",
+    "risk_domain": "FRAUD",
+    "category": "risk_combination",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "unauthorized_visitor",
+        "unusual_dwell_time",
+        "fraud_keyword"
+      ],
+      "event_created": true,
+      "peak_risk_level": "ORANGE",
+      "final_status": "INTERVENING",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "unauthorized_visitor",
+        "unusual_dwell_time",
+        "fraud_keyword"
+      ],
+      "event_created": true,
+      "peak_risk_level": "ORANGE",
+      "final_status": "INTERVENING",
+      "matched_rules": [
+        "R-FRAUD-01",
+        "R-FRAUD-01",
+        "R-FRAUD-02"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 3,
+      "evidence": 3,
+      "events": 1,
+      "rule_traces": 6
+    },
+    "latency_ms": {
+      "samples": 3,
+      "p50": 27.995,
+      "p95": 29.862
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-COMBINATION-02",
+    "risk_domain": "FRAUD",
+    "category": "risk_combination",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "fraud_keyword",
+        "unauthorized_visitor",
+        "unusual_dwell_time"
+      ],
+      "event_created": true,
+      "peak_risk_level": "ORANGE",
+      "final_status": "INTERVENING",
+      "closure_required": false
+    },
+    "actual": {
+      "evidence_types": [
+        "fraud_keyword",
+        "unauthorized_visitor",
+        "unusual_dwell_time"
+      ],
+      "event_created": true,
+      "peak_risk_level": "ORANGE",
+      "final_status": "INTERVENING",
+      "matched_rules": [
+        "R-FRAUD-01",
+        "R-FRAUD-01",
+        "R-FRAUD-02"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 3,
+      "evidence": 3,
+      "events": 1,
+      "rule_traces": 6
+    },
+    "latency_ms": {
+      "samples": 3,
+      "p50": 26.946,
+      "p95": 28.777
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-VERIFY-01",
+    "risk_domain": "FRAUD",
+    "category": "identity_recovery",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "unauthorized_visitor",
+        "identity_verified"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "RESOLVED",
+      "closure_required": true
+    },
+    "actual": {
+      "evidence_types": [
+        "unauthorized_visitor",
+        "identity_verified"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "RESOLVED",
+      "matched_rules": [
+        "R-FRAUD-01",
+        "R-FRAUD-03"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 2,
+      "evidence": 2,
+      "events": 1,
+      "rule_traces": 4
+    },
+    "latency_ms": {
+      "samples": 2,
+      "p50": 31.263,
+      "p95": 34.441
+    },
+    "passed": true
+  },
+  {
+    "scenario_id": "FRAUD-VERIFY-02",
+    "risk_domain": "FRAUD",
+    "category": "identity_recovery",
+    "source_mode": "MOCK",
+    "simulated": true,
+    "scenario_kind": "STRUCTURED_SYNTHETIC",
+    "generator_version": "extension-scenarios-v1.0",
+    "expected": {
+      "evidence_types": [
+        "unauthorized_visitor",
+        "unusual_dwell_time",
+        "false_alarm_confirmed"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "FALSE_ALARM",
+      "closure_required": true
+    },
+    "actual": {
+      "evidence_types": [
+        "unauthorized_visitor",
+        "unusual_dwell_time",
+        "false_alarm_confirmed"
+      ],
+      "event_created": true,
+      "peak_risk_level": "YELLOW",
+      "final_status": "FALSE_ALARM",
+      "matched_rules": [
+        "R-FRAUD-01",
+        "R-FRAUD-01",
+        "R-FRAUD-03"
+      ]
+    },
+    "checks": {
+      "evidence_match": true,
+      "state_match": true,
+      "false_trigger": false,
+      "false_escalation": false,
+      "traceability_complete": true,
+      "idempotent": true
+    },
+    "counts": {
+      "observations": 3,
+      "evidence": 3,
+      "events": 1,
+      "rule_traces": 6
+    },
+    "latency_ms": {
+      "samples": 3,
+      "p50": 33.288,
+      "p95": 34.818
+    },
+    "passed": true
+  }
+]

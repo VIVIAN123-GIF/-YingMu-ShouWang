@@ -53,10 +53,15 @@ async def advance_one_due_event(
     current = now or cn_now_naive()
     events = (await db.execute(
         select(RiskEvent)
-        .where(RiskEvent.status.in_(("INTERVENING", "OBSERVING")))
+        .where(
+            RiskEvent.primary_domain == "FALL",
+            RiskEvent.status.in_(("INTERVENING", "OBSERVING")),
+        )
         .order_by(RiskEvent.updated_at)
     )).scalars().all()
     for event in events:
         if await _is_due(db, event, current):
-            return await evaluate(db, event.resident_id, current)
+            return await evaluate(
+                db, event.resident_id, current, risk_domain=event.primary_domain
+            )
     return None

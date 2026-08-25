@@ -1,0 +1,32 @@
+{
+  "risk_domain": "MENTAL",
+  "scenario_count": 12,
+  "passed_scenarios": 12,
+  "expected_evidence_match": {
+    "matched": 16,
+    "expected": 16,
+    "percent": 100.0
+  },
+  "scenario_trigger_rate": {
+    "triggered": 9,
+    "expected": 9,
+    "percent": 100.0
+  },
+  "false_trigger_count": 0,
+  "false_escalation_count": 0,
+  "evidence_traceability": {
+    "complete": 16,
+    "total": 16,
+    "percent": 100.0
+  },
+  "closure_success": {
+    "successful": 3,
+    "required": 3,
+    "percent": 100.0
+  },
+  "idempotent_scenarios": 12,
+  "processing_latency_ms": {
+    "scenario_p50": 28.716,
+    "scenario_p95": 181.07
+  }
+}

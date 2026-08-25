@@ -19,6 +19,18 @@ DANGER_EVIDENCE_TYPES = {
     "no_response",
 }
 
+MENTAL_TREND_EVIDENCE_TYPES = {
+    "activity_range_decline",
+    "room_transition_decline",
+    "day_night_rhythm_change",
+}
+
+FRAUD_RISK_EVIDENCE_TYPES = {
+    "unauthorized_visitor",
+    "unusual_dwell_time",
+    "fraud_keyword",
+}
+
 
 @dataclass(frozen=True)
 class Decision:
@@ -197,6 +209,151 @@ class FallDecisionPolicy:
                 not_matched={"R-FALL-02": "trunk_sway is absent, unusable, or outside the short window"},
             )
         return Decision("NO_MATCH", previous_state, None, "NONE", "no usable short-window combination is present")
+
+
+class MentalDecisionPolicy:
+    """Engineering trend rules; this policy never makes a clinical diagnosis."""
+
+    def __init__(self, ruleset: Ruleset | None = None):
+        self.ruleset = ruleset or load_ruleset()
+
+    def usable(self, evidence: Any) -> bool:
+        return self.ruleset.usable(
+            float(evidence.confidence), float(evidence.data_quality)
+        )
+
+    def evaluate(
+        self,
+        *,
+        now: datetime,
+        previous_state: str,
+        active_status: str | None,
+        active_created_at: datetime | None,
+        recovery_started_at: datetime | None,
+        recent: list[Any],
+        trigger: Any | None = None,
+        **_: Any,
+    ) -> Decision:
+        del now, recovery_started_at
+        if trigger is not None and not self.usable(trigger):
+            return Decision(
+                "R-MENTAL-00", previous_state, active_status, "NONE",
+                "confidence or data_quality is below the engineering gate; no trend event change",
+            )
+
+        if active_status in {"OPEN", "OBSERVING"}:
+            if trigger is not None and trigger.evidence_type == "trend_recovered":
+                if active_created_at is None or FallDecisionPolicy._time(
+                    trigger.timestamp, active_created_at
+                ) > active_created_at:
+                    return Decision(
+                        "R-MENTAL-03", "GREEN", "RESOLVED", "RESOLVE",
+                        "the structured trend scenario supplied a post-event recovery marker",
+                        (trigger.evidence_id,),
+                    )
+            if trigger is not None and trigger.evidence_type == "family_contact_completed":
+                return Decision(
+                    "R-MENTAL-02", "YELLOW", "OBSERVING", "BEGIN_OBSERVING",
+                    "family contact was completed; continue non-clinical trend observation",
+                    (trigger.evidence_id,),
+                )
+            if trigger is not None and trigger.evidence_type in MENTAL_TREND_EVIDENCE_TYPES:
+                return Decision(
+                    "R-MENTAL-01", "YELLOW", active_status, "ATTACH_EVIDENCE",
+                    "another usable non-clinical trend deviation was recorded",
+                    (trigger.evidence_id,),
+                )
+            return Decision(
+                "NO_MATCH", previous_state, active_status, "NONE",
+                "the active trend event is awaiting contact or recovery evidence",
+            )
+
+        if trigger is not None and trigger.evidence_type in MENTAL_TREND_EVIDENCE_TYPES:
+            score_details = self.ruleset.score_details([trigger])
+            return Decision(
+                "R-MENTAL-01", "YELLOW", "OPEN", "CREATE_EVENT",
+                "a usable non-clinical activity or day/night trend deviation was recorded",
+                (trigger.evidence_id,), score_details["final_score"], score_details,
+            )
+        return Decision(
+            "NO_MATCH", previous_state, None, "NONE",
+            "no usable non-clinical trend deviation is present",
+        )
+
+
+class FraudDecisionPolicy:
+    """Visitor/conversation verification rules; this policy never confirms fraud."""
+
+    def __init__(self, ruleset: Ruleset | None = None):
+        self.ruleset = ruleset or load_ruleset()
+
+    def usable(self, evidence: Any) -> bool:
+        return self.ruleset.usable(
+            float(evidence.confidence), float(evidence.data_quality)
+        )
+
+    def evaluate(
+        self,
+        *,
+        now: datetime,
+        previous_state: str,
+        active_status: str | None,
+        active_created_at: datetime | None,
+        recovery_started_at: datetime | None,
+        recent: list[Any],
+        trigger: Any | None = None,
+        **_: Any,
+    ) -> Decision:
+        del now, active_created_at, recovery_started_at
+        if trigger is not None and not self.usable(trigger):
+            return Decision(
+                "R-FRAUD-00", previous_state, active_status, "NONE",
+                "confidence or data_quality is below the engineering gate; no verification event change",
+            )
+
+        if active_status in {"OPEN", "INTERVENING", "OBSERVING"} and trigger is not None:
+            if trigger.evidence_type in {"identity_verified", "false_alarm_confirmed"}:
+                next_status = (
+                    "FALSE_ALARM" if trigger.evidence_type == "false_alarm_confirmed" else "RESOLVED"
+                )
+                return Decision(
+                    "R-FRAUD-03", "GREEN", next_status, "RESOLVE",
+                    "the structured verification scenario supplied an identity or false-alarm closure marker",
+                    (trigger.evidence_id,),
+                )
+
+        usable_recent = [item for item in recent if self.usable(item)]
+        by_type = {
+            evidence_type: next(
+                (item for item in reversed(usable_recent) if item.evidence_type == evidence_type),
+                None,
+            )
+            for evidence_type in FRAUD_RISK_EVIDENCE_TYPES
+        }
+        combination = [item for item in by_type.values() if item is not None]
+        if len(combination) == len(FRAUD_RISK_EVIDENCE_TYPES):
+            score_details = self.ruleset.score_details(combination)
+            return Decision(
+                "R-FRAUD-02", "ORANGE", "INTERVENING",
+                "UPGRADE_EVENT" if active_status else "CREATE_EVENT",
+                "three independent visitor, dwell, and risk-word indicators require human verification",
+                tuple(item.evidence_id for item in combination),
+                score_details["final_score"], score_details,
+            )
+
+        if trigger is not None and trigger.evidence_type in FRAUD_RISK_EVIDENCE_TYPES:
+            score_details = self.ruleset.score_details([trigger])
+            action = "ATTACH_EVIDENCE" if active_status else "CREATE_EVENT"
+            return Decision(
+                "R-FRAUD-01", "YELLOW", active_status or "OPEN", action,
+                "a single structured indicator starts or updates identity verification only",
+                (trigger.evidence_id,), score_details["final_score"], score_details,
+                {"R-FRAUD-02": "the three-indicator combination is incomplete"},
+            )
+        return Decision(
+            "NO_MATCH", previous_state, active_status, "NONE",
+            "no usable visitor, dwell, or risk-word indicator is present",
+        )
 
 
 def quality_snapshot(evidences: list[Any], ruleset: Ruleset) -> dict[str, Any]:

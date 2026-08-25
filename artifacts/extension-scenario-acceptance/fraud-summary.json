@@ -1,0 +1,32 @@
+{
+  "risk_domain": "FRAUD",
+  "scenario_count": 12,
+  "passed_scenarios": 12,
+  "expected_evidence_match": {
+    "matched": 19,
+    "expected": 19,
+    "percent": 100.0
+  },
+  "scenario_trigger_rate": {
+    "triggered": 10,
+    "expected": 10,
+    "percent": 100.0
+  },
+  "false_trigger_count": 0,
+  "false_escalation_count": 0,
+  "evidence_traceability": {
+    "complete": 19,
+    "total": 19,
+    "percent": 100.0
+  },
+  "closure_success": {
+    "successful": 2,
+    "required": 2,
+    "percent": 100.0
+  },
+  "idempotent_scenarios": 12,
+  "processing_latency_ms": {
+    "scenario_p50": 28.593,
+    "scenario_p95": 41.3
+  }
+}
