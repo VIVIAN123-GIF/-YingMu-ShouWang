@@ -31,6 +31,7 @@ class RiskEvent(BaseModel):
 class RiskEvaluateRequest(BaseModel):
     resident_id: str
     evaluated_at: TimezoneDatetime
+    risk_domain: RiskDomain = RiskDomain.FALL
 
 
 class RiskEvaluateResponse(BaseModel):

@@ -10,7 +10,12 @@ router = APIRouter(prefix="/risk", tags=["risk"])
 
 @router.post("/evaluate", response_model=RiskEvaluateResponse)
 async def post_evaluate(payload: RiskEvaluateRequest, db: AsyncSession = Depends(get_db)):
-    result = await evaluate(db, payload.resident_id, payload.evaluated_at)
+    result = await evaluate(
+        db,
+        payload.resident_id,
+        payload.evaluated_at,
+        risk_domain=payload.risk_domain.value,
+    )
     # Persisted RuleTrace is the only log payload; do not rebuild semantics here.
     log_rule(result["trace"])
     return result

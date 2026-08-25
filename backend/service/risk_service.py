@@ -9,13 +9,24 @@ from backend.config import RULESET_VERSION
 from backend.db.models import Evidence, InterventionResult, Observation, RiskEvent, RiskEventEvidence, RuleTrace
 from backend.service.feedback_aggregation_service import aggregate_active_event_feedback
 from backend.service.serialization import aware, dumps, event_dict, loads
-from contracts.v1.decision import FallDecisionPolicy, quality_snapshot
+from contracts.v1.decision import (
+    FallDecisionPolicy,
+    FraudDecisionPolicy,
+    MentalDecisionPolicy,
+    quality_snapshot,
+)
 from contracts.v1.ruleset import load_ruleset
 
 
 ACTIVE_EVENT_STATUSES = ("OPEN", "INTERVENING", "OBSERVING")
+FRAUD_VERIFICATION_WINDOW_SECONDS = 30 * 60
 ruleset = load_ruleset()
-policy = FallDecisionPolicy(ruleset)
+policies = {
+    "FALL": FallDecisionPolicy(ruleset),
+    "MENTAL": MentalDecisionPolicy(ruleset),
+    "FRAUD": FraudDecisionPolicy(ruleset),
+}
+policy = policies["FALL"]  # Backward-compatible import for existing integrations.
 logger = logging.getLogger("backend.risk_service")
 
 
@@ -32,11 +43,16 @@ async def _enqueue_explanation_safely(db: AsyncSession, event_id: str) -> None:
         )
 
 
-async def _active_event(db: AsyncSession, resident_id: str) -> RiskEvent | None:
+async def _active_event(
+    db: AsyncSession,
+    resident_id: str,
+    risk_domain: str = "FALL",
+) -> RiskEvent | None:
     return (await db.execute(
         select(RiskEvent)
         .where(
             RiskEvent.resident_id == resident_id,
+            RiskEvent.primary_domain == risk_domain,
             RiskEvent.status.in_(ACTIVE_EVENT_STATUSES),
         )
         .order_by(RiskEvent.created_at.desc())
@@ -63,9 +79,20 @@ async def _attach_evidence(db: AsyncSession, event: RiskEvent, evidence: Evidenc
         db.add(RiskEventEvidence(event_id=event.event_id, evidence_id=evidence.evidence_id))
 
 
-async def _resolve_event(db: AsyncSession, event: RiskEvent, evaluated_at) -> None:
-    event.status = "RESOLVED"
+async def _resolve_event(
+    db: AsyncSession,
+    event: RiskEvent,
+    evaluated_at,
+    *,
+    status: str = "RESOLVED",
+) -> None:
+    event.status = status
+    event.risk_level = "GREEN"
+    event.risk_score = 0.0
     event.updated_at = evaluated_at
+    if event.primary_domain != "FALL":
+        await db.commit()
+        return
     result = (await db.execute(
         select(InterventionResult)
         .where(
@@ -88,6 +115,7 @@ async def _context(
     db: AsyncSession,
     resident_id: str,
     evaluated_at,
+    risk_domain: str = "FALL",
 ) -> tuple[list[Evidence], dict, dict]:
     short_start = evaluated_at - timedelta(seconds=ruleset.windows["short_seconds"])
     medium_start = evaluated_at - timedelta(hours=ruleset.windows["medium_hours"])
@@ -102,7 +130,16 @@ async def _context(
         .order_by(Evidence.timestamp)
     )).scalars().all()
     short_rows = [item for item in all_rows if aware(item.timestamp) >= aware(short_start)]
-    recent = [item for item in short_rows if item.risk_domain == "FALL"]
+    if risk_domain == "MENTAL":
+        recent = [item for item in all_rows if item.risk_domain == "MENTAL"]
+    elif risk_domain == "FRAUD":
+        fraud_start = evaluated_at - timedelta(seconds=FRAUD_VERIFICATION_WINDOW_SECONDS)
+        recent = [
+            item for item in all_rows
+            if item.risk_domain == "FRAUD" and aware(item.timestamp) >= aware(fraud_start)
+        ]
+    else:
+        recent = [item for item in short_rows if item.risk_domain == "FALL"]
     medium = [item for item in all_rows if aware(item.timestamp) >= aware(medium_start)]
     usable_fall = [
         item for item in recent
@@ -112,7 +149,7 @@ async def _context(
         item for item in short_rows
         if item.risk_domain == "SYSTEM"
         and ruleset.usable(float(item.confidence), float(item.data_quality))
-    ] if usable_fall else []
+    ] if usable_fall and risk_domain == "FALL" else []
     environment = [
         item for item in usable_system
         if item.evidence_type in {"high_risk_zone_entry", "obstacle_occupancy"}
@@ -153,6 +190,10 @@ async def _context(
     })
     context_snapshot = {
         "policy_version": ruleset.context_policy_version,
+        "evaluation_domain": risk_domain,
+        "effective_evidence_window_seconds": (
+            FRAUD_VERIFICATION_WINDOW_SECONDS if risk_domain == "FRAUD" else None
+        ),
         "contributions": contributions,
         "context_score": context_score,
         "environment_evidence_ids": [item.evidence_id for item in environment],
@@ -254,19 +295,30 @@ async def evaluate(
     *,
     duplicate: bool = False,
     system_evidence_id: str | None = None,
+    risk_domain: str | None = None,
 ):
-    existing = await _active_event(db, resident_id)
-    previous_state = existing.risk_level if existing else "GREEN"
-    previous_status = existing.status if existing else None
     trigger = None
     if evidence_id:
         trigger = (await db.execute(select(Evidence).where(
             Evidence.evidence_id == evidence_id
         ))).scalar_one_or_none()
-    if not duplicate:
+    selected_domain = risk_domain or (trigger.risk_domain if trigger is not None else "FALL")
+    selected_domain = getattr(selected_domain, "value", selected_domain)
+    if selected_domain not in policies:
+        selected_domain = "FALL"
+    existing = await _active_event(db, resident_id, selected_domain)
+    previous_state = existing.risk_level if existing else "GREEN"
+    previous_status = existing.status if existing else None
+    if not duplicate and selected_domain == "FALL":
         await aggregate_active_event_feedback(db, existing, evaluated_at)
-    recent, context_snapshot, baseline_snapshot = await _context(db, resident_id, evaluated_at)
-    attempts, latest_intervention_at = await _intervention_state(db, existing)
+    recent, context_snapshot, baseline_snapshot = await _context(
+        db, resident_id, evaluated_at, selected_domain
+    )
+    attempts, latest_intervention_at = (
+        await _intervention_state(db, existing)
+        if selected_domain == "FALL"
+        else (0, None)
+    )
 
     if duplicate:
         from contracts.v1.decision import Decision
@@ -275,7 +327,7 @@ async def evaluate(
             "same evidence_id and payload is an idempotent replay",
         )
     else:
-        decision = policy.evaluate(
+        decision = policies[selected_domain].evaluate(
             now=evaluated_at,
             previous_state=previous_state,
             active_status=previous_status,
@@ -293,7 +345,11 @@ async def evaluate(
     if decision.action == "CREATE_EVENT":
         selected = [item for item in recent if item.evidence_id in decision.evidence_ids]
         selected.sort(key=lambda item: item.timestamp)
-        event_id = "event-mock-fall-001" if resident_id == "resident-mock-001" else f"event-{uuid.uuid4().hex[:16]}"
+        event_id = (
+            "event-mock-fall-001"
+            if selected_domain == "FALL" and resident_id == "resident-mock-001"
+            else f"event-{uuid.uuid4().hex[:16]}"
+        )
         event = RiskEvent(
             schema_version="1.0", event_id=event_id, resident_id=resident_id,
             created_at=evaluated_at, updated_at=evaluated_at, primary_domain="FALL",
@@ -309,10 +365,37 @@ async def evaluate(
             ruleset_version=RULESET_VERSION, source_mode=selected[-1].source_mode,
             simulated=any(item.simulated for item in selected), evidences=selected,
         )
+        if selected_domain == "MENTAL":
+            event.primary_domain = "MENTAL"
+            event.risk_level = decision.risk_level
+            event.risk_score = float(decision.score or 0.0)
+            event.time_horizon = "TREND"
+            event.recommended_action = (
+                "Review routine changes and arrange a non-clinical family check-in."
+            )
+            event.intervention_policy = "mental-trend-care-v1"
+            event.status = decision.next_status
+        elif selected_domain == "FRAUD":
+            event.primary_domain = "FRAUD"
+            event.risk_level = decision.risk_level
+            event.risk_score = float(decision.score or 0.0)
+            event.time_horizon = "TODAY"
+            event.recommended_action = (
+                "Verify visitor identity and transaction intent with an authorized contact."
+            )
+            event.intervention_policy = "fraud-human-verification-v1"
+            event.status = decision.next_status
         db.add(event)
         await db.commit()
         await db.refresh(event)
         created = True
+    elif event is not None and decision.action == "ATTACH_EVIDENCE":
+        if trigger:
+            await _attach_evidence(db, event, trigger)
+            event.updated_at = trigger.timestamp
+        event.risk_level = decision.risk_level
+        event.risk_score = max(float(event.risk_score), float(decision.score or 0.0))
+        await db.commit()
     elif event is not None and decision.action == "BEGIN_OBSERVING":
         if trigger:
             await _attach_evidence(db, event, trigger)
@@ -330,7 +413,20 @@ async def evaluate(
         event.recovery_started_at = None
         await db.commit()
     elif event is not None and decision.action == "RESOLVE":
-        await _resolve_event(db, event, evaluated_at)
+        if trigger:
+            await _attach_evidence(db, event, trigger)
+        await _resolve_event(
+            db, event, evaluated_at, status=decision.next_status or "RESOLVED"
+        )
+    elif event is not None and decision.action == "UPGRADE_EVENT":
+        for evidence in recent:
+            if evidence.evidence_id in decision.evidence_ids:
+                await _attach_evidence(db, event, evidence)
+        event.risk_level = decision.risk_level
+        event.risk_score = max(float(event.risk_score), float(decision.score or 0.0))
+        event.status = decision.next_status
+        event.updated_at = evaluated_at
+        await db.commit()
     elif event is not None and decision.action == "ESCALATE":
         hazard_id = decision.evidence_ids[0] if decision.evidence_ids else None
         hazard = next((item for item in recent if item.evidence_id == hazard_id), trigger)

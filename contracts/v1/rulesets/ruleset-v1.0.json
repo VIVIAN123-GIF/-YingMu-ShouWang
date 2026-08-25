@@ -41,6 +41,14 @@
     {"id": "R-FALL-05", "name": "observation completed", "result": "RESOLVED"},
     {"id": "R-FALL-06", "name": "hazard during observation", "result": "INTERVENING"},
     {"id": "R-FALL-07", "name": "persistent hazard, no response, or hazard after two interventions", "result": "RED_ESCALATED"},
+    {"id": "R-MENTAL-00", "name": "low quality mental trend evidence", "result": "NO_UPGRADE"},
+    {"id": "R-MENTAL-01", "name": "non-clinical trend deviation", "result": "YELLOW_OPEN"},
+    {"id": "R-MENTAL-02", "name": "family contact completed", "result": "OBSERVING"},
+    {"id": "R-MENTAL-03", "name": "structured trend recovered", "result": "RESOLVED"},
+    {"id": "R-FRAUD-00", "name": "low quality fraud verification evidence", "result": "NO_UPGRADE"},
+    {"id": "R-FRAUD-01", "name": "single verification indicator", "result": "YELLOW_OPEN"},
+    {"id": "R-FRAUD-02", "name": "visitor plus dwell plus risk words within 30 minutes", "result": "ORANGE_INTERVENING"},
+    {"id": "R-FRAUD-03", "name": "identity or false alarm verified", "result": "CLOSED"},
     {"id": "R-SYSTEM-01", "name": "duplicate evidence", "result": "IDEMPOTENT"}
   ]
 }
