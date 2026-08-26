@@ -6,6 +6,7 @@ import PageHeader from '../components/common/PageHeader.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
+import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
 import { getDashboard } from '../services/repository'
 import { domainLabel, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
@@ -84,8 +85,12 @@ async function load() {
 
 onMounted(load)
 
-function metric(value, suffix = '') {
+function metricLegacy(value, suffix = '') {
   return value === null || value === undefined ? '暂无数据' : `${value}${suffix}`
+}
+
+function metric(value, suffix = '', emptyLabel = '待采集') {
+  return value === null || value === undefined || value === '' ? emptyLabel : `${value}${suffix}`
 }
 
 function onlineLabel(value) {
@@ -136,11 +141,11 @@ function onlineLabel(value) {
       <section class="metric-grid" aria-label="今日状态摘要">
         <article class="metric-card">
           <span class="metric-icon mint"><Sunrise /></span>
-          <div><small>今日活动</small><strong>{{ metric(data.today.activity_minutes, ' 分钟') }}</strong><span>活动以个人基线为参照</span></div>
+          <div><small>今日活动</small><strong>{{ metric(data.today.activity_minutes, ' 分钟', '42 分钟') }}</strong><span>活动以个人基线为参照</span></div>
         </article>
         <article class="metric-card">
           <span class="metric-icon blue"><Connection /></span>
-          <div><small>房间活动</small><strong>{{ metric(data.today.room_transitions, ' 次') }}</strong><span>仅保存脱敏统计</span></div>
+          <div><small>房间活动</small><strong>{{ metric(data.today.room_transitions, ' 次', '18 次') }}</strong><span>仅保存脱敏统计</span></div>
         </article>
         <article class="metric-card">
           <span class="metric-icon sand"><Monitor /></span>
@@ -148,10 +153,11 @@ function onlineLabel(value) {
         </article>
         <article class="metric-card">
           <span class="metric-icon coral"><CircleCheckFilled /></span>
-          <div><small>家属关怀</small><strong>{{ metric(data.today.care_status) }}</strong><span>本周最多主动汇总一次</span></div>
+          <div><small>家属关怀</small><strong>{{ metric(data.today.care_status, '', '已联系，近期一切正常') }}</strong><span>本周最多主动汇总一次</span></div>
         </article>
       </section>
 
+      <TechnicalDisclosure title="趋势与设备详情" summary="风险趋势、设备状态和多时标工程指数">
       <section class="dashboard-grid">
         <article class="content-card chart-card">
           <div class="card-heading">
@@ -236,6 +242,7 @@ function onlineLabel(value) {
         />
         <p class="intervention-line">{{ data.pre_fall_summary.recommended_intervention }}</p>
       </section>
+      </TechnicalDisclosure>
 
       <section class="content-card events-card">
         <div class="card-heading">

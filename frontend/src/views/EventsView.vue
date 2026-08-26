@@ -6,6 +6,7 @@ import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import { ALARM_TASK_STATUSES, EVENT_STATUSES, RISK_DOMAINS, RISK_LEVELS, SOURCE_MODES } from '../domain/constants'
 import { getAlarmProcessingTasks, getEvents, getRiskReviews, RESIDENT_ID, runtime } from '../services/repository'
+import { useViewMode } from '../services/viewMode'
 import { domainLabel, evidenceTypeLabel, formatDateTime, formatRiskScore, statusLabel } from '../utils/format'
 
 const router = useRouter()
@@ -18,6 +19,13 @@ const alarmTasks = ref([])
 const alarmLoading = ref(false)
 const alarmError = ref('')
 let alarmTimer = null
+const { isFamily, isReview } = useViewMode()
+
+const familyGroups = computed(() => ([
+  { key: 'action', label: '需要处理', description: '仍在开放或干预中的事件', events: filteredEvents.value.filter((event) => ['OPEN', 'INTERVENING', 'ESCALATED'].includes(event.status)) },
+  { key: 'observing', label: '持续观察', description: '系统仍在确认风险是否回落', events: filteredEvents.value.filter((event) => event.status === 'OBSERVING') },
+  { key: 'closed', label: '已解除', description: '已经回落或完成核验的事件', events: filteredEvents.value.filter((event) => ['RESOLVED', 'FALSE_ALARM'].includes(event.status)) },
+]).filter((group) => group.events.length))
 
 const filteredEvents = computed(() => events.value
   .filter((event) => !filters.value.domain || event.primary_domain === filters.value.domain)
@@ -52,7 +60,7 @@ function stopAlarmPolling() {
 
 function scheduleAlarmPolling() {
   stopAlarmPolling()
-  if (runtime.mode === 'mock') return
+  if (runtime.mode === 'replay') return
   alarmTimer = window.setTimeout(() => {
     alarmTimer = null
     void loadAlarmTasks()
@@ -60,7 +68,7 @@ function scheduleAlarmPolling() {
 }
 
 async function loadAlarmTasks() {
-  if (runtime.mode === 'mock') {
+  if (runtime.mode === 'replay') {
     alarmTasks.value = []
     stopAlarmPolling()
     return
@@ -90,7 +98,7 @@ onBeforeUnmount(stopAlarmPolling)
 
     <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
 
-    <section class="content-card alarm-processing-card" data-testid="risk-reviews">
+    <section v-if="isReview" class="content-card alarm-processing-card" data-testid="risk-reviews">
       <div class="card-heading">
         <div><span class="section-kicker">规则复核</span><h2>不可判定与黄色观察</h2></div>
         <el-tag size="large" effect="plain">{{ reviews.length }} 条待复核</el-tag>
@@ -105,7 +113,7 @@ onBeforeUnmount(stopAlarmPolling)
       </div>
     </section>
 
-    <section class="content-card alarm-processing-card" data-testid="alarm-processing">
+    <section v-if="isReview" class="content-card alarm-processing-card" data-testid="alarm-processing">
       <div class="card-heading">
         <div><span class="section-kicker">告警处理队列</span><h2>设备告警处理任务</h2></div>
         <el-tag size="large" effect="plain">{{ alarmTasks.length }} 条任务</el-tag>
@@ -129,7 +137,17 @@ onBeforeUnmount(stopAlarmPolling)
       <el-button size="large" :disabled="!activeFilterCount" @click="clearFilters">清除筛选<span v-if="activeFilterCount">（{{ activeFilterCount }}）</span></el-button>
     </section>
 
-    <section v-if="filteredEvents.length" class="unified-timeline" data-testid="unified-timeline">
+    <section v-if="isFamily && filteredEvents.length" class="family-event-groups" data-testid="family-event-groups">
+      <section v-for="group in familyGroups" :key="group.key" class="content-card family-event-group">
+        <div class="card-heading"><div><span class="section-kicker">{{ group.description }}</span><h2>{{ group.label }}</h2></div><el-tag effect="plain">{{ group.events.length }} 条</el-tag></div>
+        <button v-for="event in group.events" :key="event.event_id" type="button" class="family-event-row" @click="router.push(`/events/${event.event_id}`)">
+          <div><strong>{{ event.title }}</strong><span>{{ formatDateTime(event.created_at) }} · {{ domainLabel(event.primary_domain) }}</span></div>
+          <RiskBadge :level="event.risk_level" compact />
+          <SourceBadge :mode="event.source_mode" :simulated="event.simulated" />
+        </button>
+      </section>
+    </section>
+    <section v-else-if="isReview && filteredEvents.length" class="unified-timeline" data-testid="unified-timeline">
       <article
         v-for="event in filteredEvents"
         :key="event.event_id"

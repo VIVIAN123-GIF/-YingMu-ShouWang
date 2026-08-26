@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import events from '../mocks/events.json'
+import events from '../replay-data/events.json'
 import {
   API_BASE_URL, apiClient, getAsset, getBaseline, getWeeklyReport, interveneEvent, normalizeApiError, runtime, setDataMode, submitFamilyFeedback, submitInterventionResult,
 } from '../services/repository'
@@ -31,7 +31,7 @@ describe('前端对接文档请求契约', () => {
   it('素材读取使用编码后的 /assets/{id}，不重复拼接 API 前缀', async () => {
     setDataMode('api')
     const asset = {
-      asset_id: 'asset api/1', title: '授权素材', source_mode: 'MOCK', simulated: true,
+      asset_id: 'asset api/1', title: '授权素材', source_mode: 'RECORDED_REPLAY', simulated: true,
       stream_url: null, fallback_url: null, fallback_kind: 'unavailable', available: false,
       verification_status: 'PENDING', captured_at: '2026-08-11T15:00:00+08:00', notice: '暂无文件',
     }
@@ -69,7 +69,7 @@ describe('前端对接文档请求契约', () => {
     const response = { schema_version: '1.0', result_id: 'result-1', event_id: 'event-fall-intervening',
       started_at: '2026-08-11T15:00:00+08:00', completed_at: null, action_type: 'voice', tool_name: 'mock_voice',
       delivery_status: 'SUCCESS', resident_response: null, family_feedback: null, risk_after: null,
-      resolved: false, resolution_reason: null, operator: 'system', source_mode: 'MOCK', simulated: true }
+      resolved: false, resolution_reason: null, operator: 'system', source_mode: 'RECORDED_REPLAY', simulated: true }
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: response })
     await interveneEvent('event-fall-intervening')
     expect(post).toHaveBeenCalledWith('/events/event-fall-intervening/intervene', null, expect.any(Object))
@@ -84,7 +84,7 @@ describe('前端对接文档请求契约', () => {
       started_at: '2026-08-11T15:00:00+08:00', completed_at: '2026-08-11T15:00:00+08:00',
       action_type: 'resident_response', tool_name: 'family_console', delivery_status: 'SUCCESS',
       resident_response: 'stable', family_feedback: null, risk_after: null, resolved: false,
-      resolution_reason: null, operator: 'family', source_mode: 'MOCK', simulated: true,
+      resolution_reason: null, operator: 'family', source_mode: 'RECORDED_REPLAY', simulated: true,
     }
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: response })
 

@@ -41,12 +41,12 @@ function apiEvent(status, { eventId = 'event-poll-1', assetId = 'asset-poll-1' }
     created_at: '2026-07-31T03:07:05+08:00',
     updated_at: timeByStatus[status],
     recommended_action: '请先坐稳',
-    source_mode: 'MOCK',
+    source_mode: 'RECORDED_REPLAY',
     simulated: true,
     evidence_summary: [{ evidence_id: 'evi-1', evidence_type: 'rapid_rise', explanation: '快速起身' }],
     evidences: [{
       evidence_id: 'evi-1', observation_ids: ['obs-1'], evidence_type: 'rapid_rise', explanation: '快速起身',
-      severity: 0.8, confidence: 0.9, data_quality: 0.9, source_mode: 'MOCK', simulated: true,
+      severity: 0.8, confidence: 0.9, data_quality: 0.9, source_mode: 'RECORDED_REPLAY', simulated: true,
     }],
     observations: [{ observation_id: 'obs-1', asset_id: assetId, feature_name: 'rise_duration' }],
     interventions: [],
@@ -95,7 +95,7 @@ describe('事件详情 API 自动同步', () => {
     runtimeMock.mode = 'api'
     getAssetMock.mockReset()
     getAssetMock.mockResolvedValue({
-      asset_id: 'asset-poll-1', title: '测试素材', source_mode: 'MOCK', simulated: true,
+      asset_id: 'asset-poll-1', title: '测试素材', source_mode: 'RECORDED_REPLAY', simulated: true,
       stream_url: null, fallback_url: null, notice: '暂无文件', captured_at: '2026-07-31T03:07:05+08:00',
     })
     getEventMock.mockReset()
@@ -231,7 +231,7 @@ describe('事件详情 API 自动同步', () => {
       resolved: false,
       resolution_reason: null,
       operator: 'family',
-      source_mode: 'MOCK',
+      source_mode: 'RECORDED_REPLAY',
       simulated: true,
     })
     const { wrapper } = await mountView()
@@ -254,7 +254,7 @@ describe('事件详情 API 自动同步', () => {
       started_at: '2026-07-31T03:07:10+08:00', completed_at: '2026-07-31T03:07:10+08:00',
       action_type: 'voice', tool_name: 'mock_voice', delivery_status: 'SUCCESS', resident_response: null,
       family_feedback: null, risk_after: null, resolved: false, resolution_reason: 'Declared Mock fallback',
-      operator: 'system', source_mode: 'MOCK', simulated: true,
+      operator: 'system', source_mode: 'RECORDED_REPLAY', simulated: true,
     })
     const { wrapper } = await mountView()
 

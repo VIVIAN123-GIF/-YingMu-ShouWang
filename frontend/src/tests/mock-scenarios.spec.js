@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import events from '../mocks/events.json'
-import forewarning from '../mocks/forewarning.json'
-import weekly from '../mocks/weekly.json'
+import events from '../replay-data/events.json'
+import forewarning from '../replay-data/forewarning.json'
+import weekly from '../replay-data/weekly.json'
+import assets from '../replay-data/assets.json'
 
 describe('固定 JSON 演示闭环', () => {
   it('跌倒场景完整经过干预、观察和回落', () => {
@@ -17,7 +18,7 @@ describe('固定 JSON 演示闭环', () => {
     const snapshots = forewarning.filter((item) => item.event_id === 'event-fall-100')
     expect(snapshots.map((item) => item.phase)).toEqual(['PRE_INTERVENTION', 'POST_INTERVENTION'])
     expect(snapshots[1].instant.engineering_index).toBeLessThan(snapshots[0].instant.engineering_index)
-    expect(snapshots.every((item) => item.source_mode === 'MOCK' && item.simulated)).toBe(true)
+    expect(snapshots.every((item) => item.source_mode === 'RECORDED_REPLAY' && item.simulated)).toBe(true)
   })
 
   it('诈骗核验包含访客、停留和关键词三类证据', () => {
@@ -36,5 +37,13 @@ describe('固定 JSON 演示闭环', () => {
     expect(weekly.risk_level).toBe('YELLOW')
     expect(weekly.summary).toContain('建议家属')
     expect(weekly.summary).not.toMatch(/抑郁症|认知症|医学诊断/)
+  })
+
+  it('三类受控场景分别关联独立的授权回放素材', () => {
+    const byId = new Map(assets.map((asset) => [asset.asset_id, asset]))
+    expect(byId.get('asset-fall-authorized').fallback_url).toBe('/media/fall-risk-replay.mp4')
+    expect(byId.get('asset-mental-week').fallback_url).toBe('/media/activity-route-replay-browser.mp4')
+    expect(byId.get('asset-green-daily').fallback_url).toBe('/media/daily-baseline-replay-browser.mp4')
+    expect([...byId.values()].every((asset) => asset.source_mode === 'RECORDED_REPLAY' && asset.simulated)).toBe(true)
   })
 })

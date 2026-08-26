@@ -1,0 +1,48 @@
+{
+  "resident_id": "resident-001",
+  "as_of": "2026-08-01T08:00:00+08:00",
+  "ruleset_version": "ruleset-v1.2",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "overall_status": "PROVISIONAL",
+  "coverage_type": "AUTHORIZED_EXPERIMENT",
+  "baseline_progress": { "observed_days": 6, "provisional_target_days": 3, "stable_target_days": 7, "label": "授权实验覆盖日，不等同于居民个人基线" },
+  "coverage": {
+    "participants": 3,
+    "participant_ids": ["P01", "P02", "P03"],
+    "clip_count": 96,
+    "coverage_days": 6,
+    "baseline_clips": 41,
+    "evaluation_clips": 55,
+    "resident_calibration": "NOT_CALIBRATED",
+    "resident_calibration_label": "张建国待同一居民、同一机位实机样本校准",
+    "sources": [
+      { "package": "3人96段.zip", "participant": "P01-P03", "purpose": "受控动作与日常基线覆盖" },
+      { "package": "daily-baseline-replay.mp4", "participant": "P03", "purpose": "日常基线回放" },
+      { "package": "验证视频.zip", "participant": "匿名参与者", "purpose": "区域路线回放" }
+    ]
+  },
+  "provenance": { "device_model": "萤石 C6c（授权回放）", "camera_position_id": "scene-recorded-demo-v1", "authorization": "受控实验授权，RECORDED_REPLAY/simulated=true", "data_boundary": "实验覆盖用于工程展示，不产生张建国医学结论" },
+  "baselines": {
+    "rise_duration": { "median": null, "mad": null, "display_value": "待个人校准", "sample_count": 96, "distinct_days": 6, "status": "PROVISIONAL", "coverage_note": "96 段授权实验覆盖，未写入居民个人基线" },
+    "relative_gait_speed": { "median": null, "mad": null, "display_value": "待个人校准", "sample_count": 96, "distinct_days": 6, "status": "PROVISIONAL", "coverage_note": "96 段授权实验覆盖，未写入居民个人基线" },
+    "trunk_sway": { "median": null, "mad": null, "display_value": "待个人校准", "sample_count": 96, "distinct_days": 6, "status": "PROVISIONAL", "coverage_note": "96 段授权实验覆盖，未写入居民个人基线" }
+  },
+  "trend": [
+    { "date": "07-18", "activity_index": 72, "baseline": 70, "sleep_offset": 5 },
+    { "date": "07-19", "activity_index": 68, "baseline": 70, "sleep_offset": 8 },
+    { "date": "07-20", "activity_index": 61, "baseline": 70, "sleep_offset": 12 },
+    { "date": "07-21", "activity_index": 53, "baseline": 70, "sleep_offset": 19 },
+    { "date": "07-22", "activity_index": 49, "baseline": 70, "sleep_offset": 24 },
+    { "date": "07-23", "activity_index": 46, "baseline": 70, "sleep_offset": 31 },
+    { "date": "07-24", "activity_index": 52, "baseline": 70, "sleep_offset": 27 }
+  ],
+  "activity_heatmap": {
+    "days": ["07-18", "07-19", "07-20", "07-21", "07-22", "07-23", "07-24"],
+    "periods": ["清晨", "白天", "傍晚", "夜间"],
+    "values": [[0,0,50],[0,1,72],[0,2,61],[0,3,25],[1,0,48],[1,1,68],[1,2,58],[1,3,24],[2,0,43],[2,1,61],[2,2,52],[2,3,21],[3,0,37],[3,1,53],[3,2,45],[3,3,19],[4,0,34],[4,1,49],[4,2,42],[4,3,17],[5,0,32],[5,1,46],[5,2,39],[5,3,16],[6,0,36],[6,1,52],[6,2,44],[6,3,18]]
+  },
+  "pre_fall_summary": {
+    "as_of": "2026-08-26T14:00:00+08:00", "risk_level": "UNKNOWN", "assessment_status": "PARTIAL", "confidence_level": "LOW", "baseline_status": "PROVISIONAL", "snapshot_id": "forewarning-replay-coverage", "instant_risk": 0.18, "risk_30s": 0.24, "trend_3min": 0.22, "trend_direction": "STABLE", "human_risk": 0.18, "personal_deviation": 0.0, "environment_risk": 0.08, "interaction_risk": 0.06, "quality_penalty": 0.2, "dominant_factors": ["data_quality_downgrade"], "degradation_reasons": ["PERSONAL_BASELINE_INSUFFICIENT"], "evidence_ids": [], "recommended_intervention": "授权实验覆盖可用于工程走查；等待同一居民实机样本后再启用个人偏离判断。", "metric_semantics": "ENGINEERING_INDEX_NOT_PROBABILITY"
+  }
+}

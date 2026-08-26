@@ -11,7 +11,7 @@
     "location": "bedroom",
     "confidence": 0.92,
     "data_quality": 0.88,
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "asset_id": null,
     "simulated": true,
     "metadata": {
@@ -36,7 +36,7 @@
     "location": "bedroom",
     "explanation": "起身速度明显快于个人基线",
     "adapter_version": "fall-adapter-v1",
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "simulated": true
   },
   "risk_event": {
@@ -67,7 +67,7 @@
     "intervention_policy": "fall-orange-gentle-v1",
     "status": "INTERVENING",
     "ruleset_version": "ruleset-v1.0",
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "simulated": true
   },
   "intervention_result": {
@@ -85,7 +85,7 @@
     "resolved": false,
     "resolution_reason": null,
     "operator": "system",
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "simulated": true
   }
 }

@@ -7,7 +7,7 @@ describe('冻结枚举', () => {
   it('保留四级风险、六种事件状态和四种来源', () => {
     expect(Object.keys(RISK_LEVELS)).toEqual(['GREEN', 'YELLOW', 'ORANGE', 'RED'])
     expect(Object.keys(EVENT_STATUSES)).toEqual(['OPEN', 'INTERVENING', 'OBSERVING', 'RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
-    expect(Object.keys(SOURCE_MODES)).toEqual(['LIVE_DEVICE', 'RECORDED_REPLAY', 'PUBLIC_DATASET', 'MOCK'])
+    expect(Object.keys(SOURCE_MODES)).toEqual(['LIVE_DEVICE', 'RECORDED_REPLAY', 'PUBLIC_DATASET'])
   })
 
   it('工具失败不会映射成成功', () => {
@@ -33,7 +33,7 @@ describe('FastAPI 自动降级边界', () => {
 describe('前置预警未知状态', () => {
   it('数据不足保留 UNKNOWN，不要求伪装成 GREEN', () => {
     const dashboard = {
-      device: { source_mode: 'MOCK', simulated: true },
+      device: { source_mode: 'RECORDED_REPLAY', simulated: true },
       pre_fall_summary: {
         risk_level: 'UNKNOWN', instant_risk: 0, risk_30s: 0, trend_3min: 0,
         trend_direction: 'STABLE', personal_deviation: 0, environment_risk: 0,

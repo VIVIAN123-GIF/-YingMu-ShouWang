@@ -1,8 +1,0 @@
-{
-  "online": true,
-  "adapter_mode": "MOCK",
-  "source_mode": "MOCK",
-  "device_alias": "camera-mock-001",
-  "simulated": true,
-  "collection_active": true
-}

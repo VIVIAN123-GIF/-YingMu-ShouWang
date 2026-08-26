@@ -38,6 +38,18 @@ describe('API ViewModel 适配', () => {
     expect(event.risk_history).toEqual([])
   })
 
+  it('把关怀反馈和身份核验记录追加到事件时间轴', () => {
+    const event = normalizeEvent({
+      ...apiEvent,
+      feedback_records: [
+        { feedback_id: 'feedback-care', event_id: 'event-api-001', feedback_kind: 'CARE', value: '已联系，希望继续关注', operator: 'family', recorded_at: '2026-07-31T03:09:00+08:00', saved_in_demo: true },
+        { feedback_id: 'feedback-identity', event_id: 'event-api-001', feedback_kind: 'IDENTITY_VERIFICATION', value: '身份已确认，无需继续关注', operator: 'family', recorded_at: '2026-07-31T03:10:00+08:00', saved_in_demo: true },
+      ],
+    })
+    expect(event.timeline.slice(-2).map((item) => item.title)).toEqual(['家属关怀反馈已记录', '身份信息核验已记录'])
+    expect(event.timeline.at(-1).detail).toContain('身份已确认')
+  })
+
   it('API 无事件时不混入 Mock 风险、今日统计或趋势', () => {
     const preFallSummary = {
       risk_level: 'GREEN', instant_risk: 0.1, risk_30s: 0.08, trend_3min: 0.05,
@@ -47,7 +59,7 @@ describe('API ViewModel 适配', () => {
     }
     const dashboard = normalizeDashboard({
       residentId: 'resident-api', events: [], baseline: { pre_fall_summary: preFallSummary },
-      device: { online: true, device_alias: 'camera-mock-001', adapter_mode: 'MOCK', source_mode: 'MOCK', simulated: true, collection_active: true },
+      device: { online: true, device_alias: 'camera-mock-001', adapter_mode: 'RECORDED_REPLAY', source_mode: 'RECORDED_REPLAY', simulated: true, collection_active: true },
     })
     expect(dashboard.current_risk).toBeNull()
     expect(dashboard.today.activity_minutes).toBeNull()

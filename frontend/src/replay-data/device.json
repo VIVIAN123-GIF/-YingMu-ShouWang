@@ -1,0 +1,9 @@
+﻿{
+  "online": true,
+  "adapter_mode": "RECORDED_REPLAY",
+  "source_mode": "RECORDED_REPLAY",
+  "device_alias": "authorized-replay-c6c",
+  "simulated": true,
+  "collection_active": true
+}
+

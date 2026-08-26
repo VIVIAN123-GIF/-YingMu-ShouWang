@@ -44,6 +44,8 @@ async function load() {
 }
 
 async function submit(kind) {
+  const currentStatus = kind === 'care' ? report.value?.care?.status : report.value?.visitor_case?.verification_status
+  if (currentStatus === 'SUBMITTED') return
   const value = kind === 'care' ? careChoice.value : verifyChoice.value
   if (!value) {
     ElMessage.warning('请先选择一项反馈')
@@ -63,9 +65,12 @@ async function submit(kind) {
       ElMessage.warning('当前 API 未返回可关联的事件，无法提交反馈')
       return
     }
-    await submitFamilyFeedback(eventId, { feedback_type: 'confirm', value, operator: 'family' })
-    if (kind === 'care') report.value.care.status = 'SUBMITTED'
-    else report.value.visitor_case.verification_status = 'SUBMITTED'
+    const result = await submitFamilyFeedback(eventId, {
+      feedback_type: 'confirm', value, operator: 'family',
+      feedback_kind: kind === 'care' ? 'CARE' : 'IDENTITY_VERIFICATION',
+    })
+    if (kind === 'care') report.value.care = { ...report.value.care, status: 'SUBMITTED', feedback_record: result }
+    else report.value.visitor_case = { ...report.value.visitor_case, verification_status: 'SUBMITTED', feedback_record: result }
     ElMessage.success('反馈已记录，将进入统一事件时间轴')
   } catch (err) {
     ElMessage.error(`提交失败：${err.message}`)
@@ -113,7 +118,7 @@ onMounted(load)
           </div>
           <fieldset class="feedback-fieldset">
             <legend>完成联系后，请选择反馈</legend>
-            <el-radio-group v-model="careChoice" class="stacked-radios">
+            <el-radio-group v-model="careChoice" class="stacked-radios" :disabled="report.care.status === 'SUBMITTED'">
               <el-radio v-for="option in report.care.options" :key="option" :label="option" :value="option" border @click="careChoice = option">{{ option }}</el-radio>
             </el-radio-group>
             <el-alert v-if="!report.care.options.length" title="当前 API 未提供关怀选项" type="info" :closable="false" />
@@ -121,6 +126,9 @@ onMounted(load)
           <el-button data-testid="care-submit" type="primary" size="large" :loading="submitting" :disabled="report.care.status === 'SUBMITTED' || !report.care.options.length" @click="submit('care')">
             {{ report.care.status === 'SUBMITTED' ? '关怀反馈已记录' : '记录关怀反馈' }}
           </el-button>
+          <div v-if="report.care.feedback_record" class="recorded-feedback" data-testid="care-record">
+            <strong>已记录关怀反馈</strong><span>{{ report.care.feedback_record.value }}</span><small>{{ report.care.feedback_record.recorded_at }} · {{ report.care.feedback_record.operator }} · {{ report.care.feedback_record.saved_in_demo ? '本地演示记录' : '后端记录' }}</small>
+          </div>
         </article>
 
         <article v-if="report.visitor_case" class="content-card visitor-panel" data-testid="visitor-panel">
@@ -135,13 +143,16 @@ onMounted(load)
           <div class="gentle-action"><strong>建议</strong><p>{{ report.visitor_case.recommended_action }}</p></div>
           <fieldset class="feedback-fieldset">
             <legend>联系确认后，请选择核验结果</legend>
-            <el-radio-group v-model="verifyChoice" class="stacked-radios">
+            <el-radio-group v-model="verifyChoice" class="stacked-radios" :disabled="report.visitor_case.verification_status === 'SUBMITTED'">
               <el-radio v-for="option in report.visitor_case.verification_options" :key="option" :label="option" :value="option" border @click="verifyChoice = option">{{ option }}</el-radio>
             </el-radio-group>
           </fieldset>
           <el-button data-testid="verify-submit" type="primary" size="large" :loading="submitting" :disabled="report.visitor_case.verification_status === 'SUBMITTED' || !report.visitor_case.verification_options.length" @click="submit('verify')">
             {{ report.visitor_case.verification_status === 'SUBMITTED' ? '身份核验已记录' : '提交身份核验' }}
           </el-button>
+          <div v-if="report.visitor_case.feedback_record" class="recorded-feedback" data-testid="identity-record">
+            <strong>已记录身份核验</strong><span>{{ report.visitor_case.feedback_record.value }}</span><small>{{ report.visitor_case.feedback_record.recorded_at }} · {{ report.visitor_case.feedback_record.operator }} · {{ report.visitor_case.feedback_record.saved_in_demo ? '本地演示记录' : '后端记录' }}</small>
+          </div>
         </article>
         <article v-else class="content-card visitor-panel api-empty-state" data-testid="visitor-panel-empty">
           <div class="card-heading"><div><span class="section-kicker">访客核验</span><h2>暂无访客事件</h2></div></div>

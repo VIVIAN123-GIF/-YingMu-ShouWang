@@ -14,7 +14,9 @@
     "evidence": "playwright test --config playwright.config.js",
     "test:pages": "playwright test --config playwright.pages.config.js",
     "evidence:api": "python scripts/run_api_evidence.py",
-    "verify:agent-api": "python scripts/validate_agent_api_frontend.py"
+    "verify:agent-api": "python scripts/validate_agent_api_frontend.py",
+    "media:build": "powershell -ExecutionPolicy Bypass -File scripts/build_browser_media.ps1",
+    "media:verify": "node scripts/verify_browser_media.mjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
