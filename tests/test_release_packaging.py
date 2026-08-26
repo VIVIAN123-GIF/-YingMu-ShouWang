@@ -220,19 +220,25 @@ def test_zip_scan_rejects_runtime_env(tmp_path):
     assert not any(item.kind == "invalid_text_encoding" for item in findings)
 
 
-def test_experiment_gate_requires_p03_and_all_ablations():
+def test_experiment_gate_rejects_handcrafted_empty_dual_track_result():
     payload = {
+        "schema_version": "three-participant-results/2.0",
         "status": "COMPLETE",
         "test_lock_sha256": "a",
         "rule_freeze_sha256": "b",
-        "primary_result": {"participant_id": "P03", "config_id": "A", "sample_count": 24},
-        "participant_results": {key: {"sample_count": 24} for key in ("P01", "P02", "P03")},
-        "ablation_results": {key: {"sample_count": 24} for key in ("A", "B", "C", "D")},
+        "evaluation_spec_sha256": "c",
+        "primary_result": {
+            "participant_id": "P03", "config_id": "A", "sample_count": 24,
+            "baseline_reference_count": 8, "result_record_count": 32,
+            "effect_thresholds": None,
+        },
+        "metrics": {"instant_event": {}, "gait_trend": {}},
     }
 
-    assert assemble_submission.validate_experiment(payload) == []
-    payload["ablation_results"]["D"]["sample_count"] = 23
-    assert "ablation D" in " ".join(assemble_submission.validate_experiment(payload))
+    errors = assemble_submission.validate_experiment(payload)
+
+    assert "analysis errors" in " ".join(errors)
+    assert "metrics are incomplete" in " ".join(errors)
 
 
 def test_stability_gate_requires_three_four_hour_runs():

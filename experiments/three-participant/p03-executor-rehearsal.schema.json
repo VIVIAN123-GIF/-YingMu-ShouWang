@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p03-executor-rehearsal/1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "config_id", "executor_sha256",
+    "evaluation_spec_sha256", "deterministic_rerun", "non_overwrite_verified",
+    "participants"
+  ],
+  "properties": {
+    "schema_version": {"const": "p03-executor-rehearsal/1.0"},
+    "status": {"const": "PASS"},
+    "config_id": {"const": "A"},
+    "executor_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "evaluation_spec_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "deterministic_rerun": {"const": true},
+    "non_overwrite_verified": {"const": true},
+    "participants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["P01", "P02"],
+      "properties": {
+        "P01": {"$ref": "#/$defs/coverage"},
+        "P02": {"$ref": "#/$defs/coverage"}
+      }
+    }
+  },
+  "$defs": {
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_records", "evaluation_records"],
+      "properties": {
+        "baseline_records": {"const": 8},
+        "evaluation_records": {"const": 24}
+      }
+    }
+  }
+}
