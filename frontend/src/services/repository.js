@@ -9,9 +9,11 @@ import baselineReplay from '../replay-data/baseline.json'
 import forewarningReplay from '../replay-data/forewarning.json'
 import assetsReplay from '../replay-data/assets.json'
 import explanationsReplay from '../replay-data/explanations.json'
+import deviceSnapshotReplay from '../replay-data/device-snapshot.json'
+import sceneCalibrationReplay from '../replay-data/scene-calibration.json'
 import { DATA_MODES } from '../domain/constants'
 import {
-  validateAgentExplanationJob, validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceStatus, validateEventList, validateEventViewModel, validateForewarningSnapshot, validateInterventionResult, validateRiskReviews,
+  validateAgentExplanationJob, validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceControlResult, validateDeviceSnapshot, validateDeviceStatus, validateEventList, validateEventViewModel, validateForewarningHistory, validateForewarningSnapshot, validateInterventionResult, validateRiskReviews, validateSceneCalibration,
 } from '../domain/validation'
 import {
   normalizeBaseline, normalizeDashboard, normalizeDevice, normalizeEvent, normalizeWeeklyReport,
@@ -57,6 +59,8 @@ const replayData = {
   forewarning: structuredClone(forewarningReplay),
   assets: structuredClone(assetsReplay),
   explanations: structuredClone(explanationsReplay),
+  deviceSnapshot: structuredClone(deviceSnapshotReplay),
+  sceneCalibration: structuredClone(sceneCalibrationReplay),
 }
 
 const requiredReplayAssets = Object.freeze({
@@ -83,6 +87,7 @@ const feedbackCache = new Map()
 const interventionResultCache = new Map()
 const assetRequestCache = new Map()
 const submittedFeedbackSession = new Set()
+let lastDeviceStatus = null
 const FEEDBACK_STORAGE_KEY = 'yingmu-feedback-records-v1'
 const FEEDBACK_KINDS = new Set(['CARE', 'IDENTITY_VERIFICATION'])
 
@@ -216,7 +221,7 @@ function shouldFallback(error) {
   return !error?.response || status === 404 || status === 501 || status >= 500
 }
 
-async function resolveData(operation, apiRequest, replayFactory, validate = (value) => value) {
+async function resolveData(operation, apiRequest, replayFactory, validate = (value) => value, canFallback = shouldFallback) {
   if (runtime.mode === 'replay') {
     runtime.activeSource = 'replay_dataset'
     runtime.degraded = false
@@ -235,7 +240,7 @@ async function resolveData(operation, apiRequest, replayFactory, validate = (val
     return result
   } catch (error) {
     runtime.lastError = error?.message || 'FastAPI 请求失败'
-    if (runtime.mode === 'auto' && shouldFallback(error)) {
+    if (runtime.mode === 'auto' && canFallback(error)) {
       runtime.activeSource = 'replay_dataset'
       runtime.degraded = true
       runtime.message = 'FastAPI 暂不可用，已切换离线授权回放数据集'
@@ -284,10 +289,13 @@ export async function getDashboard(residentId = RESIDENT_ID) {
     baseline: {
       ...replayData.baseline,
       today: {
-        ...replayData.baseline.today,
+        ...replayData.dashboard.today,
         care_status: getRecordedFeedback().filter((record) => record.feedback_kind === 'CARE').at(-1)?.value
-          || replayData.baseline.today.care_status,
+          || replayData.dashboard.today?.care_status
+          || null,
       },
+      risk_trend: replayData.dashboard.risk_trend,
+      pre_fall_summary: replayData.dashboard.pre_fall_summary,
     },
     residentId,
   }), validateDashboard)
@@ -543,9 +551,103 @@ export async function getBaseline(residentId = RESIDENT_ID) {
 }
 
 export async function getDeviceStatus() {
-  return resolveData('device.status', async () => normalizeDevice(
+  const result = await resolveData('device.status', async () => normalizeDevice(
     validateDeviceStatus(payload(await apiClient.get('/device/status'))),
   ), () => normalizeDevice(validateDeviceStatus(replayData.device)))
+  lastDeviceStatus = result
+  return result
+}
+
+export async function getDeviceSnapshot() {
+  return resolveData('device.snapshot', async () => validateDeviceSnapshot(
+    payload(await apiClient.get('/device/snapshot')),
+  ), () => validateDeviceSnapshot(replayData.deviceSnapshot), validateDeviceSnapshot)
+}
+
+function controlError(code, message) {
+  const error = new Error(message)
+  error.api = { code, message, request_id: null }
+  return error
+}
+
+export async function stopDeviceCollection(controlToken) {
+  if (!controlToken || typeof controlToken !== 'string') {
+    throw controlError('CONTROL_TOKEN_REQUIRED', '请输入现场控制令牌')
+  }
+  if (runtime.mode === 'replay' || !lastDeviceStatus || lastDeviceStatus.source_mode !== 'LIVE_DEVICE' || lastDeviceStatus.simulated) {
+    const error = controlError('LIVE_CONTROL_UNAVAILABLE', '只有已确认的实时设备可以执行停止采集')
+    recordAudit('device.stop', 'BLOCKED', { detail: error.api.code })
+    throw error
+  }
+  try {
+    const result = validateDeviceControlResult(payload(await apiClient.post('/device/stop', null, {
+      headers: { 'X-Control-Token': controlToken },
+    })))
+    runtime.activeSource = 'api'
+    runtime.degraded = false
+    runtime.message = ''
+    runtime.lastError = null
+    lastDeviceStatus = { ...lastDeviceStatus, ...result, online: result.online ?? lastDeviceStatus.online }
+    recordAudit('device.stop', 'SUCCESS', { detail: 'collection-stopped' })
+    return result
+  } catch (error) {
+    runtime.lastError = error?.message || '停止采集失败'
+    recordAudit('device.stop', 'FAILED', { detail: error?.api?.code || 'CONTROL_REQUEST_FAILED' })
+    throw error
+  }
+}
+
+function replaySceneCalibration(sceneConfigId) {
+  if (replayData.sceneCalibration.scene_config_id !== sceneConfigId) {
+    throw controlError('SCENE_CONFIG_MISSING', '场景标定不存在')
+  }
+  return replayData.sceneCalibration
+}
+
+function sceneFallbackAllowed(error) {
+  if (['SCENE_CONFIG_MISSING', 'SCENE_CONFIG_INVALID'].includes(error?.api?.code)) return false
+  return shouldFallback(error)
+}
+
+export async function getSceneCalibration(sceneConfigId) {
+  if (!sceneConfigId || typeof sceneConfigId !== 'string') {
+    throw controlError('SCENE_CONFIG_REQUIRED', '缺少场景配置标识')
+  }
+  return resolveData('scene-calibration.read', async () => validateSceneCalibration(payload(await apiClient.get(
+    `/scene-calibrations/${encodeURIComponent(sceneConfigId)}`,
+  ))), () => validateSceneCalibration(replaySceneCalibration(sceneConfigId)), validateSceneCalibration, sceneFallbackAllowed)
+}
+
+function replayForewarningHistory(residentId, { from = null, to = null, limit = 100 } = {}) {
+  const fromTimestamp = from ? Date.parse(from) : Number.NEGATIVE_INFINITY
+  const toTimestamp = to ? Date.parse(to) : Number.POSITIVE_INFINITY
+  return replayData.forewarning
+    .map((snapshot) => ({ ...snapshot, resident_id: residentId }))
+    .filter((snapshot) => {
+      const timestamp = Date.parse(snapshot.evaluated_at)
+      return timestamp >= fromTimestamp && timestamp <= toTimestamp
+    })
+    .sort((left, right) => Date.parse(right.evaluated_at) - Date.parse(left.evaluated_at))
+    .slice(0, limit)
+}
+
+export async function getLatestForewarning(residentId = RESIDENT_ID) {
+  return resolveData('resident.forewarning.latest', async () => {
+    const result = payload(await apiClient.get(`/residents/${encodeURIComponent(residentId)}/forewarning/latest`))
+    return result === null ? null : validateForewarningSnapshot(result, 'resident_forewarning.latest')
+  }, () => replayForewarningHistory(residentId, { limit: 1 })[0] || null, (result) => (
+    result === null ? null : validateForewarningSnapshot(result, 'resident_forewarning.latest')
+  ))
+}
+
+export async function getForewarningHistory(residentId = RESIDENT_ID, { from = null, to = null, limit = 500 } = {}) {
+  const safeLimit = Math.min(500, Math.max(1, Number.isInteger(limit) ? limit : 500))
+  const params = { limit: safeLimit }
+  if (from) params.from = from
+  if (to) params.to = to
+  return resolveData('resident.forewarning.history', async () => validateForewarningHistory(listFrom(payload(await apiClient.get(
+    `/residents/${encodeURIComponent(residentId)}/forewarning`, { params },
+  )))), () => replayForewarningHistory(residentId, { from, to, limit: safeLimit }), validateForewarningHistory)
 }
 
 export async function getAlarmProcessingTasks({ residentId = null, limit = 20 } = {}) {
