@@ -26,6 +26,7 @@ from backend.service.stream_buffer_service import (
     cleanup_stream_buffer,
     create_buffer_session,
     inventory_buffer_segments,
+    purge_stream_buffer_runtime,
     resolve_stream_buffer_root,
     release_stream_buffer_lock,
     select_alarm_window,
@@ -217,6 +218,119 @@ def test_cleanup_keeps_active_empty_session(tmp_path):
     cleanup_stream_buffer(root, retention_seconds=60, active_session_id=session_id)
 
     assert session_dir.is_dir()
+
+
+def test_runtime_purge_removes_only_known_transient_artifacts(tmp_path):
+    private_root = tmp_path / "private"
+    root = resolve_stream_buffer_root(str(private_root / ".stream-buffer"))
+    session_id, session_dir = create_buffer_session(root)
+    segment(session_dir / "segment-000000001.ts", datetime.now(UTC))
+    workspace = root / "work" / "task-test"
+    workspace.mkdir(parents=True)
+    (workspace / "manifest.txt").write_text("temporary", encoding="utf-8")
+    (root / "status.json").write_text("{}", encoding="utf-8")
+    (root / "keep-for-review.txt").write_text("preserve", encoding="utf-8")
+    formal_asset = private_root / "asset-live-video-test.mp4"
+    formal_asset.write_bytes(b"formal asset")
+    (root / "worker.lock").write_text(
+        json.dumps({"pid": 99999999}), encoding="utf-8"
+    )
+
+    report = purge_stream_buffer_runtime(root)
+    second = purge_stream_buffer_runtime(root)
+
+    assert report == {
+        "removed_segments": 1,
+        "removed_workspaces": 1,
+        "status_removed": True,
+        "lock_removed": True,
+        "lock_active": False,
+    }
+    assert second["removed_segments"] == 0
+    assert (root / "keep-for-review.txt").read_text(encoding="utf-8") == "preserve"
+    assert formal_asset.read_bytes() == b"formal asset"
+    assert not (root / "worker.lock").exists()
+    assert not (root / "sessions" / session_id).exists()
+
+
+def test_runtime_purge_rejects_active_worker_lock(tmp_path):
+    root = resolve_stream_buffer_root(str(tmp_path / "buffer"))
+    lock_path = root / "worker.lock"
+    lock_path.write_text(json.dumps({"pid": os.getpid()}), encoding="utf-8")
+    _, session_dir = create_buffer_session(root)
+    active_segment = session_dir / "segment-001.ts"
+    active_segment.write_bytes(b"active")
+    status_path = root / "status.json"
+    status_path.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(StreamBufferError) as caught:
+        purge_stream_buffer_runtime(root)
+
+    assert caught.value.code == "STREAM_BUFFER_WORKER_STILL_ACTIVE"
+    assert lock_path.is_file()
+    assert active_segment.is_file()
+    assert status_path.is_file()
+
+
+def test_runtime_purge_reports_sanitized_failure(tmp_path, monkeypatch):
+    root = resolve_stream_buffer_root(str(tmp_path / "buffer"))
+    status_path = root / "status.json"
+    status_path.write_text("{}", encoding="utf-8")
+    original_unlink = Path.unlink
+
+    def fail_status(path, *args, **kwargs):
+        if path == status_path:
+            raise OSError("private path must not escape")
+        return original_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail_status)
+
+    with pytest.raises(StreamBufferError) as caught:
+        purge_stream_buffer_runtime(root)
+
+    assert caught.value.code == "STREAM_BUFFER_PURGE_FAILED"
+    assert "private path" not in caught.value.message
+
+
+def test_buffer_assembly_rejects_non_h264_output(tmp_path, monkeypatch):
+    root = resolve_stream_buffer_root(str(tmp_path / "buffer"))
+    started_at = datetime.now(UTC) - timedelta(seconds=2)
+    buffered = segment(root / "sessions" / "session-test" / "segment-001.ts", started_at)
+    selection = stream_buffer_service.BufferSelection(
+        alarm_time=started_at + timedelta(seconds=1),
+        window_start=started_at,
+        window_end=started_at + timedelta(seconds=2),
+        coverage_seconds=2.0,
+        segments=(buffered,),
+    )
+
+    def fake_run(command, **_kwargs):
+        Path(command[-1]).write_bytes(b"encoded video")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(stream_buffer_service.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        stream_buffer_service,
+        "_probe_recorded_video",
+        lambda _path: snapshot_asset_service.VideoProbe(
+            duration_seconds=2.0,
+            frame_rate=15.0,
+            frame_count=30,
+            codec_name="hevc",
+        ),
+    )
+
+    with pytest.raises(StreamBufferError) as caught:
+        stream_buffer_service._assemble_selection_sync(
+            selection,
+            root=root,
+            output_path=tmp_path / "assembled.mp4",
+            task_id="task-codec-test",
+            max_bytes=1024 * 1024,
+        )
+
+    assert caught.value.code == "VIDEO_CODEC_UNSUPPORTED"
+    assert not (tmp_path / "assembled.mp4").exists()
 
 
 def test_status_file_and_command_do_not_serialize_credentials(tmp_path):

@@ -131,7 +131,8 @@ def test_flv_stream_probe_records_valid_private_clip(monkeypatch):
         assert address == "https://example.test/live.flv"
         return {
             "result": "SUCCESS", "duration_seconds": 8.0, "frame_rate": 15.0,
-            "frame_count": 120, "byte_size": 1024, "content_sha256": "a" * 64,
+            "frame_count": 120, "codec_name": "h264", "byte_size": 1024,
+            "content_sha256": "a" * 64,
             "media_retained": False, "failure_reason": None,
         }
 
@@ -146,6 +147,7 @@ def test_flv_stream_probe_records_valid_private_clip(monkeypatch):
     assert record["selected_protocol"] == "flv"
     assert record["stream_probe_executed"] is True
     assert record["stream_probe"]["duration_seconds"] == 8.0
+    assert record["stream_probe"]["codec_name"] == "h264"
     assert record["stream_probe"]["media_retained"] is False
 
 

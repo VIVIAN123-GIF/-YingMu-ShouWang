@@ -188,6 +188,47 @@ def acquire_stream_buffer_lock(root: Path) -> Path:
     )
 
 
+def _acquire_stream_buffer_cleanup_lock(root: Path) -> tuple[Path, bool]:
+    """Atomically exclude a worker while transient artifacts are removed."""
+    lock_path = root / LOCK_FILENAME
+    payload = json.dumps(
+        {
+            "schema_version": "stream-buffer-lock/1.0",
+            "pid": os.getpid(),
+            "owner": "SHUTDOWN_CLEANUP",
+            "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
+            "contains_credentials": False,
+        },
+        sort_keys=True,
+    )
+    stale_removed = False
+    for _attempt in range(3):
+        try:
+            with lock_path.open("x", encoding="utf-8") as handle:
+                handle.write(payload)
+            return lock_path, stale_removed
+        except FileExistsError:
+            try:
+                existing = json.loads(lock_path.read_text(encoding="utf-8"))
+                existing_pid = int(existing.get("pid", 0))
+            except (OSError, ValueError, TypeError, json.JSONDecodeError):
+                existing_pid = 0
+            if _process_is_running(existing_pid):
+                raise StreamBufferError(
+                    "STREAM_BUFFER_WORKER_STILL_ACTIVE",
+                    "The rolling buffer worker is still active during shutdown cleanup",
+                )
+            try:
+                lock_path.unlink()
+                stale_removed = True
+            except FileNotFoundError:
+                pass
+    raise StreamBufferError(
+        "STREAM_BUFFER_PURGE_LOCK_FAILED",
+        "Shutdown cleanup could not exclusively lock the rolling buffer",
+    )
+
+
 def release_stream_buffer_lock(lock_path: Path) -> None:
     try:
         payload = json.loads(lock_path.read_text(encoding="utf-8"))
@@ -495,6 +536,69 @@ def cleanup_stream_buffer(
     return removed
 
 
+def purge_stream_buffer_runtime(
+    root: Path | None = None,
+) -> dict[str, int | bool]:
+    """Remove only transient rolling-buffer artifacts from a validated private root."""
+    buffer_root = resolve_stream_buffer_root(str(root) if root is not None else None)
+    sessions_root = buffer_root / SESSIONS_DIRECTORY
+    work_root = buffer_root / WORK_DIRECTORY
+    lock_path, stale_lock_removed = _acquire_stream_buffer_cleanup_lock(buffer_root)
+    removed_segments = 0
+    removed_workspaces = 0
+    failures = False
+    status_removed = False
+    lock_removed = False
+    try:
+        for path in sessions_root.glob("session-*/segment-*.ts"):
+            try:
+                path.unlink(missing_ok=True)
+                removed_segments += 1
+            except OSError:
+                failures = True
+        for session_dir in sessions_root.glob("session-*"):
+            try:
+                session_dir.rmdir()
+            except OSError:
+                pass
+
+        for path in (*work_root.glob("task-*"), *work_root.glob("probe-*.mp4")):
+            try:
+                if path.is_dir() and not path.is_symlink():
+                    shutil.rmtree(path)
+                else:
+                    path.unlink(missing_ok=True)
+                removed_workspaces += 1
+            except OSError:
+                failures = True
+
+        status_path = buffer_root / STATUS_FILENAME
+        try:
+            status_removed = status_path.exists()
+            status_path.unlink(missing_ok=True)
+        except OSError:
+            failures = True
+    finally:
+        try:
+            release_stream_buffer_lock(lock_path)
+            lock_removed = not lock_path.exists()
+        except OSError:
+            failures = True
+
+    if failures:
+        raise StreamBufferError(
+            "STREAM_BUFFER_PURGE_FAILED",
+            "One or more transient stream buffer artifacts could not be removed",
+        )
+    return {
+        "removed_segments": removed_segments,
+        "removed_workspaces": removed_workspaces,
+        "status_removed": status_removed,
+        "lock_removed": lock_removed or stale_lock_removed,
+        "lock_active": False,
+    }
+
+
 def _concat_manifest_line(path: Path) -> str:
     name = path.name
     if Path(name).name != name or "'" in name or "\n" in name or "\r" in name:
@@ -575,9 +679,14 @@ def _assemble_selection_sync(
         expected_seconds = max(1, int(math.floor(selection.coverage_seconds)))
         try:
             probe = _probe_recorded_video(temporary_output)
-            _validate_recorded_video(probe, expected_seconds=expected_seconds)
+            _validate_recorded_video(
+                probe,
+                expected_seconds=expected_seconds,
+                expected_codec="h264",
+            )
         except SnapshotAssetError as exc:
-            raise StreamBufferError("STREAM_BUFFER_VIDEO_INVALID", exc.message) from exc
+            code = exc.code if exc.code == "VIDEO_CODEC_UNSUPPORTED" else "STREAM_BUFFER_VIDEO_INVALID"
+            raise StreamBufferError(code, exc.message) from exc
         byte_size = temporary_output.stat().st_size
         if byte_size > max_bytes:
             raise StreamBufferError("STREAM_BUFFER_VIDEO_TOO_LARGE", "The buffered video exceeds its size limit")
@@ -792,6 +901,7 @@ def probe_stream_buffer_assembly(root: Path | None = None) -> dict:
             "duration_seconds": round(probe.duration_seconds, 3),
             "frame_rate": round(probe.frame_rate, 3),
             "frame_count": probe.frame_count,
+            "codec_name": probe.codec_name,
             "byte_size": byte_size,
             "contains_credentials": False,
             "contains_media_path": False,

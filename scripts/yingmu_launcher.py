@@ -241,6 +241,39 @@ def _terminate(processes: list[subprocess.Popen]) -> None:
             process.wait(timeout=remaining)
         except subprocess.TimeoutExpired:
             process.kill()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired as exc:
+                raise RuntimeError("PROCESS_TERMINATION_FAILED") from exc
+
+
+def _purge_live_stream_buffer(mode: str, environment: dict[str, str]) -> dict[str, int | bool] | None:
+    if mode != "live" or environment.get("YINGMU_STREAM_BUFFER_ENABLED", "false").lower() != "true":
+        return None
+    configured_root = environment.get("YINGMU_STREAM_BUFFER_ROOT", "").strip()
+    if not configured_root:
+        private_root = environment.get("YINGMU_PRIVATE_MEDIA_ROOT", "").strip()
+        if not private_root:
+            raise RuntimeError("STREAM_BUFFER_ROOT_REQUIRED")
+        configured_root = str(Path(private_root) / ".stream-buffer")
+    from backend.service.stream_buffer_service import (
+        StreamBufferError,
+        purge_stream_buffer_runtime,
+    )
+
+    try:
+        result = purge_stream_buffer_runtime(Path(configured_root))
+    except StreamBufferError as exc:
+        LOGGER.error("stream_buffer_shutdown_cleanup_failed error_code=%s", exc.code)
+        raise RuntimeError(exc.code) from exc
+    if result.get("lock_active"):
+        LOGGER.error(
+            "stream_buffer_shutdown_cleanup_failed error_code=%s",
+            "STREAM_BUFFER_WORKER_STILL_ACTIVE",
+        )
+        raise RuntimeError("STREAM_BUFFER_WORKER_STILL_ACTIVE")
+    LOGGER.info("stream_buffer_shutdown_cleanup %s", json.dumps(result, sort_keys=True))
+    return result
 
 
 def run_stack(mode: str, args: argparse.Namespace) -> int:
@@ -300,9 +333,14 @@ def run_stack(mode: str, args: argparse.Namespace) -> int:
         LOGGER.info("shutdown_requested")
         return 0
     finally:
-        _terminate(processes)
-        for handle in handles:
-            handle.close()
+        try:
+            _terminate(processes)
+        finally:
+            try:
+                _purge_live_stream_buffer(mode, environment)
+            finally:
+                for handle in handles:
+                    handle.close()
 
 
 def build_parser() -> argparse.ArgumentParser:

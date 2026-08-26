@@ -26,6 +26,7 @@ from backend.service.stream_buffer_service import (
     continuous_coverage_before,
     create_buffer_session,
     inventory_buffer_segments,
+    purge_stream_buffer_runtime,
     resolve_stream_buffer_root,
     release_stream_buffer_lock,
     validate_stream_buffer_authorization,
@@ -158,6 +159,7 @@ async def run(*, once: bool = False) -> int:
             await asyncio.sleep(YINGMU_STREAM_BUFFER_RECONNECT_SECONDS)
     finally:
         release_stream_buffer_lock(lock_path)
+        purge_stream_buffer_runtime(root)
 
 
 def main() -> int:

@@ -5,6 +5,8 @@ import json
 import math
 from pathlib import Path
 
+import pytest
+
 from contracts.v1.algorithm import (
     AdapterBatch,
     AlgorithmJob,
@@ -140,6 +142,7 @@ def test_gait_adapter_low_quality(tmp_path: Path):
 
     assert batch.status == "LOW_QUALITY"
     assert any(item.evidence_type == "tracking_lost" for item in batch.evidences)
+    assert all(item.evidence_type != "posture_recovered" for item in batch.evidences)
     assert batch.error is None
 
 
@@ -306,6 +309,48 @@ def test_v12_adapter_no_transition_does_not_emit_post_rise_risk(tmp_path: Path):
         assessment_status="NO_TRANSITION",
         assessment_reason_code="NO_SIT_TO_STAND_TRANSITION",
         sit_to_stand_transition_confirmed=False,
+    )
+
+    batch = asyncio.run(run(_job(feature_path)))
+
+    assert batch.status == "NO_EVIDENCE"
+    assert batch.evidences == []
+
+
+def test_v12_adapter_no_transition_can_emit_stable_recovery(tmp_path: Path):
+    feature_path = tmp_path / "stable-recovery.json"
+    _write_v12_features(
+        feature_path,
+        assessment_status="NO_TRANSITION",
+        assessment_reason_code="NO_SIT_TO_STAND_TRANSITION",
+        sit_to_stand_transition_confirmed=False,
+        stable_posture_duration=15.0,
+        stable_trunk_angle_deg=8.0,
+    )
+
+    batch = asyncio.run(run(_job(feature_path)))
+
+    assert batch.status == "SUCCESS"
+    assert [item.evidence_type for item in batch.evidences] == ["posture_recovered"]
+
+
+@pytest.mark.parametrize(
+    ("stable_duration", "stable_angle"),
+    ((14.9, 8.0), (15.0, 8.1)),
+)
+def test_v12_adapter_recovery_requires_stable_thresholds(
+    tmp_path: Path,
+    stable_duration: float,
+    stable_angle: float,
+):
+    feature_path = tmp_path / "insufficient-recovery.json"
+    _write_v12_features(
+        feature_path,
+        assessment_status="NO_TRANSITION",
+        assessment_reason_code="NO_SIT_TO_STAND_TRANSITION",
+        sit_to_stand_transition_confirmed=False,
+        stable_posture_duration=stable_duration,
+        stable_trunk_angle_deg=stable_angle,
     )
 
     batch = asyncio.run(run(_job(feature_path)))

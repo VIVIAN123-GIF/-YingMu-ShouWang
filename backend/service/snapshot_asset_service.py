@@ -64,6 +64,7 @@ class VideoProbe:
     duration_seconds: float
     frame_rate: float
     frame_count: int
+    codec_name: str | None = None
 
 
 VIDEO_MIN_DURATION_RATIO = 0.75
@@ -390,6 +391,7 @@ def _record_video_sync(
         _validate_recorded_video(
             _probe_recorded_video(output_path),
             expected_seconds=YINGMU_VIDEO_CAPTURE_SECONDS,
+            expected_codec="h264",
         )
     except SnapshotAssetError:
         output_path.unlink(missing_ok=True)
@@ -423,7 +425,7 @@ def _parse_frame_rate(value: object) -> float:
 def _probe_recorded_video(output_path: Path) -> VideoProbe:
     command = [
         _ffprobe_binary(), "-v", "error", "-count_frames", "-select_streams", "v:0",
-        "-show_entries", "format=duration:stream=avg_frame_rate,nb_read_frames",
+        "-show_entries", "format=duration:stream=codec_name,avg_frame_rate,nb_read_frames",
         "-of", "json", str(output_path),
     ]
     try:
@@ -441,6 +443,7 @@ def _probe_recorded_video(output_path: Path) -> VideoProbe:
             duration_seconds=float((payload.get("format") or {}).get("duration", 0)),
             frame_rate=_parse_frame_rate(stream.get("avg_frame_rate")),
             frame_count=int(stream.get("nb_read_frames", 0)),
+            codec_name=str(stream.get("codec_name") or "").lower() or None,
         )
     except (OSError, subprocess.SubprocessError, json.JSONDecodeError, IndexError, TypeError, ValueError) as exc:
         raise SnapshotAssetError(
@@ -450,7 +453,18 @@ def _probe_recorded_video(output_path: Path) -> VideoProbe:
         ) from exc
 
 
-def _validate_recorded_video(probe: VideoProbe, *, expected_seconds: int) -> None:
+def _validate_recorded_video(
+    probe: VideoProbe,
+    *,
+    expected_seconds: int,
+    expected_codec: str | None = None,
+) -> None:
+    if expected_codec and probe.codec_name != expected_codec.lower():
+        raise SnapshotAssetError(
+            "VIDEO_CODEC_UNSUPPORTED",
+            "The live video codec does not match the verified baseline",
+            retryable=False,
+        )
     minimum_duration = expected_seconds * VIDEO_MIN_DURATION_RATIO
     if not math.isfinite(probe.duration_seconds) or probe.duration_seconds < minimum_duration:
         raise SnapshotAssetError(

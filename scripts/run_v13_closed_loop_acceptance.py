@@ -40,6 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--recovery-captured-at")
     parser.add_argument("--resolve-at")
     parser.add_argument("--scene-config-id", default="scene-recorded-demo-v1")
+    parser.add_argument("--scene-config-dir", type=Path, default=ROOT / "scene-calibrations")
     parser.add_argument("--camera-position-id", default="recorded-fixed-demo-v1")
     parser.add_argument("--report", type=Path)
     return parser.parse_args()
@@ -62,6 +63,12 @@ def validate_inputs(args: argparse.Namespace) -> dict[str, datetime]:
     retention_until = parse_timestamp(args.retention_until, "retention-until")
     if retention_until <= captured_at:
         raise AcceptanceError("retention-until must be after captured-at")
+    scene_root = args.scene_config_dir.expanduser().resolve()
+    scene_path = (scene_root / f"{args.scene_config_id}.json").resolve()
+    if scene_root not in scene_path.parents:
+        raise AcceptanceError("SCENE_CONFIG_ID_INVALID")
+    if not scene_path.is_file():
+        raise AcceptanceError("SCENE_CONFIG_NOT_FOUND")
 
     timeline = {"captured_at": captured_at, "retention_until": retention_until}
     recovery_values = (args.recovery_input, args.recovery_captured_at, args.resolve_at)
@@ -153,9 +160,12 @@ def acceptance_errors(result: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if result["task_statuses"][0] not in {"COMPLETED", "NO_EVIDENCE"}:
         errors.append("trigger algorithm task did not finish successfully")
-    modules = {item.get("module"): item.get("status") for item in result["module_results"][0]}
-    if not {"GAIT", "TRAJECTORY"}.issubset(modules):
-        errors.append("GAIT and TRAJECTORY were not both executed")
+    for index, module_results in enumerate(result["module_results"], start=1):
+        modules = {item.get("module"): item.get("status") for item in module_results}
+        if not {"GAIT", "TRAJECTORY"}.issubset(modules):
+            errors.append(f"input {index} did not execute both GAIT and TRAJECTORY")
+        if any(status == "FAILED" for status in modules.values()):
+            errors.append(f"input {index} contains a failed algorithm module")
     if not result["reference_integrity"]["passed"]:
         errors.append("cross-table reference integrity failed")
     if counts["assets"] < result["input_media_count"]:
@@ -394,7 +404,7 @@ def main() -> int:
             "YINGMU_GAIT_ADAPTER": "contracts.v1.gait_adapter:run",
             "YINGMU_TRAJECTORY_ADAPTER": "adapters.trajectory_adapter:run",
             "YINGMU_SCENE_CONFIG_ID": args.scene_config_id,
-            "YINGMU_SCENE_CONFIG_DIR": str((ROOT / "scene-calibrations").resolve()),
+            "YINGMU_SCENE_CONFIG_DIR": str(args.scene_config_dir.expanduser().resolve()),
             "YINGMU_CAMERA_POSITION_ID": args.camera_position_id,
             "YINGMU_LOCATION": "living_room",
             "YINGMU_ALGORITHM_TIMEOUT_SECONDS": "120",
@@ -440,6 +450,7 @@ def main() -> int:
                 "simulated": True,
                 "pixel_source": "AUTHORIZED_REAL_RECORDING",
             },
+            "scene_config_id": args.scene_config_id,
             "backend": backend,
             "http_api": {"statuses": http_statuses, "passed": http_ok},
             "claim_boundary": "engineering forewarning index, not a fall probability or clinical validation",

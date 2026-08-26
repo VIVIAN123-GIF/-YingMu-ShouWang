@@ -433,7 +433,13 @@ def _build_evidences(job: AlgorithmJob, observations: list[Observation]) -> list
 
     stable_duration = by_feature.get("stable_posture_duration")
     stable_angle = by_feature.get("stable_trunk_angle_deg")
-    if allow_short_signals and stable_duration and stable_angle and isinstance(stable_duration.feature_value, (int, float)) and isinstance(stable_angle.feature_value, (int, float)):
+    valid_ratio = by_feature.get("valid_frame_ratio")
+    recovery_quality_usable = bool(
+        valid_ratio
+        and isinstance(valid_ratio.feature_value, (int, float))
+        and float(valid_ratio.feature_value) >= 0.65
+    )
+    if recovery_quality_usable and stable_duration and stable_angle and isinstance(stable_duration.feature_value, (int, float)) and isinstance(stable_angle.feature_value, (int, float)):
         duration = float(stable_duration.feature_value)
         angle = float(stable_angle.feature_value)
         if duration >= 15.0 and angle <= 8.0:
@@ -448,7 +454,6 @@ def _build_evidences(job: AlgorithmJob, observations: list[Observation]) -> list
                 related_observations=(stable_angle,),
             ))
 
-    valid_ratio = by_feature.get("valid_frame_ratio")
     if valid_ratio and isinstance(valid_ratio.feature_value, (int, float)) and float(valid_ratio.feature_value) < 0.65:
         value = float(valid_ratio.feature_value)
         evidences.append(_evidence(job, "tracking_lost", valid_ratio, (0.65 - value) / 0.65, value, 0.65, "有效姿态帧比例低于输入质量阈值。"))

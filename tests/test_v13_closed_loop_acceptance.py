@@ -17,6 +17,9 @@ from scripts.run_v13_closed_loop_acceptance import (
 def args(tmp_path, expected_outcome=NO_EVENT):
     media = tmp_path / "input.mp4"
     media.write_bytes(b"recorded pixels")
+    scene_dir = tmp_path / "scenes"
+    scene_dir.mkdir()
+    (scene_dir / "scene-test.json").write_text("{}", encoding="utf-8")
     return Namespace(
         expected_outcome=expected_outcome,
         input=media,
@@ -27,6 +30,9 @@ def args(tmp_path, expected_outcome=NO_EVENT):
         recovery_input=None,
         recovery_captured_at=None,
         resolve_at=None,
+        scene_config_id="scene-test",
+        scene_config_dir=scene_dir,
+        camera_position_id="camera-test",
     )
 
 
@@ -95,6 +101,22 @@ def test_timestamps_must_include_timezone(tmp_path):
         validate_inputs(payload)
 
 
+def test_private_scene_directory_is_accepted(tmp_path):
+    payload = args(tmp_path)
+
+    timeline = validate_inputs(payload)
+
+    assert timeline["captured_at"].utcoffset() == timedelta(hours=8)
+
+
+def test_missing_scene_configuration_is_rejected(tmp_path):
+    payload = args(tmp_path)
+    (payload.scene_config_dir / "scene-test.json").unlink()
+
+    with pytest.raises(AcceptanceError, match="SCENE_CONFIG_NOT_FOUND"):
+        validate_inputs(payload)
+
+
 def test_positive_acceptance_requires_every_closure_stage():
     complete = base_result(EVENT_RESOLVED)
     assert acceptance_errors(complete) == []
@@ -105,6 +127,18 @@ def test_positive_acceptance_requires_every_closure_stage():
     errors = acceptance_errors(complete)
     assert any("POST_INTERVENTION" in error for error in errors)
     assert any("risk_after" in error for error in errors)
+
+
+def test_positive_acceptance_checks_recovery_modules():
+    complete = base_result(EVENT_RESOLVED)
+    complete["module_results"][1] = [
+        {"module": "GAIT", "status": "SUCCESS"},
+        {"module": "TRAJECTORY", "status": "FAILED"},
+    ]
+
+    errors = acceptance_errors(complete)
+
+    assert "input 2 contains a failed algorithm module" in errors
 
 
 def test_no_event_acceptance_rejects_downstream_side_effects():
