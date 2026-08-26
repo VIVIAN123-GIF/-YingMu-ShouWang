@@ -107,6 +107,27 @@
 
 以仓库中的最新 CI 结果和本地 `output/fresh-release-validation.json` 为最终数字；`output/` 已忽略，不上传 Git。
 
+### 4.1 现场验收前 P0 工程修复
+
+2026-08-26 已完成以下不依赖真实设备的工程修复：
+
+- 恢复证据不再要求恢复段重复坐站转换，仍严格要求稳定至少 15 秒、躯干角不超过 8 度和有效跟踪质量；
+- 正向回放验收器支持 `--scene-config-dir`，可读取仓库外最终机位配置，并检查风险/恢复两次任务的双模块状态；
+- 实机直播录制和环形缓冲成片增加 H.264 严格门禁，脱敏报告保留 `codec_name`；
+- Stream Buffer Worker 与 Windows 启动器退出时立即清除临时分片、工作区、状态和死亡锁，正式 Asset 不受影响；
+- 新增 `docs/field-acceptance/` 轻量现场授权、采集台账、场景示例和实机验收模板。
+
+以上只表示工程门禁已经就绪。授权风险/恢复真实像素、最终机位实际坐标和 `LIVE_DEVICE/simulated=false` 现场记录仍未产生，以下三项外部阻塞保持不变。
+
+### 4.2 P03 评价口径已冻结
+
+P03 已停止使用统一 `RISK_PRECURSOR/NORMAL_CONTROL` 二分类和全局 Accuracy，改为即时事件、步态/趋势两条独立评价轨。正式主结果仅允许配置 A，B-D 消融在存在可执行实现并另行冻结前暂缓。
+
+冻结口径、机器规范和推理结果 Schema 位于 `experiments/three-participant/`。最终 `rule-freeze.json` 必须同时绑定 P03 lock、v1.2、v1.3-min、模型、评价文件、结果 Schema 和正式执行器哈希。
+
+当前仍缺少自动处理 P03 全部32段并生成 `p03-inference-results/1.0` 的正式批量执行器。因此 `generate-predictions` 已被禁止，P03 继续保持锁定，不得手工填写预测表或直接运行现有算法脚本代替正式执行器。
+正式结果契约要求每段保留有序 Evidence（含片内时间、质量和严重度）及完整 RuleTrace 序列；分析器按冻结 v1.2 规则重放同源 Observation 和 30 秒窗口，旧 `risk_status`/二分类结果不再作为裁决依据。
+
 ## 5. 当前真正卡住的问题
 
 ### 5.1 缺少真实像素正向双片段

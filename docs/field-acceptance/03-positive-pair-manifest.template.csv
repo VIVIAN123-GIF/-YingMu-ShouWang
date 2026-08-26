@@ -1,0 +1,3 @@
+pair_id,clip_role,clip_id,participant_ref,authorization_record_id,captured_at,retention_until,camera_position_id,scene_config_id,location,resolution,fps,codec_name,planned_label,transition_start_ms,transition_end_ms,assessment_window_start_ms,assessment_window_end_ms,stable_start_ms,stable_end_ms,annotator_a_ref,annotator_b_ref,annotation_status,validity,exclusion_reason,sha256,private_storage_confirmed,algorithm_run_status,notes
+PAIR-001,RISK,PAIR-001-RISK,PXX,AUTH-REPLACE,,,,,living_room,,,,RISK_PRECURSOR,,,,,,,,,PENDING,PLANNED,,,false,NOT_RUN,
+PAIR-001,RECOVERY,PAIR-001-RECOVERY,PXX,AUTH-REPLACE,,,,,living_room,,,,STABLE_RECOVERY,,,,,,,,,PENDING,PLANNED,,,false,NOT_RUN,
