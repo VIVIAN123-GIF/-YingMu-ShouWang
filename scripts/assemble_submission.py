@@ -59,25 +59,9 @@ def _load_json(path: Path) -> dict:
 
 
 def validate_experiment(payload: dict) -> list[str]:
-    errors = []
-    if payload.get("status") != "COMPLETE":
-        errors.append("experiment status is not COMPLETE")
-    primary = payload.get("primary_result", {})
-    if primary.get("participant_id") != "P03" or primary.get("config_id") != "A":
-        errors.append("primary result must be P03 configuration A")
-    if primary.get("sample_count") != 24:
-        errors.append("P03 primary result must contain exactly 24 evaluation clips")
-    participant_results = payload.get("participant_results", {})
-    for participant in ("P01", "P02", "P03"):
-        if participant_results.get(participant, {}).get("sample_count") != 24:
-            errors.append(f"{participant} result must contain exactly 24 evaluation clips")
-    ablations = payload.get("ablation_results", {})
-    for config_id in ("A", "B", "C", "D"):
-        if ablations.get(config_id, {}).get("sample_count") != 24:
-            errors.append(f"ablation {config_id} must use all 24 P03 clips")
-    if not payload.get("test_lock_sha256") or not payload.get("rule_freeze_sha256"):
-        errors.append("experiment result is missing test-lock or rule-freeze hashes")
-    return errors
+    from scripts.three_participant_experiment import validate_final_experiment_result
+
+    return validate_final_experiment_result(payload)
 
 
 def validate_stability(payload: dict) -> list[str]:

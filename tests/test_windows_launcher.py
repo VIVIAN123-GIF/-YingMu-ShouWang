@@ -161,6 +161,113 @@ def test_terminate_stops_every_started_process():
     assert all(process.terminated for process in processes)
 
 
+def test_terminate_waits_after_force_kill():
+    class Process:
+        def __init__(self):
+            self.wait_calls = 0
+            self.killed = False
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            return None
+
+        def wait(self, timeout):
+            del timeout
+            self.wait_calls += 1
+            if self.wait_calls == 1:
+                raise launcher.subprocess.TimeoutExpired("worker", 5)
+            return -9
+
+        def kill(self):
+            self.killed = True
+
+    process = Process()
+
+    launcher._terminate([process])
+
+    assert process.killed is True
+    assert process.wait_calls == 2
+
+
+def test_terminate_reports_process_that_survives_force_kill():
+    class Process:
+        def poll(self):
+            return None
+
+        def terminate(self):
+            return None
+
+        def wait(self, timeout):
+            raise launcher.subprocess.TimeoutExpired("worker", timeout)
+
+        def kill(self):
+            return None
+
+    with pytest.raises(RuntimeError, match="PROCESS_TERMINATION_FAILED"):
+        launcher._terminate([Process()])
+
+
+def test_live_launcher_purges_configured_stream_buffer(tmp_path, monkeypatch):
+    from backend.service import stream_buffer_service
+
+    calls = []
+    monkeypatch.setattr(
+        stream_buffer_service,
+        "purge_stream_buffer_runtime",
+        lambda root: calls.append(root) or {
+            "removed_segments": 2,
+            "removed_workspaces": 1,
+            "status_removed": True,
+            "lock_removed": True,
+            "lock_active": False,
+        },
+    )
+
+    result = launcher._purge_live_stream_buffer(
+        "live",
+        {
+            "YINGMU_STREAM_BUFFER_ENABLED": "true",
+            "YINGMU_STREAM_BUFFER_ROOT": str(tmp_path / "buffer"),
+        },
+    )
+
+    assert calls == [tmp_path / "buffer"]
+    assert result["removed_segments"] == 2
+
+
+def test_demo_launcher_does_not_purge_stream_buffer():
+    assert launcher._purge_live_stream_buffer(
+        "demo", {"YINGMU_STREAM_BUFFER_ENABLED": "true"}
+    ) is None
+
+
+def test_live_launcher_rejects_active_cleanup_lock(tmp_path, monkeypatch):
+    from backend.service import stream_buffer_service
+
+    monkeypatch.setattr(
+        stream_buffer_service,
+        "purge_stream_buffer_runtime",
+        lambda _root: {
+            "removed_segments": 0,
+            "removed_workspaces": 0,
+            "status_removed": False,
+            "lock_removed": False,
+            "lock_active": True,
+        },
+    )
+
+    with pytest.raises(RuntimeError, match="STREAM_BUFFER_WORKER_STILL_ACTIVE"):
+        launcher._purge_live_stream_buffer(
+            "live",
+            {
+                "YINGMU_STREAM_BUFFER_ENABLED": "true",
+                "YINGMU_STREAM_BUFFER_ROOT": str(tmp_path / "buffer"),
+            },
+        )
+
+
 def test_self_check_loads_required_local_resources(capsys):
     assert launcher.run_self_check() == 0
 

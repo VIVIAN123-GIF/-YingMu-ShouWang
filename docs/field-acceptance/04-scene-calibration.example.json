@@ -1,0 +1,33 @@
+{
+  "schema_version": "scene-calibration/1.0",
+  "scene_config_id": "scene-final-example-not-for-live",
+  "camera_position_id": "camera-final-example-not-for-live",
+  "location": "living_room",
+  "frame_width": 1920,
+  "frame_height": 1080,
+  "zones": [
+    {
+      "zone_id": "example-high-risk",
+      "zone_type": "HIGH_RISK",
+      "polygon_norm": [[0.62, 0.32], [0.90, 0.32], [0.92, 0.88], [0.60, 0.88]]
+    },
+    {
+      "zone_id": "example-support",
+      "zone_type": "SUPPORT",
+      "polygon_norm": [[0.08, 0.38], [0.34, 0.38], [0.36, 0.90], [0.06, 0.90]]
+    },
+    {
+      "zone_id": "example-obstacle",
+      "zone_type": "OBSTACLE",
+      "polygon_norm": [[0.42, 0.68], [0.54, 0.68], [0.55, 0.88], [0.41, 0.88]]
+    },
+    {
+      "zone_id": "example-safe",
+      "zone_type": "SAFE",
+      "polygon_norm": [[0.18, 0.72], [0.38, 0.70], [0.39, 0.96], [0.16, 0.96]]
+    }
+  ],
+  "effective_from": "2026-08-26T09:00:00+08:00",
+  "supersedes": null,
+  "notes": "EXAMPLE ONLY. Replace every identifier and polygon after final camera freeze. Current TRAJECTORY uses the normalized pelvis center as its image-plane anchor; SAFE is stored but does not change scoring."
+}

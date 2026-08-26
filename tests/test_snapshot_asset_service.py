@@ -273,3 +273,36 @@ def test_video_with_sufficient_duration_and_frames_is_accepted():
         VideoProbe(duration_seconds=8.0, frame_rate=15.0, frame_count=120),
         expected_seconds=8,
     )
+
+
+def test_live_video_requires_h264_codec():
+    with pytest.raises(SnapshotAssetError) as caught:
+        snapshot_service._validate_recorded_video(
+            VideoProbe(
+                duration_seconds=8.0,
+                frame_rate=15.0,
+                frame_count=120,
+                codec_name="hevc",
+            ),
+            expected_seconds=8,
+            expected_codec="h264",
+        )
+
+    assert caught.value.code == "VIDEO_CODEC_UNSUPPORTED"
+    assert caught.value.retryable is False
+
+
+def test_ffprobe_codec_is_parsed(monkeypatch, tmp_path):
+    completed = SimpleNamespace(
+        stdout='{"streams":[{"codec_name":"h264","avg_frame_rate":"15/1","nb_read_frames":"120"}],"format":{"duration":"8.0"}}'
+    )
+    monkeypatch.setattr(snapshot_service.subprocess, "run", lambda *_args, **_kwargs: completed)
+
+    probe = snapshot_service._probe_recorded_video(tmp_path / "private.mp4")
+
+    assert probe == VideoProbe(
+        duration_seconds=8.0,
+        frame_rate=15.0,
+        frame_count=120,
+        codec_name="h264",
+    )

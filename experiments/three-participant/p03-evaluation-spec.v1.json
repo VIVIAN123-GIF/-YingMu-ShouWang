@@ -1,0 +1,175 @@
+{
+  "schema_version": "p03-evaluation-spec/1.0",
+  "status": "FROZEN",
+  "inference_result_contract": {
+    "schema_version": "p03-inference-results/1.0",
+    "schema_path": "p03-inference-results.schema.json",
+    "record_count": 32,
+    "machine_generated_only": true,
+    "records_integrity_sha256_required": true,
+    "ordered_evidence_required": true,
+    "complete_rule_trace_sequence_required": true,
+    "attempt_history_required": true,
+    "isolated_database_required": true,
+    "shared_frozen_baseline_seed_required": true
+  },
+  "evaluation_config": "A",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true,
+  "effect_thresholds": null,
+  "rule_window_seconds": 30,
+  "quality_thresholds": {
+    "confidence": 0.7,
+    "data_quality": 0.7
+  },
+  "signal_families": {
+    "trunk": ["trunk_sway"],
+    "translation": ["post_rise_lateral_drift"],
+    "feet": ["support_base_change", "compensatory_step"]
+  },
+  "scenarios": {
+    "BASE_NORMAL_WALK_L2R": {
+      "track": "GAIT_REFERENCE",
+      "instant_target": "NOT_APPLICABLE",
+      "trend_target_evidence_any": [],
+      "orange_forbidden": true,
+      "independent_test": false
+    },
+    "BASE_NORMAL_WALK_R2L": {
+      "track": "GAIT_REFERENCE",
+      "instant_target": "NOT_APPLICABLE",
+      "trend_target_evidence_any": [],
+      "orange_forbidden": true,
+      "independent_test": false
+    },
+    "BASE_SIT_RISE_STABLE": {
+      "track": "BASELINE_SEED",
+      "instant_target": "NOT_SCORED",
+      "trend_target_evidence_any": [],
+      "orange_forbidden": true,
+      "independent_test": false
+    },
+    "BASE_WALK_STOP_TURN": {
+      "track": "BASELINE_SEED",
+      "instant_target": "NOT_APPLICABLE",
+      "trend_target_evidence_any": [],
+      "orange_forbidden": true,
+      "independent_test": false
+    },
+    "POS_RAPID_RISE_SWAY": {
+      "track": "INSTANT_POSITIVE",
+      "instant_target": "TRANSITION_AND_INSTABILITY",
+      "trend_target_evidence_any": [],
+      "orange_forbidden": false,
+      "independent_test": true
+    },
+    "NEG_RAPID_RISE_STABLE": {
+      "track": "INSTANT_STABLE_CONTROL",
+      "instant_target": "TRANSITION_WITHOUT_INSTABILITY",
+      "trend_target_evidence_any": [],
+      "orange_forbidden": true,
+      "independent_test": true
+    },
+    "NEG_NORMAL_RISE_WALK": {
+      "track": "INSTANT_GATING_CONTROL",
+      "instant_target": "TRANSITION_THEN_WALKING",
+      "trend_target_evidence_any": [],
+      "orange_forbidden": true,
+      "independent_test": true
+    },
+    "POS_SLOW_SMALL_STEP_SWAY": {
+      "track": "GAIT_TREND_TARGET",
+      "instant_target": "NO_TRANSITION_EVENT",
+      "trend_target_evidence_any": ["relative_speed_change", "gait_instability"],
+      "orange_forbidden": true,
+      "independent_test": true
+    },
+    "POS_ASYMMETRIC_STEP": {
+      "track": "GAIT_TREND_TARGET",
+      "instant_target": "NO_TRANSITION_EVENT",
+      "trend_target_evidence_any": ["gait_instability"],
+      "orange_forbidden": true,
+      "independent_test": true
+    },
+    "NEG_BOUNDARY_NORMAL": {
+      "track": "GATING_DEGRADATION",
+      "instant_target": "NO_TRANSITION_EVENT",
+      "trend_target_evidence_any": [],
+      "orange_forbidden": true,
+      "independent_test": true
+    }
+  },
+  "metrics": {
+    "instant": [
+      "transition_detection_rate",
+      "instability_family_detection_rate",
+      "multi_family_formation_rate",
+      "orange_production_rate",
+      "forbidden_orange_event_rate",
+      "adjudication_coverage",
+      "adjudication_conformance",
+      "event_window_hit_rate"
+    ],
+    "gait_trend": [
+      "target_evidence_detection_by_scenario",
+      "normal_reference_false_detection",
+      "engineering_index_distribution_by_scenario",
+      "predeclared_median_differences",
+      "module_status_counts",
+      "assessment_status_counts",
+      "baseline_status_counts",
+      "degradation_reason_counts"
+    ]
+  },
+  "predeclared_comparisons": [
+    {
+      "comparison_id": "slow_small_step_minus_normal_walk",
+      "target_scenarios": ["POS_SLOW_SMALL_STEP_SWAY"],
+      "reference_scenarios": ["BASE_NORMAL_WALK_L2R", "BASE_NORMAL_WALK_R2L"]
+    },
+    {
+      "comparison_id": "asymmetric_l2r_minus_normal_l2r",
+      "target_scenario": "POS_ASYMMETRIC_STEP",
+      "target_repeat_indices": [1, 3],
+      "reference_scenarios": ["BASE_NORMAL_WALK_L2R"]
+    },
+    {
+      "comparison_id": "asymmetric_r2l_minus_normal_r2l",
+      "target_scenario": "POS_ASYMMETRIC_STEP",
+      "target_repeat_indices": [2, 4],
+      "reference_scenarios": ["BASE_NORMAL_WALK_R2L"]
+    }
+  ],
+  "denominators": {
+    "p03_locked_clips": 32,
+    "p03_baseline_clips": 8,
+    "p03_evaluation_clips": 24,
+    "instant_positive_clips": 4,
+    "transition_truth_clips": 12,
+    "orange_forbidden_evaluation_clips": 20,
+    "gait_trend_target_clips": 8,
+    "normal_walk_reference_clips": 4
+  },
+  "exclusion_policy": {
+    "allowed_before_lock": ["ABORTED", "EXCLUDED"],
+    "post_inference_failures_remain_in_denominator": true,
+    "missing_results_remain_in_denominator": true,
+    "imputation_allowed": false,
+    "post_p03_label_changes_allowed": false,
+    "selective_rerun_allowed": false
+  },
+  "baseline_policy": {
+    "minimum_distinct_days": 3,
+    "current_protocol_distinct_days": 1,
+    "expected_status": "INSUFFICIENT",
+    "individualized_baseline_claim_allowed": false
+  },
+  "reporting_policy": {
+    "global_binary_accuracy_allowed": false,
+    "clinical_terms_allowed": false,
+    "confidence_interval": "WILSON_95",
+    "continuous_summary": "RAW_MEDIAN_IQR",
+    "hypothesis_testing": false,
+    "minimum_assessable_per_comparison_group": 2
+  }
+}

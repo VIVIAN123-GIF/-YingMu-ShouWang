@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p03-inference-results/1.0",
+  "title": "P03 machine-generated inference results",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "participant_id", "config_id", "source_mode", "simulated",
+    "execution_id", "generated_at", "database_isolation_id", "baseline_seed_sha256",
+    "test_lock_sha256", "rule_freeze_sha256", "records_sha256", "records"
+  ],
+  "properties": {
+    "schema_version": {"const": "p03-inference-results/1.0"},
+    "participant_id": {"const": "P03"},
+    "config_id": {"const": "A"},
+    "source_mode": {"const": "RECORDED_REPLAY"},
+    "simulated": {"const": true},
+    "execution_id": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "database_isolation_id": {"type": "string", "minLength": 1},
+    "baseline_seed_sha256": {"$ref": "#/$defs/sha256"},
+    "test_lock_sha256": {"$ref": "#/$defs/sha256"},
+    "rule_freeze_sha256": {"$ref": "#/$defs/sha256"},
+    "records_sha256": {"$ref": "#/$defs/sha256"},
+    "records": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/record"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "error_code"],
+      "properties": {
+        "status": {"enum": ["SUCCESS", "NO_EVIDENCE", "LOW_QUALITY", "FAILED"]},
+        "error_code": {"type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9_]{1,63}$"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id", "ingestion_order", "evidence_type", "signal_family",
+        "confidence", "data_quality", "severity", "current_value", "observation_ids",
+        "timestamp_ms", "first_detected_at_ms"
+      ],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1},
+        "ingestion_order": {"type": "integer", "minimum": 0},
+        "evidence_type": {"type": "string", "minLength": 1},
+        "signal_family": {"type": ["string", "null"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "data_quality": {"type": "number", "minimum": 0, "maximum": 1},
+        "severity": {"type": "number", "minimum": 0, "maximum": 1},
+        "current_value": {"type": ["number", "string", "boolean", "null"]},
+        "observation_ids": {
+          "type": "array", "minItems": 1,
+          "items": {"type": "string", "minLength": 1}, "uniqueItems": true
+        },
+        "timestamp_ms": {"type": "integer", "minimum": 0},
+        "first_detected_at_ms": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "rule_trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trace_id", "trigger_evidence_id", "evaluated_at_ms", "previous_state",
+        "next_state", "previous_status", "next_status", "matched_rule",
+        "event_created"
+      ],
+      "properties": {
+        "trace_id": {"type": "string", "minLength": 1},
+        "trigger_evidence_id": {"type": "string", "minLength": 1},
+        "evaluated_at_ms": {"type": "integer", "minimum": 0},
+        "previous_state": {"type": "string", "minLength": 1},
+        "next_state": {"type": "string", "minLength": 1},
+        "previous_status": {"type": ["string", "null"]},
+        "next_status": {"type": ["string", "null"]},
+        "matched_rule": {"type": "string", "minLength": 1},
+        "event_created": {"type": "boolean"}
+      }
+    },
+    "forewarning": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "assessment_status", "baseline_status", "human_risk", "personal_deviation",
+        "instant_index", "short_30s_index", "trend_3min_index", "degradation_reasons"
+      ],
+      "properties": {
+        "assessment_status": {"enum": ["VALID", "PARTIAL", "INSUFFICIENT"]},
+        "baseline_status": {"enum": ["INSUFFICIENT", "PROVISIONAL", "STABLE"]},
+        "human_risk": {"type": "number", "minimum": 0, "maximum": 1},
+        "personal_deviation": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "instant_index": {"type": "number", "minimum": 0, "maximum": 1},
+        "short_30s_index": {"type": "number", "minimum": 0, "maximum": 1},
+        "trend_3min_index": {"type": "number", "minimum": 0, "maximum": 1},
+        "degradation_reasons": {
+          "type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true
+        }
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt_id", "started_at", "completed_at", "status", "error_code"],
+      "properties": {
+        "attempt_id": {"type": "string", "minLength": 1},
+        "started_at": {"type": "string", "format": "date-time"},
+        "completed_at": {"type": "string", "format": "date-time"},
+        "status": {"enum": ["SUCCESS", "FAILED"]},
+        "error_code": {"type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9_]{1,63}$"}
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clip_id", "participant_id", "scenario_id", "record_role", "config_id",
+        "asset_sha256", "source_mode", "simulated", "ruleset_version",
+        "forewarning_ruleset_version", "model_sha256", "executor_sha256",
+        "evaluation_spec_sha256", "modules", "evidences", "rule_traces",
+        "risk_event_count", "forewarning", "record_error_code", "attempts"
+      ],
+      "properties": {
+        "clip_id": {"type": "string", "minLength": 1},
+        "participant_id": {"const": "P03"},
+        "scenario_id": {"type": "string", "minLength": 1},
+        "record_role": {"enum": ["BASELINE", "EVALUATION"]},
+        "config_id": {"const": "A"},
+        "asset_sha256": {"$ref": "#/$defs/sha256"},
+        "source_mode": {"const": "RECORDED_REPLAY"},
+        "simulated": {"const": true},
+        "ruleset_version": {"const": "ruleset-v1.2"},
+        "forewarning_ruleset_version": {"const": "ruleset-v1.3-min"},
+        "model_sha256": {"$ref": "#/$defs/sha256"},
+        "executor_sha256": {"$ref": "#/$defs/sha256"},
+        "evaluation_spec_sha256": {"$ref": "#/$defs/sha256"},
+        "modules": {
+          "type": "object", "additionalProperties": false,
+          "required": ["GAIT", "TRAJECTORY"],
+          "properties": {"GAIT": {"$ref": "#/$defs/module"}, "TRAJECTORY": {"$ref": "#/$defs/module"}}
+        },
+        "evidences": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "rule_traces": {"type": "array", "items": {"$ref": "#/$defs/rule_trace"}},
+        "risk_event_count": {"type": "integer", "minimum": 0},
+        "forewarning": {"$ref": "#/$defs/forewarning"},
+        "record_error_code": {"type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9_]{1,63}$"},
+        "attempts": {
+          "type": "array", "minItems": 1,
+          "items": {"$ref": "#/$defs/attempt"}
+        }
+      }
+    }
+  }
+}

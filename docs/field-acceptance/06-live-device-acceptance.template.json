@@ -1,0 +1,48 @@
+{
+  "schema_version": "live-device-acceptance/1.0",
+  "status": "INCOMPLETE",
+  "generated_at": null,
+  "task_ref": "",
+  "asset_ref": "",
+  "stream_probe": {
+    "runs": 0,
+    "successful_runs": 0,
+    "codec_name": null,
+    "stream_continuous": false
+  },
+  "buffer": {
+    "ready": false,
+    "pre_alarm_coverage_seconds": 0.0,
+    "assembly_result": "PENDING",
+    "capture_mode": null,
+    "codec_name": null
+  },
+  "modules": [
+    {"module": "GAIT", "status": "PENDING", "error_code": null},
+    {"module": "TRAJECTORY", "status": "PENDING", "error_code": null}
+  ],
+  "provenance": {
+    "source_mode": "LIVE_DEVICE",
+    "simulated": false,
+    "inheritance_passed": false
+  },
+  "decision": {
+    "risk_level": null,
+    "matched_rule": null,
+    "review_required": null,
+    "event_created": null,
+    "automatic_intervention_created": null
+  },
+  "shutdown": {
+    "port_8000_listeners": null,
+    "remaining_worker_processes": null,
+    "removed_segments": null,
+    "removed_workspaces": null,
+    "status_removed": null,
+    "lock_removed": null,
+    "formal_asset_preserved": null
+  },
+  "contains_credentials": false,
+  "contains_media_path": false,
+  "contains_device_serial": false
+}
