@@ -31,7 +31,7 @@ class RiskEvent(Base):
     recommended_action = Column(Text, nullable=False)
     intervention_policy = Column(String(128), nullable=False)
     status = Column(EventStatusEnum, nullable=False, default="OPEN")
-    ruleset_version = Column(String(64), nullable=False, default="ruleset-v1.0")
+    ruleset_version = Column(String(64), nullable=False, default="ruleset-v1.2")
     source_mode = Column(String(32), nullable=False, default="MOCK")
     simulated = Column(Boolean, nullable=False, default=True)
     # Internal checkpoint for the recovery observation window; not part of the public contract.

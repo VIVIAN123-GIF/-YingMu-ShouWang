@@ -38,27 +38,26 @@
     { "time": "03:08:30", "score": 0.24, "label": "观察结束" }
   ],
   "pre_fall_summary": {
-    "as_of": "2026-07-24T03:07:08+08:00",
-    "risk_level": "ORANGE",
-    "instant_risk": 0.83,
-    "risk_30s": 0.79,
-    "trend_3min": 0.76,
-    "trend_direction": "RISING",
-    "personal_deviation": 0.93,
-    "environment_risk": 0.31,
-    "quality_penalty": 0,
-    "dominant_factors": [
-      "fall_precursor_evidence",
-      "personal_baseline_deviation",
-      "environment_interaction_risk",
-      "multi_scale_accumulation"
-    ],
-    "evidence_ids": [
-      "evi-fall-rapid-rise",
-      "evi-fall-trunk-sway",
-      "evi-fall-low-light"
-    ],
-    "recommended_intervention": "执行低打扰语音或灯光提醒，并进入恢复观察。"
+    "as_of": "2026-08-26T14:00:00+08:00",
+    "risk_level": "UNKNOWN",
+    "assessment_status": "INSUFFICIENT",
+    "confidence_level": "LOW",
+    "baseline_status": "INSUFFICIENT",
+    "snapshot_id": "forewarning-mock-insufficient",
+    "instant_risk": 0.0,
+    "risk_30s": 0.0,
+    "trend_3min": 0.0,
+    "trend_direction": "STABLE",
+    "human_risk": 0.0,
+    "personal_deviation": 0.0,
+    "environment_risk": 0.0,
+    "interaction_risk": 0.0,
+    "quality_penalty": 1.0,
+    "dominant_factors": ["data_quality_downgrade"],
+    "degradation_reasons": ["HUMAN_EVIDENCE_INSUFFICIENT", "PERSONAL_BASELINE_INSUFFICIENT"],
+    "evidence_ids": [],
+    "recommended_intervention": "当前证据不足，保持低打扰观察并等待合格人体证据。",
+    "metric_semantics": "ENGINEERING_INDEX_NOT_PROBABILITY"
   },
   "recent_events": [
     {

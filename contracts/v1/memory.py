@@ -90,6 +90,11 @@ class MemoryStore:
         "gait_stability_score": "gait_stability",
         "relative_gait_speed": "relative_gait_speed",
         "stable_trunk_angle_deg": "stable_trunk_angle_deg",
+        "trunk_sway_angle_deg": "trunk_sway",
+        "post_rise_pelvis_lateral_excursion_norm": "pelvis_lateral_excursion",
+        "post_rise_support_width_change_norm": "support_width_change",
+        "step_asymmetry_ratio": "step_asymmetry",
+        "turn_angular_velocity_deg_s": "turn_angular_velocity",
         "activity_range": "activity_range",
         "sleep_midpoint": "circadian",
     }

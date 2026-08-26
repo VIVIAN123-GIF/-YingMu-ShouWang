@@ -31,6 +31,83 @@
       "title": "AgentEvidenceItem",
       "type": "object"
     },
+    "AgentForewarningSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "snapshot_id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "assessment_status": {
+          "enum": [
+            "VALID",
+            "PARTIAL",
+            "INSUFFICIENT"
+          ],
+          "title": "Assessment Status",
+          "type": "string"
+        },
+        "confidence_level": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH"
+          ],
+          "title": "Confidence Level",
+          "type": "string"
+        },
+        "baseline_status": {
+          "$ref": "#/$defs/AgentBaselineStatus"
+        },
+        "instant_index": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Instant Index",
+          "type": "number"
+        },
+        "short_30s_index": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Short 30S Index",
+          "type": "number"
+        },
+        "trend_3min_index": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Trend 3Min Index",
+          "type": "number"
+        },
+        "dominant_factors": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Dominant Factors",
+          "type": "array"
+        },
+        "degradation_reasons": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Degradation Reasons",
+          "type": "array"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "assessment_status",
+        "confidence_level",
+        "baseline_status",
+        "instant_index",
+        "short_30s_index",
+        "trend_3min_index"
+      ],
+      "title": "AgentForewarningSummary",
+      "type": "object"
+    },
     "AgentInterventionStatus": {
       "enum": [
         "NOT_STARTED",
@@ -137,6 +214,17 @@
       },
       "title": "Unverified Capabilities",
       "type": "array"
+    },
+    "forewarning": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AgentForewarningSummary"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [

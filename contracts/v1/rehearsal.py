@@ -13,8 +13,8 @@ def run_fixed_sequence() -> tuple[MockRiskEngine, list[dict]]:
     engine = MockRiskEngine()
     steps: list[dict] = []
 
-    normal_observation, rapid_observation, sway_observation, recovered_observation, angle_observation = data["observations"]
-    normal_evidence, rapid_evidence, sway_evidence, recovered_evidence = data["evidence"]
+    normal_observation, rapid_observation, sway_observation, recovered_observation, angle_observation, transition_observation, drift_observation = data["observations"]
+    normal_evidence, rapid_evidence, sway_evidence, recovered_evidence, transition_evidence, drift_evidence = data["evidence"]
 
     engine.ingest_observation(normal_observation)
     engine.ingest_evidence(normal_evidence)
@@ -24,13 +24,17 @@ def run_fixed_sequence() -> tuple[MockRiskEngine, list[dict]]:
     engine.ingest_observation(rapid_observation)
     engine.ingest_evidence(rapid_evidence)
     assert engine.evaluate(RESIDENT_ID) is None
-    steps.append({"step": 2, "input": "rapid_rise", "risk_level": "GREEN", "event": None})
+    steps.append({"step": 2, "input": "rapid_rise", "risk_level": "YELLOW", "event": None})
 
+    engine.ingest_observation(transition_observation)
+    engine.ingest_evidence(transition_evidence)
     engine.ingest_observation(sway_observation)
     engine.ingest_evidence(sway_evidence)
+    engine.ingest_observation(drift_observation)
+    engine.ingest_evidence(drift_evidence)
     event = engine.evaluate(RESIDENT_ID)
     assert event is not None and event.risk_level.value == "ORANGE" and event.status.value == "INTERVENING"
-    steps.append({"step": 3, "input": "trunk_sway", "event_id": event.event_id, "risk_level": "ORANGE", "status": "INTERVENING"})
+    steps.append({"step": 3, "input": "transition + trunk_sway + lateral_drift", "event_id": event.event_id, "risk_level": "ORANGE", "status": "INTERVENING"})
 
     result = engine.intervene(event.event_id)
     replayed_result = engine.intervene(event.event_id)

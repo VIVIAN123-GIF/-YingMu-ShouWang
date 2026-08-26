@@ -14,7 +14,7 @@ class RuleTrace(Base):
     resident_id = Column(String(128), nullable=False, index=True)
     evidence_id = Column(String(128), nullable=True, index=True)
     evaluated_at = Column(DateTime, nullable=False)
-    ruleset_version = Column(String(64), nullable=False, default="ruleset-v1.0")
+    ruleset_version = Column(String(64), nullable=False, default="ruleset-v1.2")
     matched_rule = Column(String(64), nullable=False)
     previous_state = Column(String(16), nullable=False)
     next_state = Column(String(16), nullable=False)

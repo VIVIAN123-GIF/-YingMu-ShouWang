@@ -1,0 +1,137 @@
+{
+  "$defs": {
+    "SceneZone": {
+      "additionalProperties": false,
+      "properties": {
+        "zone_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Zone Id",
+          "type": "string"
+        },
+        "zone_type": {
+          "enum": [
+            "HIGH_RISK",
+            "SUPPORT",
+            "OBSTACLE",
+            "SAFE"
+          ],
+          "title": "Zone Type",
+          "type": "string"
+        },
+        "polygon_norm": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "minItems": 3,
+          "title": "Polygon Norm",
+          "type": "array"
+        }
+      },
+      "required": [
+        "zone_id",
+        "zone_type",
+        "polygon_norm"
+      ],
+      "title": "SceneZone",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "scene-calibration/1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scene_config_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Scene Config Id",
+      "type": "string"
+    },
+    "camera_position_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Camera Position Id",
+      "type": "string"
+    },
+    "location": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Location",
+      "type": "string"
+    },
+    "frame_width": {
+      "exclusiveMinimum": 0,
+      "maximum": 16384,
+      "title": "Frame Width",
+      "type": "integer"
+    },
+    "frame_height": {
+      "exclusiveMinimum": 0,
+      "maximum": 16384,
+      "title": "Frame Height",
+      "type": "integer"
+    },
+    "zones": {
+      "items": {
+        "$ref": "#/$defs/SceneZone"
+      },
+      "title": "Zones",
+      "type": "array"
+    },
+    "effective_from": {
+      "format": "date-time",
+      "title": "Effective From",
+      "type": "string"
+    },
+    "supersedes": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Supersedes"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "schema_version",
+    "scene_config_id",
+    "camera_position_id",
+    "location",
+    "frame_width",
+    "frame_height",
+    "effective_from"
+  ],
+  "title": "SceneCalibration",
+  "type": "object"
+}

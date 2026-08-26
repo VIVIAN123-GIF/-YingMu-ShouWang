@@ -7,7 +7,7 @@ from pathlib import Path
 import fitz
 import pytest
 
-from scripts import assemble_submission, build_source_release
+from scripts import assemble_submission, build_source_release, validate_fresh_release
 from scripts.release_integrity import scan_text, scan_zip
 
 
@@ -69,6 +69,7 @@ def test_source_release_uses_allowlist_and_excludes_dot_env(tmp_path, monkeypatc
     (root / "outside.txt").write_text("not selected\n", encoding="utf-8")
     monkeypatch.setattr(build_source_release, "RECURSIVE_ROOTS", ("src",))
     monkeypatch.setattr(build_source_release, "EXACT_FILES", ("README.md",))
+    monkeypatch.setattr(build_source_release, "REQUIRED_RELEASE_PATHS", ())
     output = tmp_path / "source.zip"
 
     result = build_source_release.build_source_release(root, output)
@@ -89,9 +90,122 @@ def test_source_release_fails_when_raw_media_enters_allowlisted_tree(tmp_path, m
     (root / "README.md").write_text("# Demo\n", encoding="utf-8")
     monkeypatch.setattr(build_source_release, "RECURSIVE_ROOTS", ("src",))
     monkeypatch.setattr(build_source_release, "EXACT_FILES", ("README.md",))
+    monkeypatch.setattr(build_source_release, "REQUIRED_RELEASE_PATHS", ())
 
     with pytest.raises(ValueError, match="raw media"):
         build_source_release.build_source_release(root, tmp_path / "source.zip")
+
+
+def test_source_release_fails_when_required_runtime_file_is_missing(tmp_path, monkeypatch):
+    root = tmp_path / "repo"
+    (root / "src").mkdir(parents=True)
+    (root / "src/app.py").write_text("print('ok')\n", encoding="utf-8")
+    (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+    monkeypatch.setattr(build_source_release, "RECURSIVE_ROOTS", ("src",))
+    monkeypatch.setattr(build_source_release, "EXACT_FILES", ("README.md",))
+    monkeypatch.setattr(build_source_release, "REQUIRED_RELEASE_PATHS", ("src/required.py",))
+
+    with pytest.raises(ValueError, match="required source release file is missing"):
+        build_source_release.collect_source_files(root)
+
+
+def test_source_release_excludes_untracked_files_when_git_index_is_available(
+    tmp_path, monkeypatch
+):
+    root = tmp_path / "repo"
+    (root / "src").mkdir(parents=True)
+    (root / "src/app.py").write_text("print('tracked')\n", encoding="utf-8")
+    (root / "src/local-only.py").write_text("print('local')\n", encoding="utf-8")
+    (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+    monkeypatch.setattr(build_source_release, "RECURSIVE_ROOTS", ("src",))
+    monkeypatch.setattr(build_source_release, "EXACT_FILES", ("README.md",))
+    monkeypatch.setattr(build_source_release, "REQUIRED_RELEASE_PATHS", ())
+    monkeypatch.setattr(
+        build_source_release,
+        "_tracked_paths",
+        lambda _root: {"README.md", "src/app.py"},
+    )
+
+    selected = {
+        name for _, name in build_source_release.collect_source_files(root)
+    }
+
+    assert selected == {"README.md", "src/app.py"}
+
+
+def test_source_release_allows_only_checksum_pinned_external_file(tmp_path, monkeypatch):
+    root = tmp_path / "repo"
+    root.mkdir()
+    model = root / "model.task"
+    model.write_bytes(b"trusted runtime")
+    monkeypatch.setattr(build_source_release, "RECURSIVE_ROOTS", ())
+    monkeypatch.setattr(build_source_release, "EXACT_FILES", ("model.task",))
+    monkeypatch.setattr(build_source_release, "REQUIRED_RELEASE_PATHS", ())
+    monkeypatch.setattr(
+        build_source_release,
+        "PINNED_EXTERNAL_FILES",
+        {"model.task": build_source_release.sha256_file(model)},
+    )
+    monkeypatch.setattr(build_source_release, "_tracked_paths", lambda _root: set())
+
+    assert build_source_release.collect_source_files(root) == [(model, "model.task")]
+
+    model.write_bytes(b"changed runtime")
+    with pytest.raises(ValueError, match="checksum mismatch"):
+        build_source_release.collect_source_files(root)
+
+
+def test_source_release_default_roots_include_trajectory_and_scenes():
+    assert "adapters" in build_source_release.RECURSIVE_ROOTS
+    assert "scene-calibrations" in build_source_release.RECURSIVE_ROOTS
+    assert "frontend/contracts" in build_source_release.RECURSIVE_ROOTS
+    assert "deliverables/zy/pose-demo/scripts" in build_source_release.RECURSIVE_ROOTS
+    assert (
+        "deliverables/zhang-d2-snapshot-2026-08-15/batch-1"
+        in build_source_release.RECURSIVE_ROOTS
+    )
+    assert "experiments/structured_scenarios" in build_source_release.RECURSIVE_ROOTS
+    assert "backend/service/stream_buffer_service.py" in build_source_release.REQUIRED_RELEASE_PATHS
+    assert (
+        "deliverables/zy/pose-demo/scripts/recorded_replay_adapter.py"
+        in build_source_release.REQUIRED_RELEASE_PATHS
+    )
+    assert "models/pose_landmarker_heavy.task" in build_source_release.PINNED_EXTERNAL_FILES
+
+
+def test_fresh_release_resolves_windows_npm_cmd(monkeypatch):
+    monkeypatch.setattr(validate_fresh_release.sys, "platform", "win32")
+    monkeypatch.setattr(
+        validate_fresh_release.shutil,
+        "which",
+        lambda name: "D:/node.js/npm.cmd" if name == "npm.cmd" else None,
+    )
+
+    assert validate_fresh_release._resolve_npm("npm") == "D:/node.js/npm.cmd"
+
+
+def test_fresh_release_negative_runtime_is_outside_extracted_source(tmp_path):
+    extracted_source = tmp_path / "source"
+    replay_runtime = validate_fresh_release._negative_runtime_root(extracted_source)
+
+    assert replay_runtime.parent == tmp_path
+    assert replay_runtime != extracted_source
+
+
+def test_packaged_environment_template_covers_live_v13_runtime():
+    template = (Path(__file__).parents[1] / "packaging" / ".env.example").read_text(
+        encoding="utf-8"
+    )
+    required = (
+        "YINGMU_CAPTURE_MEDIA_MODE=VIDEO",
+        "YINGMU_GAIT_ADAPTER=contracts.v1.gait_adapter:run",
+        "YINGMU_TRAJECTORY_ADAPTER=adapters.trajectory_adapter:run",
+        "YINGMU_SCENE_CONFIG_DIR=scene-calibrations",
+        "YINGMU_STREAM_BUFFER_ENABLED=false",
+        "EZVIZ_LIVE_PLAYBACK_VERIFIED=false",
+        "EZVIZ_VOICE_VERIFIED=false",
+    )
+    assert all(item in template for item in required)
 
 
 def test_zip_scan_rejects_runtime_env(tmp_path):

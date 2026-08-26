@@ -130,6 +130,7 @@ class AdapterBatch(BaseModel):
             quality_types = {
                 "tracking_lost", "audio_quality_low", "camera_occlusion",
                 "stream_unavailable", "low_illumination", "low_light",
+                "assessment_indeterminate",
             }
             if not self.observations or not self.evidences:
                 raise ValueError("LOW_QUALITY requires quality Observations and Evidence")
@@ -149,6 +150,8 @@ IMAGE_FORBIDDEN_EVIDENCE = {
     "rapid_rise", "slow_rise", "trunk_sway", "gait_instability",
     "relative_speed_change", "posture_recovered", "high_risk_zone_entry",
     "unusual_pacing", "activity_range_decline", "room_transition_decline",
+    "sit_to_stand_transition", "post_rise_lateral_drift",
+    "support_base_change", "compensatory_step", "assessment_indeterminate",
 }
 
 

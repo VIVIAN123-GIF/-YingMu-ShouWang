@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib
 import inspect
 import os
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
 from typing import Any
 
 from contracts.v1.algorithm import AdapterBatch, AlgorithmJob, AlgorithmModule
@@ -36,8 +36,11 @@ class AdapterRegistry:
     def get(self, module: AlgorithmModule) -> AdapterCallable | None:
         return self._adapters.get(module)
 
-    def load_configured(self) -> None:
+    def load_configured(self, modules: Iterable[AlgorithmModule] | None = None) -> None:
+        requested = set(modules) if modules is not None else set(self.ENV_BY_MODULE)
         for module, env_name in self.ENV_BY_MODULE.items():
+            if module not in requested:
+                continue
             entrypoint = os.getenv(env_name, "").strip()
             if not entrypoint or module in self._adapters:
                 continue

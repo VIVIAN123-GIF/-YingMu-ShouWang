@@ -10,7 +10,8 @@
 - `engine.py`：只用于一期Mock联调的确定性状态机；
 - `rehearsal.py`：可复用的GREEN到RESOLVED演练流程。
 - `memory.py`：短时30秒、中时24小时、长时7天的内存查询和中位数＋MAD基线；
-- `ruleset.py`与`rulesets/ruleset-v1.0.json`：规则、门槛、权重和`RuleTrace`的唯一来源；
+- `ruleset.py`与`rulesets/ruleset-v1.2.json`：当前规则、门槛、信号族、权重和`RuleTrace`的唯一来源；
+- `forewarning.py`与`rulesets/ruleset-v1.3-min.json`：独立工程预警快照、场景多边形、三时间尺度和基线权重；
 - `examples/mock_memory_history.json`：明确标注为模拟的7天安全历史。
 
 ## 两周冲刺 D1 扩展合同
@@ -58,5 +59,6 @@ python scripts/run_memory_ruleset_rehearsal.py --runs 3
 - Evidence核心对象不包含`asset_id`，素材通过`observation_ids → Observation.asset_id`追溯；
 - GREEN是引擎和Dashboard状态，不创建核心RiskEvent；RiskEvent必须至少关联一条Evidence；
 - `MemorySnapshot`和`RuleTrace`是智能体内部决策追踪对象，不扩展四对象契约；
-- `ruleset-v1.0`中的阈值和权重是工程初值，不是实验或医学结论；
+- `ruleset-v1.2`中的阈值和权重是工程初值，不是实验或医学结论；
+- `ruleset-v1.3-min`输出工程风险指数，不是未来跌倒概率，也不替代`RiskEvent`裁决；
 - 前端、后端和算法联调统一使用`examples/four_objects.json`，不得复制后自行扩展v1.0字段。

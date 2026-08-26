@@ -1,0 +1,57 @@
+{
+  "schema_version": "scene-calibration/1.0",
+  "scene_config_id": "scene-living-room-v1",
+  "camera_position_id": "living-room-c6c-v1",
+  "location": "living_room",
+  "frame_width": 1920,
+  "frame_height": 1080,
+  "zones": [
+    {
+      "zone_id": "zone-risk",
+      "zone_type": "HIGH_RISK",
+      "polygon_norm": [
+        [
+          0.6,
+          0.3
+        ],
+        [
+          0.9,
+          0.3
+        ],
+        [
+          0.9,
+          0.9
+        ],
+        [
+          0.6,
+          0.9
+        ]
+      ]
+    },
+    {
+      "zone_id": "zone-support",
+      "zone_type": "SUPPORT",
+      "polygon_norm": [
+        [
+          0.1,
+          0.4
+        ],
+        [
+          0.35,
+          0.4
+        ],
+        [
+          0.35,
+          0.9
+        ],
+        [
+          0.1,
+          0.9
+        ]
+      ]
+    }
+  ],
+  "effective_from": "2026-08-26T09:00:00+08:00",
+  "supersedes": null,
+  "notes": "Sanitized fixed-camera calibration example"
+}

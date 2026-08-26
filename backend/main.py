@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.exception_handlers import service_error_handler, unexpected_error_handler, validation_error_handler
 from fastapi.exceptions import RequestValidationError
 from backend.api.v1.router import router
+from backend.config import RULESET_VERSION, SCHEMA_VERSION
 from backend.db.init_db import init_default_config, init_tables
 from backend.service.errors import ServiceError
 from backend.static_frontend import mount_frontend
@@ -36,7 +37,7 @@ async def request_id_middleware(request: Request, call_next):
 
 @app.get("/health", tags=["system"])
 async def health():
-    return {"status": "ok", "schema_version": "1.0", "ruleset_version": "ruleset-v1.0"}
+    return {"status": "ok", "schema_version": SCHEMA_VERSION, "ruleset_version": RULESET_VERSION}
 
 app.include_router(router)
 mount_frontend(app)

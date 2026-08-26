@@ -22,7 +22,7 @@ from backend.service.algorithm_gateway import AlgorithmGateway
 from backend.service.evidence_service import create_evidence
 from backend.service.observation_service import create_observation
 from backend.service.resident_response import canonical_resident_response
-from backend.service.serialization import aware, dumps
+from backend.service.serialization import aware, dumps, loads
 from backend.service.snapshot_asset_service import resolve_private_asset_path
 from backend.schemas.intervention_result import InterventionResultCreate
 from backend.service.event_service import create_intervention_result
@@ -39,6 +39,13 @@ from contracts.v1.algorithm import (
 
 def _now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _algorithm_summary(task: AlarmProcessingTask, **updates: Any) -> str:
+    previous = loads(task.algorithm_summary, {})
+    summary = previous if isinstance(previous, dict) else {}
+    summary.update(updates)
+    return dumps(summary)
 
 
 def _media_plan(asset: Asset, path: Path) -> tuple[MediaType, list[AlgorithmModule]]:
@@ -211,7 +218,7 @@ async def process_algorithm_task(
             requested_modules=modules,
             deadline_ms=round(YINGMU_ALGORITHM_TIMEOUT_SECONDS * 1000),
         )
-        registry.load_configured()
+        registry.load_configured(modules)
         missing = [module for module in modules if registry.get(module) is None]
         for module in missing:
             summaries.append(_module_summary(
@@ -223,10 +230,14 @@ async def process_algorithm_task(
         async def run_module(module: AlgorithmModule) -> AdapterBatch:
             return await registry.invoke(module, job)
 
-        results = await gateway.run_many({
-            module.value: (lambda module=module: run_module(module))
-            for module in configured
-        }) if configured else {}
+        # GAIT and TRAJECTORY share an in-process pose cache. Running them in
+        # the declared order guarantees that one video is decoded only once.
+        results = {}
+        for module in configured:
+            results[module.value] = await gateway.run(
+                module.value,
+                lambda module=module: run_module(module),
+            )
         valid_batches: list[AdapterBatch] = []
         for module in configured:
             result = results[module.value]
@@ -251,6 +262,21 @@ async def process_algorithm_task(
                 valid_batches.append(batch)
 
         observation_count, evidence_count = await _persist_batches(db, task, valid_batches)
+        forewarning_snapshot_id = None
+        if media_type == MediaType.VIDEO:
+            from backend.service.forewarning_service import evaluate_forewarning
+            # All GAIT and TRAJECTORY outputs are durable at this point. Build the
+            # canonical video snapshot once more so it never depends on Evidence
+            # persistence order and always carries this asset's provenance.
+            snapshot = await evaluate_forewarning(
+                db,
+                task.resident_id,
+                aware(asset.captured_at),
+                source_mode=asset.source_mode,
+                simulated=asset.simulated,
+                asset_id=asset.asset_id,
+            )
+            forewarning_snapshot_id = snapshot.snapshot_id
         await _persist_resident_responses(db, task, valid_batches)
         all_failed = not valid_batches
         if all_failed and retryable_failures and task.algorithm_attempt_count < task.max_attempts:
@@ -273,11 +299,13 @@ async def process_algorithm_task(
             task.error_stage = None
             task.error_code = "PARTIAL_ALGORITHM_FAILURE" if len(valid_batches) < len(modules) else None
             task.error_message = None
-        task.algorithm_summary = dumps({
-            "modules": summaries,
-            "observation_count": observation_count,
-            "evidence_count": evidence_count,
-        })
+        task.algorithm_summary = _algorithm_summary(
+            task,
+            modules=summaries,
+            observation_count=observation_count,
+            evidence_count=evidence_count,
+            forewarning_snapshot_id=forewarning_snapshot_id,
+        )
     except (AdapterRegistryError, ValueError, TypeError) as exc:
         task.status = "FAILED"
         task.finished_at = _now()
@@ -286,7 +314,7 @@ async def process_algorithm_task(
         message = str(exc)
         task.error_code = message.split(":", 1)[0][:64] or "ADAPTER_OUTPUT_INVALID"
         task.error_message = "Algorithm handoff failed contract or availability checks"
-        task.algorithm_summary = dumps({"modules": summaries})
+        task.algorithm_summary = _algorithm_summary(task, modules=summaries)
     except Exception as exc:
         await db.rollback()
         task = await db.get(AlarmProcessingTask, task_id)
@@ -303,7 +331,7 @@ async def process_algorithm_task(
             task.error_code = "ALGORITHM_FAILED"
         task.error_stage = "ALGORITHM"
         task.error_message = f"Algorithm processing failed: {type(exc).__name__}"
-        task.algorithm_summary = dumps({"modules": summaries})
+        task.algorithm_summary = _algorithm_summary(task, modules=summaries)
     await db.commit()
     await db.refresh(task)
     return task

@@ -22,8 +22,9 @@ os.environ["MIN_EVIDENCE_CONFIDENCE"] = "0.8"
 from fastapi.testclient import TestClient
 
 from backend.db.database import AsyncSessionLocal, engine
-from backend.db.models import (AlarmProcessingTask, DeviceInfo, Evidence, InterventionResult,
-                               RiskAlarm, RiskEvent, RuleTrace)
+from backend.db.models import (AgentExplanationJob, AlarmProcessingTask, DeviceInfo, Evidence,
+                               InterventionResult, RiskAlarm, RiskEvent, RiskEventEvidence,
+                               RuleTrace)
 from backend.main import app
 from contracts.v1.mock_memory_data import safe_history
 
@@ -36,6 +37,8 @@ def observation(
     timestamp: str,
     *,
     data_quality: float = 0.88,
+    source_mode: str = "MOCK",
+    simulated: bool = True,
 ):
     return {
         "schema_version": "1.0",
@@ -49,9 +52,9 @@ def observation(
         "location": "living_room",
         "confidence": 0.92,
         "data_quality": data_quality,
-        "source_mode": "MOCK",
+        "source_mode": source_mode,
         "asset_id": "asset-mock-fall-001",
-        "simulated": True,
+        "simulated": simulated,
         "metadata": {"model_version": "mock-v1"},
     }
 
@@ -64,6 +67,8 @@ def evidence(
     timestamp: str,
     *,
     data_quality: float = 0.88,
+    source_mode: str = "MOCK",
+    simulated: bool = True,
 ):
     return {
         "schema_version": "1.0",
@@ -83,8 +88,8 @@ def evidence(
         "location": "living_room",
         "explanation": evidence_type,
         "adapter_version": "fall-adapter-v1",
-        "source_mode": "MOCK",
-        "simulated": True,
+        "source_mode": source_mode,
+        "simulated": simulated,
     }
 
 
@@ -96,14 +101,33 @@ def post_pair(
     timestamp: str,
     *,
     data_quality: float = 0.88,
+    source_mode: str = "MOCK",
+    simulated: bool = True,
+    related_observation_ids: tuple[str, ...] = (),
 ):
+    feature_by_evidence = {
+        "rapid_rise": ("sit_to_stand_duration", 1.2),
+        "slow_rise": ("sit_to_stand_duration", 4.2),
+        "sit_to_stand_transition": ("sit_to_stand_transition_confirmed", 1.0),
+        "trunk_sway": ("trunk_sway_angle", 18.0),
+        "gait_instability": ("gait_asymmetry", 0.42),
+        "post_rise_lateral_drift": ("post_rise_pelvis_lateral_excursion_norm", 0.48),
+        "support_base_change": ("post_rise_support_width_change_norm", 0.42),
+        "compensatory_step": ("post_rise_compensatory_step_count", 1.0),
+        "assessment_indeterminate": ("post_rise_assessment_status", 0.0),
+    }
+    feature_name, feature_value = feature_by_evidence.get(
+        evidence_type, ("trunk_sway_angle", 18.0)
+    )
     observation_payload = observation(
         resident_id,
         f"obs-{prefix}",
-        "sit_to_stand_duration" if evidence_type == "rapid_rise" else "trunk_sway_angle",
-        1.2 if evidence_type == "rapid_rise" else 18.0,
+        feature_name,
+        feature_value,
         timestamp,
         data_quality=data_quality,
+        source_mode=source_mode,
+        simulated=simulated,
     )
     evidence_payload = evidence(
         resident_id,
@@ -112,15 +136,20 @@ def post_pair(
         evidence_type,
         timestamp,
         data_quality=data_quality,
+        source_mode=source_mode,
+        simulated=simulated,
     )
+    evidence_payload["observation_ids"].extend(related_observation_ids)
     observation_response = client.post("/api/v1/observations", json=observation_payload)
     evidence_response = client.post("/api/v1/evidence", json=evidence_payload)
     return observation_response, evidence_response, evidence_payload
 
 
 def start_orange_event(client: TestClient, resident_id: str, prefix: str) -> str:
-    post_pair(client, resident_id, f"{prefix}-rapid", "rapid_rise", "2026-07-31T03:07:01+08:00")
-    _, response, _ = post_pair(client, resident_id, f"{prefix}-sway", "trunk_sway", "2026-07-31T03:07:05+08:00")
+    transition_id = f"obs-{prefix}-transition"
+    post_pair(client, resident_id, f"{prefix}-transition", "sit_to_stand_transition", "2026-07-31T03:07:00+08:00")
+    post_pair(client, resident_id, f"{prefix}-sway", "trunk_sway", "2026-07-31T03:07:05+08:00", related_observation_ids=(transition_id,))
+    _, response, _ = post_pair(client, resident_id, f"{prefix}-drift", "post_rise_lateral_drift", "2026-07-31T03:07:06+08:00", related_observation_ids=(transition_id,))
     assert response.status_code == 201
     assert response.json()["evaluation"]["matched_rule"] == "R-FALL-02"
     return response.json()["evaluation"]["event_id"]
@@ -274,7 +303,7 @@ def post_baseline_day(
     metrics = {
         "sit_to_stand_duration": 3.0 + day / 10,
         "relative_gait_speed": 0.42 + day / 100,
-        "stable_trunk_angle_deg": 3.5 + day / 10,
+        "trunk_sway_angle_deg": 4.5 + day / 10,
     }
     for feature_name, value in metrics.items():
         suffix = feature_name.replace("_", "-")
@@ -317,7 +346,7 @@ def teardown_module():
     TEST_DB.unlink(missing_ok=True)
 
 
-def test_single_rapid_rise_stays_green_without_event_or_tool():
+def test_single_rapid_rise_is_yellow_review_without_event_or_tool():
     resident_id = "resident-rapid-only"
     with TestClient(app) as client:
         _, response, _ = post_pair(
@@ -329,36 +358,78 @@ def test_single_rapid_rise_stays_green_without_event_or_tool():
         )
         assert response.status_code == 201
         evaluation = response.json()["evaluation"]
-        assert evaluation["risk_level"] == "GREEN"
+        assert evaluation["risk_level"] == "YELLOW"
         assert evaluation["event_created"] is False
-        assert evaluation["matched_rule"] == "R-FALL-01"
+        assert evaluation["matched_rule"] == "R-FALL-12"
         assert asyncio.run(resident_counts(resident_id)) == (0, 0)
 
 
-def test_rapid_rise_and_trunk_sway_create_traceable_orange_event():
-    resident_id = "resident-mock-001"
+def test_rapid_rise_and_gait_instability_are_trace_only_yellow():
+    resident_id = "resident-gait-observation-only"
     with TestClient(app) as client:
         post_pair(
             client,
             resident_id,
-            "mock-rapid-rise-001",
+            "gait-observation-rapid",
             "rapid_rise",
             "2026-07-31T03:07:01+08:00",
         )
         _, response, _ = post_pair(
             client,
             resident_id,
-            "mock-trunk-sway-001",
-            "trunk_sway",
+            "gait-observation-instability",
+            "gait_instability",
             "2026-07-31T03:07:05+08:00",
         )
+
+        evaluation = response.json()["evaluation"]
+        assert evaluation["risk_level"] == "YELLOW"
+        assert evaluation["event_created"] is False
+        assert evaluation["matched_rule"] == "R-FALL-08"
+        assert asyncio.run(resident_counts(resident_id)) == (0, 0)
+
+        async def persistence_counts():
+            async with AsyncSessionLocal() as db:
+                traces = (await db.execute(
+                    select(func.count()).select_from(RuleTrace).where(
+                        RuleTrace.resident_id == resident_id,
+                        RuleTrace.matched_rule == "R-FALL-08",
+                    )
+                )).scalar_one()
+                links = (await db.execute(
+                    select(func.count()).select_from(RiskEventEvidence)
+                )).scalar_one()
+                jobs = (await db.execute(
+                    select(func.count()).select_from(AgentExplanationJob)
+                )).scalar_one()
+                return traces, links, jobs
+
+        traces, links, jobs = asyncio.run(persistence_counts())
+        assert traces == 1
+        assert links == 0
+        assert jobs == 0
+
+
+def test_transition_and_two_signal_families_create_traceable_simulated_orange_event():
+    resident_id = "resident-mock-001"
+    with TestClient(app) as client:
+        transition_id = "obs-mock-transition-001"
+        post_pair(client, resident_id, "mock-transition-001", "sit_to_stand_transition", "2026-07-31T03:07:00+08:00")
+        post_pair(
+            client,
+            resident_id,
+            "mock-trunk-sway-001",
+            "trunk_sway",
+            "2026-07-31T03:07:05+08:00", related_observation_ids=(transition_id,),
+        )
+        _, response, _ = post_pair(client, resident_id, "mock-lateral-drift-001", "post_rise_lateral_drift", "2026-07-31T03:07:06+08:00", related_observation_ids=(transition_id,))
         evaluation = response.json()["evaluation"]
         assert evaluation == {
             "risk_level": "ORANGE",
             "event_created": True,
             "event_id": "event-mock-fall-001",
             "matched_rule": "R-FALL-02",
-            "ruleset_version": "ruleset-v1.0",
+            "ruleset_version": "ruleset-v1.2",
             "system_evidence_id": None,
         }
         detail = client.get("/api/v1/events/event-mock-fall-001")
@@ -368,13 +439,75 @@ def test_rapid_rise_and_trunk_sway_create_traceable_orange_event():
         assert payload["status"] == "INTERVENING"
         assert payload["risk_score"] == 0.78
         assert payload["evidence_ids"] == [
-            "evi-mock-rapid-rise-001",
+            "evi-mock-transition-001",
             "evi-mock-trunk-sway-001",
+            "evi-mock-lateral-drift-001",
         ]
-        assert len(payload["evidences"]) == 2
-        assert len(payload["observations"]) == 2
-        assert len(payload["rule_traces"]) >= 2
+        assert len(payload["evidences"]) == 3
+        assert len(payload["observations"]) == 3
+        assert len(payload["rule_traces"]) >= 3
         assert payload["interventions"] == []
+
+
+def test_transition_with_one_instability_family_is_yellow_review():
+    resident_id = "resident-single-family"
+    with TestClient(app) as client:
+        transition_id = "obs-single-family-transition"
+        post_pair(client, resident_id, "single-family-transition", "sit_to_stand_transition", "2026-07-31T04:00:00+08:00")
+        _, response, _ = post_pair(client, resident_id, "single-family-sway", "trunk_sway", "2026-07-31T04:00:05+08:00", related_observation_ids=(transition_id,))
+        assert response.json()["evaluation"]["risk_level"] == "YELLOW"
+        assert response.json()["evaluation"]["matched_rule"] == "R-FALL-11"
+        assert asyncio.run(resident_counts(resident_id)) == (0, 0)
+
+
+def test_unlinked_signals_from_other_assessments_cannot_form_an_event():
+    resident_id = "resident-cross-assessment"
+    with TestClient(app) as client:
+        post_pair(client, resident_id, "cross-transition", "sit_to_stand_transition", "2026-07-31T04:05:00+08:00")
+        post_pair(client, resident_id, "cross-sway", "trunk_sway", "2026-07-31T04:05:05+08:00")
+        _, response, _ = post_pair(client, resident_id, "cross-drift", "post_rise_lateral_drift", "2026-07-31T04:05:06+08:00")
+        assert response.json()["evaluation"]["matched_rule"] == "R-FALL-01"
+        assert response.json()["evaluation"]["event_created"] is False
+        assert asyncio.run(resident_counts(resident_id)) == (0, 0)
+
+
+def test_live_device_multi_family_result_is_yellow_review_until_positive_validation():
+    resident_id = "resident-live-review"
+    kwargs = {"source_mode": "LIVE_DEVICE", "simulated": False}
+    with TestClient(app) as client:
+        transition_id = "obs-live-transition"
+        post_pair(client, resident_id, "live-transition", "sit_to_stand_transition", "2026-07-31T04:10:00+08:00", **kwargs)
+        post_pair(client, resident_id, "live-sway", "trunk_sway", "2026-07-31T04:10:05+08:00", related_observation_ids=(transition_id,), **kwargs)
+        _, response, _ = post_pair(client, resident_id, "live-drift", "post_rise_lateral_drift", "2026-07-31T04:10:06+08:00", related_observation_ids=(transition_id,), **kwargs)
+        assert response.json()["evaluation"]["risk_level"] == "YELLOW"
+        assert response.json()["evaluation"]["matched_rule"] == "R-FALL-10"
+        assert asyncio.run(resident_counts(resident_id)) == (0, 0)
+
+
+def test_indeterminate_assessment_is_unknown_review_without_event():
+    resident_id = "resident-indeterminate"
+    with TestClient(app) as client:
+        _, response, _ = post_pair(client, resident_id, "indeterminate", "assessment_indeterminate", "2026-07-31T04:20:00+08:00")
+        assert response.json()["evaluation"]["risk_level"] == "UNKNOWN"
+        assert response.json()["evaluation"]["matched_rule"] == "R-FALL-09"
+        reviews = client.get("/api/v1/risk/reviews", params={"resident_id": resident_id})
+        assert reviews.status_code == 200
+        assert reviews.json() == [{
+            "schema_version": "risk-review/1.0",
+            "trace_id": reviews.json()[0]["trace_id"],
+            "resident_id": resident_id,
+            "evidence_id": "evi-indeterminate",
+            "evidence_type": "assessment_indeterminate",
+            "explanation": "assessment_indeterminate",
+            "evaluated_at": "2026-07-31T04:20:00+08:00",
+            "risk_level": "UNKNOWN",
+            "matched_rule": "R-FALL-09",
+            "ruleset_version": "ruleset-v1.2",
+            "source_mode": "MOCK",
+            "simulated": True,
+            "review_required": True,
+        }]
+        assert asyncio.run(resident_counts(resident_id)) == (0, 0)
 
 
 def test_low_quality_trunk_sway_creates_system_evidence_without_orange():
@@ -422,23 +555,13 @@ def test_low_quality_trunk_sway_creates_system_evidence_without_orange():
 def test_duplicate_evidence_is_idempotent_without_new_event_or_tool():
     resident_id = "resident-duplicate"
     with TestClient(app) as client:
-        post_pair(
-            client,
-            resident_id,
-            "duplicate-rapid",
-            "rapid_rise",
-            "2026-07-31T03:07:01+08:00",
-        )
-        _, response, sway_payload = post_pair(
-            client,
-            resident_id,
-            "duplicate-sway",
-            "trunk_sway",
-            "2026-07-31T03:07:05+08:00",
-        )
+        transition_id = "obs-duplicate-transition"
+        post_pair(client, resident_id, "duplicate-transition", "sit_to_stand_transition", "2026-07-31T03:07:00+08:00")
+        post_pair(client, resident_id, "duplicate-sway", "trunk_sway", "2026-07-31T03:07:05+08:00", related_observation_ids=(transition_id,))
+        _, response, drift_payload = post_pair(client, resident_id, "duplicate-drift", "post_rise_lateral_drift", "2026-07-31T03:07:06+08:00", related_observation_ids=(transition_id,))
         event_id = response.json()["evaluation"]["event_id"]
         before = asyncio.run(resident_counts(resident_id))
-        duplicate = client.post("/api/v1/evidence", json=sway_payload)
+        duplicate = client.post("/api/v1/evidence", json=drift_payload)
         after = asyncio.run(resident_counts(resident_id))
         assert duplicate.status_code == 200
         payload = duplicate.json()
@@ -477,7 +600,8 @@ def test_public_mock_history_cannot_be_presented_as_personal_device_baseline():
         assert baselines["rise_duration"]["status"] == "INSUFFICIENT"
         assert response.json()["overall_status"] == "INSUFFICIENT"
         assert "rapid_rise" not in baselines
-        assert "trunk_sway" not in baselines
+        assert baselines["trunk_sway"]["median"] is None
+        assert baselines["trunk_sway"]["status"] == "INSUFFICIENT"
 
 
 def test_same_authorized_c6c_position_three_dates_forms_provisional_baseline():
@@ -501,7 +625,7 @@ def test_same_authorized_c6c_position_three_dates_forms_provisional_baseline():
             "camera_position_id": "living-room-fixed-001",
         }
         assert set(payload["baselines"]) == {
-            "rise_duration", "relative_gait_speed", "stable_trunk_angle_deg",
+            "rise_duration", "trunk_sway", "relative_gait_speed",
         }
         assert all(item["status"] == "PROVISIONAL" for item in payload["baselines"].values())
         assert payload["baselines"]["relative_gait_speed"]["median"] == pytest.approx(0.44)
@@ -563,30 +687,42 @@ def test_dynamic_score_and_trace_are_identical_in_db_log_and_event_api(caplog):
     caplog.set_level("INFO", logger="risk_rule")
 
     def create_scored_event(client: TestClient, resident_id: str, prefix: str, severity: float):
-        timestamp_rapid = "2026-07-31T12:30:01+08:00"
+        timestamp_transition = "2026-07-31T12:30:00+08:00"
         timestamp_sway = "2026-07-31T12:30:05+08:00"
-        rapid_observation = observation(
-            resident_id, f"obs-{prefix}-rapid", "sit_to_stand_duration", 1.2, timestamp_rapid,
+        timestamp_drift = "2026-07-31T12:30:06+08:00"
+        transition_observation = observation(
+            resident_id, f"obs-{prefix}-transition", "sit_to_stand_transition_confirmed", 1.0, timestamp_transition,
         )
         sway_observation = observation(
             resident_id, f"obs-{prefix}-sway", "trunk_sway_angle", 18.0, timestamp_sway,
         )
-        rapid_evidence = evidence(
-            resident_id, f"evi-{prefix}-rapid", rapid_observation["observation_id"],
-            "rapid_rise", timestamp_rapid,
+        drift_observation = observation(
+            resident_id, f"obs-{prefix}-drift", "post_rise_pelvis_lateral_excursion_norm", 0.48, timestamp_drift,
+        )
+        transition_evidence = evidence(
+            resident_id, f"evi-{prefix}-transition", transition_observation["observation_id"],
+            "sit_to_stand_transition", timestamp_transition,
         )
         sway_evidence = evidence(
             resident_id, f"evi-{prefix}-sway", sway_observation["observation_id"],
             "trunk_sway", timestamp_sway,
         )
-        rapid_evidence["severity"] = severity
+        drift_evidence = evidence(
+            resident_id, f"evi-{prefix}-drift", drift_observation["observation_id"],
+            "post_rise_lateral_drift", timestamp_drift,
+        )
+        sway_evidence["observation_ids"].append(transition_observation["observation_id"])
+        drift_evidence["observation_ids"].append(transition_observation["observation_id"])
         sway_evidence["severity"] = severity
-        assert client.post("/api/v1/observations", json=rapid_observation).status_code == 201
-        assert client.post("/api/v1/evidence", json=rapid_evidence).status_code == 201
+        drift_evidence["severity"] = severity
+        assert client.post("/api/v1/observations", json=transition_observation).status_code == 201
+        assert client.post("/api/v1/evidence", json=transition_evidence).status_code == 201
         assert client.post("/api/v1/observations", json=sway_observation).status_code == 201
-        response = client.post("/api/v1/evidence", json=sway_evidence)
+        assert client.post("/api/v1/evidence", json=sway_evidence).status_code == 201
+        assert client.post("/api/v1/observations", json=drift_observation).status_code == 201
+        response = client.post("/api/v1/evidence", json=drift_evidence)
         assert response.status_code == 201
-        return response.json()["evaluation"]["event_id"], sway_evidence["evidence_id"]
+        return response.json()["evaluation"]["event_id"], drift_evidence["evidence_id"]
 
     async def persisted_trace(evidence_id: str):
         async with AsyncSessionLocal() as db:
@@ -630,30 +766,17 @@ def test_dynamic_score_and_trace_are_identical_in_db_log_and_event_api(caplog):
 def test_baseline_endpoint_returns_pre_fall_summary():
     resident_id = "resident-prefall-summary"
     with TestClient(app) as client:
-        post_pair(
-            client,
-            resident_id,
-            "prefall-rapid",
-            "rapid_rise",
-            "2026-07-31T03:07:01+08:00",
-        )
-        post_pair(
-            client,
-            resident_id,
-            "prefall-sway",
-            "trunk_sway",
-            "2026-07-31T03:07:05+08:00",
-        )
+        start_orange_event(client, resident_id, "prefall")
         response = client.get(
             f"/api/v1/residents/{resident_id}/baseline",
-            params={"as_of": "2026-07-31T03:07:05+08:00"},
+            params={"as_of": "2026-07-31T03:07:06+08:00"},
         )
         assert response.status_code == 200
         summary = response.json()["pre_fall_summary"]
         assert summary["risk_level"] == "ORANGE"
-        assert summary["instant_risk"] >= 0.7
-        assert summary["risk_30s"] >= 0.7
-        assert summary["trend_3min"] >= 0.7
+        assert summary["instant_risk"] >= 0.6
+        assert summary["risk_30s"] >= 0.6
+        assert summary["trend_3min"] >= 0.6
         assert "personal_baseline_deviation" in summary["dominant_factors"]
         assert summary["recommended_intervention"] == "执行低打扰语音或灯光提醒，并进入恢复观察。"
 
@@ -827,14 +950,10 @@ def test_recorded_recovery_accepts_two_observations_on_one_authorized_asset_and_
 def test_quality_boundary_at_point_seven_allows_combo_upgrade():
     resident_id = "resident-quality-boundary-pass"
     with TestClient(app) as client:
-        post_pair(
-            client, resident_id, "quality-pass-rapid", "rapid_rise",
-            "2026-07-31T12:00:01+08:00", data_quality=0.70,
-        )
-        _, response, _ = post_pair(
-            client, resident_id, "quality-pass-sway", "trunk_sway",
-            "2026-07-31T12:00:05+08:00", data_quality=0.70,
-        )
+        transition_id = "obs-quality-pass-transition"
+        post_pair(client, resident_id, "quality-pass-transition", "sit_to_stand_transition", "2026-07-31T12:00:00+08:00", data_quality=0.70)
+        post_pair(client, resident_id, "quality-pass-sway", "trunk_sway", "2026-07-31T12:00:05+08:00", data_quality=0.70, related_observation_ids=(transition_id,))
+        _, response, _ = post_pair(client, resident_id, "quality-pass-drift", "post_rise_lateral_drift", "2026-07-31T12:00:06+08:00", data_quality=0.70, related_observation_ids=(transition_id,))
         assert response.status_code == 201
         assert response.json()["evaluation"]["matched_rule"] == "R-FALL-02"
         assert response.json()["evaluation"]["risk_level"] == "ORANGE"
@@ -901,6 +1020,8 @@ def test_recovery_observation_resolves_and_updates_successful_intervention():
         observing = client.get(f"/api/v1/events/{event_id}").json()
         assert observing["status"] == "OBSERVING"
         assert recovered_payload["evidence_id"] in observing["evidence_ids"]
+        observing_snapshots = client.get(f"/api/v1/events/{event_id}/forewarning").json()
+        assert all(item["phase"] != "POST_INTERVENTION" for item in observing_snapshots)
 
         before_window = client.post("/api/v1/risk/evaluate", json={
             "resident_id": resident_id, "evaluated_at": "2026-07-31T03:08:28+08:00",
@@ -920,6 +1041,12 @@ def test_recovery_observation_resolves_and_updates_successful_intervention():
         assert len(detail["interventions"]) == 1
         assert detail["interventions"][0]["resolved"] is True
         assert detail["interventions"][0]["risk_after"] == 0.24
+        snapshots = client.get(f"/api/v1/events/{event_id}/forewarning").json()
+        post_snapshots = [item for item in snapshots if item["phase"] == "POST_INTERVENTION"]
+        assert len(post_snapshots) == 1
+        assert post_snapshots[0]["evaluated_at"] == "2026-07-31T03:08:29+08:00"
+        assert post_snapshots[0]["event_id"] == event_id
+        assert post_snapshots[0]["intervention_result_id"] == detail["interventions"][0]["result_id"]
         transition = [item for item in detail["rule_traces"] if item["matched_rule"] == "R-FALL-05"][-1]
         assert transition["previous_status"] == "OBSERVING"
         assert transition["next_status"] == "RESOLVED"

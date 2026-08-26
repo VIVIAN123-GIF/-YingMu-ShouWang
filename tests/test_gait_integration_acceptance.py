@@ -77,13 +77,24 @@ def test_backend_checks_require_first_write_retry_event_and_trace(tmp_path: Path
     batch = AdapterBatch.model_validate_json((output_dir / "adapter_batch.json").read_text(encoding="utf-8"))
     evidence_id = batch.evidences[0].evidence_id
     receipts = {
-        "first_write": [{"status_code": 201}, {"status_code": 201}],
-        "idempotent_retry": [{"status_code": 200}, {"status_code": 200}],
+        "first_write": [{"status_code": 201}] + [
+            {"status_code": 201, "body": {"evaluation": {
+                "ruleset_version": "ruleset-v1.2",
+                "matched_rule": "R-FALL-02",
+            }}}
+            for _ in batch.evidences
+        ],
+        "idempotent_retry": [
+            {"status_code": 200}
+            for _ in range(1 + len(batch.evidences))
+        ],
         "event_details": [{"status_code": 200, "body": {
             "event_id": "event-test",
             "evidence_ids": [evidence_id],
             "rule_traces": [{"matched_rule": "test"}],
         }}],
+        "explanations": [{"status_code": 200, "body": {"status": "PENDING"}}],
+        "risk_reviews": {"status_code": 200, "body": []},
     }
 
     checks = _backend_checks(receipts, batch)
@@ -109,16 +120,58 @@ def test_backend_checks_reject_incomplete_evidence_chain(tmp_path: Path):
 
     checks = _backend_checks(receipts, batch)
 
-    assert not next(item for item in checks if item["name"] == "risk_event_returned")["passed"]
+    assert not next(item for item in checks if item["name"] == "risk_event_expectation_met")["passed"]
     assert not next(item for item in checks if item["name"] == "rule_trace_archived")["passed"]
+
+
+def test_backend_checks_accept_a_deliberate_no_event_result(tmp_path: Path):
+    feature_path = tmp_path / "features.json"
+    feature_path.write_text(json.dumps({"features": {
+        "assessment_status": "INDETERMINATE",
+        "assessment_reason_code": "POST_RISE_WINDOW_INSUFFICIENT",
+        "valid_frame_ratio": 0.95,
+    }}), encoding="utf-8")
+    job = _job(feature_path)
+    output_dir = tmp_path / "batch"
+    asyncio.run(run_acceptance(media_path=feature_path, output_dir=output_dir, job=job))
+    batch = AdapterBatch.model_validate_json((output_dir / "adapter_batch.json").read_text(encoding="utf-8"))
+    receipts = {
+        "first_write": [
+            {"status_code": 201},
+            {"status_code": 201, "body": {"evaluation": {
+                "ruleset_version": "ruleset-v1.2",
+                "matched_rule": "R-FALL-09",
+            }}},
+        ],
+        "idempotent_retry": [{"status_code": 200}, {"status_code": 200}],
+        "event_details": [],
+        "explanations": [],
+        "risk_reviews": {"status_code": 200, "body": [{
+            "evidence_id": batch.evidences[0].evidence_id,
+        }]},
+    }
+
+    checks = _backend_checks(receipts, batch, expect_event=False)
+
+    assert all(item["passed"] for item in checks)
 
 
 def test_generated_batch_reaches_backend_event_and_rule_trace(tmp_path: Path):
     run_id = uuid.uuid4().hex[:10]
     feature_path = tmp_path / "features.json"
     feature_path.write_text(json.dumps({"features": {
+        "assessment_status": "VALID",
+        "assessment_reason_code": "ASSESSABLE_POST_RISE_WINDOW",
+        "sit_to_stand_transition_confirmed": True,
         "rise_duration_s": 1.0,
         "trunk_sway_angle_deg": 16.0,
+        "post_rise_sway_reversal_count": 3,
+        "post_rise_pelvis_lateral_excursion_norm": 0.48,
+        "post_rise_support_width_change_norm": 0.12,
+        "post_rise_compensatory_step_count": 0,
+        "post_rise_feet_visibility": 0.92,
+        "post_rise_tracking_ratio": 0.95,
+        "post_rise_orientation_quality": 0.90,
         "step_speed_norm_s": 0.6,
         "step_asymmetry_ratio": 0.4,
         "valid_frame_ratio": 0.95,

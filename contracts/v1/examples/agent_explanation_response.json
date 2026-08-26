@@ -2,10 +2,10 @@
   "schema_version": "agent-explanation/1.0",
   "request_id": "agent-event-001-v1",
   "event_id": "event-001",
-  "summary": "老人快速起身后出现持续躯干摇摆",
+  "summary": "本次坐站转换后出现多信号姿态不稳",
   "reasoning_points": [
-    "起身速度明显偏离个人基线",
-    "摇摆证据与快速起身位于同一短时窗口"
+    "已确认完整坐站转换和可评估窗口",
+    "躯干摆动与骨盆横移来自同一次模拟评估"
   ],
   "recommended_action_text": "建议提醒老人坐稳并继续观察",
   "capability_notice": "设备服务端语音尚未验证，将使用明确标记的降级工具",

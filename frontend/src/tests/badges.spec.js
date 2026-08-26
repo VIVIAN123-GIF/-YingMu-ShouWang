@@ -15,4 +15,11 @@ describe('来源与风险标识', () => {
     const wrapper = mount(RiskBadge, { props: { level: 'YELLOW' } })
     expect(wrapper.text()).toContain('建议关注')
   })
+
+  it('未知等级不会静默显示为绿色', () => {
+    const wrapper = mount(RiskBadge, { props: { level: 'UNKNOWN' } })
+    expect(wrapper.text()).toContain('不可判定')
+    expect(wrapper.text()).toContain('人工复核')
+    expect(wrapper.text()).not.toContain('状态平稳')
+  })
 })

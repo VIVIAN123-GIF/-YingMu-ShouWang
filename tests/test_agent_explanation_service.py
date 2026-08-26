@@ -105,6 +105,33 @@ def test_provider_success_uses_validated_json_without_sensitive_media():
     assert "不得建议自动报警" in system_prompt
     assert "联系照护人员人工确认" in system_prompt
     assert "不得把未验证的平台能力描述为可用" in system_prompt
+    assert "多信号即时不稳工程事件" in system_prompt
+    assert "不得把它表述为长期跌倒风险评估" in system_prompt
+
+
+def test_fallback_uses_post_rise_instability_semantics():
+    req = request().model_copy(update={
+        "evidence": [
+            AgentEvidenceItem(
+                evidence_type="sit_to_stand_transition",
+                explanation="有效坐站转换",
+            ),
+            AgentEvidenceItem(
+                evidence_type="post_rise_lateral_drift",
+                explanation="起身后横向漂移",
+            ),
+            AgentEvidenceItem(
+                evidence_type="compensatory_step",
+                explanation="起身后补偿步",
+            ),
+        ]
+    })
+
+    result = asyncio.run(AgentExplanationService().explain(req))
+
+    assert result.summary == "检测到起身后多信号不稳，需要继续关注老人当前状态"
+    assert "跌倒风险前兆" not in result.model_dump_json()
+    assert any("横向漂移" in point for point in result.reasoning_points)
 
 
 def test_provider_invalid_json_is_not_exposed_and_uses_fallback():

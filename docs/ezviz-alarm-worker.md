@@ -17,18 +17,17 @@
   -> RiskEvent / Agent Job（仅在 Evidence 满足规则时）
 ```
 
-真实告警当前使用 `VIDEO` 模式。2026-08-22 的现场互操作配置为 HLS 和 4 秒采集窗口；
-该配置完成了真实 MP4 采集和 TRAJECTORY Observation 入库，但 GAIT 仍因
-`no_pose_detected` 未通过业务验收。最新边界见
-[2026-08-22 真实设备后端算法联调结论](./2026-08-22-真实设备后端算法联调结论.md)。
+真实告警当前使用 `VIDEO` 模式和已验证的 H.264 HTTP-FLV。启用环形缓冲时优先保存
+告警前 10 秒和告警后 20 秒；缓冲不可用时回退为 15 秒告警后录像。GAIT 已升级为
+`gait-adapter-v1.2`，规则集为 `ruleset-v1.2`。
 
 ## 运行
 
-开发期间，临时隧道只指向 FastAPI 的 `8000` 端口；两个 Worker 不需要公网端口。
-从仓库根目录分别启动三个进程：
+开发期间，临时隧道只指向 FastAPI 的 `8000` 端口；Worker 不需要公网端口。
+未启用环形缓冲时从仓库根目录分别启动三个进程：
 
 ```powershell
-Set-Location 'D:\OneDrive\Desktop\荧目守望'
+Set-Location '<仓库根目录>'
 
 .\.venv\Scripts\python.exe -m dotenv -f .env run --override -- `
   .\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
@@ -39,6 +38,23 @@ Set-Location 'D:\OneDrive\Desktop\荧目守望'
 .\.venv\Scripts\python.exe -m dotenv -f .env run --override -- `
   .\.venv\Scripts\python.exe -m backend.worker.agent_worker --poll-seconds 1
 ```
+
+当 `.env` 设置 `YINGMU_STREAM_BUFFER_ENABLED=true` 时，还必须启动第四个进程：
+
+```powershell
+.\.venv\Scripts\python.exe -m dotenv -f .env run --override -- `
+  .\.venv\Scripts\python.exe -m backend.worker.stream_buffer_worker
+```
+
+Windows 发布包推荐由统一启动器完成编排：
+
+```powershell
+.\YingMuShouWang.exe self-check
+.\YingMuShouWang.exe live --config config\.env.local
+```
+
+`live` 会按 `YINGMU_STREAM_BUFFER_ENABLED` 条件启动第四进程，并统一监控和回收所有子进程；
+`demo` 始终保持 API、Alarm Worker、Agent Worker 三进程，不连接真实缓冲或设备。
 
 启动前必须确认：
 
@@ -64,6 +80,13 @@ Set-Location 'D:\OneDrive\Desktop\荧目守望'
 
 `NO_EVIDENCE` 不自动等于“所有模块成功”。仍需检查 `error_code` 和 `algorithm_summary`；
 例如 `PARTIAL_ALGORITHM_FAILURE` 表示至少一个模块失败、另一个模块产生了有效批次。
+`algorithm_summary.capture.mode` 还会显示 `RING_BUFFER`、`DIRECT_FALLBACK` 或
+`DIRECT_CAPTURE`；若发生回退，`buffer_error_code` 保留脱敏原因。
+
+即时不稳规则边界：必须先确认有效坐站转换，并由至少两个独立信号族共同支持。
+授权模拟回放可创建 ORANGE 工程事件；真实设备在正向验证完成前只命中
+`R-FALL-10/YELLOW/REVIEW`，不创建事件、解释任务或干预记录。单个摆角、横移、
+补偿步或起身速度只进入人工复核；不可判定输入命中 `R-FALL-09`，不能当作 GREEN。
 
 ## 验收与诊断
 
@@ -94,3 +117,9 @@ GET /api/v1/alarms/processing
 
 同一平台告警 ID 重推只能保留一条 `RiskAlarm` 和一条处理任务。已失败任务只有在私有媒体
 存在、失败阶段明确且原因已修复时才能做单条条件重排；禁止批量改库伪造成功状态。
+
+## 告警前后环形缓冲
+
+正式现场联调可启用独立的 `backend.worker.stream_buffer_worker`，持续保留短期私有分片，并为告警任务拼接“告警前 10 秒 + 告警后 20 秒”。缓冲覆盖不足或断流时，Alarm Worker 自动回退到原有告警后录制。
+
+启动命令、脱敏健康检查、Asset 判定和隐私清理要求见 [2026-08-25-萤石告警前后环形缓冲](./2026-08-25-萤石告警前后环形缓冲.md)。缓冲 Worker 必须先启动并达到 `ready=true`，然后才能把告警前录像纳入验收。

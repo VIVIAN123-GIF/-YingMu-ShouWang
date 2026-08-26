@@ -240,6 +240,9 @@ ezviz_system.db
 /outputs/
 /output/
 /tmp/
+/.playwright-mcp/
+/.claude/plan/
+/视频/
 /data/private/
 /private-media/
 /experiments/three-participant/private/

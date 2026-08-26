@@ -55,7 +55,7 @@ def test_demo_seed_posts_existing_fixed_sequence():
 
     def requester(method, path, payload):
         requests.append((method, path, payload))
-        if path == "/api/v1/evidence" and payload["evidence_id"] == "evi-mock-trunk-sway-001":
+        if path == "/api/v1/evidence" and payload["evidence_id"] == "evi-mock-lateral-drift-001":
             return 201, {"evaluation": {"event_id": "event-mock-fall-001"}}
         if path == "/api/v1/risk/evaluate":
             return 200, {"event": {"status": "RESOLVED"}}
@@ -67,6 +67,20 @@ def test_demo_seed_posts_existing_fixed_sequence():
     assert summary["simulated"] is True
     assert summary["event_id"] == "event-mock-fall-001"
     assert summary["final_status"] == "RESOLVED"
+    posted_observations = [
+        payload["observation_id"]
+        for _, path, payload in requests
+        if path == "/api/v1/observations"
+    ]
+    posted_evidence = [
+        payload["evidence_id"]
+        for _, path, payload in requests
+        if path == "/api/v1/evidence"
+    ]
+    assert "obs-mock-transition-001" in posted_observations
+    assert "obs-mock-lateral-drift-001" in posted_observations
+    assert "evi-mock-transition-001" in posted_evidence
+    assert "evi-mock-lateral-drift-001" in posted_evidence
     assert any(path.endswith("/intervene") for _, path, _ in requests)
 
 
@@ -104,3 +118,55 @@ def test_verify_frontend_rejects_non_vue_html(monkeypatch):
 
     with pytest.raises(RuntimeError, match="frontend"):
         launcher.verify_frontend("http://unused")
+
+
+def test_worker_specs_add_stream_buffer_only_for_enabled_live(monkeypatch):
+    monkeypatch.delattr(launcher.sys, "frozen", raising=False)
+
+    demo = launcher.worker_specs("demo", {"YINGMU_STREAM_BUFFER_ENABLED": "true"})
+    live_disabled = launcher.worker_specs("live", {"YINGMU_STREAM_BUFFER_ENABLED": "false"})
+    live_enabled = launcher.worker_specs("live", {"YINGMU_STREAM_BUFFER_ENABLED": "true"})
+
+    assert [name for name, _ in demo] == ["alarm-worker", "agent-worker"]
+    assert [name for name, _ in live_disabled] == ["alarm-worker", "agent-worker"]
+    assert [name for name, _ in live_enabled] == [
+        "alarm-worker", "agent-worker", "stream-buffer-worker",
+    ]
+
+
+def test_terminate_stops_every_started_process():
+    class Process:
+        def __init__(self):
+            self.returncode = None
+            self.terminated = False
+
+        def poll(self):
+            return self.returncode
+
+        def terminate(self):
+            self.terminated = True
+            self.returncode = 0
+
+        def wait(self, timeout):
+            del timeout
+            return self.returncode
+
+        def kill(self):
+            self.returncode = -9
+
+    processes = [Process() for _ in range(4)]
+
+    launcher._terminate(processes)
+
+    assert all(process.terminated for process in processes)
+
+
+def test_self_check_loads_required_local_resources(capsys):
+    assert launcher.run_self_check() == 0
+
+    payload = __import__("json").loads(capsys.readouterr().out)
+    assert payload["status"] == "SUCCESS"
+    assert payload["device_contacted"] is False
+    assert payload["scene_config_ids"] == [
+        "scene-living-room-v1", "scene-recorded-demo-v1",
+    ]

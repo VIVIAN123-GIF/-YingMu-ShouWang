@@ -8,12 +8,16 @@
   "time_horizon": "IMMINENT",
   "evidence": [
     {
-      "evidence_type": "rapid_rise",
-      "explanation": "起身时长1.1秒，明显短于个人基线2.4秒"
+      "evidence_type": "sit_to_stand_transition",
+      "explanation": "已确认完整坐站转换并取得可评估的起身后窗口"
     },
     {
       "evidence_type": "trunk_sway",
-      "explanation": "躯干摆幅18.4度，高于个人基线5.2度"
+      "explanation": "起身后躯干摆角幅度与往复次数超过工程参考值"
+    },
+    {
+      "evidence_type": "post_rise_lateral_drift",
+      "explanation": "起身后骨盆横向漂移超过身体尺度归一化工程参考值"
     }
   ],
   "baseline_status": "STABLE",
@@ -23,5 +27,6 @@
   ],
   "unverified_capabilities": [
     "EZVIZ_SERVER_VOICE"
-  ]
+  ],
+  "forewarning": null
 }

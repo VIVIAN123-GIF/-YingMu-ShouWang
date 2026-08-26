@@ -20,23 +20,23 @@
   },
   "evidence": {
     "schema_version": "1.0",
-    "evidence_id": "evi-mock-rapid-rise-001",
+    "evidence_id": "evi-mock-transition-001",
     "observation_ids": [
-      "obs-mock-rapid-rise-001"
+      "obs-mock-transition-001"
     ],
     "resident_id": "resident-mock-001",
-    "timestamp": "2026-07-31T03:07:01+08:00",
+    "timestamp": "2026-07-31T03:07:00+08:00",
     "risk_domain": "FALL",
-    "evidence_type": "rapid_rise",
-    "severity": 0.78,
-    "confidence": 0.92,
-    "data_quality": 0.88,
-    "baseline_value": 3.5,
-    "current_value": 1.2,
-    "baseline_deviation": -2.1,
+    "evidence_type": "sit_to_stand_transition",
+    "severity": 0.0,
+    "confidence": 0.94,
+    "data_quality": 0.9,
+    "baseline_value": null,
+    "current_value": 1.0,
+    "baseline_deviation": null,
     "time_scale": "SHORT",
     "location": "bedroom",
-    "explanation": "起身速度明显快于个人基线",
+    "explanation": "已确认有效坐站转换，进入起身后稳定性观察窗口",
     "adapter_version": "fall-adapter-mock-v1",
     "source_mode": "MOCK",
     "simulated": true
@@ -45,33 +45,39 @@
     "schema_version": "1.0",
     "event_id": "event-mock-fall-001",
     "resident_id": "resident-mock-001",
-    "created_at": "2026-07-31T03:07:05+08:00",
+    "created_at": "2026-07-31T03:07:06+08:00",
     "updated_at": "2026-07-31T03:08:30+08:00",
     "primary_domain": "FALL",
     "related_domains": [],
     "risk_level": "ORANGE",
     "risk_score": 0.82,
     "evidence_ids": [
-      "evi-mock-rapid-rise-001",
-      "evi-mock-trunk-sway-001"
+      "evi-mock-transition-001",
+      "evi-mock-trunk-sway-001",
+      "evi-mock-lateral-drift-001"
     ],
     "evidence_summary": [
       {
-        "evidence_id": "evi-mock-rapid-rise-001",
-        "evidence_type": "rapid_rise",
-        "explanation": "起身速度明显快于个人基线"
+        "evidence_id": "evi-mock-transition-001",
+        "evidence_type": "sit_to_stand_transition",
+        "explanation": "已确认有效坐站转换，进入起身后稳定性观察窗口"
       },
       {
         "evidence_id": "evi-mock-trunk-sway-001",
         "evidence_type": "trunk_sway",
         "explanation": "起身后躯干出现连续摇晃"
+      },
+      {
+        "evidence_id": "evi-mock-lateral-drift-001",
+        "evidence_type": "post_rise_lateral_drift",
+        "explanation": "起身后骨盆横向位移超过工程参考阈值"
       }
     ],
     "time_horizon": "IMMINENT",
     "recommended_action": "先坐稳，扶住固定物，再慢慢起身。",
     "intervention_policy": "fall-orange-gentle-v1",
     "status": "RESOLVED",
-    "ruleset_version": "ruleset-v1.0",
+    "ruleset_version": "ruleset-v1.2",
     "source_mode": "MOCK",
     "simulated": true
   },
@@ -79,7 +85,7 @@
     "schema_version": "1.0",
     "result_id": "result-mock-voice-001",
     "event_id": "event-mock-fall-001",
-    "started_at": "2026-07-31T03:07:06+08:00",
+    "started_at": "2026-07-31T03:07:07+08:00",
     "completed_at": "2026-07-31T03:08:30+08:00",
     "action_type": "voice",
     "tool_name": "mock_voice",

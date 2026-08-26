@@ -135,10 +135,14 @@ def seed_demo(base_url: str, requester: Callable | None = None) -> dict[str, obj
 
     _post_checked(requester, "/api/v1/observations", observations["obs-mock-green-001"])
     _post_checked(requester, "/api/v1/evidence", evidence["evi-mock-green-001"])
+    _post_checked(requester, "/api/v1/observations", observations["obs-mock-transition-001"])
+    _post_checked(requester, "/api/v1/evidence", evidence["evi-mock-transition-001"])
     _post_checked(requester, "/api/v1/observations", observations["obs-mock-rapid-rise-001"])
     _post_checked(requester, "/api/v1/evidence", evidence["evi-mock-rapid-rise-001"])
     _post_checked(requester, "/api/v1/observations", observations["obs-mock-trunk-sway-001"])
-    orange = _post_checked(requester, "/api/v1/evidence", evidence["evi-mock-trunk-sway-001"])
+    _post_checked(requester, "/api/v1/evidence", evidence["evi-mock-trunk-sway-001"])
+    _post_checked(requester, "/api/v1/observations", observations["obs-mock-lateral-drift-001"])
+    orange = _post_checked(requester, "/api/v1/evidence", evidence["evi-mock-lateral-drift-001"])
     event_id = orange["evaluation"]["event_id"]
     _post_checked(requester, f"/api/v1/events/{event_id}/intervene", None)
     _post_checked(requester, "/api/v1/observations", observations["obs-mock-posture-recovered-001"])
@@ -177,6 +181,55 @@ def run_agent_worker(poll_seconds: float) -> int:
     return asyncio.run(run(once=False, poll_seconds=poll_seconds))
 
 
+def run_stream_buffer_worker() -> int:
+    from backend.worker.stream_buffer_worker import run
+
+    return asyncio.run(run(once=False))
+
+
+def worker_specs(mode: str, environment: dict[str, str]) -> list[tuple[str, list[str]]]:
+    specs = [
+        ("alarm-worker", self_command("alarm-worker", "--poll-seconds", "1")),
+        ("agent-worker", self_command("agent-worker", "--poll-seconds", "1")),
+    ]
+    buffer_enabled = environment.get("YINGMU_STREAM_BUFFER_ENABLED", "false").lower() == "true"
+    if mode == "live" and buffer_enabled:
+        specs.append(("stream-buffer-worker", self_command("stream-buffer-worker")))
+    return specs
+
+
+def run_self_check() -> int:
+    root = application_root()
+    required = {
+        "pose_model": root / "models" / "pose_landmarker_heavy.task",
+        "live_scene": root / "scene-calibrations" / "scene-living-room-v1.json",
+        "replay_scene": root / "scene-calibrations" / "scene-recorded-demo-v1.json",
+    }
+    missing = [name for name, path in required.items() if not path.is_file()]
+    if missing:
+        raise RuntimeError(f"required packaged resource is missing: {', '.join(missing)}")
+
+    os.environ["YINGMU_SCENE_CONFIG_DIR"] = str((root / "scene-calibrations").resolve())
+    from adapters.trajectory_adapter import load_scene_calibration
+    from backend.schemas.risk_review import RiskReviewItem
+    from backend.service.stream_buffer_service import stream_buffer_health
+    from contracts.v1.ruleset import load_forewarning_ruleset, load_ruleset
+
+    del RiskReviewItem, stream_buffer_health
+    live_scene = load_scene_calibration("scene-living-room-v1")
+    replay_scene = load_scene_calibration("scene-recorded-demo-v1")
+    result = {
+        "status": "SUCCESS",
+        "ruleset_version": load_ruleset().version,
+        "forewarning_ruleset_version": load_forewarning_ruleset().version,
+        "scene_config_ids": [live_scene.scene_config_id, replay_scene.scene_config_id],
+        "contains_credentials": False,
+        "device_contacted": False,
+    }
+    print(json.dumps(result, ensure_ascii=False))
+    return 0
+
+
 def _terminate(processes: list[subprocess.Popen]) -> None:
     for process in processes:
         if process.poll() is None:
@@ -203,11 +256,12 @@ def run_stack(mode: str, args: argparse.Namespace) -> int:
     child_environment.update(environment)
     logs = runtime_dir / "logs"
     logs.mkdir(parents=True, exist_ok=True)
-    handles = [
-        (logs / "server.log").open("a", encoding="utf-8"),
-        (logs / "alarm-worker.log").open("a", encoding="utf-8"),
-        (logs / "agent-worker.log").open("a", encoding="utf-8"),
-    ]
+    specs = worker_specs(mode, environment)
+    handles = [(logs / "server.log").open("a", encoding="utf-8")]
+    handles.extend(
+        (logs / f"{name}.log").open("a", encoding="utf-8")
+        for name, _ in specs
+    )
     processes: list[subprocess.Popen] = []
     try:
         server_command = self_command("server", "--host", args.host, "--port", str(args.port))
@@ -220,11 +274,7 @@ def run_stack(mode: str, args: argparse.Namespace) -> int:
         ))
         base_url = f"http://{args.host if args.host not in {'0.0.0.0', '::'} else '127.0.0.1'}:{args.port}"
         wait_for_health(base_url, processes)
-        worker_commands = (
-            self_command("alarm-worker", "--poll-seconds", "1"),
-            self_command("agent-worker", "--poll-seconds", "1"),
-        )
-        for command, handle in zip(worker_commands, handles[1:]):
+        for (_, command), handle in zip(specs, handles[1:]):
             processes.append(subprocess.Popen(
                 command,
                 cwd=root,
@@ -274,6 +324,8 @@ def build_parser() -> argparse.ArgumentParser:
     for command in ("alarm-worker", "agent-worker"):
         worker = subparsers.add_parser(command)
         worker.add_argument("--poll-seconds", type=float, default=1.0)
+    subparsers.add_parser("stream-buffer-worker")
+    subparsers.add_parser("self-check")
     return parser
 
 
@@ -290,7 +342,11 @@ def main() -> int:
             return run_server(args.host, args.port)
         if args.command == "alarm-worker":
             return run_alarm_worker(args.poll_seconds)
-        return run_agent_worker(args.poll_seconds)
+        if args.command == "agent-worker":
+            return run_agent_worker(args.poll_seconds)
+        if args.command == "stream-buffer-worker":
+            return run_stream_buffer_worker()
+        return run_self_check()
     except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
         print(f"启动失败：{exc}", file=sys.stderr)
         return 1

@@ -11,7 +11,7 @@ class SystemConfig(Base):
     intervention_retry_times = Column(Integer, default=1)
     stream_max_channel = Column(Integer, default=2)
     auto_analysis_switch = Column(Boolean, default=True)
-    ruleset_version = Column(String(64), default="ruleset-v1.0")
+    ruleset_version = Column(String(64), default="ruleset-v1.2")
     update_time = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now, nullable=False)
 
 class WeeklyStat(Base):

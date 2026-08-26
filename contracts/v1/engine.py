@@ -1,4 +1,4 @@
-"""Deterministic v1.0 risk engine used by the Mock integration rehearsal."""
+"""Deterministic risk engine used by the Mock integration rehearsal."""
 
 from __future__ import annotations
 
@@ -81,7 +81,7 @@ class MockRiskEngine:
         now: datetime,
         matched_rule: str,
         previous_state: RiskLevel,
-        next_state: RiskLevel,
+        next_state: RiskLevel | str,
         reason: str,
         event_id: str | None = None,
         not_matched: dict[str, str] | None = None,
@@ -99,7 +99,7 @@ class MockRiskEngine:
             },
             matched_rule=matched_rule,
             previous_state=previous_state.value,
-            next_state=next_state.value,
+            next_state=getattr(next_state, "value", next_state),
             reason=reason,
             not_matched=not_matched or {},
             event_id=event_id,
@@ -188,7 +188,7 @@ class MockRiskEngine:
             time_scale=source.time_scale,
             location=source.location,
             explanation="数据质量低于工程门槛，本条证据不参与风险升级",
-            adapter_version="ruleset-v1.0",
+            adapter_version=self.ruleset.version,
             source_mode=source.source_mode,
             simulated=source.simulated,
         )
@@ -257,14 +257,12 @@ class MockRiskEngine:
             intervention_attempts=self.intervention_attempts.get(active.event_id, 0) if active else 0,
             latest_intervention_at=latest_intervention.started_at if latest_intervention else None,
         )
-        next_state = RiskLevel(decision.risk_level)
+        next_state = decision.risk_level
 
         if decision.action == "CREATE_EVENT":
             selected = [self.evidences[item] for item in decision.evidence_ids]
-            rapid = next(item for item in selected if item.evidence_type == "rapid_rise")
-            sway = next(item for item in selected if item.evidence_type == "trunk_sway")
             event_id = self._next_event_id(resident_id)
-            created = max(rapid.timestamp, sway.timestamp)
+            created = max(item.timestamp for item in selected)
             event = RiskEvent(
                 schema_version="1.0",
                 event_id=event_id,
@@ -275,23 +273,27 @@ class MockRiskEngine:
                 related_domains=[],
                 risk_level=RiskLevel.ORANGE,
                 risk_score=decision.score,
-                evidence_ids=[rapid.evidence_id, sway.evidence_id],
+                evidence_ids=[item.evidence_id for item in selected],
                 evidence_summary=[
-                    EvidenceSummary(evidence_id=rapid.evidence_id, evidence_type=rapid.evidence_type, explanation=rapid.explanation),
-                    EvidenceSummary(evidence_id=sway.evidence_id, evidence_type=sway.evidence_type, explanation=sway.explanation),
+                    EvidenceSummary(
+                        evidence_id=item.evidence_id,
+                        evidence_type=item.evidence_type,
+                        explanation=item.explanation,
+                    )
+                    for item in selected
                 ],
                 time_horizon="IMMINENT",
                 recommended_action="先坐稳，扶住固定物，再慢慢起身。",
                 intervention_policy="fall-orange-gentle-v1",
                 status=EventStatus.INTERVENING,
                 ruleset_version=self.ruleset.version,
-                source_mode=rapid.source_mode,
-                simulated=rapid.simulated,
+                source_mode=selected[-1].source_mode,
+                simulated=any(item.simulated for item in selected),
             )
             self.events[event.event_id] = event
             self.memory.set_state(resident_id, RiskLevel.ORANGE)
             self._trace(resident_id=resident_id, now=now, matched_rule=decision.matched_rule,
-                        previous_state=previous, next_state=RiskLevel.ORANGE,
+                        previous_state=previous, next_state="ORANGE",
                         reason=decision.reason, event_id=event.event_id,
                         not_matched=decision.not_matched, context_snapshot=context_snapshot,
                         score_components=decision.score_components)

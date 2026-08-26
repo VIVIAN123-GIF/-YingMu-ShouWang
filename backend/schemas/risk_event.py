@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from backend.schemas.common import EventStatus, RiskDomain, RiskLevel, Score, SourceMode, TimezoneDatetime
 from backend.schemas.evidence import Evidence
 from backend.schemas.observation import Observation
+from contracts.v1.forewarning import ForewarningSnapshot
 
 
 class RiskEvent(BaseModel):
@@ -40,6 +41,7 @@ class RiskEvaluateResponse(BaseModel):
     event: RiskEvent | None
     matched_rule: str
     ruleset_version: str
+    forewarning_snapshot: ForewarningSnapshot | None = None
 
 
 class EventDetailResponse(RiskEvent):

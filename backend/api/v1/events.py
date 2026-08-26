@@ -20,8 +20,15 @@ from backend.service.agent_explanation_job_service import (
     latest_event_explanation,
 )
 from backend.service.errors import ServiceError
+from backend.service.forewarning_service import event_forewarning
+from contracts.v1.forewarning import ForewarningSnapshot
 
 router = APIRouter(prefix="/events", tags=["events"])
+
+
+@router.get("/{event_id}/forewarning", response_model=list[ForewarningSnapshot])
+async def get_event_forewarning(event_id: str, db: AsyncSession = Depends(get_db)):
+    return await event_forewarning(db, event_id)
 
 @router.get("", response_model=list[RiskEvent])
 async def get_events(resident_id: str | None = Query(default=None),

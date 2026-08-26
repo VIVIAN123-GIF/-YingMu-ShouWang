@@ -1,0 +1,16 @@
+{
+  "schema_version": "scene-calibration/1.0",
+  "scene_config_id": "scene-living-room-v1",
+  "camera_position_id": "living-room-c6c-v1",
+  "location": "living_room",
+  "frame_width": 1920,
+  "frame_height": 1080,
+  "zones": [
+    {"zone_id": "corridor-risk", "zone_type": "HIGH_RISK", "polygon_norm": [[0.62, 0.31], [0.92, 0.30], [0.95, 0.95], [0.59, 0.95]]},
+    {"zone_id": "fixed-support", "zone_type": "SUPPORT", "polygon_norm": [[0.10, 0.42], [0.38, 0.42], [0.40, 0.92], [0.08, 0.92]]},
+    {"zone_id": "fixed-obstacle", "zone_type": "OBSTACLE", "polygon_norm": [[0.44, 0.70], [0.53, 0.70], [0.54, 0.90], [0.43, 0.90]]}
+  ],
+  "effective_from": "2026-08-26T09:00:00+08:00",
+  "supersedes": null,
+  "notes": "Sanitized fixed-camera example; replace with a locally validated calibration before live use."
+}

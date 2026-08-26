@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +30,8 @@ from contracts.v1.algorithm import (
 )
 from contracts.v1.gait_adapter import run as run_gait_adapter
 from contracts.v1.gait_video import VIDEO_SUFFIXES, _resolve_model_path
+from contracts.v1.decision import FallDecisionPolicy
+from contracts.v1.ruleset import load_ruleset
 
 
 REPORT_VERSION = "gait-integration-acceptance/1.0"
@@ -208,10 +211,31 @@ def _submit_backend(
         call("GET", f"{base}/events/{event_id}", None)
         for event_id in event_ids
     ]
-    return {"first_write": first, "idempotent_retry": duplicate, "event_details": event_details}
+    explanations = [
+        call("GET", f"{base}/events/{event_id}/explanation", None)
+        for event_id in event_ids
+    ]
+    resident_id = batch.observations[0].resident_id if batch.observations else ""
+    risk_reviews = call(
+        "GET",
+        f"{base}/risk/reviews?{urlencode({'resident_id': resident_id, 'limit': 100})}",
+        None,
+    )
+    return {
+        "first_write": first,
+        "idempotent_retry": duplicate,
+        "event_details": event_details,
+        "explanations": explanations,
+        "risk_reviews": risk_reviews,
+    }
 
 
-def _backend_checks(receipts: dict[str, Any], batch: AdapterBatch) -> list[dict[str, Any]]:
+def _backend_checks(
+    receipts: dict[str, Any],
+    batch: AdapterBatch,
+    *,
+    expect_event: bool = True,
+) -> list[dict[str, Any]]:
     first_codes = [item["status_code"] for item in receipts["first_write"]]
     duplicate_codes = [item["status_code"] for item in receipts["idempotent_retry"]]
     details = [
@@ -224,19 +248,73 @@ def _backend_checks(receipts: dict[str, Any], batch: AdapterBatch) -> list[dict[
         for evidence_id in detail.get("evidence_ids", [])
     }
     submitted_evidence = {item.evidence_id for item in batch.evidences}
+    evaluations = [
+        item["body"]["evaluation"]
+        for item in receipts["first_write"]
+        if isinstance(item.get("body"), dict)
+        and isinstance(item["body"].get("evaluation"), dict)
+    ]
+    explanations = [
+        item["body"]
+        for item in receipts.get("explanations", [])
+        if item.get("status_code") == 200 and isinstance(item.get("body"), dict)
+    ]
+    review_response = receipts.get("risk_reviews", {})
+    review_rows = (
+        review_response.get("body", [])
+        if review_response.get("status_code") == 200
+        and isinstance(review_response.get("body"), list)
+        else []
+    )
+    reviewed_evidence = {
+        item.get("evidence_id")
+        for item in review_rows
+        if isinstance(item, dict)
+    } - {None}
+    event_expectation_met = bool(details) == expect_event
     return [
         _check("backend_first_write_201", bool(first_codes) and all(code == 201 for code in first_codes), first_codes),
         _check("backend_idempotent_retry_200", bool(duplicate_codes) and all(code == 200 for code in duplicate_codes), duplicate_codes),
-        _check("risk_event_returned", bool(details), [item.get("event_id") for item in details]),
+        _check(
+            "backend_evaluations_returned",
+            len(evaluations) == len(batch.evidences),
+            len(evaluations),
+        ),
+        _check(
+            "backend_ruleset_v1_2",
+            bool(evaluations)
+            and all(item.get("ruleset_version") == "ruleset-v1.2" for item in evaluations),
+            sorted({item.get("ruleset_version") for item in evaluations}),
+        ),
+        _check(
+            "risk_event_expectation_met",
+            event_expectation_met,
+            {
+                "expected": expect_event,
+                "event_ids": [item.get("event_id") for item in details],
+            },
+        ),
         _check(
             "event_contains_submitted_evidence",
-            bool(archived_evidence & submitted_evidence),
+            (not expect_event and not details)
+            or bool(archived_evidence & submitted_evidence),
             sorted(archived_evidence & submitted_evidence),
         ),
         _check(
             "rule_trace_archived",
-            any(detail.get("rule_traces") for detail in details),
-            sum(len(detail.get("rule_traces", [])) for detail in details),
+            (not expect_event and bool(reviewed_evidence & submitted_evidence))
+            or any(detail.get("rule_traces") for detail in details),
+            {
+                "event_trace_count": sum(len(detail.get("rule_traces", [])) for detail in details),
+                "review_evidence_count": len(reviewed_evidence & submitted_evidence),
+            },
+        ),
+        _check(
+            "agent_explanation_job_enqueued",
+            (not expect_event and not explanations)
+            or bool(explanations)
+            and all(item.get("status") != "NOT_REQUESTED" for item in explanations),
+            [item.get("status") for item in explanations],
         ),
     ]
 
@@ -273,6 +351,16 @@ async def run_acceptance(
         asset = _asset_payload(job, manifest, authorization_record_id, retention_until, device_ref)
     batch = AdapterBatch.model_validate(await run_gait_adapter(job))
     checks = _adapter_checks(job, batch, manifest, model_manifest, expected_status)
+    local_decision = FallDecisionPolicy(load_ruleset()).evaluate(
+        now=job.captured_at,
+        previous_state="GREEN",
+        active_status=None,
+        active_created_at=None,
+        recovery_started_at=None,
+        recent=list(batch.evidences),
+        trigger=None,
+    )
+    expect_event = local_decision.action == "CREATE_EVENT"
 
     output_dir.mkdir(parents=True)
     _write_json(output_dir / "media_manifest.json", manifest)
@@ -286,7 +374,8 @@ async def run_acceptance(
         _write_json(output_dir / "asset.json", asset)
         receipts = _submit_backend(backend_url, asset, batch, timeout, requester)
         _write_json(output_dir / "backend_receipts.json", receipts)
-        checks.extend(_backend_checks(receipts, batch))
+        backend_checks = _backend_checks(receipts, batch, expect_event=expect_event)
+        checks.extend(backend_checks)
 
     check_by_name = {item["name"]: item["passed"] for item in checks}
     contract_pass = all(check_by_name[name] for name in (
@@ -301,12 +390,7 @@ async def run_acceptance(
         "pose_model_hash_recorded",
     ))
     if backend_url:
-        backend_pass = all(
-            item["passed"] for item in checks
-            if item["name"].startswith("backend_") or item["name"] in {
-                "risk_event_returned", "event_contains_submitted_evidence", "rule_trace_archived",
-            }
-        )
+        backend_pass = all(item["passed"] for item in backend_checks)
         verdict = "BACKEND_E2E_PASS" if adapter_pass and backend_pass else "FAIL"
     elif adapter_pass:
         verdict = "ADAPTER_PASS"
@@ -321,6 +405,12 @@ async def run_acceptance(
         "verdict": verdict,
         "job_id": job.job_id,
         "media": manifest,
+        "local_decision": {
+            "risk_level": local_decision.risk_level,
+            "matched_rule": local_decision.matched_rule,
+            "action": local_decision.action,
+            "event_expected": expect_event,
+        },
         "checks": checks,
         "artifacts": {
             "job": "algorithm_job.redacted.json",

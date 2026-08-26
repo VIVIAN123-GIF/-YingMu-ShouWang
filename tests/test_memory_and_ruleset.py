@@ -13,6 +13,13 @@ from contracts.v1.rehearsal import run_fixed_sequence
 from contracts.v1.ruleset import load_ruleset
 
 
+def ingest_simulated_post_rise_event(engine: MockRiskEngine, data: dict):
+    for observation_index, evidence_index in ((5, 4), (2, 2), (6, 5)):
+        engine.ingest_observation(data["observations"][observation_index])
+        engine.ingest_evidence(data["evidence"][evidence_index])
+    return engine.evaluate(RESIDENT_ID)
+
+
 class MemoryAndRulesetTests(unittest.TestCase):
     def setUp(self):
         self.data = sequence()
@@ -20,7 +27,10 @@ class MemoryAndRulesetTests(unittest.TestCase):
 
     def test_ruleset_has_fixed_windows_weights_and_mock_score(self):
         ruleset = load_ruleset()
-        self.assertEqual(ruleset.version, "ruleset-v1.0")
+        self.assertEqual(ruleset.version, "ruleset-v1.2")
+        self.assertEqual(ruleset.thresholds["trunk_sway_amplitude_deg"], 12.0)
+        self.assertEqual(ruleset.thresholds["orange_min_signal_families"], 2)
+        self.assertEqual(set(ruleset.signal_families), {"trunk", "translation", "feet"})
         self.assertEqual(ruleset.windows, {"short_seconds": 30, "medium_hours": 24, "long_days": 7})
         self.assertEqual(sum(ruleset.risk_weights.values()), 1.0)
         engine, _ = run_fixed_sequence()
@@ -34,6 +44,8 @@ class MemoryAndRulesetTests(unittest.TestCase):
             engine.ingest_evidence(evidence)
         for index in (1, 2, 3):
             engine.ingest_observation(self.data["observations"][index])
+            if index == 2:
+                engine.ingest_observation(self.data["observations"][5])
             if index == 3:
                 engine.ingest_observation(self.data["observations"][4])
             engine.ingest_evidence(self.data["evidence"][index])
@@ -134,29 +146,28 @@ class MemoryAndRulesetTests(unittest.TestCase):
         self.assertEqual(engine.traces[-1].matched_rule, "R-FALL-03")
         self.assertIsNone(engine.evaluate(RESIDENT_ID, datetime.fromisoformat(evidence["timestamp"])))
 
-    def test_rapid_rise_alone_matches_rule_01(self):
+    def test_rapid_rise_alone_matches_yellow_review_rule_12(self):
         engine = MockRiskEngine()
         engine.ingest_observation(self.data["observations"][1])
         engine.ingest_evidence(self.data["evidence"][1])
         self.assertIsNone(engine.evaluate(RESIDENT_ID))
-        self.assertEqual(engine.traces[-1].matched_rule, "R-FALL-01")
+        self.assertEqual(engine.traces[-1].matched_rule, "R-FALL-12")
+        self.assertEqual(engine.traces[-1].next_state, "YELLOW")
 
-    def test_rapid_rise_and_sway_matches_rule_02_and_score(self):
+    def test_transition_and_two_families_match_rule_02_and_score(self):
         engine = MockRiskEngine()
-        for index in (1, 2):
-            engine.ingest_observation(self.data["observations"][index])
-            engine.ingest_evidence(self.data["evidence"][index])
-        event = engine.evaluate(RESIDENT_ID)
+        event = ingest_simulated_post_rise_event(engine, self.data)
         if event is None:
-            self.fail("rapid_rise + trunk_sway should create a RiskEvent")
+            self.fail("transition plus two independent signal families should create a RiskEvent")
         self.assertEqual((event.risk_level.value, event.status.value, event.risk_score), ("ORANGE", "INTERVENING", 0.82))
         self.assertEqual(engine.traces[-1].matched_rule, "R-FALL-02")
 
     def test_forewarning_profile_fuses_personal_environment_and_time_scales(self):
         engine = MockRiskEngine()
-        for index in (1, 2):
-            engine.ingest_observation(self.data["observations"][index])
-            engine.ingest_evidence(self.data["evidence"][index])
+        for observation_index, evidence_index in ((1, 1), (5, 4), (2, 2), (6, 5)):
+            engine.ingest_observation(self.data["observations"][observation_index])
+            engine.ingest_evidence(self.data["evidence"][evidence_index])
+        engine.evaluate(RESIDENT_ID)
         low_light_observation = deepcopy(self.data["observations"][2])
         low_light_observation["observation_id"] = "obs-low-light-env"
         low_light_observation["timestamp"] = "2026-07-31T03:07:04+08:00"
@@ -199,10 +210,7 @@ class MemoryAndRulesetTests(unittest.TestCase):
     def test_observation_hazard_matches_rule_06_and_allows_second_intervention(self):
         engine = MockRiskEngine()
         data = self.data
-        for index in (1, 2):
-            engine.ingest_observation(data["observations"][index])
-            engine.ingest_evidence(data["evidence"][index])
-        event = engine.evaluate(RESIDENT_ID)
+        event = ingest_simulated_post_rise_event(engine, data)
         if event is None:
             self.fail("initial fall evidence should create a RiskEvent")
         engine.intervene(event.event_id)
@@ -256,10 +264,7 @@ class MemoryAndRulesetTests(unittest.TestCase):
 
     def test_persistent_instability_matches_rule_07(self):
         engine = MockRiskEngine()
-        for index in (1, 2):
-            engine.ingest_observation(self.data["observations"][index])
-            engine.ingest_evidence(self.data["evidence"][index])
-        event = engine.evaluate(RESIDENT_ID)
+        event = ingest_simulated_post_rise_event(engine, self.data)
         if event is None:
             self.fail("initial fall evidence should create a RiskEvent")
         self.assertEqual(event.status, EventStatus.INTERVENING)

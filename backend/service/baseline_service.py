@@ -15,7 +15,12 @@ from contracts.v1.models import Observation as ContractObservation
 from contracts.v1.ruleset import load_ruleset
 
 
-EXPECTED_METRICS = ("rise_duration", "relative_gait_speed", "stable_trunk_angle_deg")
+EXPECTED_METRICS = ("rise_duration", "trunk_sway", "relative_gait_speed")
+OPTIONAL_METRICS = (
+    "stable_trunk_angle_deg", "pelvis_lateral_excursion", "support_width_change",
+    "step_asymmetry", "turn_angular_velocity",
+)
+ALL_METRICS = EXPECTED_METRICS + OPTIONAL_METRICS
 STATUS_ORDER = {"INSUFFICIENT": 0, "PROVISIONAL": 1, "STABLE": 2}
 
 
@@ -164,7 +169,7 @@ class BaselineStore:
                 continue
             observation = mapped[0]
             metric = MemoryStore.METRIC_BY_FEATURE[observation.feature_name]
-            if metric not in EXPECTED_METRICS or observation.data_quality < self.ruleset.thresholds["data_quality"]:
+            if metric not in ALL_METRICS or observation.data_quality < self.ruleset.thresholds["data_quality"]:
                 continue
             asset = asset_by_id.get(observation.asset_id)
             if not asset or not asset.device_ref or not asset.camera_position_id:
@@ -193,7 +198,7 @@ class BaselineStore:
             days[candidate.metric].add(aware(candidate.evidence.timestamp).date())
 
         result = {}
-        for metric in EXPECTED_METRICS:
+        for metric in ALL_METRICS:
             samples = values[metric]
             distinct_days = len(days[metric])
             if samples:
@@ -212,8 +217,15 @@ class BaselineStore:
                 "status": status,
             }
 
-        overall_status = min((item["status"] for item in result.values()), key=STATUS_ORDER.get)
-        observed_days = min(item["distinct_days"] for item in result.values())
+        result = {
+            metric: stats
+            for metric, stats in result.items()
+            if metric in EXPECTED_METRICS or stats["sample_count"] > 0
+        }
+
+        core = [result[metric] for metric in EXPECTED_METRICS]
+        overall_status = min((item["status"] for item in core), key=STATUS_ORDER.get)
+        observed_days = min(item["distinct_days"] for item in core)
         provenance = None
         if selected:
             asset = selected[0].asset
@@ -222,6 +234,14 @@ class BaselineStore:
                 "device_model": asset.device_model,
                 "camera_position_id": asset.camera_position_id,
             }
+        pre_fall_summary = memory.forewarning_profile(resident_id, as_of)
+        try:
+            from backend.service.forewarning_service import latest_forewarning, legacy_pre_fall_summary
+            latest = await latest_forewarning(db, resident_id)
+            if latest is not None and latest.source_mode.value != "MOCK":
+                pre_fall_summary = legacy_pre_fall_summary(latest)
+        except Exception:
+            pass
         return {
             "resident_id": resident_id,
             "as_of": as_of,
@@ -234,7 +254,7 @@ class BaselineStore:
                 "stable_target_days": self.ruleset.windows["long_days"],
             },
             "provenance": provenance,
-            "pre_fall_summary": memory.forewarning_profile(resident_id, as_of),
+            "pre_fall_summary": pre_fall_summary,
             "source_mode": "RECORDED_REPLAY",
             "simulated": True,
         }

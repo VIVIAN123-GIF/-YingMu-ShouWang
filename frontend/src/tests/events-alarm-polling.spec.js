@@ -2,13 +2,14 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getAlarmProcessingTasksMock, getEventsMock, runtimeMock } = vi.hoisted(() => ({
-  getAlarmProcessingTasksMock: vi.fn(), getEventsMock: vi.fn(), runtimeMock: { mode: 'api' },
+const { getAlarmProcessingTasksMock, getEventsMock, getRiskReviewsMock, runtimeMock } = vi.hoisted(() => ({
+  getAlarmProcessingTasksMock: vi.fn(), getEventsMock: vi.fn(), getRiskReviewsMock: vi.fn(), runtimeMock: { mode: 'api' },
 }))
 
 vi.mock('../services/repository', () => ({
   getAlarmProcessingTasks: getAlarmProcessingTasksMock,
   getEvents: getEventsMock,
+  getRiskReviews: getRiskReviewsMock,
   RESIDENT_ID: 'resident-001',
   runtime: runtimeMock,
 }))
@@ -20,6 +21,12 @@ const waitingTask = {
   status: 'WAITING_ALGORITHM', attempt_count: 1, max_attempts: 3, capture_asset_id: 'asset-1',
   error_code: null, error_message: null, available_at: '2026-08-11T15:00:00',
   started_at: '2026-08-11T15:00:01', finished_at: null, create_time: '2026-08-11T15:00:00', update_time: '2026-08-11T15:00:01',
+}
+
+const reviewItem = {
+  trace_id: 'trace-review-1', evidence_type: 'assessment_indeterminate',
+  explanation: '观察窗口不完整，需要人工复核', evaluated_at: '2026-08-26T10:00:00+08:00',
+  matched_rule: 'R-FALL-09', ruleset_version: 'ruleset-v1.2', risk_level: 'UNKNOWN',
 }
 
 function mountView() {
@@ -37,6 +44,7 @@ describe('告警处理任务轮询', () => {
     vi.useFakeTimers()
     runtimeMock.mode = 'api'
     getEventsMock.mockReset().mockResolvedValue([])
+    getRiskReviewsMock.mockReset().mockResolvedValue([reviewItem])
     getAlarmProcessingTasksMock.mockReset().mockResolvedValue([waitingTask])
   })
   afterEach(() => vi.useRealTimers())
@@ -46,6 +54,8 @@ describe('告警处理任务轮询', () => {
     await flushPromises()
     expect(getAlarmProcessingTasksMock).toHaveBeenCalledWith({ residentId: 'resident-001', limit: 20 })
     expect(wrapper.text()).toContain('等待算法分析')
+    expect(wrapper.text()).toContain('本次评估不可判定')
+    expect(wrapper.text()).toContain('R-FALL-09')
     expect(wrapper.text()).not.toContain('检测到跌倒')
     await vi.advanceTimersByTimeAsync(5000)
     await flushPromises()

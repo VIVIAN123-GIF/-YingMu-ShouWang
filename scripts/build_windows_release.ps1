@@ -18,6 +18,19 @@ if (-not (Test-Path -LiteralPath $Python)) {
 if (-not (Test-Path -LiteralPath "models\pose_landmarker_heavy.task")) {
     throw "MediaPipe model is missing. Run the documented model downloader first."
 }
+$requiredReleaseFiles = @(
+    "adapters\trajectory_adapter.py",
+    "backend\schemas\risk_review.py",
+    "backend\service\stream_buffer_service.py",
+    "backend\worker\stream_buffer_worker.py",
+    "scene-calibrations\scene-living-room-v1.json",
+    "scene-calibrations\scene-recorded-demo-v1.json"
+)
+foreach ($requiredFile in $requiredReleaseFiles) {
+    if (-not (Test-Path -LiteralPath $requiredFile)) {
+        throw "Required release file is missing: $requiredFile"
+    }
+}
 
 if (-not $SkipFrontend) {
     Push-Location "frontend"
@@ -47,12 +60,10 @@ if (-not $SkipPyInstaller) {
         --clean `
         --onedir `
         --name YingMuShouWang `
-        --paths "deliverables\cym\audio-behavior-demo\src" `
         --collect-submodules backend `
         --collect-submodules contracts `
         --hidden-import aiosqlite `
         --hidden-import adapters.trajectory_adapter `
-        --hidden-import adapters.language_adapter `
         --add-data "frontend\dist;frontend_dist" `
         --add-data "contracts\v1\rulesets;contracts\v1\rulesets" `
         --add-data "models\pose_landmarker_heavy.task;models" `
@@ -73,6 +84,8 @@ Copy-Item -LiteralPath "packaging\start-live.cmd" -Destination $release
 Copy-Item -LiteralPath "packaging\THIRD_PARTY_NOTICES.txt" -Destination $release
 New-Item -ItemType Directory -Path (Join-Path $release "config") | Out-Null
 Copy-Item -LiteralPath "packaging\.env.example" -Destination (Join-Path $release "config\.env.example")
+Copy-Item -LiteralPath "scene-calibrations" -Destination (Join-Path $release "scene-calibrations") -Recurse
+Copy-Item -LiteralPath "models" -Destination (Join-Path $release "models") -Recurse
 New-Item -ItemType Directory -Path (Join-Path $release "runtime\logs") -Force | Out-Null
 
 $readmePdf = Get-ChildItem -LiteralPath "final-delivery\output\pdf" -Filter "03-*.pdf" | Select-Object -First 1
@@ -84,6 +97,10 @@ $smokeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("yingmu-smoke-" + [gui
 New-Item -ItemType Directory -Path $smokeRoot | Out-Null
 $smokePassed = $false
 try {
+    & (Join-Path $release "YingMuShouWang.exe") self-check
+    if ($LASTEXITCODE -ne 0) {
+        throw "Packaged self-check failed with exit code $LASTEXITCODE."
+    }
     & (Join-Path $release "YingMuShouWang.exe") demo --host 127.0.0.1 --port 8099 --runtime-dir $smokeRoot --no-browser --smoke-test
     if ($LASTEXITCODE -ne 0) {
         throw "Packaged demo stack failed its smoke test with exit code $LASTEXITCODE."
@@ -117,4 +134,59 @@ if (Test-Path -LiteralPath $zipPath) {
     Remove-Item -LiteralPath $zipPath -Force
 }
 Compress-Archive -LiteralPath $release -DestinationPath $zipPath -CompressionLevel Optimal
+
+$freshRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("yingmu-windows-fresh-" + [guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Path $freshRoot | Out-Null
+$freshPassed = $false
+try {
+    Expand-Archive -LiteralPath $zipPath -DestinationPath $freshRoot
+    $freshExe = Get-ChildItem -LiteralPath $freshRoot -Filter "YingMuShouWang.exe" -File -Recurse
+    if (@($freshExe).Count -ne 1) {
+        throw "Fresh Windows ZIP must contain exactly one YingMuShouWang.exe."
+    }
+    $freshRelease = $freshExe[0].Directory.FullName
+    $freshManifest = Join-Path $freshRelease "MANIFEST-SHA256.txt"
+    if (-not (Test-Path -LiteralPath $freshManifest)) {
+        throw "Fresh Windows ZIP is missing MANIFEST-SHA256.txt."
+    }
+    foreach ($line in Get-Content -LiteralPath $freshManifest -Encoding utf8) {
+        if (-not $line) { continue }
+        if ($line -notmatch '^([0-9a-f]{64})  (.+)$') {
+            throw "Fresh Windows ZIP manifest contains an invalid line."
+        }
+        $expectedHash = $Matches[1]
+        $relativePath = $Matches[2].Replace('/', '\')
+        $manifestFile = Join-Path $freshRelease $relativePath
+        if (-not (Test-Path -LiteralPath $manifestFile -PathType Leaf)) {
+            throw "Fresh Windows ZIP manifest references a missing file."
+        }
+        $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $manifestFile).Hash.ToLowerInvariant()
+        if ($actualHash -ne $expectedHash) {
+            throw "Fresh Windows ZIP manifest hash mismatch."
+        }
+    }
+    & $freshExe[0].FullName self-check
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fresh Windows ZIP self-check failed with exit code $LASTEXITCODE."
+    }
+    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+    $listener.Start()
+    $freshPort = ([System.Net.IPEndPoint]$listener.LocalEndpoint).Port
+    $listener.Stop()
+    $freshRuntime = Join-Path $freshRoot "runtime"
+    & $freshExe[0].FullName demo --host 127.0.0.1 --port $freshPort --runtime-dir $freshRuntime --no-browser --smoke-test
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fresh Windows ZIP demo smoke failed with exit code $LASTEXITCODE."
+    }
+    $freshPassed = $true
+}
+finally {
+    $resolvedFreshRoot = [System.IO.Path]::GetFullPath($freshRoot)
+    $resolvedTempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
+    if ($freshPassed -and $resolvedFreshRoot.StartsWith($resolvedTempRoot) -and (Test-Path -LiteralPath $resolvedFreshRoot)) {
+        Remove-Item -LiteralPath $resolvedFreshRoot -Recurse -Force
+    } elseif (-not $freshPassed) {
+        Write-Warning "Fresh Windows ZIP diagnostics retained at $resolvedFreshRoot"
+    }
+}
 Write-Host "PASS: Windows release created at $zipPath"
