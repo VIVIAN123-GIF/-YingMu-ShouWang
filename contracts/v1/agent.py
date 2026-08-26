@@ -53,6 +53,20 @@ class AgentEvidenceItem(BaseModel):
     explanation: NonEmptyText
 
 
+class AgentForewarningSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    snapshot_id: StrictStr = Field(min_length=1, max_length=160)
+    assessment_status: Literal["VALID", "PARTIAL", "INSUFFICIENT"]
+    confidence_level: Literal["LOW", "MEDIUM", "HIGH"]
+    baseline_status: AgentBaselineStatus
+    instant_index: StrictFloat = Field(ge=0, le=1)
+    short_30s_index: StrictFloat = Field(ge=0, le=1)
+    trend_3min_index: StrictFloat = Field(ge=0, le=1)
+    dominant_factors: list[StrictStr] = Field(default_factory=list, max_length=5)
+    degradation_reasons: list[StrictStr] = Field(default_factory=list, max_length=8)
+
+
 class AgentExplanationRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -72,6 +86,7 @@ class AgentExplanationRequest(BaseModel):
     intervention_status: AgentInterventionStatus
     verified_capabilities: list[PlatformCapability]
     unverified_capabilities: list[PlatformCapability]
+    forewarning: AgentForewarningSummary | None = None
 
     @field_validator("risk_score")
     @classmethod

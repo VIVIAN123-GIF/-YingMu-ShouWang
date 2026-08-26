@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import uuid
 
@@ -21,7 +22,7 @@ from backend.db.models import (
     Observation,
     RiskEvent,
 )
-from backend.service import algorithm_task_service
+from backend.service import agent_explanation_job_service, algorithm_task_service
 from backend.service.algorithm_task_service import process_algorithm_task
 from backend.api.exception_handlers import (
     service_error_handler,
@@ -176,7 +177,7 @@ class FakeRegistry:
     def __init__(self, adapters=None):
         self.adapters = adapters or {}
 
-    def load_configured(self):
+    def load_configured(self, modules=None):
         return None
 
     def get(self, module):
@@ -389,6 +390,49 @@ def test_agent_job_is_version_idempotent_and_persists_fallback(tmp_path):
     assert status == "FALLBACK"
 
 
+def test_agent_job_version_changes_with_capability_snapshot(tmp_path, monkeypatch):
+    async def operation(db):
+        resident_id = "resident-agent-capability-version"
+        event = event_row("event-agent-capability-version", resident_id)
+        observation = observation_row("obs-agent-capability-version", resident_id)
+        evidence = evidence_row(
+            "evi-agent-capability-version",
+            observation.observation_id,
+            resident_id,
+            "trunk_sway",
+        )
+        db.add_all([observation, evidence, event])
+        await db.commit()
+
+        monkeypatch.setattr(
+            agent_explanation_job_service,
+            "EZVIZ_LIVE_PLAYBACK_VERIFIED",
+            False,
+        )
+        before, before_created = await enqueue_event_explanation(db, event.event_id)
+        before_payload = loads(before.request_payload, {})
+
+        monkeypatch.setattr(
+            agent_explanation_job_service,
+            "EZVIZ_LIVE_PLAYBACK_VERIFIED",
+            True,
+        )
+        after, after_created = await enqueue_event_explanation(db, event.event_id)
+        after_payload = loads(after.request_payload, {})
+        return before, after, before_created, after_created, before_payload, after_payload
+
+    before, after, before_created, after_created, before_payload, after_payload = asyncio.run(
+        with_database(tmp_path, operation)
+    )
+    assert before_created is True
+    assert after_created is True
+    assert before.request_id != after.request_id
+    assert before.event_version_hash != after.event_version_hash
+    assert "EZVIZ_LIVE_PLAYBACK" in before_payload["unverified_capabilities"]
+    assert "EZVIZ_LIVE_PLAYBACK" in after_payload["verified_capabilities"]
+    assert "EZVIZ_LIVE_PLAYBACK" not in after_payload["unverified_capabilities"]
+
+
 def test_agent_snapshot_includes_only_normalized_resident_help_semantic(tmp_path):
     async def operation(db):
         resident_id = "resident-agent-help"
@@ -569,6 +613,89 @@ def test_one_algorithm_failure_does_not_cancel_valid_module(monkeypatch, tmp_pat
     assert status == "NO_EVIDENCE"
     assert error_code == "PARTIAL_ALGORITHM_FAILURE"
     assert observation_saved is True
+
+
+def test_video_worker_recomputes_snapshot_after_all_evidence_is_persisted(monkeypatch, tmp_path):
+    media = tmp_path / "capture.mp4"
+    media.write_bytes(b"test-video")
+    monkeypatch.setattr(algorithm_task_service, "resolve_private_asset_path", lambda _: media)
+    state = {"persisted": False, "evaluated": False}
+
+    async def adapter_batch(job, module, observation_id):
+        return AdapterBatch.model_validate({
+            "schema_version": "adapter-batch/1.0",
+            "job_id": job.job_id,
+            "module": module.value,
+            "adapter_version": f"{module.value.lower()}-test-v1",
+            "status": "NO_EVIDENCE",
+            "started_at": NOW,
+            "completed_at": NOW,
+            "observations": [{
+                "schema_version": "1.0",
+                "observation_id": observation_id,
+                "resident_id": job.resident_id,
+                "timestamp": NOW,
+                "source": "pose" if module == AlgorithmModule.GAIT else "trajectory_adapter",
+                "feature_name": "valid_frame_ratio",
+                "feature_value": 0.9,
+                "unit": "ratio",
+                "location": "living_room",
+                "confidence": 0.9,
+                "data_quality": 0.9,
+                "source_mode": job.source_mode,
+                "asset_id": job.asset_id,
+                "simulated": job.simulated,
+                "metadata": {},
+            }],
+            "evidences": [],
+            "resident_response_candidate": None,
+            "diagnostics": {},
+            "error": None,
+        })
+
+    async def gait(job):
+        return await adapter_batch(job, AlgorithmModule.GAIT, "obs-final-gait")
+
+    async def trajectory(job):
+        return await adapter_batch(job, AlgorithmModule.TRAJECTORY, "obs-final-trajectory")
+
+    async def persist_batches(_db, _task, batches):
+        assert [batch.module for batch in batches] == [AlgorithmModule.GAIT, AlgorithmModule.TRAJECTORY]
+        state["persisted"] = True
+        return 2, 2
+
+    async def evaluate_forewarning(_db, resident_id, evaluated_at, **kwargs):
+        assert state["persisted"] is True
+        assert resident_id == "resident-task-final-snapshot"
+        assert evaluated_at == NOW
+        assert kwargs == {
+            "source_mode": "MOCK",
+            "simulated": True,
+            "asset_id": "asset-final-snapshot",
+        }
+        state["evaluated"] = True
+        return SimpleNamespace(snapshot_id="forewarning-final-snapshot")
+
+    monkeypatch.setattr(algorithm_task_service, "_persist_batches", persist_batches)
+    from backend.service import forewarning_service
+    monkeypatch.setattr(forewarning_service, "evaluate_forewarning", evaluate_forewarning)
+    registry = FakeRegistry({
+        AlgorithmModule.GAIT: gait,
+        AlgorithmModule.TRAJECTORY: trajectory,
+    })
+
+    async def operation(db):
+        asset = asset_row("asset-final-snapshot", content_type="video/mp4")
+        task = alarm_task_row("task-final-snapshot", asset.asset_id)
+        db.add_all([asset, task])
+        await db.commit()
+        result = await process_algorithm_task(db, task, registry=registry)
+        return result.status, loads(result.algorithm_summary, {})
+
+    status, summary = asyncio.run(with_database(tmp_path, operation))
+    assert status == "COMPLETED"
+    assert state["evaluated"] is True
+    assert summary["forewarning_snapshot_id"] == "forewarning-final-snapshot"
 
 
 def test_public_api_rejects_internal_evidence_and_controls_explanation_enqueue(tmp_path):

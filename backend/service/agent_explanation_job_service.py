@@ -9,8 +9,8 @@ from typing import Any
 from sqlalchemy import and_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.config import EZVIZ_VOICE_VERIFIED
-from backend.db.models import AgentExplanationJob, Evidence, InterventionResult, RiskEvent
+from backend.config import EZVIZ_LIVE_PLAYBACK_VERIFIED, EZVIZ_VOICE_VERIFIED
+from backend.db.models import AgentExplanationJob, Evidence, ForewarningSnapshot, InterventionResult, RiskEvent
 from backend.service.agent_explanation_service import (
     AgentExplanationService,
     build_default_agent_explanation_service,
@@ -22,6 +22,7 @@ from contracts.v1.agent import (
     AgentBaselineStatus,
     AgentEvidenceItem,
     AgentExplanationRequest,
+    AgentForewarningSummary,
     AgentInterventionStatus,
     PlatformCapability,
 )
@@ -78,6 +79,26 @@ async def _event_snapshot(
     if latest_intervention is not None:
         intervention_status = AgentInterventionStatus(latest_intervention.delivery_status)
 
+    forewarning_row = (await db.execute(
+        select(ForewarningSnapshot)
+        .where(ForewarningSnapshot.event_id == event.event_id)
+        .order_by(ForewarningSnapshot.evaluated_at.desc(), ForewarningSnapshot.id.desc())
+    )).scalars().first()
+    forewarning = None
+    if forewarning_row is not None:
+        factors = loads(forewarning_row.factors_payload, [])
+        forewarning = AgentForewarningSummary(
+            snapshot_id=forewarning_row.snapshot_id,
+            assessment_status=forewarning_row.assessment_status,
+            confidence_level=forewarning_row.confidence_level,
+            baseline_status=AgentBaselineStatus(forewarning_row.baseline_status),
+            instant_index=float(forewarning_row.instant_index),
+            short_30s_index=float(forewarning_row.short_30s_index),
+            trend_3min_index=float(forewarning_row.trend_3min_index),
+            dominant_factors=[item.get("factor", "") for item in factors if item.get("factor")][:5],
+            degradation_reasons=loads(forewarning_row.degradation_payload, [])[:8],
+        )
+
     verified = [
         PlatformCapability.EZVIZ_DEVICE_STATUS,
         PlatformCapability.EZVIZ_CAPTURE,
@@ -85,7 +106,11 @@ async def _event_snapshot(
         PlatformCapability.MOCK_VOICE,
         PlatformCapability.TEXT_NOTICE,
     ]
-    unverified = [PlatformCapability.EZVIZ_LIVE_PLAYBACK]
+    unverified = []
+    if EZVIZ_LIVE_PLAYBACK_VERIFIED:
+        verified.append(PlatformCapability.EZVIZ_LIVE_PLAYBACK)
+    else:
+        unverified.append(PlatformCapability.EZVIZ_LIVE_PLAYBACK)
     if EZVIZ_VOICE_VERIFIED:
         verified.append(PlatformCapability.EZVIZ_SERVER_VOICE)
     else:
@@ -98,6 +123,8 @@ async def _event_snapshot(
         "risk_score": event.risk_score,
         "status": event.status,
         "evidence_ids": evidence_ids,
+        "verified_capabilities": [item.value for item in verified],
+        "unverified_capabilities": [item.value for item in unverified],
         "latest_intervention": None if latest_intervention is None else {
             "result_id": latest_intervention.result_id,
             "delivery_status": latest_intervention.delivery_status,
@@ -106,6 +133,7 @@ async def _event_snapshot(
             "completed_at": aware(latest_intervention.completed_at).isoformat()
             if latest_intervention.completed_at else None,
         },
+        "forewarning": forewarning.model_dump(mode="json") if forewarning else None,
     }
     version_hash = hashlib.sha256(dumps(version_payload).encode("utf-8")).hexdigest()
     request_id = AgentExplanationService.request_id_for_event(event.event_id, version_hash)
@@ -122,6 +150,7 @@ async def _event_snapshot(
         intervention_status=intervention_status,
         verified_capabilities=verified,
         unverified_capabilities=unverified,
+        forewarning=forewarning,
     )
     return version_hash, request
 

@@ -29,6 +29,48 @@ policies = {
 policy = policies["FALL"]  # Backward-compatible import for existing integrations.
 logger = logging.getLogger("backend.risk_service")
 
+REVIEW_RULES = ("R-FALL-08", "R-FALL-09", "R-FALL-10", "R-FALL-11", "R-FALL-12")
+
+
+async def list_risk_reviews(
+    db: AsyncSession,
+    *,
+    resident_id: str | None = None,
+    limit: int = 20,
+) -> list[dict]:
+    query = (
+        select(RuleTrace, Evidence)
+        .join(Evidence, Evidence.evidence_id == RuleTrace.evidence_id)
+        .where(
+            RuleTrace.event_created.is_(False),
+            RuleTrace.matched_rule.in_(REVIEW_RULES),
+            RuleTrace.next_state.in_(("UNKNOWN", "YELLOW")),
+        )
+        .order_by(RuleTrace.evaluated_at.desc(), RuleTrace.id.desc())
+        .limit(limit)
+    )
+    if resident_id:
+        query = query.where(RuleTrace.resident_id == resident_id)
+    rows = (await db.execute(query)).all()
+    return [
+        {
+            "schema_version": "risk-review/1.0",
+            "trace_id": trace.trace_id,
+            "resident_id": trace.resident_id,
+            "evidence_id": evidence.evidence_id,
+            "evidence_type": evidence.evidence_type,
+            "explanation": evidence.explanation,
+            "evaluated_at": aware(trace.evaluated_at),
+            "risk_level": trace.next_state,
+            "matched_rule": trace.matched_rule,
+            "ruleset_version": trace.ruleset_version,
+            "source_mode": getattr(evidence.source_mode, "value", evidence.source_mode),
+            "simulated": evidence.simulated,
+            "review_required": True,
+        }
+        for trace, evidence in rows
+    ]
+
 
 async def _enqueue_explanation_safely(db: AsyncSession, event_id: str) -> None:
     try:
@@ -85,6 +127,7 @@ async def _resolve_event(
     evaluated_at,
     *,
     status: str = "RESOLVED",
+    risk_after: float | None = None,
 ) -> None:
     event.status = status
     event.risk_level = "GREEN"
@@ -104,7 +147,7 @@ async def _resolve_event(
     )).scalars().first()
     if result:
         result.resident_response = "stable"
-        result.risk_after = 0.24
+        result.risk_after = round(float(risk_after), 4) if risk_after is not None else 0.24
         result.resolved = True
         result.resolution_reason = "姿态恢复且60秒观察期内无新风险证据"
         result.completed_at = evaluated_at
@@ -307,6 +350,22 @@ async def evaluate(
     if selected_domain not in policies:
         selected_domain = "FALL"
     existing = await _active_event(db, resident_id, selected_domain)
+    forewarning = None
+    if selected_domain == "FALL" and not duplicate:
+        from backend.service.forewarning_service import evaluate_forewarning
+        forewarning = await evaluate_forewarning(
+            db,
+            resident_id,
+            evaluated_at,
+            phase="PERIODIC",
+            event_id=existing.event_id if existing else None,
+            source_mode=trigger.source_mode if trigger is not None else (
+                existing.source_mode if existing is not None else None
+            ),
+            simulated=trigger.simulated if trigger is not None else (
+                existing.simulated if existing is not None else None
+            ),
+        )
     previous_state = existing.risk_level if existing else "GREEN"
     previous_status = existing.status if existing else None
     if not duplicate and selected_domain == "FALL":
@@ -314,6 +373,16 @@ async def evaluate(
     recent, context_snapshot, baseline_snapshot = await _context(
         db, resident_id, evaluated_at, selected_domain
     )
+    if forewarning is not None:
+        context_snapshot["forewarning_snapshot"] = {
+            "snapshot_id": forewarning.snapshot_id,
+            "assessment_status": forewarning.assessment_status,
+            "confidence_level": forewarning.confidence_level,
+            "components": forewarning.components.model_dump(mode="json"),
+            "instant_index": forewarning.instant.engineering_index,
+            "short_30s_index": forewarning.short_30s.engineering_index,
+            "trend_3min_index": forewarning.trend_3min.engineering_index,
+        }
     attempts, latest_intervention_at = (
         await _intervention_state(db, existing)
         if selected_domain == "FALL"
@@ -415,8 +484,33 @@ async def evaluate(
     elif event is not None and decision.action == "RESOLVE":
         if trigger:
             await _attach_evidence(db, event, trigger)
+        intervention = (await db.execute(
+            select(InterventionResult)
+            .where(
+                InterventionResult.event_id == event.event_id,
+                InterventionResult.delivery_status == "SUCCESS",
+                InterventionResult.action_type != "family_feedback",
+            )
+            .order_by(InterventionResult.started_at.desc())
+        )).scalars().first()
+        from backend.service.forewarning_service import evaluate_forewarning
+        forewarning = await evaluate_forewarning(
+            db,
+            resident_id,
+            evaluated_at,
+            phase="POST_INTERVENTION",
+            event_id=event.event_id,
+            intervention_result_id=intervention.result_id if intervention else None,
+            source_mode=event.source_mode,
+            simulated=event.simulated,
+        )
         await _resolve_event(
-            db, event, evaluated_at, status=decision.next_status or "RESOLVED"
+            db, event, evaluated_at, status=decision.next_status or "RESOLVED",
+            risk_after=None if event.source_mode == "MOCK" else max(
+                forewarning.instant.engineering_index,
+                forewarning.short_30s.engineering_index,
+                forewarning.trend_3min.engineering_index,
+            ) if forewarning is not None else None,
         )
     elif event is not None and decision.action == "UPGRADE_EVENT":
         for evidence in recent:
@@ -439,6 +533,23 @@ async def evaluate(
         event.recommended_action = "通知家属并转人工接管，不自动拨打120"
         event.intervention_policy = "fall-red-human-handoff-v1"
         await db.commit()
+
+    if event is not None and forewarning is not None:
+        from backend.service.forewarning_service import link_snapshot_closure
+        intervention = (await db.execute(
+            select(InterventionResult)
+            .where(InterventionResult.event_id == event.event_id)
+            .order_by(InterventionResult.started_at.desc())
+        )).scalars().first()
+        phase = "PRE_INTERVENTION" if created else forewarning.phase
+        linked = await link_snapshot_closure(
+            db,
+            forewarning.snapshot_id,
+            event.event_id,
+            phase=phase,
+            intervention_result_id=intervention.result_id if intervention and phase == "POST_INTERVENTION" else None,
+        )
+        forewarning = linked or forewarning
 
     next_state = decision.risk_level
     next_status = event.status if event else decision.next_status
@@ -463,5 +574,6 @@ async def evaluate(
         "matched_rule": decision.matched_rule,
         "ruleset_version": RULESET_VERSION,
         "system_evidence_id": system_evidence_id,
+        "forewarning_snapshot": forewarning.model_dump(mode="json") if forewarning else None,
         "trace": trace,
     }

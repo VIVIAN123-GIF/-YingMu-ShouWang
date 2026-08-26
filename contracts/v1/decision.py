@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any
@@ -10,11 +11,11 @@ from .ruleset import Ruleset, load_ruleset
 
 
 DANGER_EVIDENCE_TYPES = {
-    "rapid_rise",
-    "slow_rise",
     "trunk_sway",
     "gait_instability",
-    "relative_speed_change",
+    "post_rise_lateral_drift",
+    "support_base_change",
+    "compensatory_step",
     "persistent_instability",
     "no_response",
 }
@@ -46,7 +47,7 @@ class Decision:
 
 
 class FallDecisionPolicy:
-    """Pure ruleset-v1.0 state decision; persistence is owned by adapters."""
+    """Pure fall-state decision; persistence is owned by adapters."""
 
     def __init__(self, ruleset: Ruleset | None = None):
         self.ruleset = ruleset or load_ruleset()
@@ -83,6 +84,10 @@ class FallDecisionPolicy:
         thresholds = self.ruleset.thresholds
         usable_recent = [item for item in recent if self.usable(item)]
 
+        indeterminate = next(
+            (item for item in reversed(recent) if item.evidence_type == "assessment_indeterminate"),
+            None,
+        )
         if active_status in {"OPEN", "INTERVENING", "OBSERVING"}:
             persistent = next(
                 (item for item in usable_recent if item.evidence_type in {"persistent_instability", "no_response"}),
@@ -104,6 +109,14 @@ class FallDecisionPolicy:
                     "R-FALL-07", "RED", "ESCALATED", "ESCALATE",
                     "persistent hazard, no response, or hazard after two interventions",
                     (escalation.evidence_id,), thresholds["red_score"],
+                )
+
+            if trigger is not None and trigger.evidence_type == "assessment_indeterminate":
+                return Decision(
+                    "R-FALL-09", previous_state, active_status, "REVIEW",
+                    "post-rise assessment is indeterminate; the active event remains unchanged",
+                    (trigger.evidence_id,),
+                    not_matched={"R-FALL-07": "no new usable escalation signal is present"},
                 )
 
             if trigger is not None and not self.usable(trigger):
@@ -171,6 +184,14 @@ class FallDecisionPolicy:
                 "active event is awaiting new evidence",
             )
 
+        if indeterminate is not None:
+            return Decision(
+                "R-FALL-09", "UNKNOWN", None, "REVIEW",
+                "post-rise assessment is indeterminate; manual review is required",
+                (indeterminate.evidence_id,),
+                not_matched={"R-FALL-02": "input quality or camera geometry is not assessable"},
+            )
+
         if trigger is not None and not self.usable(trigger):
             return Decision(
                 "R-FALL-03",
@@ -181,32 +202,133 @@ class FallDecisionPolicy:
                 not_matched={"R-FALL-02": "trigger evidence is not usable"},
             )
 
-        rapid_items = [item for item in usable_recent if item.evidence_type == "rapid_rise"]
-        sway_items = [item for item in usable_recent if item.evidence_type == "trunk_sway"]
-        pair = next(
+        transitions = [
+            item for item in usable_recent if item.evidence_type == "sit_to_stand_transition"
+        ]
+        family_by_type = {
+            evidence_type: family
+            for family, evidence_types in self.ruleset.signal_families.items()
+            for evidence_type in evidence_types
+        }
+        signal_items = [item for item in usable_recent if item.evidence_type in family_by_type]
+
+        def observation_ids(item: Any) -> set[str]:
+            values = getattr(item, "observation_ids", ())
+            if isinstance(values, str):
+                try:
+                    values = json.loads(values)
+                except json.JSONDecodeError:
+                    return set()
+            return {str(value) for value in values if isinstance(value, str)}
+
+        def same_assessment(left: Any, right: Any) -> bool:
+            left_mode = getattr(getattr(left, "source_mode", None), "value", getattr(left, "source_mode", None))
+            right_mode = getattr(getattr(right, "source_mode", None), "value", getattr(right, "source_mode", None))
+            return (
+                left_mode == right_mode
+                and bool(left.simulated) == bool(right.simulated)
+                and bool(observation_ids(left) & observation_ids(right))
+            )
+
+        def seconds_after(candidate: Any, transition_item: Any) -> float:
+            return (
+                self._time(candidate.timestamp, transition_item.timestamp)
+                - transition_item.timestamp
+            ).total_seconds()
+
+        transition = next(
             (
-                (rapid, sway)
-                for rapid in reversed(rapid_items)
-                for sway in reversed(sway_items)
-                if abs((self._time(sway.timestamp, rapid.timestamp) - rapid.timestamp).total_seconds()) <= self.ruleset.windows["short_seconds"]
-                and self.ruleset.high_confidence([rapid.confidence, sway.confidence])
+                candidate
+                for candidate in reversed(transitions)
+                if any(
+                    same_assessment(candidate, signal)
+                    and 0 <= seconds_after(signal, candidate) <= self.ruleset.windows["short_seconds"]
+                    for signal in signal_items
+                )
             ),
             None,
         )
-        if pair:
-            score_details = self.ruleset.score_details(list(pair), context_score)
-            return Decision(
-                "R-FALL-02", "ORANGE", "INTERVENING", "CREATE_EVENT",
-                "rapid_rise and trunk_sway are within the short window with usable quality and high confidence",
-                tuple(item.evidence_id for item in pair),
-                score_details["final_score"], score_details,
-                {"R-FALL-01": "a second independent short-window evidence is present"},
+        paired_signals = [
+            signal
+            for signal in signal_items
+            if transition is not None
+            and same_assessment(transition, signal)
+            and 0 <= seconds_after(signal, transition) <= self.ruleset.windows["short_seconds"]
+        ]
+        selected_by_family: dict[str, Any] = {}
+        for signal in paired_signals:
+            selected_by_family[family_by_type[signal.evidence_type]] = signal
+
+        if transition is not None and len(selected_by_family) >= int(
+            thresholds["orange_min_signal_families"]
+        ):
+            selected = [transition, *selected_by_family.values()]
+            score_details = self.ruleset.score_details(selected[1:], context_score)
+            source_mode = getattr(
+                getattr(transition, "source_mode", None),
+                "value",
+                getattr(transition, "source_mode", None),
             )
-        if rapid_items:
+            if source_mode in {"RECORDED_REPLAY", "MOCK"} and bool(transition.simulated):
+                return Decision(
+                    "R-FALL-02", "ORANGE", "INTERVENING", "CREATE_EVENT",
+                    "an assessable sit-to-stand transition has instability in at least two independent signal families",
+                    tuple(item.evidence_id for item in selected),
+                    score_details["final_score"], score_details,
+                )
+            return Decision(
+                "R-FALL-10", "YELLOW", None, "REVIEW",
+                "multi-family post-rise instability requires review because live-device positive validation is incomplete",
+                tuple(item.evidence_id for item in selected),
+                score_details["final_score"], score_details,
+                {"R-FALL-02": "automatic ORANGE is limited to explicitly simulated replay evidence"},
+            )
+
+        if transition is not None and selected_by_family:
+            selected = [transition, *selected_by_family.values()]
+            return Decision(
+                "R-FALL-11", "YELLOW", None, "REVIEW",
+                "one post-rise instability signal family is present; independent confirmation is absent",
+                tuple(item.evidence_id for item in selected),
+                not_matched={"R-FALL-02": "fewer than two independent signal families are present"},
+            )
+
+        rapid_items = [item for item in usable_recent if item.evidence_type == "rapid_rise"]
+        slow_items = [item for item in usable_recent if item.evidence_type == "slow_rise"]
+        instability_items = [
+            item for item in usable_recent if item.evidence_type == "gait_instability"
+        ]
+        observation_pair = next(
+            (
+                (rapid, instability)
+                for rapid in reversed(rapid_items)
+                for instability in reversed(instability_items)
+                if abs(
+                    (self._time(instability.timestamp, rapid.timestamp) - rapid.timestamp).total_seconds()
+                ) <= self.ruleset.windows["short_seconds"]
+            ),
+            None,
+        )
+        if observation_pair:
+            return Decision(
+                "R-FALL-08", "YELLOW", None, "REVIEW",
+                "legacy rise-speed and gait-asymmetry signals require review and do not create an event",
+                tuple(item.evidence_id for item in observation_pair),
+                not_matched={"R-FALL-02": "transition-bound multi-family evidence is absent"},
+            )
+        speed_items = [*rapid_items, *slow_items]
+        if speed_items:
+            return Decision(
+                "R-FALL-12", "YELLOW", None, "REVIEW",
+                "rise speed is an observation signal and does not independently establish post-rise instability",
+                (speed_items[-1].evidence_id,),
+                not_matched={"R-FALL-02": "two independent post-rise instability families are absent"},
+            )
+        if transitions:
             return Decision(
                 "R-FALL-01", "GREEN", None, "NONE",
-                "rapid_rise alone waits for an independent danger signal",
-                not_matched={"R-FALL-02": "trunk_sway is absent, unusable, or outside the short window"},
+                "the sit-to-stand transition is assessable and no post-rise instability signal is present",
+                (transitions[-1].evidence_id,),
             )
         return Decision("NO_MATCH", previous_state, None, "NONE", "no usable short-window combination is present")
 

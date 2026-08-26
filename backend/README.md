@@ -50,10 +50,21 @@ python -m backend.worker.alarm_worker
 ## 决策规则来源
 
 后端不维护第二套风险阈值。张薇已合并的
-`contracts/v1/rulesets/ruleset-v1.0.json` 是规则版本、短中长时间窗和
+`contracts/v1/rulesets/ruleset-v1.2.json` 是当前规则版本、短中长时间窗和
 观察阈值的唯一来源；`contracts/v1/engine.py` 是对应的确定性 Mock
 状态机。`backend/service/risk_service.py` 负责把该规则集适配到持久化
 RiskEvent、Evidence 和 RuleTrace。
+
+独立的前置预警层由 `contracts/v1/rulesets/ruleset-v1.3-min.json` 和
+`backend/service/forewarning_service.py` 实现，输出三时间尺度、四分量的
+工程风险指数。它不替代 v1.2 事件裁决，也不表示跌倒概率。查询接口为：
+
+```text
+GET /api/v1/residents/{id}/forewarning/latest
+GET /api/v1/residents/{id}/forewarning
+GET /api/v1/events/{id}/forewarning
+GET /api/v1/scene-calibrations/{id}
+```
 
 常易铭的语音/行为算法只提交 Observation 与 Evidence，不提交最终风险
 等级。可用下面的隔离验收命令验证其 2026-08-03 原始交付物：
@@ -67,7 +78,35 @@ python scripts/validate_voice_behavior_package.py
 ```powershell
 python -m pytest tests/test_risk_api.py -q
 python scripts/validate_database.py
+python -m scripts.yingmu_launcher self-check
 ```
+
+`self-check` 只检查关键模块、v1.2/v1.3-min 规则集、姿态模型、场景配置和运行目录，
+不会访问萤石设备。Windows 发布包使用等价命令：
+
+```powershell
+.\YingMuShouWang.exe self-check
+.\YingMuShouWang.exe demo
+.\YingMuShouWang.exe live --config config\.env.local
+```
+
+`demo` 固定启动 API、Alarm Worker 和 Agent Worker。`live` 在
+`YINGMU_STREAM_BUFFER_ENABLED=true` 时额外启动 Stream Buffer Worker；任一子进程异常退出时，
+启动器会统一回收全部子进程。缓冲尚未预热时告警链路保守回退到告警后直录，现场验收前仍须运行
+`scripts/check_stream_buffer.py` 并确认 `ready=true`。
+
+v1.3-min 录制素材验收器使用显式结果模式。负向模式要求全程不创建 RiskEvent：
+
+```powershell
+python scripts/run_v13_closed_loop_acceptance.py `
+  --expected-outcome NO_EVENT --input <授权负向视频> `
+  --database <临时数据库> --private-root <仓库外私有目录> `
+  --captured-at <带时区拍摄时间> --retention-until <带时区保留期限>
+```
+
+正向模式还必须提供 `--recovery-input`、`--recovery-captured-at` 和 `--resolve-at`，并满足恢复观察窗口。
+报告统一标记为 `RECORDED_TIMELINE`；当前自动化只证明正向工程链路可达，真实像素
+`EVENT_RESOLVED` 报告仍需补拍两段已授权风险/恢复素材后生成，不能表述为实时等待或真实老人医学验证。
 
 真实设备三轮验收使用：
 

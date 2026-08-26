@@ -1,0 +1,56 @@
+{
+  "schema_version": "forewarning-snapshot/1.0",
+  "snapshot_id": "forewarning-demo-001",
+  "resident_id": "resident-demo-001",
+  "evaluated_at": "2026-08-26T09:30:08+08:00",
+  "phase": "PRE_INTERVENTION",
+  "assessment_status": "PARTIAL",
+  "confidence_level": "MEDIUM",
+  "baseline_status": "PROVISIONAL",
+  "components": {
+    "human_risk": 0.76,
+    "personal_deviation": 0.42,
+    "environment_risk": 0.18,
+    "interaction_risk": 0.35
+  },
+  "instant": {
+    "window_seconds": 8,
+    "engineering_index": 0.64,
+    "attention_level": "YELLOW"
+  },
+  "short_30s": {
+    "window_seconds": 30,
+    "engineering_index": 0.58,
+    "attention_level": "YELLOW"
+  },
+  "trend_3min": {
+    "window_seconds": 180,
+    "engineering_index": 0.49,
+    "attention_level": "YELLOW"
+  },
+  "dominant_factors": [
+    {
+      "factor": "human_instability",
+      "contribution": 0.494,
+      "evidence_ids": [
+        "evi-demo-001"
+      ]
+    }
+  ],
+  "degradation_reasons": [
+    "SCENE_CONTEXT_MISSING"
+  ],
+  "evidence_ids": [
+    "evi-demo-001"
+  ],
+  "observation_ids": [
+    "obs-demo-001"
+  ],
+  "scene_config_id": null,
+  "event_id": "event-demo-001",
+  "intervention_result_id": null,
+  "recommended_action": "当前为降级工程观察，保持低打扰监测并等待第二条独立证据。",
+  "ruleset_version": "ruleset-v1.3-min",
+  "source_mode": "RECORDED_REPLAY",
+  "simulated": true
+}

@@ -2,7 +2,7 @@
   "schema_version": "adapter-batch/1.0",
   "job_id": "job-gait-demo-001",
   "module": "GAIT",
-  "adapter_version": "gait-adapter-v1",
+  "adapter_version": "gait-adapter-v1.2",
   "status": "SUCCESS",
   "started_at": "2026-08-16T09:30:01+08:00",
   "completed_at": "2026-08-16T09:30:01+08:00",
@@ -47,8 +47,8 @@
       "baseline_deviation": -0.504,
       "time_scale": "SHORT",
       "location": "bedroom",
-      "explanation": "Rise duration is shorter than the baseline and indicates a rapid rise.",
-      "adapter_version": "gait-adapter-v1",
+      "explanation": "Rise duration is shorter than the engineering reference and is retained as a review signal only.",
+      "adapter_version": "gait-adapter-v1.2",
       "source_mode": "RECORDED_REPLAY",
       "simulated": true
     }

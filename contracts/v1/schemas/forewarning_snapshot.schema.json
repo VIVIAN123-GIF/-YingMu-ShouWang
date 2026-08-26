@@ -1,0 +1,307 @@
+{
+  "$defs": {
+    "ForewarningComponents": {
+      "additionalProperties": false,
+      "properties": {
+        "human_risk": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Human Risk",
+          "type": "number"
+        },
+        "personal_deviation": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Personal Deviation"
+        },
+        "environment_risk": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Environment Risk",
+          "type": "number"
+        },
+        "interaction_risk": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Interaction Risk",
+          "type": "number"
+        }
+      },
+      "required": [
+        "human_risk",
+        "environment_risk",
+        "interaction_risk"
+      ],
+      "title": "ForewarningComponents",
+      "type": "object"
+    },
+    "ForewarningFactor": {
+      "additionalProperties": false,
+      "properties": {
+        "factor": {
+          "enum": [
+            "human_instability",
+            "personal_baseline_deviation",
+            "environment_context",
+            "human_environment_interaction",
+            "data_quality_downgrade"
+          ],
+          "title": "Factor",
+          "type": "string"
+        },
+        "contribution": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Contribution",
+          "type": "number"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "factor",
+        "contribution"
+      ],
+      "title": "ForewarningFactor",
+      "type": "object"
+    },
+    "ForewarningHorizon": {
+      "additionalProperties": false,
+      "properties": {
+        "window_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 86400,
+          "title": "Window Seconds",
+          "type": "integer"
+        },
+        "engineering_index": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Engineering Index",
+          "type": "number"
+        },
+        "attention_level": {
+          "enum": [
+            "UNKNOWN",
+            "GREEN",
+            "YELLOW",
+            "ORANGE"
+          ],
+          "title": "Attention Level",
+          "type": "string"
+        }
+      },
+      "required": [
+        "window_seconds",
+        "engineering_index",
+        "attention_level"
+      ],
+      "title": "ForewarningHorizon",
+      "type": "object"
+    },
+    "SourceMode": {
+      "enum": [
+        "LIVE_DEVICE",
+        "RECORDED_REPLAY",
+        "PUBLIC_DATASET",
+        "MOCK"
+      ],
+      "title": "SourceMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "An auditable engineering index, deliberately separate from RiskEvent.",
+  "properties": {
+    "schema_version": {
+      "const": "forewarning-snapshot/1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "resident_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Resident Id",
+      "type": "string"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "phase": {
+      "enum": [
+        "PERIODIC",
+        "PRE_INTERVENTION",
+        "POST_INTERVENTION"
+      ],
+      "title": "Phase",
+      "type": "string"
+    },
+    "assessment_status": {
+      "enum": [
+        "VALID",
+        "PARTIAL",
+        "INSUFFICIENT"
+      ],
+      "title": "Assessment Status",
+      "type": "string"
+    },
+    "confidence_level": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "title": "Confidence Level",
+      "type": "string"
+    },
+    "baseline_status": {
+      "enum": [
+        "INSUFFICIENT",
+        "PROVISIONAL",
+        "STABLE"
+      ],
+      "title": "Baseline Status",
+      "type": "string"
+    },
+    "components": {
+      "$ref": "#/$defs/ForewarningComponents"
+    },
+    "instant": {
+      "$ref": "#/$defs/ForewarningHorizon"
+    },
+    "short_30s": {
+      "$ref": "#/$defs/ForewarningHorizon"
+    },
+    "trend_3min": {
+      "$ref": "#/$defs/ForewarningHorizon"
+    },
+    "dominant_factors": {
+      "items": {
+        "$ref": "#/$defs/ForewarningFactor"
+      },
+      "title": "Dominant Factors",
+      "type": "array"
+    },
+    "degradation_reasons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Degradation Reasons",
+      "type": "array"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "observation_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Observation Ids",
+      "type": "array"
+    },
+    "scene_config_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scene Config Id"
+    },
+    "event_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Event Id"
+    },
+    "intervention_result_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Intervention Result Id"
+    },
+    "recommended_action": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Recommended Action",
+      "type": "string"
+    },
+    "ruleset_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Ruleset Version",
+      "type": "string"
+    },
+    "source_mode": {
+      "$ref": "#/$defs/SourceMode"
+    },
+    "simulated": {
+      "title": "Simulated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "resident_id",
+    "evaluated_at",
+    "phase",
+    "assessment_status",
+    "confidence_level",
+    "baseline_status",
+    "components",
+    "instant",
+    "short_30s",
+    "trend_3min",
+    "recommended_action",
+    "ruleset_version",
+    "source_mode",
+    "simulated"
+  ],
+  "title": "ForewarningSnapshot",
+  "type": "object"
+}

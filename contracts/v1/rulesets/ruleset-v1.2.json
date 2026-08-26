@@ -1,0 +1,76 @@
+{
+  "ruleset_version": "ruleset-v1.2",
+  "context_policy_version": "env-context-v1.0",
+  "engineering_initials": true,
+  "claim_boundary": "post-rise instability engineering prototype; not a clinical fall-risk assessment",
+  "windows": {
+    "short_seconds": 30,
+    "medium_hours": 24,
+    "long_days": 7
+  },
+  "thresholds": {
+    "data_quality": 0.7,
+    "confidence": 0.7,
+    "high_confidence": 0.8,
+    "stable_posture_seconds": 15,
+    "observation_seconds": 60,
+    "no_response_seconds": 60,
+    "persistent_evidence_count": 3,
+    "rapid_rise_duration_s": 1.5,
+    "slow_rise_duration_s": 3.5,
+    "trunk_sway_amplitude_deg": 12.0,
+    "trunk_sway_min_reversals": 2,
+    "post_rise_lateral_excursion_norm": 0.35,
+    "post_rise_support_width_change_norm": 0.3,
+    "post_rise_compensatory_step_count": 1,
+    "post_rise_orientation_quality": 0.45,
+    "post_rise_feet_visibility": 0.65,
+    "post_rise_tracking_ratio": 0.65,
+    "orange_min_signal_families": 2,
+    "orange_score": 0.7,
+    "red_score": 0.9
+  },
+  "signal_families": {
+    "trunk": ["trunk_sway"],
+    "translation": ["post_rise_lateral_drift"],
+    "feet": ["support_base_change", "compensatory_step"]
+  },
+  "risk_weights": {
+    "severity": 0.45,
+    "confidence": 0.30,
+    "data_quality": 0.15,
+    "context": 0.10
+  },
+  "context_factors": {
+    "night": 0.25,
+    "low_light": 0.25,
+    "repeated_daily_abnormality": 0.20,
+    "yellow_state": 0.40,
+    "long_term_deviation": 0.20,
+    "high_risk_zone": 0.25,
+    "obstacle_interaction": 0.20
+  },
+  "rules": [
+    {"id": "R-FALL-09", "name": "post-rise assessment indeterminate", "result": "UNKNOWN_REVIEW"},
+    {"id": "R-FALL-02", "name": "post-rise multi-family instability in authorized replay", "result": "ORANGE_INTERVENING"},
+    {"id": "R-FALL-10", "name": "post-rise multi-family instability on live device", "result": "YELLOW_REVIEW_ONLY"},
+    {"id": "R-FALL-11", "name": "single post-rise instability family", "result": "YELLOW_REVIEW_ONLY"},
+    {"id": "R-FALL-12", "name": "rise speed observation", "result": "YELLOW_REVIEW_ONLY"},
+    {"id": "R-FALL-01", "name": "assessable transition without instability", "result": "GREEN_WAIT"},
+    {"id": "R-FALL-03", "name": "low quality evidence", "result": "SYSTEM_NO_UPGRADE"},
+    {"id": "R-FALL-04", "name": "posture recovered", "result": "OBSERVING"},
+    {"id": "R-FALL-05", "name": "observation completed", "result": "RESOLVED"},
+    {"id": "R-FALL-06", "name": "hazard during observation", "result": "INTERVENING"},
+    {"id": "R-FALL-07", "name": "persistent hazard, no response, or hazard after two interventions", "result": "RED_ESCALATED"},
+    {"id": "R-FALL-08", "name": "legacy rapid rise plus gait instability observation", "result": "YELLOW_TRACE_ONLY"},
+    {"id": "R-MENTAL-00", "name": "low quality mental trend evidence", "result": "NO_UPGRADE"},
+    {"id": "R-MENTAL-01", "name": "non-clinical trend deviation", "result": "YELLOW_OPEN"},
+    {"id": "R-MENTAL-02", "name": "family contact completed", "result": "OBSERVING"},
+    {"id": "R-MENTAL-03", "name": "structured trend recovered", "result": "RESOLVED"},
+    {"id": "R-FRAUD-00", "name": "low quality fraud verification evidence", "result": "NO_UPGRADE"},
+    {"id": "R-FRAUD-01", "name": "single verification indicator", "result": "YELLOW_OPEN"},
+    {"id": "R-FRAUD-02", "name": "visitor plus dwell plus risk words within 30 minutes", "result": "ORANGE_INTERVENING"},
+    {"id": "R-FRAUD-03", "name": "identity or false alarm verified", "result": "CLOSED"},
+    {"id": "R-SYSTEM-01", "name": "duplicate evidence", "result": "IDEMPOTENT"}
+  ]
+}

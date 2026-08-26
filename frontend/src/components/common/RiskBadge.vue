@@ -7,7 +7,8 @@ const props = defineProps({
   compact: Boolean,
 })
 
-const config = computed(() => RISK_LEVELS[props.level] || RISK_LEVELS.GREEN)
+const unknownConfig = Object.freeze({ label: '不可判定 · 人工复核', color: '#64748b' })
+const config = computed(() => RISK_LEVELS[props.level] || unknownConfig)
 </script>
 
 <template>

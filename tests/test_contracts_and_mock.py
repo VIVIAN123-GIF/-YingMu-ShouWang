@@ -164,11 +164,11 @@ class EngineContractTests(unittest.TestCase):
         engine.ingest_evidence(self.data["evidence"][1])
         self.assertIsNone(engine.evaluate(RESIDENT_ID))
 
-    def test_rapid_rise_and_sway_trigger_orange(self):
+    def test_transition_and_two_signal_families_trigger_orange(self):
         engine = MockRiskEngine()
-        for index in (1, 2):
-            engine.ingest_observation(self.data["observations"][index])
-            engine.ingest_evidence(self.data["evidence"][index])
+        for observation_index, evidence_index in ((5, 4), (2, 2), (6, 5)):
+            engine.ingest_observation(self.data["observations"][observation_index])
+            engine.ingest_evidence(self.data["evidence"][evidence_index])
         event = engine.evaluate(RESIDENT_ID)
         self.assertEqual(event.risk_level.value, "ORANGE")
         self.assertEqual(event.status.value, "INTERVENING")
@@ -177,6 +177,7 @@ class EngineContractTests(unittest.TestCase):
         engine = MockRiskEngine()
         engine.ingest_observation(self.data["observations"][1])
         engine.ingest_evidence(self.data["evidence"][1])
+        engine.ingest_observation(self.data["observations"][5])
         low_observation = deepcopy(self.data["observations"][2])
         low_observation["data_quality"] = 0.69
         low_evidence = deepcopy(self.data["evidence"][2])

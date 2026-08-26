@@ -1,0 +1,67 @@
+[
+  {
+    "schema_version": "forewarning-snapshot/1.0",
+    "snapshot_id": "forewarning-mock-pre-001",
+    "resident_id": "resident-001",
+    "evaluated_at": "2026-07-24T03:07:08+08:00",
+    "phase": "PRE_INTERVENTION",
+    "assessment_status": "VALID",
+    "confidence_level": "HIGH",
+    "baseline_status": "STABLE",
+    "components": {
+      "human_risk": 0.82,
+      "personal_deviation": 0.61,
+      "environment_risk": 0.18,
+      "interaction_risk": 0.42
+    },
+    "instant": { "window_seconds": 8, "engineering_index": 0.78, "attention_level": "ORANGE" },
+    "short_30s": { "window_seconds": 30, "engineering_index": 0.72, "attention_level": "ORANGE" },
+    "trend_3min": { "window_seconds": 180, "engineering_index": 0.64, "attention_level": "YELLOW" },
+    "dominant_factors": [
+      { "factor": "human_instability", "contribution": 0.451, "evidence_ids": ["evi-fall-trunk-sway"] },
+      { "factor": "human_environment_interaction", "contribution": 0.063, "evidence_ids": ["evi-fall-low-light"] }
+    ],
+    "degradation_reasons": [],
+    "evidence_ids": ["evi-fall-rapid-rise", "evi-fall-trunk-sway", "evi-fall-low-light"],
+    "observation_ids": ["obs-fall-rise", "obs-fall-sway", "obs-fall-light"],
+    "scene_config_id": "scene-mock-living-room",
+    "event_id": "event-fall-100",
+    "intervention_result_id": null,
+    "recommended_action": "执行低打扰提醒并进入恢复观察。",
+    "ruleset_version": "ruleset-v1.3-min",
+    "source_mode": "MOCK",
+    "simulated": true
+  },
+  {
+    "schema_version": "forewarning-snapshot/1.0",
+    "snapshot_id": "forewarning-mock-post-001",
+    "resident_id": "resident-001",
+    "evaluated_at": "2026-07-24T03:08:30+08:00",
+    "phase": "POST_INTERVENTION",
+    "assessment_status": "VALID",
+    "confidence_level": "HIGH",
+    "baseline_status": "STABLE",
+    "components": {
+      "human_risk": 0.18,
+      "personal_deviation": 0.22,
+      "environment_risk": 0.18,
+      "interaction_risk": 0.0
+    },
+    "instant": { "window_seconds": 8, "engineering_index": 0.24, "attention_level": "GREEN" },
+    "short_30s": { "window_seconds": 30, "engineering_index": 0.31, "attention_level": "GREEN" },
+    "trend_3min": { "window_seconds": 180, "engineering_index": 0.42, "attention_level": "YELLOW" },
+    "dominant_factors": [
+      { "factor": "personal_baseline_deviation", "contribution": 0.044, "evidence_ids": [] }
+    ],
+    "degradation_reasons": [],
+    "evidence_ids": ["evi-fall-posture-recovered"],
+    "observation_ids": ["obs-fall-recovered"],
+    "scene_config_id": "scene-mock-living-room",
+    "event_id": "event-fall-100",
+    "intervention_result_id": "result-fall-voice-001",
+    "recommended_action": "继续完成观察期，确认无新风险证据。",
+    "ruleset_version": "ruleset-v1.3-min",
+    "source_mode": "MOCK",
+    "simulated": true
+  }
+]

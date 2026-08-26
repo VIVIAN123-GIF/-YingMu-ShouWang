@@ -14,8 +14,9 @@ from backend.db.models import (
     WeeklyStat,
     RuleTrace,
     AgentExplanationJob,
+    ForewarningSnapshot,
 )
-from backend.config import ENV_MODE, EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL, EZVIZ_RESIDENT_ID
+from backend.config import ENV_MODE, EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL, EZVIZ_RESIDENT_ID, RULESET_VERSION
 
 
 DEFAULT_CONFIGS = [
@@ -46,10 +47,45 @@ DEFAULT_CONFIGS = [
     ),
     SystemConfig(
         config_key="ruleset_version",
-        config_value="ruleset-v1.0",
-        desc="固定状态机版本",
+        config_value=RULESET_VERSION,
+        desc="当前确定性状态机版本",
     ),
 ]
+
+SCHEMA_REQUIREMENTS = {
+    "forewarning_snapshot": {
+        "snapshot_id", "resident_id", "phase", "event_id",
+        "intervention_result_id", "source_mode", "simulated",
+    },
+    "risk_event": {"source_mode", "simulated", "recovery_started_at"},
+    "intervention_result": {"risk_after", "resolved", "source_mode", "simulated"},
+    "rule_trace": {"previous_status", "next_status", "trace_payload"},
+}
+
+
+async def assert_schema_ready(conn) -> None:
+    tables = {
+        row[0]
+        for row in (await conn.execute(text(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        ))).all()
+    }
+    missing_tables = sorted(set(SCHEMA_REQUIREMENTS) - tables)
+    missing_columns = {}
+    for table, required in SCHEMA_REQUIREMENTS.items():
+        if table not in tables:
+            continue
+        columns = {
+            row[1]
+            for row in (await conn.execute(text(f"PRAGMA table_info({table})"))).all()
+        }
+        missing = sorted(required - columns)
+        if missing:
+            missing_columns[table] = missing
+    if missing_tables or missing_columns:
+        raise RuntimeError(
+            f"DATABASE_SCHEMA_INCOMPLETE tables={missing_tables} columns={missing_columns}"
+        )
 
 
 async def init_tables() -> None:
@@ -117,7 +153,8 @@ async def init_tables() -> None:
                 await conn.execute(text(
                     f"ALTER TABLE alarm_processing_task ADD COLUMN {column} {definition}"
                 ))
-    print("所有数据表创建完成：设备/观测/证据/风险事件/干预/原始告警/配置/周报/事件证据关联表")
+        await assert_schema_ready(conn)
+    print("所有数据表创建完成：设备/观测/证据/预警快照/风险事件/干预/原始告警/配置/周报/事件证据关联表")
 
 
 async def init_default_config() -> None:
@@ -128,6 +165,13 @@ async def init_default_config() -> None:
         to_insert = [cfg for cfg in DEFAULT_CONFIGS if cfg.config_key not in existing_keys]
         if to_insert:
             db.add_all(to_insert)
+            await db.commit()
+
+        ruleset_config = (await db.execute(select(SystemConfig).where(
+            SystemConfig.config_key == "ruleset_version"
+        ))).scalar_one_or_none()
+        if ruleset_config and ruleset_config.config_value != RULESET_VERSION:
+            ruleset_config.config_value = RULESET_VERSION
             await db.commit()
 
         if ENV_MODE == "live" and EZVIZ_DEVICE_SERIAL and EZVIZ_RESIDENT_ID:

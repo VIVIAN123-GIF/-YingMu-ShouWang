@@ -9,7 +9,7 @@ import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
 import { getAsset, getEvent, getEventExplanation, interveneEvent, runtime, submitInterventionResult } from '../services/repository'
-import { domainLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
+import { domainLabel, evidenceTypeLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -31,6 +31,7 @@ const explanationError = ref('')
 const explanationState = ref('loading')
 const submittingIntervention = ref(false)
 const interventionRequested = ref(false)
+const forewarningSnapshots = ref([])
 
 const POLL_INTERVAL_MS = 1500
 const TERMINAL_STATUSES = new Set(['RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
@@ -101,6 +102,20 @@ const riskChartOption = computed(() => ({
 }))
 
 const displayRuleTraces = computed(() => event.value?.rule_traces || [])
+const preInterventionSnapshot = computed(() => (
+  forewarningSnapshots.value.find((item) => item.phase === 'PRE_INTERVENTION') || forewarningSnapshots.value[0] || null
+))
+const postInterventionSnapshot = computed(() => (
+  [...forewarningSnapshots.value].reverse().find((item) => item.phase === 'POST_INTERVENTION') || null
+))
+const forewarningDelta = computed(() => {
+  if (!preInterventionSnapshot.value || !postInterventionSnapshot.value) return null
+  return postInterventionSnapshot.value.instant.engineering_index - preInterventionSnapshot.value.instant.engineering_index
+})
+
+function assessmentLabel(value) {
+  return { VALID: '完整评估', PARTIAL: '降级评估', INSUFFICIENT: '数据不足' }[value] || value
+}
 
 function contextText(trace) {
   const entries = Object.entries(trace?.context_snapshot?.contributions || {}).filter(([, value]) => Number(value) > 0)
@@ -238,9 +253,11 @@ async function refreshEvent(activeSession, initial = false) {
   else syncState.value = 'polling'
 
   try {
-    const nextEvent = await getEvent(route.params.eventId || 'event-fall-100')
+    const eventId = route.params.eventId || 'event-fall-100'
+    const nextEvent = await getEvent(eventId)
     if (activeSession !== sessionId) return
     event.value = nextEvent
+    forewarningSnapshots.value = nextEvent.forewarning_snapshots || []
     void syncAsset(nextEvent, activeSession)
     error.value = ''
     syncWarning.value = ''
@@ -270,6 +287,7 @@ function startEventSession() {
   clearPollTimer()
   clearExplanationPollTimer()
   event.value = null
+  forewarningSnapshots.value = []
   explanation.value = null
   explanationError.value = ''
   explanationState.value = 'loading'
@@ -372,6 +390,46 @@ onBeforeUnmount(stopEventSession)
       <el-alert v-else-if="assetState === 'failed'" :title="assetMessage" type="error" show-icon :closable="false" data-testid="asset-status" />
       <el-alert v-else-if="assetState === 'idle'" title="暂无可追溯视频" type="info" show-icon :closable="false" data-testid="asset-status" />
 
+      <section v-if="preInterventionSnapshot" class="content-card forewarning-closure-card" data-testid="forewarning-closure-panel">
+        <div class="card-heading">
+          <div><span class="section-kicker">工程风险指数 · 非概率</span><h2>干预前后观察对比</h2></div>
+          <el-tag :type="postInterventionSnapshot ? 'success' : 'warning'" effect="plain">
+            {{ postInterventionSnapshot ? '已取得恢复快照' : '等待恢复快照' }}
+          </el-tag>
+        </div>
+        <div class="forewarning-closure-grid">
+          <article>
+            <small>干预前即时指数</small>
+            <strong>{{ formatRiskScore(preInterventionSnapshot.instant.engineering_index) }}</strong>
+            <span>{{ assessmentLabel(preInterventionSnapshot.assessment_status) }} · 置信 {{ preInterventionSnapshot.confidence_level }}</span>
+          </article>
+          <article>
+            <small>干预后即时指数</small>
+            <strong>{{ postInterventionSnapshot ? formatRiskScore(postInterventionSnapshot.instant.engineering_index) : '—' }}</strong>
+            <span>{{ postInterventionSnapshot ? `${assessmentLabel(postInterventionSnapshot.assessment_status)} · 置信 ${postInterventionSnapshot.confidence_level}` : '继续观察中' }}</span>
+          </article>
+          <article>
+            <small>指数变化</small>
+            <strong>{{ forewarningDelta === null ? '—' : `${forewarningDelta > 0 ? '+' : ''}${Math.round(forewarningDelta * 100)}` }}</strong>
+            <span>{{ forewarningDelta === null ? '尚不可比较' : forewarningDelta <= 0 ? '工程指数回落' : '仍需继续观察' }}</span>
+          </article>
+          <article class="forewarning-components">
+            <small>干预前四分量</small>
+            <span>人体 {{ formatRiskScore(preInterventionSnapshot.components.human_risk) }}</span>
+            <span>个人 {{ formatRiskScore(preInterventionSnapshot.components.personal_deviation) }}</span>
+            <span>环境 {{ formatRiskScore(preInterventionSnapshot.components.environment_risk) }}</span>
+            <span>交互 {{ formatRiskScore(preInterventionSnapshot.components.interaction_risk) }}</span>
+          </article>
+        </div>
+        <el-alert
+          v-if="preInterventionSnapshot.degradation_reasons.length"
+          :title="`降级原因：${preInterventionSnapshot.degradation_reasons.join(' · ')}`"
+          type="warning"
+          show-icon
+          :closable="false"
+        />
+      </section>
+
       <section class="content-card agent-explanation-card" data-testid="agent-explanation-panel">
         <div class="card-heading">
           <div><span class="section-kicker">Agent Explanation</span><h2>智能体解释</h2></div>
@@ -407,7 +465,7 @@ onBeforeUnmount(stopEventSession)
             <div class="card-heading"><div><span class="section-kicker">Evidence</span><h2>为什么系统建议关注</h2></div><span>{{ event.evidence_summary.length }} 条证据</span></div>
             <div v-if="displayEvidences.length" class="evidence-grid">
               <article v-for="evidence in displayEvidences" :key="evidence.evidence_id" class="evidence-card">
-                <div class="evidence-top"><code>{{ evidence.evidence_type }}</code><span>{{ evidence.time_scale || '摘要' }}</span></div>
+                <div class="evidence-top"><code>{{ evidenceTypeLabel(evidence.evidence_type) }}</code><span>{{ evidence.time_scale || '摘要' }}</span></div>
                 <h3>{{ evidence.explanation }}</h3>
                 <div class="evidence-metrics">
                   <span><small>当前值</small><b>{{ evidence.current_value ?? '—' }}</b></span>
@@ -527,7 +585,7 @@ onBeforeUnmount(stopEventSession)
       <el-drawer v-model="traceOpen" title="Evidence 原始来源" size="520px">
         <div v-if="selectedEvidence" class="trace-drawer" data-testid="evidence-trace">
           <SourceBadge :mode="selectedEvidence.source_mode" :simulated="selectedEvidence.simulated" />
-          <h2>{{ selectedEvidence.evidence_type }}</h2>
+          <h2>{{ evidenceTypeLabel(selectedEvidence.evidence_type) }}</h2>
           <p>{{ selectedEvidence.explanation }}</p>
           <dl class="detail-list">
             <div><dt>Evidence ID</dt><dd>{{ selectedEvidence.evidence_id }}</dd></div>

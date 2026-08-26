@@ -6,9 +6,10 @@ import weeklyMock from '../mocks/weekly.json'
 import deviceMock from '../mocks/device.json'
 import observationsMock from '../mocks/observations.json'
 import baselineMock from '../mocks/baseline.json'
+import forewarningMock from '../mocks/forewarning.json'
 import { DATA_MODES } from '../domain/constants'
 import {
-  validateAgentExplanationJob, validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceStatus, validateEventList, validateEventViewModel, validateInterventionResult,
+  validateAgentExplanationJob, validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceStatus, validateEventList, validateEventViewModel, validateForewarningSnapshot, validateInterventionResult, validateRiskReviews,
 } from '../domain/validation'
 import {
   normalizeBaseline, normalizeDashboard, normalizeDevice, normalizeEvent, normalizeWeeklyReport,
@@ -23,7 +24,9 @@ const initialMode = PAGES_BUILD ? 'mock' : (sessionStorage.getItem('yingmu-data-
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 2800,
+  // Device status may require a round trip to the live provider; keep the
+  // dashboard from failing while the other API calls are still healthy.
+  timeout: 8000,
   headers: { Accept: 'application/json', 'Content-Type': 'application/json; charset=utf-8' },
 })
 
@@ -48,6 +51,7 @@ const mocks = {
   device: structuredClone(deviceMock),
   observations: structuredClone(observationsMock),
   baseline: structuredClone(baselineMock),
+  forewarning: structuredClone(forewarningMock),
 }
 
 const feedbackCache = new Map()
@@ -169,6 +173,12 @@ function hydrateMockEvent(event) {
   return { ...event, observations: observationsFor(event) }
 }
 
+function mockForewarningFor(eventId) {
+  return mocks.forewarning
+    .filter((snapshot) => snapshot.event_id === eventId)
+    .map((snapshot, index) => validateForewarningSnapshot(snapshot, `forewarning[${index}]`))
+}
+
 export async function getDashboard(residentId = RESIDENT_ID) {
   return resolveData('dashboard.read', async () => {
     const [eventsResponse, deviceResponse, baselineResponse] = await Promise.all([
@@ -191,12 +201,34 @@ export async function getEvents(residentId = RESIDENT_ID) {
   }, () => mocks.events.map(normalizeEvent), validateEventList)
 }
 
+export async function getRiskReviews(residentId = RESIDENT_ID, limit = 20) {
+  return resolveData('risk-reviews.list', async () => {
+    const response = await apiClient.get('/risk/reviews', { params: { resident_id: residentId, limit } })
+    return validateRiskReviews(listFrom(payload(response)))
+  }, () => [], validateRiskReviews)
+}
+
 export async function getEvent(eventId) {
   return resolveData('event.detail', async () => {
-    const event = payload(await apiClient.get(`/events/${eventId}`))
+    const [eventResponse, snapshotResponse] = await Promise.all([
+      apiClient.get(`/events/${eventId}`),
+      apiClient.get(`/events/${encodeURIComponent(eventId)}/forewarning`),
+    ])
+    const event = payload(eventResponse)
     validateEventViewModel(event)
-    return normalizeEvent(event)
-  }, () => normalizeEvent(hydrateMockEvent(mocks.events.find((event) => event.event_id === eventId) || mocks.events[0])), validateEventViewModel)
+    const snapshots = listFrom(payload(snapshotResponse)).map((snapshot, index) => validateForewarningSnapshot(snapshot, `forewarning[${index}]`))
+    return normalizeEvent({ ...event, forewarning_snapshots: snapshots })
+  }, () => normalizeEvent({
+    ...hydrateMockEvent(mocks.events.find((event) => event.event_id === eventId) || mocks.events[0]),
+    forewarning_snapshots: mockForewarningFor(eventId),
+  }), validateEventViewModel)
+}
+
+export async function getEventForewarning(eventId) {
+  return resolveData('event.forewarning', async () => {
+    const snapshots = listFrom(payload(await apiClient.get(`/events/${encodeURIComponent(eventId)}/forewarning`)))
+    return snapshots.map((snapshot, index) => validateForewarningSnapshot(snapshot, `forewarning[${index}]`))
+  }, () => mockForewarningFor(eventId))
 }
 
 export async function getEventExplanation(eventId) {

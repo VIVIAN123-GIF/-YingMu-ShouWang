@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from datetime import datetime, timedelta, timezone
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -13,22 +14,43 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import AlarmProcessingTask, RiskAlarm
 from backend.service.device_adapter import device_adapter
-from backend.config import YINGMU_CAPTURE_MEDIA_MODE
-from backend.service.serialization import loads
+from backend.config import YINGMU_CAPTURE_MEDIA_MODE, YINGMU_STREAM_BUFFER_ENABLED
+from backend.service.serialization import dumps, loads
 from backend.service.snapshot_asset_service import (
     SnapshotAssetError,
     persist_snapshot_asset,
     persist_live_video_asset,
 )
+from backend.service.stream_buffer_service import (
+    StreamBufferError,
+    persist_buffered_video_asset,
+)
 from contracts.v1.platform import PlatformSnapshotResult, PlatformVideoSource
 
 
 CLAIMABLE_STATUSES = ("PENDING", "RETRY")
+logger = logging.getLogger("backend.alarm_task_service")
 
 
 def _now() -> datetime:
     # Existing SQLite models use timezone-naive DATETIME values.
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _set_capture_summary(
+    task: AlarmProcessingTask,
+    *,
+    mode: str,
+    buffer_error_code: str | None,
+) -> None:
+    summary = loads(getattr(task, "algorithm_summary", None), {})
+    if not isinstance(summary, dict):
+        summary = {}
+    summary["capture"] = {
+        "mode": mode,
+        "buffer_error_code": buffer_error_code,
+    }
+    task.algorithm_summary = dumps(summary)
 
 
 def task_dict(task: AlarmProcessingTask) -> dict[str, Any]:
@@ -39,6 +61,7 @@ def task_dict(task: AlarmProcessingTask) -> dict[str, Any]:
     device_ref = hashlib.sha256(task.device_sn.encode("utf-8")).hexdigest()[:12]
     algorithm_summary = loads(task.algorithm_summary, None)
     if isinstance(algorithm_summary, dict):
+        capture = algorithm_summary.get("capture")
         algorithm_summary = {
             "modules": [
                 {
@@ -52,6 +75,14 @@ def task_dict(task: AlarmProcessingTask) -> dict[str, Any]:
             ],
             "observation_count": algorithm_summary.get("observation_count", 0),
             "evidence_count": algorithm_summary.get("evidence_count", 0),
+            "capture": (
+                {
+                    "mode": capture.get("mode"),
+                    "buffer_error_code": capture.get("buffer_error_code"),
+                }
+                if isinstance(capture, dict)
+                else None
+            ),
         }
     return {
         "task_id": task.task_id,
@@ -160,6 +191,9 @@ async def process_claimed_task(
     store_video_asset: Callable[
         [AsyncSession, PlatformVideoSource, str], Awaitable[dict]
     ] | None = None,
+    store_buffered_asset: Callable[
+        [AsyncSession, str, datetime, str], Awaitable[tuple[dict, bool]]
+    ] | None = None,
 ) -> AlarmProcessingTask:
     """Capture and persist an Asset before handing the task to an algorithm."""
     try:
@@ -171,14 +205,62 @@ async def process_claimed_task(
             and capture_snapshot is None
             and store_snapshot_asset is None
         ):
-            source = await (capture_video_source() if capture_video_source else device_adapter.capture_video_source())
-            video_result = await (
-                store_video_asset(db, source, task.task_id)
-                if store_video_asset
-                else persist_live_video_asset(db, source, task_id=task.task_id)
+            use_buffer = YINGMU_STREAM_BUFFER_ENABLED and (
+                store_buffered_asset is not None
+                or (capture_video_source is None and store_video_asset is None)
             )
-            asset, _ = video_result
-            task.capture_asset_id = asset.get("asset_id")
+            if use_buffer:
+                buffer_error_code = None
+                alarm = (
+                    await db.execute(
+                        select(RiskAlarm).where(RiskAlarm.alarm_msg_id == task.alarm_msg_id)
+                    )
+                ).scalar_one_or_none()
+                if alarm is not None:
+                    try:
+                        device_ref = device_adapter._device_ref(task.device_sn)
+                        if store_buffered_asset is not None:
+                            buffered_asset, _ = await store_buffered_asset(
+                                db, task.task_id, alarm.alarm_time, device_ref
+                            )
+                        else:
+                            buffered_asset, _ = await persist_buffered_video_asset(
+                                db,
+                                task_id=task.task_id,
+                                alarm_time=alarm.alarm_time,
+                                device_ref=device_ref,
+                            )
+                        task.capture_asset_id = buffered_asset.get("asset_id")
+                        _set_capture_summary(
+                            task,
+                            mode="RING_BUFFER",
+                            buffer_error_code=None,
+                        )
+                    except StreamBufferError as exc:
+                        buffer_error_code = exc.code
+                        logger.warning(
+                            "stream_buffer_fallback task_id=%s error_code=%s",
+                            task.task_id,
+                            exc.code,
+                        )
+            if not task.capture_asset_id:
+                source = await (
+                    capture_video_source()
+                    if capture_video_source
+                    else device_adapter.capture_video_source()
+                )
+                video_result = await (
+                    store_video_asset(db, source, task.task_id)
+                    if store_video_asset
+                    else persist_live_video_asset(db, source, task_id=task.task_id)
+                )
+                asset, _ = video_result
+                task.capture_asset_id = asset.get("asset_id")
+                _set_capture_summary(
+                    task,
+                    mode="DIRECT_FALLBACK" if use_buffer else "DIRECT_CAPTURE",
+                    buffer_error_code=buffer_error_code if use_buffer else None,
+                )
         else:
             snapshot = await (capture_snapshot() if capture_snapshot else device_adapter.capture_snapshot())
             if isinstance(snapshot, dict):

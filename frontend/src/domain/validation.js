@@ -15,6 +15,8 @@ const PRE_FALL_FACTORS = new Set([
   'multi_scale_accumulation',
   'normal_fluctuation',
 ])
+const FOREWARNING_ASSESSMENTS = new Set(['VALID', 'PARTIAL', 'INSUFFICIENT'])
+const FOREWARNING_ATTENTION_LEVELS = new Set(['UNKNOWN', 'GREEN', 'YELLOW', 'ORANGE'])
 
 export class DataContractError extends Error {
   constructor(message, field = null) {
@@ -288,6 +290,29 @@ export function validateAlarmProcessingTasks(tasks) {
   return tasks.map(validateAlarmProcessingTask)
 }
 
+export function validateRiskReview(review, index = 0) {
+  const label = `risk_reviews[${index}]`
+  assertObject(review, label)
+  if (assertRequired(review, 'schema_version', label) !== 'risk-review/1.0') {
+    fail(`${label}.schema_version 必须为 risk-review/1.0`, `${label}.schema_version`)
+  }
+  ;['trace_id', 'resident_id', 'evidence_id', 'evidence_type', 'explanation', 'matched_rule', 'ruleset_version']
+    .forEach((field) => assertString(assertRequired(review, field, label), `${label}.${field}`))
+  assertIsoTime(assertRequired(review, 'evaluated_at', label), `${label}.evaluated_at`)
+  assertOneOf(assertRequired(review, 'risk_level', label), new Set(['UNKNOWN', 'YELLOW']), `${label}.risk_level`)
+  assertKnown(assertRequired(review, 'source_mode', label), SOURCE_MODES, `${label}.source_mode`)
+  assertBoolean(assertRequired(review, 'simulated', label), `${label}.simulated`)
+  if (assertRequired(review, 'review_required', label) !== true) {
+    fail(`${label}.review_required 必须为 true`, `${label}.review_required`)
+  }
+  return review
+}
+
+export function validateRiskReviews(reviews) {
+  if (!Array.isArray(reviews)) fail('人工复核队列必须是数组', 'risk_reviews')
+  return reviews.map(validateRiskReview)
+}
+
 export function validateAgentExplanationJob(job) {
   const label = 'AgentExplanation'
   assertObject(job, label)
@@ -344,7 +369,7 @@ export function validateDashboard(dashboard) {
   ;(dashboard?.risk_trend || []).forEach((point, index) => assertRiskScore(point.score, `risk_trend[${index}].score`))
   if (dashboard?.pre_fall_summary) {
     const summary = assertObject(dashboard.pre_fall_summary, 'pre_fall_summary')
-    assertKnown(assertRequired(summary, 'risk_level', 'pre_fall_summary'), RISK_LEVELS, 'pre_fall_summary.risk_level')
+    assertOneOf(assertRequired(summary, 'risk_level', 'pre_fall_summary'), FOREWARNING_ATTENTION_LEVELS, 'pre_fall_summary.risk_level')
     ;['instant_risk', 'risk_30s', 'trend_3min', 'personal_deviation', 'environment_risk', 'quality_penalty']
       .forEach((field) => assertRiskScore(assertRequired(summary, field, 'pre_fall_summary'), `pre_fall_summary.${field}`))
     assertOneOf(assertRequired(summary, 'trend_direction', 'pre_fall_summary'), new Set(['RISING', 'STABLE', 'FALLING']), 'pre_fall_summary.trend_direction')
@@ -366,4 +391,22 @@ export function validateDashboard(dashboard) {
     ;(event.evidence_summary || []).forEach(validateEvidenceSummary)
   })
   return dashboard
+}
+
+export function validateForewarningSnapshot(snapshot, label = 'forewarning') {
+  const value = assertObject(snapshot, label)
+  if (value.schema_version !== 'forewarning-snapshot/1.0') fail(`${label}.schema_version 无效`, `${label}.schema_version`)
+  assertString(assertRequired(value, 'snapshot_id', label), `${label}.snapshot_id`)
+  assertOneOf(assertRequired(value, 'assessment_status', label), FOREWARNING_ASSESSMENTS, `${label}.assessment_status`)
+  assertOneOf(assertRequired(value, 'confidence_level', label), new Set(['LOW', 'MEDIUM', 'HIGH']), `${label}.confidence_level`)
+  assertOneOf(assertRequired(value, 'baseline_status', label), new Set(['INSUFFICIENT', 'PROVISIONAL', 'STABLE']), `${label}.baseline_status`)
+  const components = assertObject(assertRequired(value, 'components', label), `${label}.components`)
+  ;['human_risk', 'environment_risk', 'interaction_risk'].forEach((field) => assertRiskScore(assertRequired(components, field, `${label}.components`), `${label}.components.${field}`))
+  if (components.personal_deviation !== null) assertRiskScore(components.personal_deviation, `${label}.components.personal_deviation`)
+  ;['instant', 'short_30s', 'trend_3min'].forEach((field) => {
+    const horizon = assertObject(assertRequired(value, field, label), `${label}.${field}`)
+    assertRiskScore(assertRequired(horizon, 'engineering_index', `${label}.${field}`), `${label}.${field}.engineering_index`)
+    assertOneOf(assertRequired(horizon, 'attention_level', `${label}.${field}`), FOREWARNING_ATTENTION_LEVELS, `${label}.${field}.attention_level`)
+  })
+  return value
 }

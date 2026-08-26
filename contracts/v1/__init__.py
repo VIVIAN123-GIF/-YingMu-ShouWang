@@ -20,12 +20,14 @@ from .models import (
     TimeHorizon,
 )
 from .memory import BaselineStatus, MemoryStore
+from .forewarning import ForewarningSnapshot, SceneCalibration
 from .platform import PlatformSnapshotResult
-from .ruleset import RuleTrace, Ruleset, load_ruleset
+from .ruleset import RuleTrace, Ruleset, load_forewarning_ruleset, load_ruleset
 
 __all__ = [
     "Evidence",
     "EvidenceSummary",
+    "ForewarningSnapshot",
     "AgentBaselineStatus",
     "AgentEvidenceItem",
     "AgentExplanationRequest",
@@ -41,8 +43,10 @@ __all__ = [
     "PlatformCapability",
     "PlatformSnapshotResult",
     "RiskEvent",
+    "SceneCalibration",
     "RuleTrace",
     "Ruleset",
     "TimeHorizon",
     "load_ruleset",
+    "load_forewarning_ruleset",
 ]

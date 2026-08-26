@@ -7,6 +7,8 @@ EVIDENCE_TYPES_BY_DOMAIN = {
     "FALL": {
         "rapid_rise", "slow_rise", "trunk_sway", "gait_instability",
         "relative_speed_change", "posture_recovered", "tracking_lost",
+        "sit_to_stand_transition", "post_rise_lateral_drift",
+        "support_base_change", "compensatory_step", "assessment_indeterminate",
         "persistent_instability", "no_response", "normal_baseline_sample",
         "rise_duration_baseline_sample", "trunk_sway_baseline_sample",
         "gait_stability_baseline_sample",

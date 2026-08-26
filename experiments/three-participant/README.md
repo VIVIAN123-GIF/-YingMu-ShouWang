@@ -101,3 +101,23 @@ python scripts/three_participant_experiment.py analyze-stability `
 - `results/authorization-summary.json`：只保存参与者编号和授权完成状态，不保存姓名、签字或扫描原件。
 
 任何命令返回`FAIL`或`INCOMPLETE`时不得把对应结果写成正式通过。
+
+## 原始视频初筛
+
+原始文件名无场景信息、存在重拍或参与者目录放错时，先运行标签盲态清点。该步骤只做媒体完整性、人工观察和文件整理，不运行P03姿态或风险推理，也不根据画面自动生成正式真值。
+
+```powershell
+python scripts/review_three_participant_videos.py audit `
+  --input "<仓库外授权素材包>" `
+  --output-dir outputs\three-participant-review
+```
+
+输出目录中的`review-index.html`用于逐段确认参与者、`scenario_id`和有效性；`video-confirmation.csv`是等价的机器可读确认表。拍摄同学确认后运行：
+
+```powershell
+python scripts/review_three_participant_videos.py finalize `
+  --confirmation outputs\three-participant-review\video-confirmation-reviewed.csv `
+  --output-dir outputs\three-participant-review
+```
+
+`capture-manifest.draft.csv`只有在96个槽位全部真实匹配、人工事件区间和授权编号完整，并通过`three_participant_experiment.py validate-manifest --stage captured`后，才能用于P03锁定。冒烟小样和未选重拍片段始终保留在审计清单中，不计入96段。

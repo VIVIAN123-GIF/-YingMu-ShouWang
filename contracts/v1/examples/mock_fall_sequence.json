@@ -94,6 +94,44 @@
       "metadata": {
         "model_version": "mock-pose-v1"
       }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-mock-transition-001",
+      "resident_id": "resident-mock-001",
+      "timestamp": "2026-07-31T03:07:00+08:00",
+      "source": "pose",
+      "feature_name": "sit_to_stand_transition_confirmed",
+      "feature_value": 1.0,
+      "unit": "boolean",
+      "location": "bedroom",
+      "confidence": 0.94,
+      "data_quality": 0.9,
+      "source_mode": "MOCK",
+      "asset_id": "asset-mock-fall-001",
+      "simulated": true,
+      "metadata": {
+        "model_version": "mock-pose-v1"
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "observation_id": "obs-mock-lateral-drift-001",
+      "resident_id": "resident-mock-001",
+      "timestamp": "2026-07-31T03:07:06+08:00",
+      "source": "pose",
+      "feature_name": "post_rise_pelvis_lateral_excursion_norm",
+      "feature_value": 0.48,
+      "unit": "body_scale",
+      "location": "bedroom",
+      "confidence": 0.91,
+      "data_quality": 0.89,
+      "source_mode": "MOCK",
+      "asset_id": "asset-mock-fall-001",
+      "simulated": true,
+      "metadata": {
+        "model_version": "mock-pose-v1"
+      }
     }
   ],
   "evidence": [
@@ -147,7 +185,8 @@
       "schema_version": "1.0",
       "evidence_id": "evi-mock-trunk-sway-001",
       "observation_ids": [
-        "obs-mock-trunk-sway-001"
+        "obs-mock-trunk-sway-001",
+        "obs-mock-transition-001"
       ],
       "resident_id": "resident-mock-001",
       "timestamp": "2026-07-31T03:07:05+08:00",
@@ -189,6 +228,53 @@
       "adapter_version": "fall-adapter-mock-v1",
       "source_mode": "MOCK",
       "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-mock-transition-001",
+      "observation_ids": [
+        "obs-mock-transition-001"
+      ],
+      "resident_id": "resident-mock-001",
+      "timestamp": "2026-07-31T03:07:00+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "sit_to_stand_transition",
+      "severity": 0.0,
+      "confidence": 0.94,
+      "data_quality": 0.9,
+      "baseline_value": null,
+      "current_value": 1.0,
+      "baseline_deviation": null,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "已确认有效坐站转换，进入起身后稳定性观察窗口",
+      "adapter_version": "fall-adapter-mock-v1",
+      "source_mode": "MOCK",
+      "simulated": true
+    },
+    {
+      "schema_version": "1.0",
+      "evidence_id": "evi-mock-lateral-drift-001",
+      "observation_ids": [
+        "obs-mock-lateral-drift-001",
+        "obs-mock-transition-001"
+      ],
+      "resident_id": "resident-mock-001",
+      "timestamp": "2026-07-31T03:07:06+08:00",
+      "risk_domain": "FALL",
+      "evidence_type": "post_rise_lateral_drift",
+      "severity": 0.82,
+      "confidence": 0.91,
+      "data_quality": 0.89,
+      "baseline_value": null,
+      "current_value": 0.48,
+      "baseline_deviation": null,
+      "time_scale": "SHORT",
+      "location": "bedroom",
+      "explanation": "起身后骨盆横向位移超过工程参考阈值",
+      "adapter_version": "fall-adapter-mock-v1",
+      "source_mode": "MOCK",
+      "simulated": true
     }
   ],
   "expected_steps": [
@@ -201,12 +287,12 @@
     {
       "step": 2,
       "input": "rapid_rise",
-      "risk_level": "GREEN",
+      "risk_level": "YELLOW",
       "event": null
     },
     {
       "step": 3,
-      "input": "trunk_sway",
+      "input": "transition + trunk_sway + lateral_drift",
       "event_id": "event-mock-fall-001",
       "risk_level": "ORANGE",
       "status": "INTERVENING"

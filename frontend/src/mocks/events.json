@@ -5,35 +5,41 @@
     "resident_id": "resident-001",
     "created_at": "2026-07-24T03:09:02+08:00",
     "updated_at": "2026-07-24T03:09:08+08:00",
-    "title": "快速起身后需要先坐稳",
+    "title": "起身后多信号不稳，需要先坐稳",
     "primary_domain": "FALL",
     "related_domains": [
       "SYSTEM"
     ],
     "risk_level": "ORANGE",
     "risk_score": 0.82,
-    "risk_score_provenance": "ruleset-v1.0模拟场景计算结果，不是固定后端返回值",
+    "risk_score_provenance": "ruleset-v1.2模拟场景计算结果，不是真实老人监测值",
     "evidence_ids": [
-      "evi-rapid-rise-live",
-      "evi-trunk-sway-live"
+      "evi-transition-live",
+      "evi-trunk-sway-live",
+      "evi-lateral-drift-live"
     ],
     "evidence_summary": [
       {
-        "evidence_id": "evi-rapid-rise-live",
-        "evidence_type": "rapid_rise",
-        "explanation": "起身速度明显快于个人基线"
+        "evidence_id": "evi-transition-live",
+        "evidence_type": "sit_to_stand_transition",
+        "explanation": "已确认完整坐站转换和可评估窗口"
       },
       {
         "evidence_id": "evi-trunk-sway-live",
         "evidence_type": "trunk_sway",
         "explanation": "起身后躯干出现连续摇晃"
+      },
+      {
+        "evidence_id": "evi-lateral-drift-live",
+        "evidence_type": "post_rise_lateral_drift",
+        "explanation": "起身后骨盆出现明显横向漂移"
       }
     ],
     "time_horizon": "IMMINENT",
     "recommended_action": "先坐稳，扶住身边固定物。",
     "intervention_policy": "fall-orange-gentle-v1",
     "status": "INTERVENING",
-    "ruleset_version": "ruleset-v1.0",
+    "ruleset_version": "ruleset-v1.2",
     "source_mode": "MOCK",
     "simulated": true,
     "asset_id": "asset-fall-authorized",
@@ -43,7 +49,7 @@
         "time": "03:09:02",
         "kind": "evidence",
         "title": "风险证据聚合",
-        "detail": "快速起身与躯干摇晃共同出现",
+        "detail": "同次坐站转换后，躯干摆动与横向漂移共同出现",
         "status": "ORANGE"
       },
       {
@@ -90,22 +96,22 @@
     ],
     "evidences": [
       {
-        "evidence_id": "evi-rapid-rise-live",
+        "evidence_id": "evi-transition-live",
         "timestamp": "2026-07-24T03:09:02+08:00",
         "risk_domain": "FALL",
         "observation_ids": [
-          "obs-rapid-rise"
+          "obs-transition"
         ],
-        "evidence_type": "rapid_rise",
-        "explanation": "起身速度明显快于个人基线",
-        "severity": 0.78,
-        "confidence": 0.92,
-        "data_quality": 0.88,
+        "evidence_type": "sit_to_stand_transition",
+        "explanation": "已确认完整坐站转换和可评估窗口",
+        "severity": 0.05,
+        "confidence": 0.94,
+        "data_quality": 0.9,
         "time_scale": "SHORT",
-        "baseline_value": 3.5,
-        "current_value": 1.2,
-        "baseline_deviation": -2.1,
-        "adapter_version": "fall-adapter-v1",
+        "baseline_value": 1,
+        "current_value": 1,
+        "baseline_deviation": 0,
+        "adapter_version": "gait-adapter-v1.2",
         "source_mode": "MOCK",
         "simulated": true,
         "schema_version": "1.0",
@@ -117,7 +123,8 @@
         "timestamp": "2026-07-24T03:09:05+08:00",
         "risk_domain": "FALL",
         "observation_ids": [
-          "obs-trunk-sway"
+          "obs-trunk-sway",
+          "obs-transition"
         ],
         "evidence_type": "trunk_sway",
         "explanation": "起身后躯干出现连续摇晃",
@@ -128,7 +135,28 @@
         "baseline_value": 0.12,
         "current_value": 0.46,
         "baseline_deviation": 2.8,
-        "adapter_version": "fall-adapter-v1",
+        "adapter_version": "gait-adapter-v1.2",
+        "source_mode": "MOCK",
+        "simulated": true,
+        "schema_version": "1.0",
+        "resident_id": "resident-001",
+        "location": null
+      },
+      {
+        "evidence_id": "evi-lateral-drift-live",
+        "timestamp": "2026-07-24T03:09:06+08:00",
+        "risk_domain": "FALL",
+        "observation_ids": ["obs-lateral-drift", "obs-transition"],
+        "evidence_type": "post_rise_lateral_drift",
+        "explanation": "起身后骨盆出现明显横向漂移",
+        "severity": 0.82,
+        "confidence": 0.91,
+        "data_quality": 0.89,
+        "time_scale": "SHORT",
+        "baseline_value": 0.35,
+        "current_value": 0.48,
+        "baseline_deviation": 0.371,
+        "adapter_version": "gait-adapter-v1.2",
         "source_mode": "MOCK",
         "simulated": true,
         "schema_version": "1.0",
@@ -143,30 +171,36 @@
     "resident_id": "resident-001",
     "created_at": "2026-07-24T03:07:02+08:00",
     "updated_at": "2026-07-24T03:08:30+08:00",
-    "title": "凌晨快速起身与躯干摇晃",
+    "title": "凌晨起身后多信号姿态不稳",
     "primary_domain": "FALL",
     "related_domains": [
       "SYSTEM"
     ],
     "risk_level": "ORANGE",
     "risk_score": 0.84,
-    "risk_score_provenance": "ruleset-v1.0模拟场景计算结果，不是实时监测值",
+    "risk_score_provenance": "ruleset-v1.2模拟场景计算结果，不是真实老人监测值",
     "evidence_ids": [
-      "evi-rapid-rise",
+      "evi-transition",
       "evi-trunk-sway",
+      "evi-lateral-drift",
       "evi-low-light",
       "evi-recovered"
     ],
     "evidence_summary": [
       {
-        "evidence_id": "evi-rapid-rise",
-        "evidence_type": "rapid_rise",
-        "explanation": "起身速度明显快于个人基线"
+        "evidence_id": "evi-transition",
+        "evidence_type": "sit_to_stand_transition",
+        "explanation": "已确认完整坐站转换和可评估窗口"
       },
       {
         "evidence_id": "evi-trunk-sway",
         "evidence_type": "trunk_sway",
         "explanation": "起身后躯干出现连续摇晃"
+      },
+      {
+        "evidence_id": "evi-lateral-drift",
+        "evidence_type": "post_rise_lateral_drift",
+        "explanation": "起身后骨盆出现明显横向漂移"
       },
       {
         "evidence_id": "evi-low-light",
@@ -183,7 +217,7 @@
     "recommended_action": "先坐稳，扶住床边，再慢慢起身。",
     "intervention_policy": "fall-orange-gentle-v1",
     "status": "RESOLVED",
-    "ruleset_version": "ruleset-v1.0",
+    "ruleset_version": "ruleset-v1.2",
     "source_mode": "MOCK",
     "simulated": true,
     "asset_id": "asset-fall-authorized",
@@ -193,7 +227,7 @@
         "time": "03:07:02",
         "kind": "evidence",
         "title": "风险证据聚合",
-        "detail": "快速起身、躯干摇晃和低照度共同出现",
+        "detail": "同次坐站转换后，躯干摆动和横向漂移共同出现；低照度仅作上下文",
         "status": "ORANGE"
       },
       {
@@ -269,22 +303,22 @@
     ],
     "evidences": [
       {
-        "evidence_id": "evi-rapid-rise",
+        "evidence_id": "evi-transition",
         "timestamp": "2026-07-24T03:07:02+08:00",
         "risk_domain": "FALL",
         "observation_ids": [
-          "obs-rapid-rise"
+          "obs-transition"
         ],
-        "evidence_type": "rapid_rise",
-        "explanation": "起身速度明显快于个人基线",
-        "severity": 0.78,
-        "confidence": 0.92,
-        "data_quality": 0.88,
+        "evidence_type": "sit_to_stand_transition",
+        "explanation": "已确认完整坐站转换和可评估窗口",
+        "severity": 0.05,
+        "confidence": 0.94,
+        "data_quality": 0.9,
         "time_scale": "SHORT",
-        "baseline_value": 3.5,
-        "current_value": 1.2,
-        "baseline_deviation": -2.1,
-        "adapter_version": "fall-adapter-v1",
+        "baseline_value": 1,
+        "current_value": 1,
+        "baseline_deviation": 0,
+        "adapter_version": "gait-adapter-v1.2",
         "source_mode": "MOCK",
         "simulated": true,
         "schema_version": "1.0",
@@ -296,7 +330,8 @@
         "timestamp": "2026-07-24T03:07:06+08:00",
         "risk_domain": "FALL",
         "observation_ids": [
-          "obs-trunk-sway"
+          "obs-trunk-sway",
+          "obs-transition"
         ],
         "evidence_type": "trunk_sway",
         "explanation": "起身后躯干出现连续摇晃",
@@ -307,7 +342,28 @@
         "baseline_value": 0.12,
         "current_value": 0.46,
         "baseline_deviation": 2.8,
-        "adapter_version": "fall-adapter-v1",
+        "adapter_version": "gait-adapter-v1.2",
+        "source_mode": "MOCK",
+        "simulated": true,
+        "schema_version": "1.0",
+        "resident_id": "resident-001",
+        "location": null
+      },
+      {
+        "evidence_id": "evi-lateral-drift",
+        "timestamp": "2026-07-24T03:07:06+08:00",
+        "risk_domain": "FALL",
+        "observation_ids": ["obs-lateral-drift", "obs-transition"],
+        "evidence_type": "post_rise_lateral_drift",
+        "explanation": "起身后骨盆出现明显横向漂移",
+        "severity": 0.82,
+        "confidence": 0.91,
+        "data_quality": 0.89,
+        "time_scale": "SHORT",
+        "baseline_value": 0.35,
+        "current_value": 0.48,
+        "baseline_deviation": 0.371,
+        "adapter_version": "gait-adapter-v1.2",
         "source_mode": "MOCK",
         "simulated": true,
         "schema_version": "1.0",
@@ -354,7 +410,7 @@
         "baseline_value": 15,
         "current_value": 15,
         "baseline_deviation": 0,
-        "adapter_version": "fall-adapter-v1",
+        "adapter_version": "gait-adapter-v1.2",
         "source_mode": "MOCK",
         "simulated": true,
         "schema_version": "1.0",
@@ -394,7 +450,7 @@
     "recommended_action": "建议本周与父亲联系，了解近期作息和外出安排。",
     "intervention_policy": "mental-yellow-weekly-v1",
     "status": "OBSERVING",
-    "ruleset_version": "ruleset-v1.0",
+    "ruleset_version": "ruleset-v1.2",
     "source_mode": "RECORDED_REPLAY",
     "simulated": true,
     "timeline": [],
@@ -486,7 +542,7 @@
     "recommended_action": "建议先联系父亲确认访客身份和来访目的。",
     "intervention_policy": "fraud-family-verify-v1",
     "status": "RESOLVED",
-    "ruleset_version": "ruleset-v1.0",
+    "ruleset_version": "ruleset-v1.2",
     "source_mode": "RECORDED_REPLAY",
     "simulated": true,
     "timeline": [],
@@ -591,7 +647,7 @@
     "recommended_action": "请通过家属电话确认老人当前状态。",
     "intervention_policy": "fallback-family-contact-v1",
     "status": "OBSERVING",
-    "ruleset_version": "ruleset-v1.0",
+    "ruleset_version": "ruleset-v1.2",
     "source_mode": "MOCK",
     "simulated": true,
     "timeline": [],
@@ -660,7 +716,7 @@
     "recommended_action": "无需额外操作。",
     "intervention_policy": "none",
     "status": "RESOLVED",
-    "ruleset_version": "ruleset-v1.0",
+    "ruleset_version": "ruleset-v1.2",
     "source_mode": "PUBLIC_DATASET",
     "simulated": true,
     "timeline": [],

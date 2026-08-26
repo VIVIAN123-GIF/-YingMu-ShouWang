@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "result_id": "result-mock-voice-001",
   "event_id": "event-mock-fall-001",
-  "started_at": "2026-07-31T03:07:06+08:00",
+  "started_at": "2026-07-31T03:07:07+08:00",
   "completed_at": "2026-07-31T03:08:30+08:00",
   "action_type": "voice",
   "tool_name": "mock_voice",

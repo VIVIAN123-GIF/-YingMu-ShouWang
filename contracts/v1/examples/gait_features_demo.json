@@ -1,8 +1,18 @@
 {
   "features": {
+    "assessment_status": "VALID",
+    "assessment_reason_code": "ASSESSABLE_POST_RISE_WINDOW",
+    "sit_to_stand_transition_confirmed": true,
     "rise_duration_s": 1.24,
     "hip_vertical_speed_norm_s": 0.31,
     "trunk_sway_angle_deg": 16.8,
+    "post_rise_sway_reversal_count": 3,
+    "post_rise_pelvis_lateral_excursion_norm": 0.48,
+    "post_rise_support_width_change_norm": 0.12,
+    "post_rise_compensatory_step_count": 0,
+    "post_rise_feet_visibility": 0.92,
+    "post_rise_tracking_ratio": 0.91,
+    "post_rise_orientation_quality": 0.88,
     "com_offset_norm": 0.14,
     "step_speed_norm_s": 0.88,
     "step_asymmetry_ratio": 0.42,

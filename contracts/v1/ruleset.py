@@ -1,4 +1,4 @@
-"""Ruleset v1.0 configuration, risk scoring and explainable rule traces."""
+"""Versioned ruleset configuration, risk scoring and explainable rule traces."""
 
 from __future__ import annotations
 
@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-RULESET_PATH = Path(__file__).parent / "rulesets" / "ruleset-v1.0.json"
+RULESET_PATH = Path(__file__).parent / "rulesets" / "ruleset-v1.2.json"
+FOREWARNING_RULESET_PATH = Path(__file__).parent / "rulesets" / "ruleset-v1.3-min.json"
 
 
 @dataclass(frozen=True)
@@ -58,7 +59,9 @@ class Ruleset:
     thresholds: dict[str, float]
     risk_weights: dict[str, float]
     context_factors: dict[str, float]
+    signal_families: dict[str, tuple[str, ...]]
     rules: tuple[dict[str, str], ...]
+    forewarning_weights: dict[str, dict[str, float]] | None = None
 
     @classmethod
     def load(cls, path: Path = RULESET_PATH) -> "Ruleset":
@@ -73,7 +76,15 @@ class Ruleset:
             thresholds=payload["thresholds"],
             risk_weights=weights,
             context_factors=payload["context_factors"],
+            signal_families={
+                str(name): tuple(str(item) for item in values)
+                for name, values in payload.get("signal_families", {}).items()
+            },
             rules=tuple(payload["rules"]),
+            forewarning_weights={
+                str(status): {str(name): float(weight) for name, weight in weights.items()}
+                for status, weights in payload.get("forewarning_weights", {}).items()
+            },
         )
 
     def usable(self, confidence: float, data_quality: float) -> bool:
@@ -122,3 +133,7 @@ class Ruleset:
 
 def load_ruleset() -> Ruleset:
     return Ruleset.load()
+
+
+def load_forewarning_ruleset() -> Ruleset:
+    return Ruleset.load(FOREWARNING_RULESET_PATH)

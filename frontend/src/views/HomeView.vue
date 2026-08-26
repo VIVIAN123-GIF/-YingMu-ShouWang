@@ -14,12 +14,21 @@ const loading = ref(true)
 const error = ref('')
 const data = ref(null)
 const factorLabels = {
-  fall_precursor_evidence: '跌倒前兆证据',
+  fall_precursor_evidence: '起身后不稳证据',
   personal_baseline_deviation: '偏离个人基线',
   environment_interaction_risk: '人-环境交互风险',
   data_quality_downgrade: '数据质量降级',
   multi_scale_accumulation: '多时标累积',
   normal_fluctuation: '日常波动',
+}
+const assessmentLabels = { VALID: '完整评估', PARTIAL: '降级评估', INSUFFICIENT: '数据不足' }
+const confidenceLabels = { LOW: '低', MEDIUM: '中', HIGH: '高' }
+const baselineLabels = { INSUFFICIENT: '样本不足', PROVISIONAL: '初步基线', STABLE: '稳定工程基线' }
+const degradationLabels = {
+  HUMAN_EVIDENCE_INSUFFICIENT: '人体证据不足',
+  PERSONAL_BASELINE_INSUFFICIENT: '个人基线不足',
+  QUALITY_GATE_FAILED: '画面质量未通过',
+  SCENE_CONTEXT_MISSING: '场景配置缺失',
 }
 const trendLabels = {
   RISING: '上升',
@@ -174,8 +183,15 @@ function onlineLabel(value) {
 
       <section v-if="data.pre_fall_summary" class="content-card prefall-card">
         <div class="card-heading">
-          <div><span class="section-kicker">跌倒前兆</span><h2>个体记忆驱动的多时间尺度预警</h2></div>
+          <div><span class="section-kicker">工程风险指数 · 非概率</span><h2>个体化多源前置观察</h2></div>
           <RiskBadge :level="data.pre_fall_summary.risk_level" />
+        </div>
+        <div class="prefall-status-line">
+          <el-tag :type="data.pre_fall_summary.assessment_status === 'VALID' ? 'success' : 'warning'" effect="plain">
+            {{ assessmentLabels[data.pre_fall_summary.assessment_status] || '兼容评估' }}
+          </el-tag>
+          <span>置信等级 {{ confidenceLabels[data.pre_fall_summary.confidence_level] || '未提供' }}</span>
+          <span>个人基线 {{ baselineLabels[data.pre_fall_summary.baseline_status] || '未提供' }}</span>
         </div>
         <div class="prefall-grid">
           <div class="prefall-meter">
@@ -184,9 +200,9 @@ function onlineLabel(value) {
             <span>即时失稳</span>
           </div>
           <div class="prefall-meter">
-            <small>未来30秒</small>
+            <small>最近30秒</small>
             <strong>{{ formatRiskScore(data.pre_fall_summary.risk_30s) }}</strong>
-            <span>短时恶化</span>
+            <span>短时累积</span>
           </div>
           <div class="prefall-meter">
             <small>最近3分钟</small>
@@ -195,9 +211,10 @@ function onlineLabel(value) {
           </div>
           <div class="prefall-fusion">
             <dl class="detail-list compact">
+              <div><dt>人体信号</dt><dd>{{ formatRiskScore(data.pre_fall_summary.human_risk) }}</dd></div>
               <div><dt>个人偏离</dt><dd>{{ formatRiskScore(data.pre_fall_summary.personal_deviation) }}</dd></div>
-              <div><dt>环境交互</dt><dd>{{ formatRiskScore(data.pre_fall_summary.environment_risk) }}</dd></div>
-              <div><dt>质量降级</dt><dd>{{ formatRiskScore(data.pre_fall_summary.quality_penalty) }}</dd></div>
+              <div><dt>环境风险</dt><dd>{{ formatRiskScore(data.pre_fall_summary.environment_risk) }}</dd></div>
+              <div><dt>人-环境交互</dt><dd>{{ formatRiskScore(data.pre_fall_summary.interaction_risk) }}</dd></div>
             </dl>
             <div class="factor-list">
               <el-tag
@@ -210,6 +227,13 @@ function onlineLabel(value) {
             </div>
           </div>
         </div>
+        <el-alert
+          v-if="data.pre_fall_summary.degradation_reasons?.length"
+          :title="`降级原因：${data.pre_fall_summary.degradation_reasons.map((reason) => degradationLabels[reason] || reason).join(' · ')}`"
+          type="warning"
+          show-icon
+          :closable="false"
+        />
         <p class="intervention-line">{{ data.pre_fall_summary.recommended_intervention }}</p>
       </section>
 

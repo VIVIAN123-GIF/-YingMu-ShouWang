@@ -5,13 +5,14 @@ import PageHeader from '../components/common/PageHeader.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import { ALARM_TASK_STATUSES, EVENT_STATUSES, RISK_DOMAINS, RISK_LEVELS, SOURCE_MODES } from '../domain/constants'
-import { getAlarmProcessingTasks, getEvents, RESIDENT_ID, runtime } from '../services/repository'
-import { domainLabel, formatDateTime, formatRiskScore, statusLabel } from '../utils/format'
+import { getAlarmProcessingTasks, getEvents, getRiskReviews, RESIDENT_ID, runtime } from '../services/repository'
+import { domainLabel, evidenceTypeLabel, formatDateTime, formatRiskScore, statusLabel } from '../utils/format'
 
 const router = useRouter()
 const loading = ref(true)
 const error = ref('')
 const events = ref([])
+const reviews = ref([])
 const filters = ref({ domain: '', level: '', status: '', source: '' })
 const alarmTasks = ref([])
 const alarmLoading = ref(false)
@@ -34,7 +35,7 @@ function clearFilters() {
 async function load() {
   loading.value = true
   try {
-    events.value = await getEvents()
+    ;[events.value, reviews.value] = await Promise.all([getEvents(), getRiskReviews()])
   } catch (err) {
     error.value = `无法读取事件时间轴：${err.message}`
   } finally {
@@ -88,6 +89,21 @@ onBeforeUnmount(stopAlarmPolling)
     </PageHeader>
 
     <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
+
+    <section class="content-card alarm-processing-card" data-testid="risk-reviews">
+      <div class="card-heading">
+        <div><span class="section-kicker">规则复核</span><h2>不可判定与黄色观察</h2></div>
+        <el-tag size="large" effect="plain">{{ reviews.length }} 条待复核</el-tag>
+      </div>
+      <div class="alarm-task-list">
+        <article v-for="review in reviews" :key="review.trace_id" class="alarm-task-row">
+          <div><strong>{{ evidenceTypeLabel(review.evidence_type) }}</strong><span>{{ review.explanation }}</span></div>
+          <div><span>{{ formatDateTime(review.evaluated_at) }}</span><span>{{ review.matched_rule }}</span><span>{{ review.ruleset_version }}</span></div>
+          <RiskBadge :level="review.risk_level" compact />
+        </article>
+        <el-empty v-if="!reviews.length && !loading" description="暂无需要人工复核的算法结果" />
+      </div>
+    </section>
 
     <section class="content-card alarm-processing-card" data-testid="alarm-processing">
       <div class="card-heading">
