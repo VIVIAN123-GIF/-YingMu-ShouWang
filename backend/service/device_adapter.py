@@ -1,4 +1,6 @@
+import asyncio
 import hashlib
+import logging
 import time
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -9,6 +11,7 @@ from backend.config import (
     EZVIZ_DEVICE_SERIAL,
     EZVIZ_DEVICE_VERIFY_CODE,
     EZVIZ_LIVE_PROTOCOL,
+    EZVIZ_STATUS_TIMEOUT_SECONDS,
 )
 from backend.service.errors import ServiceError
 from backend.utils.ezviz_api import EzvizAPI
@@ -16,11 +19,13 @@ from contracts.v1.platform import PlatformSnapshotResult, PlatformVideoSource
 
 
 TZ = timezone(timedelta(hours=8))
+logger = logging.getLogger(__name__)
 
 
 class DeviceAdapter:
     def __init__(self):
         self.collection_active = True
+        self._last_status: dict | None = None
 
     @staticmethod
     def _configured_serial() -> str:
@@ -34,21 +39,37 @@ class DeviceAdapter:
         return f"device-{digest}"
 
     async def status(self):
-        if ENV_MODE == "mock" and not EZVIZ_DEVICE_SERIAL:
+        if ENV_MODE == "mock":
             return {"online": True, "adapter_mode": "MOCK", "source_mode": "MOCK",
                     "device_alias": "camera-mock-001", "simulated": True,
                     "collection_active": self.collection_active}
         try:
             # 官方 status/get 是设备详细运行参数；在线状态以 device/info 的 status=1 为准。
-            result = await EzvizAPI.get_device_info(self._configured_serial())
+            result = await asyncio.wait_for(
+                EzvizAPI.get_device_info(self._configured_serial()),
+                timeout=EZVIZ_STATUS_TIMEOUT_SECONDS,
+            )
         except Exception as exc:
-            raise ServiceError(503, "EZVIZ_STATUS_UNAVAILABLE",
-                               "Ezviz device status is temporarily unavailable") from exc
+            logger.warning("Ezviz device status unavailable; returning last known state: %s", type(exc).__name__)
+            if self._last_status is not None:
+                return {**self._last_status, "status_stale": True}
+            return {
+                "online": False,
+                "adapter_mode": "EZVIZ_CLOUD",
+                "source_mode": "LIVE_DEVICE",
+                "device_alias": "camera-live-001",
+                "simulated": False,
+                "collection_active": self.collection_active,
+                "status_stale": True,
+            }
         data = result.get("data", result)
-        return {"online": bool(data.get("status", data.get("online", 0))),
-                "adapter_mode": "EZVIZ_CLOUD", "source_mode": "LIVE_DEVICE",
-                "device_alias": "camera-live-001", "simulated": False,
-                "collection_active": self.collection_active}
+        status = {"online": bool(data.get("status", data.get("online", 0))),
+                  "adapter_mode": "EZVIZ_CLOUD", "source_mode": "LIVE_DEVICE",
+                  "device_alias": "camera-live-001", "simulated": False,
+                  "collection_active": self.collection_active,
+                  "status_stale": False}
+        self._last_status = status
+        return status
 
     async def stop(self):
         self.collection_active = False
@@ -63,7 +84,7 @@ class DeviceAdapter:
     ) -> PlatformSnapshotResult:
         """Return the frozen internal contract; callers must not serialize its URL."""
         request_id = request_id or f"ezviz-capture-{uuid4().hex}"
-        if ENV_MODE == "mock" and not EZVIZ_DEVICE_SERIAL:
+        if ENV_MODE == "mock":
             return PlatformSnapshotResult(
                 schema_version="platform-snapshot/1.0",
                 request_id=request_id,

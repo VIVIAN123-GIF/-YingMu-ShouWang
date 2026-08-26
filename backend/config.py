@@ -18,6 +18,7 @@ EZVIZ_DEVICE_SERIAL = os.getenv("EZVIZ_DEVICE_SERIAL", "")
 EZVIZ_CHANNEL_NO = int(os.getenv("EZVIZ_CHANNEL_NO", "1"))
 EZVIZ_LIVE_PROTOCOL = int(os.getenv("EZVIZ_LIVE_PROTOCOL", "4"))
 EZVIZ_CAPTURE_TIMEOUT_SECONDS = float(os.getenv("EZVIZ_CAPTURE_TIMEOUT_SECONDS", "45"))
+EZVIZ_STATUS_TIMEOUT_SECONDS = float(os.getenv("EZVIZ_STATUS_TIMEOUT_SECONDS", "5"))
 YINGMU_CAPTURE_MEDIA_MODE = os.getenv("YINGMU_CAPTURE_MEDIA_MODE", "SNAPSHOT").upper()
 YINGMU_VIDEO_CAPTURE_SECONDS = int(os.getenv("YINGMU_VIDEO_CAPTURE_SECONDS", "8"))
 YINGMU_FFMPEG_BINARY = os.getenv("YINGMU_FFMPEG_BINARY", "ffmpeg")
@@ -81,6 +82,14 @@ EZVIZ_WEBHOOK_ALLOW_UNSIGNED_TEST = (
     os.getenv("EZVIZ_WEBHOOK_ALLOW_UNSIGNED_TEST", "false").lower() == "true"
 )
 CONTROL_TOKEN = os.getenv("YINGMU_CONTROL_TOKEN", "")
+CORS_ORIGINS = tuple(
+    origin.strip()
+    for origin in os.getenv(
+        "YINGMU_CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+)
 
 TOKEN_REFRESH_OFFSET = 60
 _RULESET = load_ruleset()
@@ -96,6 +105,8 @@ if ENV_MODE == "live" and (not EZVIZ_APP_KEY or not EZVIZ_APP_SECRET or not EZVI
 
 if EZVIZ_CAPTURE_TIMEOUT_SECONDS <= 0:
     raise RuntimeError("EZVIZ_CAPTURE_TIMEOUT_SECONDS must be positive")
+if EZVIZ_STATUS_TIMEOUT_SECONDS <= 0:
+    raise RuntimeError("EZVIZ_STATUS_TIMEOUT_SECONDS must be positive")
 if EZVIZ_LIVE_PROTOCOL not in {2, 4}:
     raise RuntimeError("EZVIZ_LIVE_PROTOCOL must be 2 (HLS) or 4 (FLV)")
 if YINGMU_CAPTURE_MEDIA_MODE not in {"SNAPSHOT", "VIDEO"}:

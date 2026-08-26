@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.exception_handlers import service_error_handler, unexpected_error_handler, validation_error_handler
 from fastapi.exceptions import RequestValidationError
 from backend.api.v1.router import router
-from backend.config import RULESET_VERSION, SCHEMA_VERSION
+from backend.config import CORS_ORIGINS, RULESET_VERSION, SCHEMA_VERSION
 from backend.db.init_db import init_default_config, init_tables
 from backend.service.errors import ServiceError
 from backend.static_frontend import mount_frontend
@@ -22,7 +22,7 @@ async def lifespan(_: FastAPI):
     yield
 
 app = FastAPI(title="萤目守望风险服务", version="1.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+app.add_middleware(CORSMiddleware, allow_origins=list(CORS_ORIGINS),
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 app.add_exception_handler(ServiceError, service_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
