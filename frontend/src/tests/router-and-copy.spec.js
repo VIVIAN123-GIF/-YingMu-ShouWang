@@ -6,6 +6,9 @@ import { routes } from '../router'
 describe('统一家属端信息架构', () => {
   it('提供九个冻结一级导航入口', () => {
     expect(routes.filter((route) => route.meta?.nav)).toHaveLength(9)
+    expect(routes.find((route) => route.name === 'scene-calibration')).toMatchObject({
+      path: '/system/calibration/:sceneConfigId', meta: { nav: false },
+    })
   })
 
   it('核心页面不包含禁止使用的武断文案', () => {

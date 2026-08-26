@@ -7,7 +7,7 @@ describe('冻结枚举', () => {
   it('保留四级风险、六种事件状态和四种来源', () => {
     expect(Object.keys(RISK_LEVELS)).toEqual(['GREEN', 'YELLOW', 'ORANGE', 'RED'])
     expect(Object.keys(EVENT_STATUSES)).toEqual(['OPEN', 'INTERVENING', 'OBSERVING', 'RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
-    expect(Object.keys(SOURCE_MODES)).toEqual(['LIVE_DEVICE', 'RECORDED_REPLAY', 'PUBLIC_DATASET'])
+    expect(Object.keys(SOURCE_MODES)).toEqual(['LIVE_DEVICE', 'RECORDED_REPLAY', 'PUBLIC_DATASET', 'MOCK'])
   })
 
   it('工具失败不会映射成成功', () => {
@@ -47,11 +47,13 @@ describe('前置预警未知状态', () => {
   it('接受合法的前置预警快照枚举', () => {
     const snapshot = {
       schema_version: 'forewarning-snapshot/1.0', snapshot_id: 'snapshot-test',
+      resident_id: 'resident-test', evaluated_at: '2026-08-26T19:00:00+08:00', phase: 'PERIODIC',
       assessment_status: 'VALID', confidence_level: 'HIGH', baseline_status: 'STABLE',
       components: { human_risk: 0.7, personal_deviation: 0.2, environment_risk: 0.1, interaction_risk: 0.3 },
       instant: { engineering_index: 0.7, attention_level: 'ORANGE' },
       short_30s: { engineering_index: 0.6, attention_level: 'YELLOW' },
       trend_3min: { engineering_index: 0.5, attention_level: 'YELLOW' },
+      recommended_action: '继续观察。', ruleset_version: 'ruleset-v1.3-min', source_mode: 'MOCK', simulated: true,
     }
     expect(validateForewarningSnapshot(snapshot)).toBe(snapshot)
   })

@@ -25,6 +25,7 @@ export const SOURCE_MODES = Object.freeze({
   LIVE_DEVICE: { label: '实时设备', tone: 'success' },
   RECORDED_REPLAY: { label: '授权回放', tone: 'warning' },
   PUBLIC_DATASET: { label: '公开数据集', tone: 'info' },
+  MOCK: { label: '模拟接口', tone: 'info' },
 })
 
 export const DELIVERY_STATUSES = Object.freeze({

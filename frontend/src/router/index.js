@@ -7,6 +7,7 @@ const BaselineView = () => import('../views/BaselineView.vue')
 const ResidentView = () => import('../views/ResidentView.vue')
 const CareView = () => import('../views/CareView.vue')
 const SystemView = () => import('../views/SystemView.vue')
+const SceneCalibrationView = () => import('../views/SceneCalibrationView.vue')
 const ReplayView = () => import('../views/ReplayView.vue')
 
 const routes = [
@@ -18,6 +19,7 @@ const routes = [
   { path: '/care', name: 'care', component: CareView, meta: { title: '家属关怀与身份核验', nav: true, icon: 'ChatLineRound', description: '承接家属关怀反馈、自愿筛查入口和访客身份核验结果。' } },
   { path: '/weekly', name: 'weekly', component: WeeklyView, meta: { title: '周报与核验', nav: true, icon: 'DataAnalysis' } },
   { path: '/system', name: 'system', component: SystemView, meta: { title: '系统和设备状态', nav: true, icon: 'Monitor', description: '展示设备在线状态、适配器模式、数据质量和未核验能力。' } },
+  { path: '/system/calibration/:sceneConfigId', name: 'scene-calibration', component: SceneCalibrationView, meta: { title: '场景标定详情', nav: false } },
   { path: '/replay', name: 'replay', component: ReplayView, meta: { title: '场景回放', nav: true, icon: 'VideoPlay', description: '按故事顺序回放100天关键场景，并清楚标记真实、回放、公开数据或Mock来源。' } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]

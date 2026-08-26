@@ -1,0 +1,15 @@
+{
+  "schema_version": "scene-calibration/1.0",
+  "scene_config_id": "scene-replay-living-room",
+  "camera_position_id": "recorded-fixed-demo-v1",
+  "location": "living_room",
+  "frame_width": 960,
+  "frame_height": 544,
+  "zones": [
+    { "zone_id": "fixed-chair-support", "zone_type": "SUPPORT", "polygon_norm": [[0.28, 0.34], [0.47, 0.34], [0.47, 0.96], [0.27, 0.96]] },
+    { "zone_id": "visible-floor-safe", "zone_type": "SAFE", "polygon_norm": [[0.05, 0.78], [0.92, 0.73], [0.98, 1.0], [0.0, 1.0]] }
+  ],
+  "effective_from": "2026-08-26T12:00:00+08:00",
+  "supersedes": null,
+  "notes": "授权固定机位回放标定；摄像机或家具移动后需要重新标定。"
+}

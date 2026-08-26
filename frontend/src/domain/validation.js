@@ -17,6 +17,9 @@ const PRE_FALL_FACTORS = new Set([
 ])
 const FOREWARNING_ASSESSMENTS = new Set(['VALID', 'PARTIAL', 'INSUFFICIENT'])
 const FOREWARNING_ATTENTION_LEVELS = new Set(['UNKNOWN', 'GREEN', 'YELLOW', 'ORANGE'])
+const DEVICE_ADAPTER_MODES = new Set(['EZVIZ_CLOUD', 'RECORDED_REPLAY', 'MOCK'])
+const DEVICE_SOURCE_MODES = new Set(['LIVE_DEVICE', 'RECORDED_REPLAY', 'MOCK'])
+const SCENE_ZONE_TYPES = new Set(['HIGH_RISK', 'SUPPORT', 'OBSTACLE', 'SAFE'])
 
 export class DataContractError extends Error {
   constructor(message, field = null) {
@@ -262,12 +265,83 @@ export function validateDeviceStatus(device) {
   const label = 'DeviceStatus'
   assertObject(device, label)
   assertBoolean(assertRequired(device, 'online', label), `${label}.online`)
-  assertOneOf(assertRequired(device, 'adapter_mode', label), new Set(['EZVIZ_CLOUD', 'RECORDED_REPLAY']), `${label}.adapter_mode`)
-  assertOneOf(assertRequired(device, 'source_mode', label), new Set(['LIVE_DEVICE', 'RECORDED_REPLAY']), `${label}.source_mode`)
+  assertOneOf(assertRequired(device, 'adapter_mode', label), DEVICE_ADAPTER_MODES, `${label}.adapter_mode`)
+  assertOneOf(assertRequired(device, 'source_mode', label), DEVICE_SOURCE_MODES, `${label}.source_mode`)
   assertString(assertRequired(device, 'device_alias', label), `${label}.device_alias`)
   assertBoolean(assertRequired(device, 'simulated', label), `${label}.simulated`)
   assertBoolean(assertRequired(device, 'collection_active', label), `${label}.collection_active`)
   return device
+}
+
+export function validateDeviceControlResult(result) {
+  const label = 'DeviceControlResult'
+  assertObject(result, label)
+  const online = assertRequired(result, 'online', label)
+  if (online !== null) assertBoolean(online, `${label}.online`)
+  assertOneOf(assertRequired(result, 'adapter_mode', label), DEVICE_ADAPTER_MODES, `${label}.adapter_mode`)
+  assertOneOf(assertRequired(result, 'source_mode', label), DEVICE_SOURCE_MODES, `${label}.source_mode`)
+  assertString(assertRequired(result, 'device_alias', label), `${label}.device_alias`)
+  assertBoolean(assertRequired(result, 'simulated', label), `${label}.simulated`)
+  assertBoolean(assertRequired(result, 'collection_active', label), `${label}.collection_active`)
+  return result
+}
+
+export function validateDeviceSnapshot(snapshot) {
+  const label = 'DeviceSnapshot'
+  assertObject(snapshot, label)
+  if (snapshot.schema_version !== 'platform-snapshot/1.0') fail(`${label}.schema_version 无效`, `${label}.schema_version`)
+  if (Object.hasOwn(snapshot, 'temporary_url')) fail(`${label} 不得包含临时图片地址`, `${label}.temporary_url`)
+  ;['request_id', 'device_ref'].forEach((field) => assertString(assertRequired(snapshot, field, label), `${label}.${field}`))
+  const channelNo = assertRequired(snapshot, 'channel_no', label)
+  if (!Number.isInteger(channelNo) || channelNo < 1) fail(`${label}.channel_no 必须是正整数`, `${label}.channel_no`)
+  assertIsoTime(assertRequired(snapshot, 'captured_at', label), `${label}.captured_at`)
+  assertOneOf(assertRequired(snapshot, 'source_mode', label), new Set(['LIVE_DEVICE', 'MOCK']), `${label}.source_mode`)
+  assertBoolean(assertRequired(snapshot, 'simulated', label), `${label}.simulated`)
+  assertIsoTime(assertRequired(snapshot, 'expires_at', label), `${label}.expires_at`, { nullable: true })
+  const latency = assertRequired(snapshot, 'provider_latency_ms', label)
+  if (!Number.isInteger(latency) || latency < 0) fail(`${label}.provider_latency_ms 必须是非负整数`, `${label}.provider_latency_ms`)
+  if (assertRequired(snapshot, 'temporary_url_stored', label) !== false) fail(`${label}.temporary_url_stored 必须为 false`, `${label}.temporary_url_stored`)
+  return snapshot
+}
+
+export function validateSceneCalibration(calibration) {
+  const label = 'SceneCalibration'
+  assertObject(calibration, label)
+  if (calibration.schema_version !== 'scene-calibration/1.0') fail(`${label}.schema_version 无效`, `${label}.schema_version`)
+  ;['scene_config_id', 'camera_position_id', 'location'].forEach((field) => assertString(assertRequired(calibration, field, label), `${label}.${field}`))
+  ;['frame_width', 'frame_height'].forEach((field) => {
+    const value = assertRequired(calibration, field, label)
+    if (!Number.isInteger(value) || value < 1 || value > 16384) fail(`${label}.${field} 必须是有效画面尺寸`, `${label}.${field}`)
+  })
+  const zones = assertRequired(calibration, 'zones', label)
+  if (!Array.isArray(zones)) fail(`${label}.zones 必须是数组`, `${label}.zones`)
+  const zoneIds = new Set()
+  zones.forEach((zone, index) => {
+    const zoneLabel = `${label}.zones[${index}]`
+    assertObject(zone, zoneLabel)
+    const zoneId = assertString(assertRequired(zone, 'zone_id', zoneLabel), `${zoneLabel}.zone_id`)
+    if (zoneIds.has(zoneId)) fail(`${label}.zone_id 必须唯一`, `${zoneLabel}.zone_id`)
+    zoneIds.add(zoneId)
+    assertOneOf(assertRequired(zone, 'zone_type', zoneLabel), SCENE_ZONE_TYPES, `${zoneLabel}.zone_type`)
+    const polygon = assertRequired(zone, 'polygon_norm', zoneLabel)
+    if (!Array.isArray(polygon) || polygon.length < 3) fail(`${zoneLabel}.polygon_norm 至少包含三个点`, `${zoneLabel}.polygon_norm`)
+    const points = polygon.map((point, pointIndex) => {
+      if (!Array.isArray(point) || point.length !== 2 || point.some((coordinate) => typeof coordinate !== 'number' || coordinate < 0 || coordinate > 1)) {
+        fail(`${zoneLabel}.polygon_norm[${pointIndex}] 必须是归一化坐标`, `${zoneLabel}.polygon_norm[${pointIndex}]`)
+      }
+      return point
+    })
+    if (new Set(points.map((point) => point.join(','))).size < 3) fail(`${zoneLabel}.polygon_norm 至少需要三个不同点`, `${zoneLabel}.polygon_norm`)
+    const twiceArea = points.reduce((area, point, pointIndex) => {
+      const next = points[(pointIndex + 1) % points.length]
+      return area + (point[0] * next[1]) - (next[0] * point[1])
+    }, 0)
+    if (Math.abs(twiceArea) <= 1e-8) fail(`${zoneLabel}.polygon_norm 面积不能为零`, `${zoneLabel}.polygon_norm`)
+  })
+  assertIsoTime(assertRequired(calibration, 'effective_from', label), `${label}.effective_from`)
+  assertNullableString(assertRequired(calibration, 'supersedes', label), `${label}.supersedes`)
+  assertNullableString(assertRequired(calibration, 'notes', label), `${label}.notes`)
+  return calibration
 }
 
 export function validateAlarmProcessingTask(task, index = 0) {
@@ -397,6 +471,9 @@ export function validateForewarningSnapshot(snapshot, label = 'forewarning') {
   const value = assertObject(snapshot, label)
   if (value.schema_version !== 'forewarning-snapshot/1.0') fail(`${label}.schema_version 无效`, `${label}.schema_version`)
   assertString(assertRequired(value, 'snapshot_id', label), `${label}.snapshot_id`)
+  assertString(assertRequired(value, 'resident_id', label), `${label}.resident_id`)
+  assertIsoTime(assertRequired(value, 'evaluated_at', label), `${label}.evaluated_at`)
+  assertOneOf(assertRequired(value, 'phase', label), new Set(['PERIODIC', 'PRE_INTERVENTION', 'POST_INTERVENTION']), `${label}.phase`)
   assertOneOf(assertRequired(value, 'assessment_status', label), FOREWARNING_ASSESSMENTS, `${label}.assessment_status`)
   assertOneOf(assertRequired(value, 'confidence_level', label), new Set(['LOW', 'MEDIUM', 'HIGH']), `${label}.confidence_level`)
   assertOneOf(assertRequired(value, 'baseline_status', label), new Set(['INSUFFICIENT', 'PROVISIONAL', 'STABLE']), `${label}.baseline_status`)
@@ -408,5 +485,13 @@ export function validateForewarningSnapshot(snapshot, label = 'forewarning') {
     assertRiskScore(assertRequired(horizon, 'engineering_index', `${label}.${field}`), `${label}.${field}.engineering_index`)
     assertOneOf(assertRequired(horizon, 'attention_level', `${label}.${field}`), FOREWARNING_ATTENTION_LEVELS, `${label}.${field}.attention_level`)
   })
+  assertString(assertRequired(value, 'recommended_action', label), `${label}.recommended_action`)
+  assertString(assertRequired(value, 'ruleset_version', label), `${label}.ruleset_version`)
+  assertSource(value, label)
   return value
+}
+
+export function validateForewarningHistory(snapshots) {
+  if (!Array.isArray(snapshots)) fail('居民预警历史必须是数组', 'resident_forewarning')
+  return snapshots.map((snapshot, index) => validateForewarningSnapshot(snapshot, `resident_forewarning[${index}]`))
 }
