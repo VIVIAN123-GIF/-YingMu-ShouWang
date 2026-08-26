@@ -25,7 +25,7 @@ const groupConfig = [
 ]
 const navRoutes = routes.filter((item) => item.meta?.nav)
 const navGroups = groupConfig.map((group) => ({ ...group, items: group.paths.map((path) => navRoutes.find((item) => item.path === path)).filter(Boolean) }))
-const activePath = computed(() => route.name === 'event-detail' ? '/events/:eventId' : route.path)
+const activePath = computed(() => ['event-detail', 'event-detail-empty'].includes(route.name) ? '/events/:eventId' : route.path)
 
 function logout() { logoutOfDemo(); emit('logout') }
 function createdAtTimestamp(event) { const timestamp = Date.parse(event?.created_at || ''); return Number.isNaN(timestamp) ? 0 : timestamp }
@@ -38,9 +38,16 @@ async function handleSelect(path) {
   try {
     const events = await getEvents()
     const latestEvent = events.reduce((latest, event) => (!latest || createdAtTimestamp(event) > createdAtTimestamp(latest) ? event : latest), null)
-    if (!latestEvent) { ElMessage.info('暂无风险事件，请先等待风险事件生成'); await router.push('/events'); return }
+    if (!latestEvent) {
+      ElMessage.error('风险事件调取失败：当前居民暂无可用事件')
+      await router.push({ name: 'event-detail-empty', query: { reason: 'empty' } })
+      return
+    }
     await router.push({ name: 'event-detail', params: { eventId: latestEvent.event_id } })
-  } catch { ElMessage.error('无法读取风险事件，请稍后重试') } finally { openingEventDetail.value = false }
+  } catch {
+    ElMessage.error('风险事件调取失败：FastAPI 服务不可达')
+    await router.push({ name: 'event-detail-empty', query: { reason: 'unavailable' } })
+  } finally { openingEventDetail.value = false }
 }
 </script>
 
@@ -78,7 +85,12 @@ async function handleSelect(path) {
         </div>
       </header>
       <div v-if="runtime.message" class="runtime-banner" :class="{ degraded: runtime.degraded }" role="status"><el-icon><InfoFilled /></el-icon><span>{{ runtime.message }}</span><small v-if="runtime.activeSource === 'replay_dataset'">RECORDED_REPLAY / 授权回放</small></div>
-      <main class="main-content"><router-view :key="`${route.fullPath}-${runtime.mode}`" /></main>
+      <main
+        v-loading="openingEventDetail"
+        element-loading-text="正在调取风险事件"
+        class="main-content"
+        data-testid="event-navigation-loading"
+      ><router-view :key="`${route.fullPath}-${runtime.mode}`" /></main>
     </div>
 
     <el-drawer v-model="mobileNavigationOpen" title="萤目守望" direction="ltr" size="min(86vw, 340px)" class="mobile-navigation-drawer">

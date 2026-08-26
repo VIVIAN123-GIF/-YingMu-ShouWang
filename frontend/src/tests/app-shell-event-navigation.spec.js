@@ -32,6 +32,7 @@ async function mountShell(path = '/') {
     routes: [
       { path: '/', name: 'home', component: ViewStub },
       { path: '/events', name: 'events', component: ViewStub },
+      { path: '/events/detail', name: 'event-detail-empty', component: ViewStub },
       { path: '/events/:eventId', name: 'event-detail', component: ViewStub },
     ],
   })
@@ -64,6 +65,22 @@ describe('风险事件详情导航入口', () => {
     expect(router.currentRoute.value.fullPath).toContain('event%20latest%2F')
   })
 
+  it('调取事件列表期间显示加载状态', async () => {
+    let resolveEvents
+    getEventsMock.mockReturnValue(new Promise((resolve) => { resolveEvents = resolve }))
+    const { wrapper } = await mountShell()
+
+    const navigation = wrapper.vm.handleSelect('/events/:eventId')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.vm.openingEventDetail).toBe(true)
+    expect(wrapper.get('[data-testid="event-navigation-loading"]').attributes('element-loading-text')).toBe('正在调取风险事件')
+
+    resolveEvents([])
+    await navigation
+    expect(wrapper.vm.openingEventDetail).toBe(false)
+  })
+
   it('已经位于事件详情页时保留当前事件且不重复读取列表', async () => {
     const { router, wrapper } = await mountShell('/events/event-current')
 
@@ -73,15 +90,16 @@ describe('风险事件详情导航入口', () => {
     expect(router.currentRoute.value.params.eventId).toBe('event-current')
   })
 
-  it('没有事件时进入时间轴并给出明确提示', async () => {
+  it('没有事件时进入详情失败状态并显示调取失败', async () => {
     getEventsMock.mockResolvedValue([])
     const { router, wrapper } = await mountShell()
 
     await wrapper.vm.handleSelect('/events/:eventId')
     await flushPromises()
 
-    expect(router.currentRoute.value.path).toBe('/events')
-    expect(messageMock.info).toHaveBeenCalledWith('暂无风险事件，请先等待风险事件生成')
+    expect(router.currentRoute.value.name).toBe('event-detail-empty')
+    expect(router.currentRoute.value.path).toBe('/events/detail')
+    expect(messageMock.error).toHaveBeenCalledWith('风险事件调取失败：当前居民暂无可用事件')
   })
 
   it('事件列表请求失败时不进入错误详情地址', async () => {
@@ -90,8 +108,9 @@ describe('风险事件详情导航入口', () => {
 
     await wrapper.vm.handleSelect('/events/:eventId')
 
-    expect(router.currentRoute.value.path).toBe('/')
-    expect(messageMock.error).toHaveBeenCalledWith('无法读取风险事件，请稍后重试')
+    expect(router.currentRoute.value.name).toBe('event-detail-empty')
+    expect(router.currentRoute.value.query.reason).toBe('unavailable')
+    expect(messageMock.error).toHaveBeenCalledWith('风险事件调取失败：FastAPI 服务不可达')
     expect(messageMock.error.mock.calls[0][0]).not.toContain('private backend detail')
   })
 })

@@ -300,6 +300,14 @@ function startEventSession() {
   residentResponseRecorded.value = false
   submittingIntervention.value = false
   interventionRequested.value = false
+  if (!route.params.eventId) {
+    loading.value = false
+    error.value = route.query.reason === 'unavailable'
+      ? '风险事件调取失败：FastAPI 服务不可达，请检查后端服务和网络连接'
+      : '风险事件调取失败：当前居民暂无可用事件'
+    syncState.value = 'idle'
+    return
+  }
   void refreshEvent(activeSession, true)
   void refreshExplanation(activeSession, true)
 }
@@ -346,7 +354,7 @@ async function requestIntervention() {
   }
 }
 
-watch(() => [route.params.eventId, runtime.mode], startEventSession, { immediate: true })
+watch(() => [route.params.eventId, route.query.reason, runtime.mode], startEventSession, { immediate: true })
 onBeforeUnmount(stopEventSession)
 </script>
 

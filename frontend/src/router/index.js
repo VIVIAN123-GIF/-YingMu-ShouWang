@@ -15,6 +15,7 @@ const routes = [
   { path: '/resident', name: 'resident', component: ResidentView, meta: { title: '老人档案与授权', nav: true, icon: 'User', description: '管理老人基本档案、隐私区域、家属授权和适老提醒语音。' } },
   { path: '/baseline', name: 'baseline', component: BaselineView, meta: { title: '个人基线与趋势', nav: true, icon: 'TrendCharts', description: '查看短、中、长期个人基线及活动热力图，异常时段不会写入正常基线。' } },
   { path: '/events', name: 'events', component: EventsView, meta: { title: '统一事件时间轴', nav: true, icon: 'Clock' } },
+  { path: '/events/detail', name: 'event-detail-empty', component: EventDetailView, meta: { title: '风险事件详情', nav: false } },
   { path: '/events/:eventId', name: 'event-detail', component: EventDetailView, meta: { title: '风险事件详情', nav: true, icon: 'DocumentChecked' } },
   { path: '/care', name: 'care', component: CareView, meta: { title: '家属关怀与身份核验', nav: true, icon: 'ChatLineRound', description: '承接家属关怀反馈、自愿筛查入口和访客身份核验结果。' } },
   { path: '/weekly', name: 'weekly', component: WeeklyView, meta: { title: '周报与核验', nav: true, icon: 'DataAnalysis' } },

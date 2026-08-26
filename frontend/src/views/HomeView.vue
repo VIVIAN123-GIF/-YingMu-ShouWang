@@ -141,11 +141,11 @@ function onlineLabel(value) {
       <section class="metric-grid" aria-label="今日状态摘要">
         <article class="metric-card">
           <span class="metric-icon mint"><Sunrise /></span>
-          <div><small>今日活动</small><strong>{{ metric(data.today.activity_minutes, ' 分钟', '42 分钟') }}</strong><span>活动以个人基线为参照</span></div>
+          <div><small>今日活动</small><strong>{{ metric(data.today.activity_minutes, ' 分钟', '暂无数据') }}</strong><span>活动以个人基线为参照</span></div>
         </article>
         <article class="metric-card">
           <span class="metric-icon blue"><Connection /></span>
-          <div><small>房间活动</small><strong>{{ metric(data.today.room_transitions, ' 次', '18 次') }}</strong><span>仅保存脱敏统计</span></div>
+          <div><small>房间活动</small><strong>{{ metric(data.today.room_transitions, ' 次', '暂无数据') }}</strong><span>仅保存脱敏统计</span></div>
         </article>
         <article class="metric-card">
           <span class="metric-icon sand"><Monitor /></span>
@@ -153,7 +153,7 @@ function onlineLabel(value) {
         </article>
         <article class="metric-card">
           <span class="metric-icon coral"><CircleCheckFilled /></span>
-          <div><small>家属关怀</small><strong>{{ metric(data.today.care_status, '', '已联系，近期一切正常') }}</strong><span>本周最多主动汇总一次</span></div>
+          <div><small>家属关怀</small><strong>{{ metric(data.today.care_status, '', '尚未记录') }}</strong><span>本周最多主动汇总一次</span></div>
         </article>
       </section>
 
