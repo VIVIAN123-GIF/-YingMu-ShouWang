@@ -146,6 +146,23 @@ def test_gait_adapter_low_quality(tmp_path: Path):
     assert batch.error is None
 
 
+def test_gait_adapter_orientation_quality_uses_video_specific_gate(tmp_path: Path):
+    feature_path = tmp_path / "valid-low-orientation-quality.json"
+    _write_v12_features(
+        feature_path,
+        post_rise_orientation_quality=0.466,
+        valid_frame_ratio=0.91,
+        post_rise_tracking_ratio=0.91,
+    )
+
+    batch = asyncio.run(run(_job(feature_path)))
+
+    assert batch.status == "SUCCESS"
+    assert batch.error is None
+    assert any(item.evidence_type == "trunk_sway" for item in batch.evidences)
+    assert all(item.data_quality >= 0.7 for item in batch.observations)
+
+
 def test_gait_adapter_invalid_input_is_contract_failed(tmp_path: Path):
     job = _job(tmp_path / "missing.json")
 

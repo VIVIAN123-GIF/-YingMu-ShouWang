@@ -203,12 +203,14 @@ def _score(value: float) -> float:
 
 
 def _quality(features: dict[str, Any]) -> float:
+    # Orientation quality has its own assessment gate in gait_video.  It is
+    # deliberately excluded here so a valid front-facing replay at 0.45-0.70
+    # is not downgraded a second time by the generic evidence quality gate.
     values = [
         float(value)
         for key in (
             "valid_frame_ratio",
             "post_rise_tracking_ratio",
-            "post_rise_orientation_quality",
         )
         if isinstance((value := features.get(key)), (int, float))
     ]
