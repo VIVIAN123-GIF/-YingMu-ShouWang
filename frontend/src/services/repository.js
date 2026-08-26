@@ -564,6 +564,12 @@ export async function getDeviceSnapshot() {
   ), () => validateDeviceSnapshot(replayData.deviceSnapshot), validateDeviceSnapshot)
 }
 
+export async function getDeviceLiveAddress() {
+  return resolveData('device.live-address', async () => payload(await apiClient.get('/device/live-address')), () => {
+    throw Object.assign(new Error('直播仅在实时设备模式下可用'), { response: { status: 503 } })
+  })
+}
+
 function controlError(code, message) {
   const error = new Error(message)
   error.api = { code, message, request_id: null }

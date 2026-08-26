@@ -507,7 +507,19 @@ p { font-size: 16px; line-height: 1.65; }
 .form-actions span { color: var(--muted); font-size: 13px; }
 .system-operations-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 18px; margin: 20px 0; align-items: stretch; }
 .system-operations-grid > .content-card { margin: 0; min-height: 310px; }
+.system-operations-grid > .live-card { grid-column: 1 / -1; min-height: 500px; }
+.live-card { display: flex; flex-direction: column; }
 .snapshot-card, .scene-link-card { display: flex; flex-direction: column; }
+.live-video {
+  width: 100%;
+  flex: 1;
+  min-height: 390px;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  object-position: center;
+  background: #000;
+  border-radius: 6px;
+}
 .snapshot-card > .el-empty, .scene-link-card > .el-empty { flex: 1; display: grid; align-content: center; }
 .snapshot-result { display: flex; flex-direction: column; gap: 16px; }
 .snapshot-unavailable { min-height: 104px; padding: 18px; display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; column-gap: 14px; border: 1px dashed var(--line-strong); border-radius: 6px; background: #f4f7f6; }
