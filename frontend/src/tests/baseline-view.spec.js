@@ -1,7 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import baselineMock from '../mocks/baseline.json'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import baselineMock from '../replay-data/baseline.json'
 import { normalizeBaseline } from '../services/viewModel'
+import { setViewMode } from '../services/viewMode'
 
 const { getBaselineMock } = vi.hoisted(() => ({ getBaselineMock: vi.fn() }))
 
@@ -27,27 +28,28 @@ function mountView() {
 }
 
 describe('个人基线页面', () => {
-  beforeEach(() => getBaselineMock.mockReset())
+  beforeEach(() => { getBaselineMock.mockReset(); setViewMode('review') })
+  afterEach(() => setViewMode('family'))
 
-  it('素材到位前明确展示样本不足且不伪造趋势', async () => {
+  it('授权回放展示实验覆盖且不冒充居民个人基线', async () => {
     getBaselineMock.mockResolvedValue(normalizeBaseline(structuredClone(baselineMock)))
     const wrapper = mountView()
     await flushPromises()
-    expect(wrapper.text()).toContain('样本不足')
-    expect(wrapper.text()).toContain('待授权C6c样本')
-    expect(wrapper.text()).not.toContain('模拟实验回放')
-    expect(wrapper.findAll('.chart-stub')).toHaveLength(0)
+    expect(wrapper.text()).toContain('3 名参与者 · 96 段受控片段')
+    expect(wrapper.text()).toContain('张建国待同一居民、同一机位实机样本校准')
+    expect(wrapper.text()).toContain('待个人校准')
+    expect(wrapper.findAll('.chart-stub')).toHaveLength(2)
   })
 
   it('API 没有时序数据时展示诚实空状态', async () => {
     getBaselineMock.mockResolvedValue(normalizeBaseline({
       resident_id: 'resident-api', as_of: '2026-07-30T08:00:00+08:00', ruleset_version: 'ruleset-v1.0',
-      source_mode: 'MOCK', simulated: true,
+      source_mode: 'RECORDED_REPLAY', simulated: true,
       baselines: { rise_duration: { median: 3.5, mad: 0.4, sample_count: 20, distinct_days: 7, status: 'STABLE' } },
     }))
     const wrapper = mountView()
     await flushPromises()
-    expect(wrapper.text()).toContain('当前 API 未提供活动时序数据，不使用 Mock 趋势补位')
+    expect(wrapper.text()).toContain('当前 API 未提供活动时序数据')
     expect(wrapper.text()).toContain('当前 API 暂无活动热力图时序数据')
     expect(wrapper.text()).not.toContain('模拟实验回放')
   })

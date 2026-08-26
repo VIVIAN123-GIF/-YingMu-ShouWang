@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import weeklyMock from '../mocks/weekly.json'
+import weeklyMock from '../replay-data/weekly.json'
 
 const { getWeeklyReportMock, submitFamilyFeedbackMock, messageMock } = vi.hoisted(() => ({
   getWeeklyReportMock: vi.fn(),
@@ -65,7 +65,7 @@ describe('黄色周报与诈骗核验卡', () => {
     await wrapper.get('[data-testid="care-submit"]').trigger('click')
     await flushPromises()
     expect(submitFamilyFeedbackMock).toHaveBeenCalledWith('event-mental-week', {
-      feedback_type: 'confirm', value: weeklyMock.care.options[0], operator: 'family',
+      feedback_type: 'confirm', feedback_kind: 'CARE', value: weeklyMock.care.options[0], operator: 'family',
     })
     expect(wrapper.get('[data-testid="care-submit"]').text()).toContain('关怀反馈已记录')
 
@@ -73,7 +73,7 @@ describe('黄色周报与诈骗核验卡', () => {
     await wrapper.get('[data-testid="verify-submit"]').trigger('click')
     await flushPromises()
     expect(submitFamilyFeedbackMock).toHaveBeenCalledWith('event-fraud-visitor', {
-      feedback_type: 'confirm', value: weeklyMock.visitor_case.verification_options[2], operator: 'family',
+      feedback_type: 'confirm', feedback_kind: 'IDENTITY_VERIFICATION', value: weeklyMock.visitor_case.verification_options[2], operator: 'family',
     })
     expect(wrapper.get('[data-testid="verify-submit"]').text()).toContain('身份核验已记录')
   })
@@ -81,7 +81,7 @@ describe('黄色周报与诈骗核验卡', () => {
   it('API 缺少周报扩展数据时展示诚实空状态并禁用提交', async () => {
     getWeeklyReportMock.mockResolvedValue({
       resident_id: 'resident-api', period: '2026-08-01 至 2026-08-07', generated_at: '2026-08-07T08:00:00+08:00',
-      risk_level: 'GREEN', source_mode: 'MOCK', simulated: true,
+      risk_level: 'GREEN', source_mode: 'RECORDED_REPLAY', simulated: true,
       summary: '后端周报摘要', trend: [], evidence: [], recommendations: [],
       care: { status: 'PENDING', last_contact: null, options: [] }, visitor_case: null,
     })

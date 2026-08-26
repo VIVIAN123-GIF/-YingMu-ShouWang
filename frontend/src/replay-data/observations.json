@@ -11,7 +11,7 @@
     "location": "bedroom",
     "confidence": 0.94,
     "data_quality": 0.9,
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-fall-authorized",
     "simulated": true,
     "metadata": {"model_version": "mediapipe-pose-heavy"}
@@ -28,7 +28,7 @@
     "location": "bedroom",
     "confidence": 0.91,
     "data_quality": 0.89,
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-fall-authorized",
     "simulated": true,
     "metadata": {"model_version": "mediapipe-pose-heavy"}
@@ -45,7 +45,7 @@
     "location": "bedroom",
     "confidence": 0.92,
     "data_quality": 0.88,
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-fall-authorized",
     "simulated": true,
     "metadata": {
@@ -64,7 +64,7 @@
     "location": "bedroom",
     "confidence": 0.9,
     "data_quality": 0.88,
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-fall-authorized",
     "simulated": true,
     "metadata": {
@@ -83,7 +83,7 @@
     "location": "bedroom",
     "confidence": 0.95,
     "data_quality": 0.91,
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-fall-authorized",
     "simulated": true,
     "metadata": {
@@ -102,7 +102,7 @@
     "location": "bedroom",
     "confidence": 0.94,
     "data_quality": 0.9,
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-fall-authorized",
     "simulated": true,
     "metadata": {
@@ -121,7 +121,7 @@
     "location": "bedroom",
     "confidence": 0.94,
     "data_quality": 0.9,
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-fall-authorized",
     "simulated": true,
     "metadata": {
@@ -233,11 +233,12 @@
     "location": null,
     "confidence": 1,
     "data_quality": 1,
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "asset_id": null,
     "simulated": true,
     "metadata": {
-      "adapter": "mock-device-adapter-v1"
+      "adapter": "authorized-replay-adapter-v1"
     }
   }
 ]
+

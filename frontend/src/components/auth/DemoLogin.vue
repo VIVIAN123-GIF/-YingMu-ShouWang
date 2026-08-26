@@ -55,7 +55,7 @@ async function submit() {
 
       <div class="demo-login-boundaries" aria-label="演示数据边界">
         <span>脱敏演示数据</span>
-        <span>MOCK / RECORDED_REPLAY</span>
+        <span>RECORDED_REPLAY / 授权回放</span>
         <span>非实时设备</span>
         <span>非老年人实测</span>
       </div>

@@ -262,8 +262,8 @@ export function validateDeviceStatus(device) {
   const label = 'DeviceStatus'
   assertObject(device, label)
   assertBoolean(assertRequired(device, 'online', label), `${label}.online`)
-  assertOneOf(assertRequired(device, 'adapter_mode', label), new Set(['EZVIZ_CLOUD', 'MOCK']), `${label}.adapter_mode`)
-  assertOneOf(assertRequired(device, 'source_mode', label), new Set(['LIVE_DEVICE', 'MOCK']), `${label}.source_mode`)
+  assertOneOf(assertRequired(device, 'adapter_mode', label), new Set(['EZVIZ_CLOUD', 'RECORDED_REPLAY']), `${label}.adapter_mode`)
+  assertOneOf(assertRequired(device, 'source_mode', label), new Set(['LIVE_DEVICE', 'RECORDED_REPLAY']), `${label}.source_mode`)
   assertString(assertRequired(device, 'device_alias', label), `${label}.device_alias`)
   assertBoolean(assertRequired(device, 'simulated', label), `${label}.simulated`)
   assertBoolean(assertRequired(device, 'collection_active', label), `${label}.collection_active`)

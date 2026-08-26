@@ -30,7 +30,7 @@ function eventFixture() {
     time_horizon: 'IMMINENT', evidence_ids: ['evi-1'],
     evidence_summary: [{ evidence_id: 'evi-1', evidence_type: 'rapid_rise', explanation: 'Fast rise' }],
     evidences: [], observations: [], interventions: [], rule_traces: [], timeline: [], risk_history: [],
-    source_mode: 'MOCK', simulated: true,
+    source_mode: 'RECORDED_REPLAY', simulated: true,
   }
 }
 
@@ -283,7 +283,7 @@ describe('agent explanation frontend contract', () => {
   })
 
   it('keeps polling the backend explanation in explicit mock mode', async () => {
-    runtimeMock.mode = 'mock'
+    runtimeMock.mode = 'replay'
     vi.useFakeTimers()
     getEventMock.mockResolvedValue(eventFixture())
     getAssetMock.mockResolvedValue(null)

@@ -1,4 +1,4 @@
-{
+﻿{
   "resident": {
     "resident_id": "resident-001",
     "name": "张建国",
@@ -19,13 +19,13 @@
     "activity_minutes": 42,
     "room_transitions": 18,
     "events": 1,
-    "care_status": "已联系"
+    "care_status": "已联系，近期一切正常"
   },
   "device": {
     "online": true,
-    "adapter_mode": "MOCK",
-    "device_alias": "camera-mock-001",
-    "source_mode": "MOCK",
+    "adapter_mode": "RECORDED_REPLAY",
+    "device_alias": "authorized-replay-c6c",
+    "source_mode": "RECORDED_REPLAY",
     "simulated": true,
     "collection_active": true
   },
@@ -43,7 +43,7 @@
     "assessment_status": "INSUFFICIENT",
     "confidence_level": "LOW",
     "baseline_status": "INSUFFICIENT",
-    "snapshot_id": "forewarning-mock-insufficient",
+    "snapshot_id": "forewarning-replay-coverage",
     "instant_risk": 0.0,
     "risk_30s": 0.0,
     "trend_3min": 0.0,
@@ -68,7 +68,7 @@
       "risk_score": 0.84,
       "status": "RESOLVED",
       "title": "凌晨快速起身与躯干摇晃",
-      "source_mode": "MOCK",
+      "source_mode": "RECORDED_REPLAY",
       "simulated": true
     },
     {
@@ -95,3 +95,4 @@
     }
   ]
 }
+

@@ -15,6 +15,7 @@ vi.mock('../services/repository', () => ({
 }))
 
 import EventsView from '../views/EventsView.vue'
+import { setViewMode } from '../services/viewMode'
 
 const waitingTask = {
   task_id: 'alarm-task-1', alarm_ref: 'alarm-1', resident_id: 'resident-001', device_ref: 'device-1',
@@ -46,8 +47,9 @@ describe('告警处理任务轮询', () => {
     getEventsMock.mockReset().mockResolvedValue([])
     getRiskReviewsMock.mockReset().mockResolvedValue([reviewItem])
     getAlarmProcessingTasksMock.mockReset().mockResolvedValue([waitingTask])
+    setViewMode('review')
   })
-  afterEach(() => vi.useRealTimers())
+  afterEach(() => { setViewMode('family'); vi.useRealTimers() })
 
   it('使用 resident_id 和 limit=20，每 5000ms 轮询，并在卸载后停止', async () => {
     const wrapper = mountView()

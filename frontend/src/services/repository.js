@@ -1,12 +1,14 @@
 import axios from 'axios'
 import { reactive } from 'vue'
-import dashboardMock from '../mocks/dashboard.json'
-import eventsMock from '../mocks/events.json'
-import weeklyMock from '../mocks/weekly.json'
-import deviceMock from '../mocks/device.json'
-import observationsMock from '../mocks/observations.json'
-import baselineMock from '../mocks/baseline.json'
-import forewarningMock from '../mocks/forewarning.json'
+import dashboardReplay from '../replay-data/dashboard.json'
+import eventsReplay from '../replay-data/events.json'
+import weeklyReplay from '../replay-data/weekly.json'
+import deviceReplay from '../replay-data/device.json'
+import observationsReplay from '../replay-data/observations.json'
+import baselineReplay from '../replay-data/baseline.json'
+import forewarningReplay from '../replay-data/forewarning.json'
+import assetsReplay from '../replay-data/assets.json'
+import explanationsReplay from '../replay-data/explanations.json'
 import { DATA_MODES } from '../domain/constants'
 import {
   validateAgentExplanationJob, validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceStatus, validateEventList, validateEventViewModel, validateForewarningSnapshot, validateInterventionResult, validateRiskReviews,
@@ -18,9 +20,10 @@ import {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 const RESIDENT_ID = import.meta.env.VITE_RESIDENT_ID || 'resident-001'
 const PAGES_BUILD = import.meta.env.VITE_PAGES_BUILD === 'true'
-// API is the safe default: mock fallback must be explicitly enabled for demos.
+const AUTHORIZED_CLIP_URL = import.meta.env.VITE_AUTHORIZED_CLIP_URL?.trim() || ''
+// API is the safe default; offline replay is an explicit, traceable dataset.
 const configuredMode = import.meta.env.VITE_DATA_MODE || 'api'
-const initialMode = PAGES_BUILD ? 'mock' : (sessionStorage.getItem('yingmu-data-mode') || configuredMode)
+const initialMode = PAGES_BUILD ? 'replay' : (sessionStorage.getItem('yingmu-data-mode') || configuredMode)
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -44,25 +47,111 @@ export function normalizeApiError(error) {
 
 apiClient.interceptors.response.use((response) => response, (error) => Promise.reject(normalizeApiError(error)))
 
-const mocks = {
-  dashboard: structuredClone(dashboardMock),
-  events: structuredClone(eventsMock),
-  weekly: structuredClone(weeklyMock),
-  device: structuredClone(deviceMock),
-  observations: structuredClone(observationsMock),
-  baseline: structuredClone(baselineMock),
-  forewarning: structuredClone(forewarningMock),
+const replayData = {
+  dashboard: structuredClone(dashboardReplay),
+  events: structuredClone(eventsReplay),
+  weekly: structuredClone(weeklyReplay),
+  device: structuredClone(deviceReplay),
+  observations: structuredClone(observationsReplay),
+  baseline: structuredClone(baselineReplay),
+  forewarning: structuredClone(forewarningReplay),
+  assets: structuredClone(assetsReplay),
+  explanations: structuredClone(explanationsReplay),
 }
+
+const requiredReplayAssets = Object.freeze({
+  'asset-fall-authorized': '/media/fall-risk-replay.mp4',
+  'asset-mental-week': '/media/activity-route-replay-browser.mp4',
+  'asset-green-daily': '/media/daily-baseline-replay-browser.mp4',
+})
+
+export function validateReplayAssetManifest() {
+  const issues = Object.entries(requiredReplayAssets).flatMap(([assetId, fallbackUrl]) => {
+    const asset = replayData.assets.find((item) => item.asset_id === assetId)
+    if (!asset) return [`缺少授权资产 ${assetId}`]
+    return asset.fallback_url !== fallbackUrl
+      ? [`授权资产 ${assetId} 未映射到 ${fallbackUrl}`]
+      : []
+  })
+  if (issues.length && typeof console !== 'undefined') console.error(`[授权回放素材校验] ${issues.join('；')}`)
+  return issues
+}
+
+validateReplayAssetManifest()
 
 const feedbackCache = new Map()
 const interventionResultCache = new Map()
 const assetRequestCache = new Map()
+const submittedFeedbackSession = new Set()
+const FEEDBACK_STORAGE_KEY = 'yingmu-feedback-records-v1'
+const FEEDBACK_KINDS = new Set(['CARE', 'IDENTITY_VERIFICATION'])
+
+// 回放反馈仅用于当前演示页面，重新打开网址时从空白状态开始。
+if (initialMode === 'replay' || PAGES_BUILD) {
+  try { localStorage.removeItem(FEEDBACK_STORAGE_KEY) } catch { /* Storage may be unavailable. */ }
+}
+
+function readFeedbackRecords() {
+  try {
+    const value = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '[]')
+    return Array.isArray(value) ? value : []
+  } catch { return [] }
+}
+
+function writeFeedbackRecords(records) {
+  try { localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(records.slice(-100))) } catch { /* Storage may be unavailable. */ }
+}
+
+function replayContext() {
+  return runtime.mode === 'replay' || runtime.activeSource === 'replay_dataset'
+}
+
+function feedbackRecordId(eventId, feedbackKind, value) {
+  return stableFeedbackId(eventId, { feedback_kind: feedbackKind, value })
+}
+
+function normalizeFeedbackRecord(record, defaults = {}) {
+  return {
+    feedback_id: record.feedback_id,
+    event_id: record.event_id,
+    feedback_kind: record.feedback_kind || defaults.feedback_kind || 'CARE',
+    value: record.value || '',
+    operator: record.operator || 'family',
+    recorded_at: record.recorded_at || record.updated_at || new Date().toISOString(),
+    source_mode: record.source_mode || defaults.source_mode || 'RECORDED_REPLAY',
+    simulated: record.simulated ?? defaults.simulated ?? true,
+    saved_in_demo: record.saved_in_demo ?? defaults.saved_in_demo ?? true,
+  }
+}
+
+export function getRecordedFeedback(eventId = null) {
+  if (!replayContext()) return []
+  const records = readFeedbackRecords()
+  return structuredClone(eventId ? records.filter((record) => record.event_id === eventId) : records)
+}
+
+export function getAllRecordedFeedback() {
+  return getRecordedFeedback()
+}
+
+export function clearRecordedFeedback() {
+  try { localStorage.removeItem(FEEDBACK_STORAGE_KEY) } catch { /* Storage may be unavailable. */ }
+  feedbackCache.clear()
+  submittedFeedbackSession.clear()
+}
+
+function saveReplayFeedback(record) {
+  const records = readFeedbackRecords().filter((item) => item.feedback_id !== record.feedback_id)
+  records.push(record)
+  writeFeedbackRecords(records)
+  return record
+}
 
 export const runtime = reactive({
   mode: DATA_MODES[initialMode] ? initialMode : 'auto',
-  activeSource: initialMode === 'mock' ? 'mock' : 'api',
+  activeSource: initialMode === 'replay' ? 'replay_dataset' : 'api',
   degraded: false,
-  message: initialMode === 'mock' ? '当前使用固定 JSON 演示数据' : '',
+  message: initialMode === 'replay' ? '当前使用离线授权回放数据集' : '',
   apiBaseUrl: API_BASE_URL,
   lastError: null,
 })
@@ -106,13 +195,13 @@ if (typeof window !== 'undefined') {
 }
 
 export function setDataMode(mode) {
-  if (PAGES_BUILD && mode !== 'mock') return
+  if (PAGES_BUILD && mode !== 'replay') return
   if (!DATA_MODES[mode]) return
   runtime.mode = mode
-  runtime.activeSource = mode === 'mock' ? 'mock' : 'api'
+  runtime.activeSource = mode === 'replay' ? 'replay_dataset' : 'api'
   runtime.degraded = false
   runtime.lastError = null
-  runtime.message = mode === 'mock' ? '当前使用固定 JSON 演示数据' : ''
+  runtime.message = mode === 'replay' ? '当前使用离线授权回放数据集' : ''
   sessionStorage.setItem('yingmu-data-mode', mode)
   recordAudit('data-mode.change', 'SUCCESS', { detail: `mode=${mode}` })
 }
@@ -127,12 +216,12 @@ function shouldFallback(error) {
   return !error?.response || status === 404 || status === 501 || status >= 500
 }
 
-async function resolveData(operation, apiRequest, mockFactory, validate = (value) => value) {
-  if (runtime.mode === 'mock') {
-    runtime.activeSource = 'mock'
+async function resolveData(operation, apiRequest, replayFactory, validate = (value) => value) {
+  if (runtime.mode === 'replay') {
+    runtime.activeSource = 'replay_dataset'
     runtime.degraded = false
-    const result = validate(structuredClone(mockFactory()))
-    recordAudit(operation, 'MOCK', { detail: 'fixed-json', event_id: result?.event_id, ruleset_version: result?.ruleset_version })
+    const result = validate(structuredClone(replayFactory()))
+    recordAudit(operation, 'REPLAY', { detail: 'authorized-replay-dataset', event_id: result?.event_id, ruleset_version: result?.ruleset_version })
     return result
   }
 
@@ -147,11 +236,11 @@ async function resolveData(operation, apiRequest, mockFactory, validate = (value
   } catch (error) {
     runtime.lastError = error?.message || 'FastAPI 请求失败'
     if (runtime.mode === 'auto' && shouldFallback(error)) {
-      runtime.activeSource = 'mock'
+      runtime.activeSource = 'replay_dataset'
       runtime.degraded = true
-      runtime.message = 'FastAPI 暂不可用，已自动切换固定 JSON 演示数据'
-      const result = validate(structuredClone(mockFactory()))
-      recordAudit(operation, 'DEGRADED', { detail: error?.message || 'FastAPI unavailable', event_id: result?.event_id, ruleset_version: result?.ruleset_version })
+      runtime.message = 'FastAPI 暂不可用，已切换离线授权回放数据集'
+      const result = validate(structuredClone(replayFactory()))
+      recordAudit(operation, 'DEGRADED_REPLAY', { detail: error?.message || 'FastAPI unavailable', event_id: result?.event_id, ruleset_version: result?.ruleset_version })
       return result
     }
     recordAudit(operation, 'FAILED', { detail: error?.message || 'contract/api error' })
@@ -166,15 +255,15 @@ function listFrom(data) {
 
 function observationsFor(event) {
   const ids = new Set((event.evidences || []).flatMap((evidence) => evidence.observation_ids || []))
-  return mocks.observations.filter((observation) => ids.has(observation.observation_id))
+  return replayData.observations.filter((observation) => ids.has(observation.observation_id))
 }
 
-function hydrateMockEvent(event) {
+function hydrateReplayEvent(event) {
   return { ...event, observations: observationsFor(event) }
 }
 
-function mockForewarningFor(eventId) {
-  return mocks.forewarning
+function replayForewarningFor(eventId) {
+  return replayData.forewarning
     .filter((snapshot) => snapshot.event_id === eventId)
     .map((snapshot, index) => validateForewarningSnapshot(snapshot, `forewarning[${index}]`))
 }
@@ -190,7 +279,17 @@ export async function getDashboard(residentId = RESIDENT_ID) {
     const baseline = payload(baselineResponse)
     return normalizeDashboard({ events, device: validateDeviceStatus(payload(deviceResponse)), baseline, residentId })
   }, () => normalizeDashboard({
-    events: mocks.events, device: validateDeviceStatus(mocks.device), baseline: mocks.baseline, residentId,
+    events: replayData.events,
+    device: validateDeviceStatus(replayData.device),
+    baseline: {
+      ...replayData.baseline,
+      today: {
+        ...replayData.baseline.today,
+        care_status: getRecordedFeedback().filter((record) => record.feedback_kind === 'CARE').at(-1)?.value
+          || replayData.baseline.today.care_status,
+      },
+    },
+    residentId,
   }), validateDashboard)
 }
 
@@ -198,7 +297,7 @@ export async function getEvents(residentId = RESIDENT_ID) {
   return resolveData('events.list', async () => {
     const response = await apiClient.get('/events', { params: { resident_id: residentId } })
     return validateEventList(listFrom(payload(response))).map(normalizeEvent)
-  }, () => mocks.events.map(normalizeEvent), validateEventList)
+  }, () => replayData.events.map(normalizeEvent), validateEventList)
 }
 
 export async function getRiskReviews(residentId = RESIDENT_ID, limit = 20) {
@@ -217,10 +316,11 @@ export async function getEvent(eventId) {
     const event = payload(eventResponse)
     validateEventViewModel(event)
     const snapshots = listFrom(payload(snapshotResponse)).map((snapshot, index) => validateForewarningSnapshot(snapshot, `forewarning[${index}]`))
-    return normalizeEvent({ ...event, forewarning_snapshots: snapshots })
+    return normalizeEvent({ ...event, forewarning_snapshots: snapshots, feedback_records: getRecordedFeedback(event.event_id) })
   }, () => normalizeEvent({
-    ...hydrateMockEvent(mocks.events.find((event) => event.event_id === eventId) || mocks.events[0]),
-    forewarning_snapshots: mockForewarningFor(eventId),
+    ...hydrateReplayEvent(replayData.events.find((event) => event.event_id === eventId) || replayData.events[0]),
+    feedback_records: getRecordedFeedback(eventId),
+    forewarning_snapshots: replayForewarningFor(eventId),
   }), validateEventViewModel)
 }
 
@@ -228,11 +328,34 @@ export async function getEventForewarning(eventId) {
   return resolveData('event.forewarning', async () => {
     const snapshots = listFrom(payload(await apiClient.get(`/events/${encodeURIComponent(eventId)}/forewarning`)))
     return snapshots.map((snapshot, index) => validateForewarningSnapshot(snapshot, `forewarning[${index}]`))
-  }, () => mockForewarningFor(eventId))
+  }, () => replayForewarningFor(eventId))
+}
+
+function replayTimePlusSeconds(value, seconds) {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  const beijingMillis = date.getTime() + (seconds * 1000) + (8 * 60 * 60 * 1000)
+  return `${new Date(beijingMillis).toISOString().slice(0, 19)}+08:00`
+}
+
+export function getReplayExplanation(eventId) {
+  const template = replayData.explanations[eventId]
+  if (!template) throw new Error('本地回放解释不可用')
+  const createdAtSource = replayData.events.find((event) => event.event_id === eventId)?.created_at || null
+  const createdAt = replayTimePlusSeconds(createdAtSource, 0)
+  return validateAgentExplanationJob({ event_id: eventId, status: 'FALLBACK', request_id: `replay-${eventId}`, event_version_hash: 'replay-explanation-v1', generated_by: 'replay-explanation-v1', fallback_used: true, attempt_count: 1, error_code: null, created_at: createdAt, completed_at: replayTimePlusSeconds(createdAtSource, 5), explanation: { schema_version: 'agent-explanation/1.0', request_id: `replay-${eventId}`, event_id: eventId, ...template, capability_notice: 'RECORDED_REPLAY / 授权回放', generated_by: 'replay-explanation-v1', fallback_used: true } })
 }
 
 export async function getEventExplanation(eventId) {
+  if (runtime.mode === 'replay') {
+    const result = getReplayExplanation(eventId)
+    recordAudit('event.explanation.read', 'REPLAY', { event_id: eventId, detail: 'authorized-replay-dataset' })
+    return result
+  }
   if (PAGES_BUILD) {
+    return getReplayExplanation(eventId)
+    /* legacy static template retained below for compatibility */
     const result = validateAgentExplanationJob({
       event_id: eventId,
       status: 'FALLBACK',
@@ -251,12 +374,12 @@ export async function getEventExplanation(eventId) {
         summary: '基于固定 Evidence 的脱敏解释',
         reasoning_points: ['当前页面仅回放预置证据，不连接后端或外部模型。'],
         recommended_action_text: '按演示事件中的分级干预流程继续查看。',
-        capability_notice: 'MOCK / RECORDED_REPLAY，仅用于赛事评审走查。',
+        capability_notice: 'RECORDED_REPLAY / 授权回放，仅用于赛事评审走查。',
         generated_by: 'static-demo',
         fallback_used: true,
       },
     })
-    recordAudit('event.explanation.read', 'MOCK', { event_id: eventId, detail: 'static-pages' })
+    recordAudit('event.explanation.read', 'REPLAY', { event_id: eventId, detail: 'authorized-replay-dataset' })
     return result
   }
   try {
@@ -269,6 +392,12 @@ export async function getEventExplanation(eventId) {
     })
     return result
   } catch (error) {
+    if (runtime.mode === 'auto' && shouldFallback(error) && replayData.explanations[eventId]) {
+      runtime.activeSource = 'replay_dataset'
+      runtime.degraded = true
+      recordAudit('event.explanation.read', 'DEGRADED_REPLAY', { event_id: eventId, detail: 'FastAPI unavailable' })
+      return getReplayExplanation(eventId)
+    }
     recordAudit('event.explanation.read', 'FAILED', {
       event_id: eventId,
       detail: 'explanation-read-failed',
@@ -279,7 +408,7 @@ export async function getEventExplanation(eventId) {
 
 export async function interveneEvent(eventId) {
   const encodedEventId = encodeURIComponent(eventId)
-  if (runtime.mode !== 'mock') {
+  if (runtime.mode !== 'replay') {
     try {
       const result = validateInterventionResult(payload(await apiClient.post(
         `/events/${encodedEventId}/intervene`, null,
@@ -295,9 +424,9 @@ export async function interveneEvent(eventId) {
         recordAudit('intervention.trigger', 'FAILED', { event_id: eventId, detail: error?.message })
         throw error
       }
-      runtime.activeSource = 'mock'
+      runtime.activeSource = 'replay_dataset'
       runtime.degraded = true
-      runtime.message = '后端干预接口暂不可用，本次仅展示 Mock 干预结果'
+      runtime.message = '后端干预接口暂不可用，本次仅展示离线授权回放结果'
       recordAudit('intervention.trigger', 'DEGRADED', { event_id: eventId, detail: error?.message })
     }
   }
@@ -305,30 +434,43 @@ export async function interveneEvent(eventId) {
   const timestamp = new Date().toISOString()
   const result = validateInterventionResult({
     schema_version: '1.0',
-    result_id: `result-${eventId}-mock-intervention`,
+    result_id: `result-${eventId}-replay-intervention`,
     event_id: eventId,
     started_at: timestamp,
     completed_at: timestamp,
     action_type: 'voice',
-    tool_name: 'mock_voice',
+    tool_name: 'offline_replay_intervention',
     delivery_status: 'SUCCESS',
     resident_response: null,
     family_feedback: null,
     risk_after: null,
     resolved: false,
-    resolution_reason: 'Declared Mock fallback',
+    resolution_reason: 'Declared offline replay fallback',
     operator: 'system',
-    source_mode: 'MOCK',
+    source_mode: 'RECORDED_REPLAY',
     simulated: true,
   })
-  recordAudit('intervention.trigger', 'MOCK', { event_id: eventId, detail: result.result_id })
+  recordAudit('intervention.trigger', 'REPLAY', { event_id: eventId, detail: result.result_id })
   return result
 }
 
 export async function getWeeklyReport(residentId = RESIDENT_ID) {
-  return resolveData('reports.weekly', async () => normalizeWeeklyReport(payload(await apiClient.get(
+  const report = await resolveData('reports.weekly', async () => normalizeWeeklyReport(payload(await apiClient.get(
     '/reports/weekly', { params: { resident_id: residentId } },
-  ))), () => normalizeWeeklyReport(mocks.weekly))
+  ))), () => normalizeWeeklyReport(replayData.weekly))
+  if (!replayContext()) return report
+  const records = getRecordedFeedback()
+  const careRecord = records.filter((record) => record.feedback_kind === 'CARE').at(-1)
+  const identityRecord = records.filter((record) => record.feedback_kind === 'IDENTITY_VERIFICATION').at(-1)
+  return {
+    ...report,
+    care: careRecord || submittedFeedbackSession.has(`${report.care?.event_id}:CARE`)
+      ? { ...report.care, status: submittedFeedbackSession.has(`${report.care?.event_id}:CARE`) ? 'SUBMITTED' : report.care.status, feedback_record: careRecord }
+      : report.care,
+    visitor_case: identityRecord && report.visitor_case
+      ? { ...report.visitor_case, verification_status: submittedFeedbackSession.has(`${report.visitor_case.event_id}:IDENTITY_VERIFICATION`) ? 'SUBMITTED' : report.visitor_case.verification_status, feedback_record: identityRecord }
+      : report.visitor_case,
+  }
 }
 
 export async function getAsset(assetId) {
@@ -337,24 +479,38 @@ export async function getAsset(assetId) {
   const cacheKey = `${runtime.mode}:${assetId}`
   if (assetRequestCache.has(cacheKey)) return assetRequestCache.get(cacheKey)
 
-  if (runtime.mode === 'mock') {
-    const result = validateAsset({
+  function readReplayAsset() {
+    const configuredAsset = replayData.assets.find((asset) => asset.asset_id === assetId)
+    const configuredUrl = assetId === 'asset-fall-authorized' && AUTHORIZED_CLIP_URL
+      ? AUTHORIZED_CLIP_URL
+      : configuredAsset?.fallback_url
+    const result = validateAsset(configuredAsset ? {
+      ...structuredClone(configuredAsset),
+      fallback_url: configuredUrl || null,
+      available: Boolean(configuredUrl),
+      verification_status: configuredUrl ? 'AUTHORIZED_LOCAL_CLIP' : configuredAsset.verification_status,
+      notice: assetId === 'asset-fall-authorized' && AUTHORIZED_CLIP_URL
+        ? '已配置授权的本地模拟实验回放片段。'
+        : configuredAsset.notice,
+    } : {
       asset_id: assetId,
-      title: '固定 JSON 演示素材',
-      source_mode: 'MOCK',
+      title: '授权回放数据集素材',
+      source_mode: 'RECORDED_REPLAY',
       simulated: true,
       stream_url: null,
       fallback_url: null,
       fallback_kind: 'unavailable',
       available: false,
-      verification_status: 'MOCK_ONLY',
+      verification_status: 'AUTHORIZED_LOCAL_CLIP',
       captured_at: new Date().toISOString(),
       notice: `固定演示数据仅保留素材标识（${assetId}）`,
     })
-    recordAudit('asset.read', 'MOCK', { detail: assetId })
+    recordAudit('asset.read', 'REPLAY', { detail: assetId })
     assetRequestCache.set(cacheKey, Promise.resolve(result))
     return result
   }
+
+  if (runtime.mode === 'replay') return readReplayAsset()
 
   const request = (async () => {
     try {
@@ -362,6 +518,14 @@ export async function getAsset(assetId) {
       recordAudit('asset.read', 'SUCCESS', { detail: assetId })
       return result
     } catch (error) {
+      if (runtime.mode === 'auto' && shouldFallback(error)) {
+        runtime.activeSource = 'replay_dataset'
+        runtime.degraded = true
+        runtime.message = '素材接口暂不可用，已切换对应的离线授权回放素材'
+        const result = readReplayAsset()
+        recordAudit('asset.read', 'DEGRADED_REPLAY', { detail: `${assetId}: ${error?.message || 'API unavailable'}` })
+        return result
+      }
       recordAudit('asset.read', 'FAILED', { detail: error?.message || assetId })
       const missing = error?.response?.status === 404 || error?.api?.code === 'ASSET_NOT_FOUND'
       if (!missing) assetRequestCache.delete(cacheKey)
@@ -375,13 +539,13 @@ export async function getAsset(assetId) {
 export async function getBaseline(residentId = RESIDENT_ID) {
   return resolveData('residents.baseline', async () => normalizeBaseline(payload(await apiClient.get(
     `/residents/${encodeURIComponent(residentId)}/baseline`,
-  ))), () => normalizeBaseline(mocks.baseline))
+  ))), () => normalizeBaseline(replayData.baseline))
 }
 
 export async function getDeviceStatus() {
   return resolveData('device.status', async () => normalizeDevice(
     validateDeviceStatus(payload(await apiClient.get('/device/status'))),
-  ), () => normalizeDevice(validateDeviceStatus(mocks.device)))
+  ), () => normalizeDevice(validateDeviceStatus(replayData.device)))
 }
 
 export async function getAlarmProcessingTasks({ residentId = null, limit = 20 } = {}) {
@@ -394,7 +558,7 @@ export async function getAlarmProcessingTasks({ residentId = null, limit = 20 } 
 }
 
 function stableFeedbackId(eventId, feedback) {
-  const source = `${eventId}|${feedback.feedback_type || ''}|${feedback.value || ''}`
+  const source = `${eventId}|${feedback.feedback_kind || 'CARE'}|${feedback.feedback_type || ''}|${feedback.value || ''}`
   let hash = 2166136261
   for (let index = 0; index < source.length; index += 1) {
     hash ^= source.charCodeAt(index)
@@ -444,7 +608,7 @@ export async function submitInterventionResult(event, residentResponse = 'stable
     return structuredClone(interventionResultCache.get(resultId))
   }
 
-  if (runtime.mode !== 'mock') {
+  if (runtime.mode !== 'replay') {
     try {
       const result = validateInterventionResult(payload(await apiClient.post(
         `/events/${encodeURIComponent(event.event_id)}/results`, requestBody,
@@ -460,7 +624,7 @@ export async function submitInterventionResult(event, residentResponse = 'stable
         recordAudit('intervention-result.write', 'FAILED', { event_id: event.event_id, detail: error?.message })
         throw error
       }
-      runtime.activeSource = 'mock'
+      runtime.activeSource = 'replay_dataset'
       runtime.degraded = true
       runtime.message = '干预结果接口暂不可用，确认结果仅保存在本次演示中'
       recordAudit('intervention-result.write', 'DEGRADED', { event_id: event.event_id, detail: error?.message })
@@ -469,21 +633,33 @@ export async function submitInterventionResult(event, residentResponse = 'stable
 
   const result = { ...requestBody, saved_in_demo: true }
   interventionResultCache.set(resultId, result)
-  recordAudit('intervention-result.write', 'MOCK', { event_id: event.event_id, detail: resultId })
+  recordAudit('intervention-result.write', 'REPLAY', { event_id: event.event_id, detail: resultId })
   return structuredClone(result)
 }
 
 export async function submitFamilyFeedback(eventId, feedback) {
-  const feedbackBody = { ...feedback, feedback_type: 'confirm' }
+  const feedbackKind = feedback.feedback_kind || 'CARE'
+  if (!FEEDBACK_KINDS.has(feedbackKind)) throw new Error(`不支持的反馈类型：${feedbackKind}`)
+  const feedbackBody = { ...feedback, feedback_kind: feedbackKind, feedback_type: 'confirm' }
   const feedbackId = feedbackBody.feedback_id || stableFeedbackId(eventId, feedbackBody)
   const requestBody = { ...feedbackBody, feedback_id: feedbackId }
 
   if (feedbackCache.has(feedbackId)) {
+    submittedFeedbackSession.add(`${eventId}:${feedbackKind}`)
     recordAudit('feedback.write', 'IDEMPOTENT_REPLAY', { event_id: eventId, detail: feedbackId })
     return structuredClone(feedbackCache.get(feedbackId))
   }
+  if (replayContext()) {
+    const stored = getRecordedFeedback(eventId).find((record) => record.feedback_id === feedbackId)
+    if (stored) {
+      submittedFeedbackSession.add(`${eventId}:${feedbackKind}`)
+      feedbackCache.set(feedbackId, stored)
+      recordAudit('feedback.write', 'IDEMPOTENT_REPLAY', { event_id: eventId, detail: feedbackId })
+      return structuredClone(stored)
+    }
+  }
 
-  if (runtime.mode !== 'mock') {
+  if (runtime.mode !== 'replay') {
     try {
       const response = await apiClient.post(`/events/${eventId}/feedback`, requestBody, {
         headers: { 'Idempotency-Key': feedbackId, 'Content-Type': 'application/json; charset=utf-8' },
@@ -492,23 +668,29 @@ export async function submitFamilyFeedback(eventId, feedback) {
       runtime.degraded = false
       const result = payload(response)
       feedbackCache.set(feedbackId, result)
+      submittedFeedbackSession.add(`${eventId}:${feedbackKind}`)
       recordAudit('feedback.write', 'SUCCESS', { event_id: eventId, detail: feedbackId })
-      return result
+      return normalizeFeedbackRecord({ ...result, feedback_id: result?.feedback_id || feedbackId, event_id: eventId }, {
+        feedback_kind: feedbackKind, source_mode: 'LIVE_DEVICE', simulated: false, saved_in_demo: false,
+      })
     } catch (error) {
       if (!(runtime.mode === 'auto' && shouldFallback(error))) {
         recordAudit('feedback.write', 'FAILED', { event_id: eventId, detail: error?.message })
         throw error
       }
-      runtime.activeSource = 'mock'
+      runtime.activeSource = 'replay_dataset'
       runtime.degraded = true
       runtime.message = '反馈接口暂不可用，结果仅保存在本次演示中'
       recordAudit('feedback.write', 'DEGRADED', { event_id: eventId, detail: error?.message })
     }
   }
 
-  const result = { event_id: eventId, ...requestBody, saved_in_demo: true, updated_at: new Date().toISOString() }
+  const result = saveReplayFeedback(normalizeFeedbackRecord({
+    event_id: eventId, ...requestBody, recorded_at: new Date().toISOString(), saved_in_demo: true,
+  }))
   feedbackCache.set(feedbackId, result)
-  recordAudit('feedback.write', 'MOCK', { event_id: eventId, detail: feedbackId })
+  submittedFeedbackSession.add(`${eventId}:${feedbackKind}`)
+  recordAudit('feedback.write', 'REPLAY', { event_id: eventId, detail: feedbackId })
   return structuredClone(result)
 }
 

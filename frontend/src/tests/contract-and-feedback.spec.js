@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import events from '../mocks/events.json'
-import dashboard from '../mocks/dashboard.json'
-import observations from '../mocks/observations.json'
+import events from '../replay-data/events.json'
+import dashboard from '../replay-data/dashboard.json'
+import observations from '../replay-data/observations.json'
 import fourObjects from '../../contracts/v1/examples/four-objects.json'
 import {
   DataContractError,
@@ -42,9 +42,9 @@ describe('0—1 风险分契约', () => {
     expect(Object.keys(fourObjects.risk_event.evidence_summary[0]).sort()).toEqual([
       'evidence_id', 'evidence_type', 'explanation',
     ])
-    expect(fourObjects.intervention_result.source_mode).toBe('MOCK')
+    expect(fourObjects.intervention_result.source_mode).toBe('RECORDED_REPLAY')
     expect(fourObjects.intervention_result.simulated).toBe(true)
-    expect(fourObjects.risk_event.source_mode).toBe('MOCK')
+    expect(fourObjects.risk_event.source_mode).toBe('RECORDED_REPLAY')
     expect(fourObjects.risk_event.simulated).toBe(true)
   })
 
@@ -92,7 +92,7 @@ describe('0—1 风险分契约', () => {
   it('拒绝 ViewModel 中与 RiskEvent 不一致的干预模拟标记', () => {
     const viewModel = {
       ...structuredClone(fourObjects.risk_event),
-      source_mode: 'MOCK',
+      source_mode: 'RECORDED_REPLAY',
       simulated: true,
       evidences: [structuredClone(fourObjects.evidence)],
       observations: [structuredClone(fourObjects.observation)],
@@ -117,7 +117,7 @@ describe('0—1 风险分契约', () => {
 
 describe('家属反馈幂等', () => {
   it('相同事件和反馈生成稳定ID并复用第一次结果', async () => {
-    setDataMode('mock')
+    setDataMode('replay')
     const feedback = { feedback_type: 'confirm', value: '已联系，希望继续关注', operator: 'family' }
     const id = stableFeedbackId('event-mental-week', feedback)
     expect(id).toBe(stableFeedbackId('event-mental-week', feedback))
@@ -128,7 +128,7 @@ describe('家属反馈幂等', () => {
   })
 
   it('诈骗核验反馈同样使用稳定ID并复用第一次结果', async () => {
-    setDataMode('mock')
+    setDataMode('replay')
     const feedback = { feedback_type: 'confirm', value: '身份不明确，继续联系', operator: 'family' }
     const id = stableFeedbackId('event-fraud-visitor', feedback)
     const first = await submitFamilyFeedback('event-fraud-visitor', feedback)
@@ -138,7 +138,7 @@ describe('家属反馈幂等', () => {
   })
 
   it('坐稳确认按稳定结果 ID 回写，且不将事件直接标记为已解决', async () => {
-    setDataMode('mock')
+    setDataMode('replay')
     const event = structuredClone(events.find((item) => item.event_id === 'event-fall-intervening'))
     const id = stableInterventionResultId(event.event_id, 'stable')
     expect(id).toBe(stableInterventionResultId(event.event_id, 'stable'))
@@ -154,8 +154,8 @@ describe('家属反馈幂等', () => {
 
 describe('前端对接文档设备状态契约', () => {
   const validDevice = {
-    online: true, adapter_mode: 'MOCK', source_mode: 'MOCK',
-    device_alias: 'camera-mock-001', simulated: true, collection_active: true,
+    online: true, adapter_mode: 'RECORDED_REPLAY', source_mode: 'RECORDED_REPLAY',
+    device_alias: 'authorized-replay-c6c', simulated: true, collection_active: true,
   }
 
   it('接受完整合法的 DeviceStatus', () => {
@@ -171,7 +171,7 @@ describe('前端对接文档设备状态契约', () => {
   )
 
   it.each([
-    ['adapter_mode', 'UNKNOWN'], ['source_mode', 'RECORDED_REPLAY'],
+    ['adapter_mode', 'UNKNOWN'], ['source_mode', 'UNKNOWN'],
     ['online', 'true'], ['simulated', 1], ['collection_active', null],
   ])('拒绝非法 DeviceStatus %s', (field, value) => {
     const invalid = { ...validDevice, [field]: value }

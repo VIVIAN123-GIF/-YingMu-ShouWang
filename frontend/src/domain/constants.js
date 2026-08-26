@@ -25,7 +25,6 @@ export const SOURCE_MODES = Object.freeze({
   LIVE_DEVICE: { label: '实时设备', tone: 'success' },
   RECORDED_REPLAY: { label: '授权回放', tone: 'warning' },
   PUBLIC_DATASET: { label: '公开数据集', tone: 'info' },
-  MOCK: { label: '演示数据', tone: 'danger' },
 })
 
 export const DELIVERY_STATUSES = Object.freeze({
@@ -37,7 +36,7 @@ export const DELIVERY_STATUSES = Object.freeze({
 export const DATA_MODES = Object.freeze({
   auto: '自动切换',
   api: '仅 FastAPI',
-  mock: '固定 JSON',
+  replay: '离线授权回放',
 })
 
 export const ALARM_TASK_STATUSES = Object.freeze({
@@ -52,6 +51,6 @@ export const ALARM_TASK_STATUSES = Object.freeze({
  * @typedef {'FALL'|'MENTAL'|'FRAUD'|'SYSTEM'} RiskDomain
  * @typedef {'GREEN'|'YELLOW'|'ORANGE'|'RED'} RiskLevel
  * @typedef {'OPEN'|'INTERVENING'|'OBSERVING'|'RESOLVED'|'ESCALATED'|'FALSE_ALARM'} EventStatus
- * @typedef {'LIVE_DEVICE'|'RECORDED_REPLAY'|'PUBLIC_DATASET'|'MOCK'} SourceMode
+ * @typedef {'LIVE_DEVICE'|'RECORDED_REPLAY'|'PUBLIC_DATASET'} SourceMode
  * @typedef {'SUCCESS'|'FAILED'|'RETRYING'} DeliveryStatus
  */

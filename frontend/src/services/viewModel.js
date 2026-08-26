@@ -30,6 +30,12 @@ export function deriveEventTitle(event) {
   return explanation || DOMAIN_TITLES[event?.primary_domain] || '风险事件'
 }
 
+export function resolveEventAssetId(event) {
+  return asArray(event?.observations).find((observation) => observation.asset_id)?.asset_id
+    || event?.asset_id
+    || null
+}
+
 function transitionDetail(trace) {
   const previous = trace.previous_status || trace.previous_state || '未知状态'
   const next = trace.next_status || trace.next_state || previous
@@ -58,6 +64,16 @@ function timelineFrom(event, traces) {
     .sort((left, right) => new Date(left.time) - new Date(right.time))
 }
 
+function feedbackTimelineItems(records) {
+  return asArray(records).map((record) => ({
+    time: record.recorded_at,
+    title: record.feedback_kind === 'IDENTITY_VERIFICATION' ? '身份信息核验已记录' : '家属关怀反馈已记录',
+    detail: `${record.value} · 操作人：${record.operator || 'family'}${record.saved_in_demo ? ' · 本地演示记录' : ''}`,
+    status: 'RECORDED',
+    kind: 'FAMILY_FEEDBACK',
+  }))
+}
+
 function observationSeconds(traces) {
   const observing = traces.find((trace) => trace.next_status === 'OBSERVING')
   const resolved = [...traces].reverse().find((trace) => trace.next_status === 'RESOLVED')
@@ -68,6 +84,8 @@ function observationSeconds(traces) {
 
 export function normalizeEvent(event) {
   const traces = asArray(event?.rule_traces).filter((trace) => traceBelongsToEvent(trace, event))
+  const baseTimeline = asArray(event?.timeline).length ? event.timeline : timelineFrom(event, traces)
+  const feedbackItems = feedbackTimelineItems(event?.feedback_records)
   return {
     ...event,
     title: deriveEventTitle(event),
@@ -75,7 +93,8 @@ export function normalizeEvent(event) {
     observations: asArray(event?.observations),
     interventions: asArray(event?.interventions),
     rule_traces: traces,
-    timeline: asArray(event?.timeline).length ? event.timeline : timelineFrom(event, traces),
+    timeline: [...baseTimeline, ...feedbackItems].sort((left, right) => new Date(left.time) - new Date(right.time)),
+    feedback_records: asArray(event?.feedback_records),
     risk_history: asArray(event?.risk_history),
     observation_seconds: event?.observation_seconds ?? observationSeconds(traces),
   }
@@ -89,7 +108,7 @@ export function normalizeDevice(device = {}) {
     adapter: device.adapter || device.adapter_mode || '未提供',
     last_seen: device.last_seen || null,
     data_quality: typeof device.data_quality === 'number' ? device.data_quality : null,
-    source_mode: device.source_mode || 'MOCK',
+    source_mode: device.source_mode || 'RECORDED_REPLAY',
     simulated: device.simulated ?? true,
   }
 }
@@ -143,15 +162,20 @@ export function normalizeBaseline(baseline = {}) {
     unit: METRIC_META[key]?.unit || '',
     median: value?.median ?? null,
     mad: value?.mad ?? null,
+    display_value: value?.display_value || null,
     sample_count: value?.sample_count ?? 0,
     distinct_days: value?.distinct_days ?? 0,
     status: value?.status || 'INSUFFICIENT',
+    coverage_note: value?.coverage_note || '',
   }))
   const observedDays = metrics.reduce((maximum, metric) => Math.max(maximum, metric.distinct_days), 0)
   return {
     ...baseline,
     metrics,
-    trend: asArray(baseline.trend),
+    trend: asArray(baseline.trend).map((item) => ({
+      ...item,
+      activity_index: item.activity_index ?? item.activity ?? 0,
+    })),
     activity_heatmap: baseline.activity_heatmap || null,
     overall_status: baseline.overall_status || (metrics.length
       ? metrics.reduce((status, metric) => {
@@ -163,6 +187,8 @@ export function normalizeBaseline(baseline = {}) {
       observed_days: observedDays, provisional_target_days: 3, stable_target_days: 7,
     },
     provenance: baseline.provenance || null,
+    coverage_type: baseline.coverage_type || null,
+    coverage: baseline.coverage || null,
   }
 }
 

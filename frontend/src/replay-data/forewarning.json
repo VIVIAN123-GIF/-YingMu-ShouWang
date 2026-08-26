@@ -1,7 +1,7 @@
 [
   {
     "schema_version": "forewarning-snapshot/1.0",
-    "snapshot_id": "forewarning-mock-pre-001",
+    "snapshot_id": "forewarning-replay-pre-001",
     "resident_id": "resident-001",
     "evaluated_at": "2026-07-24T03:07:08+08:00",
     "phase": "PRE_INTERVENTION",
@@ -24,17 +24,17 @@
     "degradation_reasons": [],
     "evidence_ids": ["evi-fall-rapid-rise", "evi-fall-trunk-sway", "evi-fall-low-light"],
     "observation_ids": ["obs-fall-rise", "obs-fall-sway", "obs-fall-light"],
-    "scene_config_id": "scene-mock-living-room",
+    "scene_config_id": "scene-replay-living-room",
     "event_id": "event-fall-100",
     "intervention_result_id": null,
     "recommended_action": "执行低打扰提醒并进入恢复观察。",
     "ruleset_version": "ruleset-v1.3-min",
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "simulated": true
   },
   {
     "schema_version": "forewarning-snapshot/1.0",
-    "snapshot_id": "forewarning-mock-post-001",
+    "snapshot_id": "forewarning-replay-post-001",
     "resident_id": "resident-001",
     "evaluated_at": "2026-07-24T03:08:30+08:00",
     "phase": "POST_INTERVENTION",
@@ -56,12 +56,13 @@
     "degradation_reasons": [],
     "evidence_ids": ["evi-fall-posture-recovered"],
     "observation_ids": ["obs-fall-recovered"],
-    "scene_config_id": "scene-mock-living-room",
+    "scene_config_id": "scene-replay-living-room",
     "event_id": "event-fall-100",
     "intervention_result_id": "result-fall-voice-001",
     "recommended_action": "继续完成观察期，确认无新风险证据。",
     "ruleset_version": "ruleset-v1.3-min",
-    "source_mode": "MOCK",
+    "source_mode": "RECORDED_REPLAY",
     "simulated": true
   }
 ]
+

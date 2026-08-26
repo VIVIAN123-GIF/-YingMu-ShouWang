@@ -7,8 +7,10 @@ import MediaPanel from '../components/common/MediaPanel.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
+import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
 import { getAsset, getEvent, getEventExplanation, interveneEvent, runtime, submitInterventionResult } from '../services/repository'
+import { resolveEventAssetId } from '../services/viewModel'
 import { domainLabel, evidenceTypeLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const route = useRoute()
@@ -54,7 +56,7 @@ const syncLabel = computed(() => ({
   polling: '自动同步中',
   retrying: '同步重试中',
   complete: '同步已完成',
-  idle: runtime.mode === 'mock' ? '固定数据模式' : '等待同步',
+  idle: runtime.mode === 'replay' ? '离线授权回放模式' : '等待同步',
 }[syncState.value]))
 
 const syncTagType = computed(() => ({
@@ -165,14 +167,8 @@ function clearExplanationPollTimer() {
   }
 }
 
-function eventAssetId(currentEvent) {
-  return currentEvent?.observations?.find((observation) => observation.asset_id)?.asset_id
-    || currentEvent?.asset_id
-    || null
-}
-
 async function syncAsset(currentEvent, activeSession) {
-  const nextAssetId = eventAssetId(currentEvent)
+  const nextAssetId = resolveEventAssetId(currentEvent)
   if (!nextAssetId) {
     asset.value = null
     assetId.value = null
@@ -203,7 +199,7 @@ async function syncAsset(currentEvent, activeSession) {
 }
 
 function pollingEnabled() {
-  return runtime.mode !== 'mock'
+  return runtime.mode !== 'replay'
 }
 
 function isTerminal(currentEvent) {
@@ -378,7 +374,7 @@ onBeforeUnmount(stopEventSession)
           </div>
           <h2>{{ event.title }}</h2>
           <p>{{ event.recommended_action }}</p>
-          <div class="meta-line">
+          <div class="meta-line review-only">
             <span>事件 {{ event.event_id }}</span><span>风险等级 {{ event.risk_level }}</span><span>事件状态 {{ event.status }}</span><span>规则版本 {{ event.ruleset_version }}</span><span>{{ formatDateTime(event.created_at) }}</span>
           </div>
         </div>
@@ -467,14 +463,14 @@ onBeforeUnmount(stopEventSession)
               <article v-for="evidence in displayEvidences" :key="evidence.evidence_id" class="evidence-card">
                 <div class="evidence-top"><code>{{ evidenceTypeLabel(evidence.evidence_type) }}</code><span>{{ evidence.time_scale || '摘要' }}</span></div>
                 <h3>{{ evidence.explanation }}</h3>
-                <div class="evidence-metrics">
+                <div class="evidence-metrics review-only display-grid">
                   <span><small>当前值</small><b>{{ evidence.current_value ?? '—' }}</b></span>
                   <span><small>个人基线</small><b>{{ evidence.baseline_value ?? '—' }}</b></span>
                   <span><small>异常程度</small><b>{{ formatPercent(evidence.severity) }}</b></span>
                   <span><small>置信度</small><b>{{ formatPercent(evidence.confidence) }}</b></span>
                   <span><small>数据质量</small><b>{{ formatPercent(evidence.data_quality) }}</b></span>
                 </div>
-                <div class="evidence-trace-summary">
+                <div class="evidence-trace-summary review-only">
                   <span>{{ (evidence.observation_ids || []).length }} 条 Observation</span>
                   <span>{{ evidence.adapter_version || '暂无适配器详情' }}</span>
                 </div>
@@ -485,7 +481,8 @@ onBeforeUnmount(stopEventSession)
             <el-empty v-else description="该绿色事件没有异常 Evidence" />
           </article>
 
-          <article v-if="displayRuleTraces.length" class="content-card" data-testid="rule-trace-panel">
+          <TechnicalDisclosure v-if="displayRuleTraces.length" title="规则判断与质量门槛" summary="状态迁移、评分分量、个人基线和查询窗口">
+          <article class="content-card" data-testid="rule-trace-panel">
             <div class="card-heading"><div><span class="section-kicker">RuleTrace</span><h2>后端实际规则判断</h2></div><span>{{ displayRuleTraces.length }} 次评估</span></div>
             <div class="tool-results">
               <article v-for="trace in displayRuleTraces" :key="trace.trace_id">
@@ -504,12 +501,13 @@ onBeforeUnmount(stopEventSession)
               </article>
             </div>
           </article>
+          </TechnicalDisclosure>
 
           <article class="content-card">
             <div class="card-heading"><div><span class="section-kicker">系统动作</span><h2>干预与观察时间轴</h2></div></div>
             <el-timeline v-if="event.timeline?.length" class="action-timeline" data-testid="event-action-timeline">
               <el-timeline-item v-for="item in event.timeline" :key="`${item.time}-${item.title}`" :timestamp="item.time" placement="top">
-                <div class="timeline-card"><strong>{{ item.title }}</strong><p>{{ item.detail }}</p><el-tag effect="plain">{{ item.status }}</el-tag></div>
+                <div class="timeline-card"><strong>{{ item.title }}</strong><p>{{ item.detail }}</p><el-tag effect="plain" :type="item.kind === 'FAMILY_FEEDBACK' ? 'warning' : undefined">{{ item.kind === 'FAMILY_FEEDBACK' ? '家属记录' : item.status }}</el-tag></div>
               </el-timeline-item>
             </el-timeline>
             <el-empty v-else description="当前事件暂无系统动作时间轴" />
