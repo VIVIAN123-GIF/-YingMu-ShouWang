@@ -496,8 +496,8 @@ def test_buffered_asset_is_private_live_and_idempotent(tmp_path, monkeypatch):
     database_path = tmp_path / "buffer-asset.db"
     engine = create_async_engine(f"sqlite+aiosqlite:///{database_path}")
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    alarm = datetime(2026, 8, 25, 21, 0)
-    normalized = alarm.replace(tzinfo=timezone(timedelta(hours=8))).astimezone(UTC)
+    normalized = datetime.now(UTC) - timedelta(seconds=30)
+    alarm = normalized.astimezone(timezone(timedelta(hours=8))).replace(tzinfo=None)
     start = normalized - timedelta(seconds=12)
     segment_root = buffer_root / "sessions" / "session-test"
     segments = [
