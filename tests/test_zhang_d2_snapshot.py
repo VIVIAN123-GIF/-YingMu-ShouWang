@@ -11,6 +11,68 @@ from contracts.v1.platform import PlatformSnapshotResult
 from scripts import validate_ezviz_live as validator
 
 
+def test_mock_mode_ignores_configured_live_device(monkeypatch):
+    async def must_not_call_provider(device_serial: str):
+        raise AssertionError("mock mode must not call the live provider")
+
+    monkeypatch.setattr(adapter_module, "ENV_MODE", "mock")
+    monkeypatch.setattr(adapter_module, "EZVIZ_DEVICE_SERIAL", "SERIAL-MUST-BE-IGNORED")
+    monkeypatch.setattr(adapter_module.EzvizAPI, "get_device_info", must_not_call_provider)
+
+    status = asyncio.run(DeviceAdapter().status())
+
+    assert status["adapter_mode"] == "MOCK"
+    assert status["source_mode"] == "MOCK"
+    assert status["simulated"] is True
+
+
+def test_live_status_timeout_returns_degraded_contract(monkeypatch):
+    async def slow_status(device_serial: str):
+        await asyncio.sleep(0.05)
+        return {"data": {"status": 1}}
+
+    monkeypatch.setattr(adapter_module, "ENV_MODE", "live")
+    monkeypatch.setattr(adapter_module, "EZVIZ_DEVICE_SERIAL", "SERIAL-STATUS-001")
+    monkeypatch.setattr(adapter_module, "EZVIZ_STATUS_TIMEOUT_SECONDS", 0.01)
+    monkeypatch.setattr(adapter_module.EzvizAPI, "get_device_info", slow_status)
+
+    status = asyncio.run(DeviceAdapter().status())
+
+    assert status == {
+        "online": False,
+        "adapter_mode": "EZVIZ_CLOUD",
+        "source_mode": "LIVE_DEVICE",
+        "device_alias": "camera-live-001",
+        "simulated": False,
+        "collection_active": True,
+        "status_stale": True,
+    }
+
+
+def test_live_status_failure_reuses_last_known_state(monkeypatch):
+    calls = 0
+
+    async def changing_status(device_serial: str):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return {"data": {"status": 1}}
+        raise ConnectionError("provider unavailable")
+
+    monkeypatch.setattr(adapter_module, "ENV_MODE", "live")
+    monkeypatch.setattr(adapter_module, "EZVIZ_DEVICE_SERIAL", "SERIAL-STATUS-001")
+    monkeypatch.setattr(adapter_module.EzvizAPI, "get_device_info", changing_status)
+    adapter = DeviceAdapter()
+
+    current = asyncio.run(adapter.status())
+    stale = asyncio.run(adapter.status())
+
+    assert current["online"] is True
+    assert current["status_stale"] is False
+    assert stale["online"] is True
+    assert stale["status_stale"] is True
+
+
 def test_live_capture_is_normalized_and_public_view_is_redacted(monkeypatch):
     temporary_url = "https://snapshot.example/private/capture.jpg"
 

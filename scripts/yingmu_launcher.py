@@ -49,6 +49,7 @@ def apply_demo_environment(runtime_dir: Path) -> dict[str, str]:
         "YINGMU_DB_PATH": str((runtime_dir / "demo.db").resolve()),
         "YINGMU_CONTROL_TOKEN": "packaged-demo-control-token",
         "EZVIZ_WEBHOOK_ALLOW_UNSIGNED_TEST": "false",
+        "EZVIZ_DEVICE_SERIAL": "",
     }
     os.environ.update(values)
     return values
