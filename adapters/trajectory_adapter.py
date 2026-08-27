@@ -288,7 +288,7 @@ async def run(job: AlgorithmJob) -> AdapterBatch:
     ]
     evidences: list[Evidence] = []
     if quality < float(RULESET.thresholds["post_rise_tracking_ratio"]):
-        evidences.append(_evidence(job, "tracking_lost", [observations[0]], 0.0, "人体轨迹有效帧不足，交互风险不可判定。"))
+        evidences.append(_evidence(job, "quality_gate_failed", [observations[0]], 0.0, "人体轨迹有效帧不足，交互风险不可判定。"))
         batch = AdapterBatch(
             schema_version="adapter-batch/1.0", job_id=job.job_id, module=MODULE,
             adapter_version=ADAPTER_VERSION, status=AdapterStatus.LOW_QUALITY,

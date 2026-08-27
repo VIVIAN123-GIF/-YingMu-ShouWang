@@ -6,12 +6,14 @@ import hashlib
 import html.parser
 import json
 import pathlib
+import re
 import ssl
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -67,30 +69,90 @@ def fetch_json(url: str) -> dict:
 
 def remote_size(url: str) -> int | None:
     request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}, method="HEAD")
-    try:
-        with urllib.request.urlopen(request, context=default_ssl_context()) as response:
-            header = response.headers.get("Content-Length")
-            return int(header) if header else None
-    except Exception:
-        return None
+    for _ in range(5):
+        try:
+            with urllib.request.urlopen(
+                request,
+                context=default_ssl_context(),
+                timeout=60,
+            ) as response:
+                header = response.headers.get("Content-Length")
+                if header:
+                    return int(header)
+        except (OSError, urllib.error.URLError):
+            continue
+    return None
 
 
-def download_file(url: str, destination: pathlib.Path) -> None:
+def download_file(
+    url: str,
+    destination: pathlib.Path,
+    expected_size: int | None,
+    max_attempts: int,
+) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    existing_size = destination.stat().st_size if destination.exists() else 0
-    headers = {"User-Agent": "Mozilla/5.0"}
-    if existing_size > 0:
-        headers["Range"] = f"bytes={existing_size}-"
-    request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request, context=default_ssl_context()) as response:
-        status_code = getattr(response, "status", None)
-        mode = "ab" if existing_size > 0 and status_code == 206 else "wb"
-        with destination.open(mode) as handle:
-            while True:
-                chunk = response.read(1024 * 1024)
-                if not chunk:
-                    break
-                handle.write(chunk)
+    if expected_size is None:
+        raise RuntimeError(f"Remote size is required for resumable download: {url}")
+    if destination.exists() and destination.stat().st_size > expected_size:
+        destination.unlink()
+
+    offset = destination.stat().st_size if destination.exists() else 0
+    chunk_size = 4 * 1024 * 1024
+    while offset < expected_size:
+        end = min(offset + chunk_size, expected_size) - 1
+        expected_chunk_size = end - offset + 1
+        for attempt in range(1, max_attempts + 1):
+            request = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0",
+                    "Range": f"bytes={offset}-{end}",
+                },
+            )
+            try:
+                with urllib.request.urlopen(
+                    request,
+                    context=default_ssl_context(),
+                    timeout=90,
+                ) as response:
+                    status_code = getattr(response, "status", None)
+                    content_range = response.headers.get("Content-Range", "")
+                    match = re.fullmatch(r"bytes\s+(\d+)-(\d+)/(\d+)", content_range)
+                    if status_code != 206 or not match:
+                        raise RuntimeError(
+                            f"invalid ranged response status={status_code} range={content_range!r}"
+                        )
+                    actual_start, actual_end, actual_total = map(int, match.groups())
+                    if (actual_start, actual_end, actual_total) != (offset, end, expected_size):
+                        raise RuntimeError(
+                            "ranged response mismatch "
+                            f"{actual_start}-{actual_end}/{actual_total}; "
+                            f"expected {offset}-{end}/{expected_size}"
+                        )
+                    data = response.read(expected_chunk_size + 1)
+                    if len(data) != expected_chunk_size:
+                        raise RuntimeError(
+                            f"ranged response length {len(data)}; expected {expected_chunk_size}"
+                        )
+                with destination.open("ab") as handle:
+                    handle.write(data)
+                offset += len(data)
+                print(
+                    f"Downloaded {destination.name}: {offset}/{expected_size} bytes",
+                    flush=True,
+                )
+                break
+            except (OSError, urllib.error.URLError, RuntimeError) as exc:
+                if attempt == max_attempts:
+                    raise RuntimeError(
+                        f"Failed range {offset}-{end} for {destination} after "
+                        f"{max_attempts} attempts: {exc}"
+                    ) from exc
+                print(
+                    f"Retry {attempt}/{max_attempts}: {destination.name} "
+                    f"range {offset}-{end} after {type(exc).__name__}",
+                    flush=True,
+                )
 
 
 def sha256_file(path: pathlib.Path) -> str:
@@ -112,11 +174,13 @@ def infer_pre_vfall_modality(name: str) -> str:
     return "archive"
 
 
-def build_urfd_items(include_preview_mp4: bool) -> list[DownloadItem]:
+def build_urfd_items(include_preview_mp4: bool, camera_filter: str = "all") -> list[DownloadItem]:
     items: list[DownloadItem] = []
     for index in range(1, 31):
         seq = f"fall-{index:02d}"
         for camera in ("cam0", "cam1"):
+            if camera_filter != "all" and camera != camera_filter:
+                continue
             filename = f"{seq}-{camera}-rgb.zip"
             items.append(
                 DownloadItem(
@@ -139,6 +203,8 @@ def build_urfd_items(include_preview_mp4: bool) -> list[DownloadItem]:
         )
         if include_preview_mp4 and index == 1:
             for camera in ("cam0", "cam1"):
+                if camera_filter != "all" and camera != camera_filter:
+                    continue
                 preview_name = f"{seq}-{camera}.mp4"
                 items.append(
                     DownloadItem(
@@ -152,6 +218,8 @@ def build_urfd_items(include_preview_mp4: bool) -> list[DownloadItem]:
 
     for index in range(1, 41):
         seq = f"adl-{index:02d}"
+        if camera_filter == "cam1":
+            continue
         rgb_name = f"{seq}-cam0-rgb.zip"
         items.append(
             DownloadItem(
@@ -242,18 +310,32 @@ def write_manifest(root: pathlib.Path, downloaded_items: Iterable[DownloadItem])
     return manifest_path
 
 
-def download_items(root: pathlib.Path, items: Iterable[DownloadItem], overwrite: bool) -> None:
-    for item in items:
+def download_items(
+    root: pathlib.Path,
+    items: Iterable[DownloadItem],
+    overwrite: bool,
+    workers: int,
+    max_attempts: int,
+) -> None:
+    def download_one(item: DownloadItem) -> None:
         destination = root / item.relative_path
         expected_size = item.expected_size if item.expected_size is not None else remote_size(item.source_url)
+        if expected_size is None:
+            raise RuntimeError(f"Unable to determine remote size for {item.source_url}")
         if destination.exists() and not overwrite:
             if expected_size is not None and destination.stat().st_size == expected_size:
-                print(f"Skip existing: {destination}")
-                continue
-        print(f"Downloading: {item.source_url}")
-        download_file(item.source_url, destination)
+                print(f"Skip existing: {destination}", flush=True)
+                return
+        print(f"Downloading: {item.source_url}", flush=True)
+        download_file(item.source_url, destination, expected_size, max_attempts)
         if expected_size is not None and destination.stat().st_size != expected_size:
             raise RuntimeError(f"Incomplete download for {destination}: {destination.stat().st_size}/{expected_size} bytes.")
+
+    item_list = list(items)
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
+        futures = {executor.submit(download_one, item): item for item in item_list}
+        for future in as_completed(futures):
+            future.result()
 
 
 def extract_archives(root: pathlib.Path) -> None:
@@ -273,6 +355,19 @@ def main() -> None:
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--skip-extract", action="store_true")
     parser.add_argument("--include-preview-mp4", action="store_true")
+    parser.add_argument("--workers", type=int, default=1, help="Concurrent download workers.")
+    parser.add_argument(
+        "--max-download-attempts",
+        type=int,
+        default=50,
+        help="Maximum resume attempts per source file.",
+    )
+    parser.add_argument(
+        "--camera-filter",
+        choices=("all", "cam0", "cam1"),
+        default="all",
+        help="Download only the selected URFD camera. ADL sequences are available for cam0 only.",
+    )
     args = parser.parse_args()
 
     root = pathlib.Path(args.root).resolve()
@@ -281,11 +376,22 @@ def main() -> None:
     all_items: list[DownloadItem] = []
     if args.dataset in ("urfd", "all"):
         verify_urfd_index()
-        all_items.extend(build_urfd_items(include_preview_mp4=args.include_preview_mp4))
+        all_items.extend(
+            build_urfd_items(
+                include_preview_mp4=args.include_preview_mp4,
+                camera_filter=args.camera_filter,
+            )
+        )
     if args.dataset in ("pre-vfall", "all"):
         all_items.extend(build_pre_vfall_items())
 
-    download_items(root, all_items, overwrite=args.overwrite)
+    download_items(
+        root,
+        all_items,
+        overwrite=args.overwrite,
+        workers=max(1, args.workers),
+        max_attempts=max(1, args.max_download_attempts),
+    )
     if not args.skip_extract:
         extract_archives(root)
     manifest_path = write_manifest(root, all_items)

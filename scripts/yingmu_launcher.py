@@ -234,7 +234,21 @@ def run_self_check() -> int:
 def _terminate(processes: list[subprocess.Popen]) -> None:
     for process in processes:
         if process.poll() is None:
-            process.terminate()
+            pid = getattr(process, "pid", None)
+            if os.name == "nt" and isinstance(pid, int):
+                try:
+                    result = subprocess.run(
+                        ["taskkill", "/PID", str(pid), "/T", "/F"],
+                        check=False,
+                        capture_output=True,
+                        timeout=5,
+                    )
+                except (OSError, subprocess.SubprocessError):
+                    raise RuntimeError("PROCESS_TREE_TERMINATION_FAILED") from None
+                if result.returncode != 0:
+                    raise RuntimeError("PROCESS_TREE_TERMINATION_FAILED")
+            else:
+                process.terminate()
     deadline = time.monotonic() + 5
     for process in processes:
         remaining = max(0.0, deadline - time.monotonic())
@@ -334,11 +348,14 @@ def run_stack(mode: str, args: argparse.Namespace) -> int:
         LOGGER.info("shutdown_requested")
         return 0
     finally:
+        terminated = False
         try:
             _terminate(processes)
+            terminated = True
         finally:
             try:
-                _purge_live_stream_buffer(mode, environment)
+                if terminated:
+                    _purge_live_stream_buffer(mode, environment)
             finally:
                 for handle in handles:
                     handle.close()

@@ -130,7 +130,7 @@ class AdapterBatch(BaseModel):
             quality_types = {
                 "tracking_lost", "audio_quality_low", "camera_occlusion",
                 "stream_unavailable", "low_illumination", "low_light",
-                "assessment_indeterminate",
+                "assessment_indeterminate", "quality_gate_failed",
             }
             if not self.observations or not self.evidences:
                 raise ValueError("LOW_QUALITY requires quality Observations and Evidence")

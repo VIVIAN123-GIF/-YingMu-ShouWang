@@ -351,7 +351,11 @@ def buffer_session_stalled(
 
 
 def _coverage_seconds(
-    segments: list[BufferedSegment], window_start: datetime, window_end: datetime
+    segments: list[BufferedSegment],
+    window_start: datetime,
+    window_end: datetime,
+    *,
+    gap_tolerance_seconds: float = 0.0,
 ) -> float:
     intervals = sorted(
         (
@@ -366,7 +370,7 @@ def _coverage_seconds(
     total = 0.0
     start, end = intervals[0]
     for next_start, next_end in intervals[1:]:
-        if next_start <= end:
+        if next_start <= end + timedelta(seconds=gap_tolerance_seconds):
             end = max(end, next_end)
             continue
         total += (end - start).total_seconds()
@@ -476,8 +480,13 @@ def select_alarm_window(
         raise StreamBufferError("STREAM_BUFFER_EMPTY", "No completed buffer segments cover the alarm")
 
     _validate_continuous_segments(selected, segment_seconds=duration)
-    coverage = _coverage_seconds(selected, window_start, window_end)
     boundary_tolerance = timedelta(seconds=max(0.25, duration * 0.25))
+    coverage = _coverage_seconds(
+        selected,
+        window_start,
+        window_end,
+        gap_tolerance_seconds=boundary_tolerance.total_seconds(),
+    )
     minimum_coverage = max(1.0, before + after - boundary_tolerance.total_seconds())
     if (
         selected[0].started_at > window_start + boundary_tolerance

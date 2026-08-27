@@ -1,0 +1,1604 @@
+{
+  "schema_version": "three-participant-results/2.0",
+  "status": "COMPLETE",
+  "generated_at": "2026-08-27T11:12:38+08:00",
+  "test_lock_sha256": "e8ef2ed4c630fb3a07d04586003b47ff921603f72063bcf28b60f230167fe251",
+  "rule_freeze_sha256": "ae646075f3ba539770a7dc8e749980b745245039fd08fb180aa14b138e42133b",
+  "evaluation_spec_sha256": "7447001534f580a6df5bc3fb3d00f58b3859ddf2888482edf71adc186fb50933",
+  "source_inference_sha256": "cc18ce7a751533273469228b2efbcab86d79a32133149eb1c758ba76d38bd5b0",
+  "source_records_sha256": "def1f5e86fe86ad0c3c61c1071aed780a142e0fd95098f6c8180115ad0e73638",
+  "primary_result": {
+    "participant_id": "P03",
+    "config_id": "A",
+    "sample_count": 24,
+    "baseline_reference_count": 8,
+    "result_record_count": 32,
+    "effect_thresholds": null
+  },
+  "metrics": {
+    "instant_event": {
+      "transition_detection_rate": {
+        "numerator": 11,
+        "denominator": 12,
+        "rate": 0.916667,
+        "wilson_95": [
+          0.64612,
+          0.985135
+        ]
+      },
+      "instability_family_detection_rate": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "wilson_95": [
+          0.0,
+          0.489891
+        ]
+      },
+      "multi_family_formation_rate": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "wilson_95": [
+          0.0,
+          0.489891
+        ]
+      },
+      "orange_production": {
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "wilson_95": [
+          0.0,
+          0.489891
+        ],
+        "orange_event_count": 0,
+        "semantics": "ENGINEERING_YIELD_NOT_CLINICAL_SENSITIVITY"
+      },
+      "forbidden_orange_events": {
+        "event_count": 0,
+        "denominator_clips": 20,
+        "events_per_clip": 0.0
+      },
+      "adjudication_coverage": {
+        "numerator": 24,
+        "denominator": 24,
+        "rate": 1.0,
+        "wilson_95": [
+          0.862024,
+          1.0
+        ]
+      },
+      "adjudication_conformance": {
+        "numerator": 24,
+        "denominator": 24,
+        "rate": 1.0,
+        "wilson_95": [
+          0.862024,
+          1.0
+        ]
+      },
+      "event_window_hit_rate": {
+        "status": "AVAILABLE",
+        "numerator": 0,
+        "denominator": 4,
+        "rate": 0.0,
+        "wilson_95": [
+          0.0,
+          0.489891
+        ]
+      }
+    },
+    "gait_trend": {
+      "target_evidence_detection_by_scenario": {
+        "POS_SLOW_SMALL_STEP_SWAY": {
+          "any_target": {
+            "numerator": 0,
+            "denominator": 4,
+            "rate": 0.0,
+            "wilson_95": [
+              0.0,
+              0.489891
+            ]
+          },
+          "by_type": {
+            "gait_instability": {
+              "numerator": 0,
+              "denominator": 4,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.489891
+              ]
+            },
+            "relative_speed_change": {
+              "numerator": 0,
+              "denominator": 4,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.489891
+              ]
+            }
+          }
+        },
+        "POS_ASYMMETRIC_STEP": {
+          "any_target": {
+            "numerator": 0,
+            "denominator": 4,
+            "rate": 0.0,
+            "wilson_95": [
+              0.0,
+              0.489891
+            ]
+          },
+          "by_type": {
+            "gait_instability": {
+              "numerator": 0,
+              "denominator": 4,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.489891
+              ]
+            }
+          }
+        }
+      },
+      "normal_reference_false_detection": {
+        "baseline_normal_walk": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.489891
+          ]
+        },
+        "evaluation_normal_rise_walk": {
+          "numerator": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "wilson_95": [
+            0.510109,
+            1.0
+          ]
+        }
+      },
+      "engineering_indices_by_scenario": {
+        "BASE_NORMAL_WALK_L2R": {
+          "human_risk": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_L2R-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_L2R-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "personal_deviation": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_L2R-01",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_L2R-02",
+                "assessment_status": "VALID",
+                "value": null
+              }
+            ],
+            "assessable_count": 0,
+            "median": null,
+            "iqr": null
+          },
+          "instant_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_L2R-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_L2R-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "short_30s_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_L2R-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_L2R-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "trend_3min_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_L2R-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_L2R-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "BASE_NORMAL_WALK_R2L": {
+          "human_risk": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_R2L-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_R2L-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "personal_deviation": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_R2L-01",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_R2L-02",
+                "assessment_status": "VALID",
+                "value": null
+              }
+            ],
+            "assessable_count": 0,
+            "median": null,
+            "iqr": null
+          },
+          "instant_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_R2L-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_R2L-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "short_30s_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_R2L-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_R2L-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "trend_3min_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_R2L-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-BASE_NORMAL_WALK_R2L-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "BASE_SIT_RISE_STABLE": {
+          "human_risk": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_SIT_RISE_STABLE-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.988
+              },
+              {
+                "clip_id": "P03-BASE_SIT_RISE_STABLE-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.986
+              }
+            ],
+            "assessable_count": 2,
+            "median": 0.987,
+            "iqr": [
+              0.986,
+              0.988
+            ]
+          },
+          "personal_deviation": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_SIT_RISE_STABLE-01",
+                "assessment_status": "PARTIAL",
+                "value": null
+              },
+              {
+                "clip_id": "P03-BASE_SIT_RISE_STABLE-02",
+                "assessment_status": "PARTIAL",
+                "value": null
+              }
+            ],
+            "assessable_count": 0,
+            "median": null,
+            "iqr": null
+          },
+          "instant_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_SIT_RISE_STABLE-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.988
+              },
+              {
+                "clip_id": "P03-BASE_SIT_RISE_STABLE-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.986
+              }
+            ],
+            "assessable_count": 2,
+            "median": 0.987,
+            "iqr": [
+              0.986,
+              0.988
+            ]
+          },
+          "short_30s_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_SIT_RISE_STABLE-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.988
+              },
+              {
+                "clip_id": "P03-BASE_SIT_RISE_STABLE-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.986
+              }
+            ],
+            "assessable_count": 2,
+            "median": 0.987,
+            "iqr": [
+              0.986,
+              0.988
+            ]
+          },
+          "trend_3min_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_SIT_RISE_STABLE-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.988
+              },
+              {
+                "clip_id": "P03-BASE_SIT_RISE_STABLE-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.986
+              }
+            ],
+            "assessable_count": 2,
+            "median": 0.987,
+            "iqr": [
+              0.986,
+              0.988
+            ]
+          }
+        },
+        "BASE_WALK_STOP_TURN": {
+          "human_risk": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_WALK_STOP_TURN-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              },
+              {
+                "clip_id": "P03-BASE_WALK_STOP_TURN-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 0.5,
+            "iqr": [
+              0.25,
+              0.75
+            ]
+          },
+          "personal_deviation": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_WALK_STOP_TURN-01",
+                "assessment_status": "PARTIAL",
+                "value": null
+              },
+              {
+                "clip_id": "P03-BASE_WALK_STOP_TURN-02",
+                "assessment_status": "VALID",
+                "value": null
+              }
+            ],
+            "assessable_count": 0,
+            "median": null,
+            "iqr": null
+          },
+          "instant_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_WALK_STOP_TURN-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              },
+              {
+                "clip_id": "P03-BASE_WALK_STOP_TURN-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 0.5,
+            "iqr": [
+              0.25,
+              0.75
+            ]
+          },
+          "short_30s_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_WALK_STOP_TURN-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              },
+              {
+                "clip_id": "P03-BASE_WALK_STOP_TURN-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 0.5,
+            "iqr": [
+              0.25,
+              0.75
+            ]
+          },
+          "trend_3min_index": {
+            "raw": [
+              {
+                "clip_id": "P03-BASE_WALK_STOP_TURN-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              },
+              {
+                "clip_id": "P03-BASE_WALK_STOP_TURN-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 2,
+            "median": 0.5,
+            "iqr": [
+              0.25,
+              0.75
+            ]
+          }
+        },
+        "POS_RAPID_RISE_SWAY": {
+          "human_risk": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-01",
+                "assessment_status": "PARTIAL",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.985
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.985
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.984
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.985,
+            "iqr": [
+              0.985,
+              0.989
+            ]
+          },
+          "personal_deviation": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-01",
+                "assessment_status": "PARTIAL",
+                "value": null
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-02",
+                "assessment_status": "PARTIAL",
+                "value": null
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-03",
+                "assessment_status": "PARTIAL",
+                "value": null
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-04",
+                "assessment_status": "PARTIAL",
+                "value": null
+              }
+            ],
+            "assessable_count": 0,
+            "median": null,
+            "iqr": null
+          },
+          "instant_index": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-01",
+                "assessment_status": "PARTIAL",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.985
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.985
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.984
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.985,
+            "iqr": [
+              0.985,
+              0.989
+            ]
+          },
+          "short_30s_index": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-01",
+                "assessment_status": "PARTIAL",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.985
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.985
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.984
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.985,
+            "iqr": [
+              0.985,
+              0.989
+            ]
+          },
+          "trend_3min_index": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-01",
+                "assessment_status": "PARTIAL",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.985
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.985
+              },
+              {
+                "clip_id": "P03-POS_RAPID_RISE_SWAY-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.984
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.985,
+            "iqr": [
+              0.985,
+              0.989
+            ]
+          }
+        },
+        "NEG_RAPID_RISE_STABLE": {
+          "human_risk": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.994
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.99
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.994
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.992,
+            "iqr": [
+              0.742,
+              0.994
+            ]
+          },
+          "personal_deviation": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-01",
+                "assessment_status": "PARTIAL",
+                "value": null
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-02",
+                "assessment_status": "PARTIAL",
+                "value": null
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-03",
+                "assessment_status": "PARTIAL",
+                "value": null
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-04",
+                "assessment_status": "PARTIAL",
+                "value": null
+              }
+            ],
+            "assessable_count": 0,
+            "median": null,
+            "iqr": null
+          },
+          "instant_index": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.994
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.99
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.994
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.992,
+            "iqr": [
+              0.742,
+              0.994
+            ]
+          },
+          "short_30s_index": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.994
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.99
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.994
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.992,
+            "iqr": [
+              0.742,
+              0.994
+            ]
+          },
+          "trend_3min_index": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-01",
+                "assessment_status": "PARTIAL",
+                "value": 0.994
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-02",
+                "assessment_status": "PARTIAL",
+                "value": 0.99
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              },
+              {
+                "clip_id": "P03-NEG_RAPID_RISE_STABLE-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.994
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.992,
+            "iqr": [
+              0.742,
+              0.994
+            ]
+          }
+        },
+        "NEG_NORMAL_RISE_WALK": {
+          "human_risk": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-01",
+                "assessment_status": "VALID",
+                "value": 0.978
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-02",
+                "assessment_status": "VALID",
+                "value": 0.981
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-03",
+                "assessment_status": "VALID",
+                "value": 0.979
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-04",
+                "assessment_status": "VALID",
+                "value": 0.979
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.979,
+            "iqr": [
+              0.979,
+              0.98
+            ]
+          },
+          "personal_deviation": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-01",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-02",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-03",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-04",
+                "assessment_status": "VALID",
+                "value": null
+              }
+            ],
+            "assessable_count": 0,
+            "median": null,
+            "iqr": null
+          },
+          "instant_index": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-01",
+                "assessment_status": "VALID",
+                "value": 0.978
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-02",
+                "assessment_status": "VALID",
+                "value": 0.981
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-03",
+                "assessment_status": "VALID",
+                "value": 0.979
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-04",
+                "assessment_status": "VALID",
+                "value": 0.979
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.979,
+            "iqr": [
+              0.979,
+              0.98
+            ]
+          },
+          "short_30s_index": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-01",
+                "assessment_status": "VALID",
+                "value": 0.978
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-02",
+                "assessment_status": "VALID",
+                "value": 0.981
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-03",
+                "assessment_status": "VALID",
+                "value": 0.979
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-04",
+                "assessment_status": "VALID",
+                "value": 0.979
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.979,
+            "iqr": [
+              0.979,
+              0.98
+            ]
+          },
+          "trend_3min_index": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-01",
+                "assessment_status": "VALID",
+                "value": 0.978
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-02",
+                "assessment_status": "VALID",
+                "value": 0.981
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-03",
+                "assessment_status": "VALID",
+                "value": 0.979
+              },
+              {
+                "clip_id": "P03-NEG_NORMAL_RISE_WALK-04",
+                "assessment_status": "VALID",
+                "value": 0.979
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.979,
+            "iqr": [
+              0.979,
+              0.98
+            ]
+          }
+        },
+        "POS_SLOW_SMALL_STEP_SWAY": {
+          "human_risk": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-03",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-04",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "personal_deviation": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-01",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-02",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-03",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-04",
+                "assessment_status": "VALID",
+                "value": null
+              }
+            ],
+            "assessable_count": 0,
+            "median": null,
+            "iqr": null
+          },
+          "instant_index": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-03",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-04",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "short_30s_index": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-03",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-04",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "trend_3min_index": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-03",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_SLOW_SMALL_STEP_SWAY-04",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "POS_ASYMMETRIC_STEP": {
+          "human_risk": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-03",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-04",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "personal_deviation": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-01",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-02",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-03",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-04",
+                "assessment_status": "VALID",
+                "value": null
+              }
+            ],
+            "assessable_count": 0,
+            "median": null,
+            "iqr": null
+          },
+          "instant_index": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-03",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-04",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "short_30s_index": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-03",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-04",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          },
+          "trend_3min_index": {
+            "raw": [
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-03",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-POS_ASYMMETRIC_STEP-04",
+                "assessment_status": "VALID",
+                "value": 1.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 1.0,
+            "iqr": [
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "NEG_BOUNDARY_NORMAL": {
+          "human_risk": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.687
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.844,
+            "iqr": [
+              0.515,
+              1.0
+            ]
+          },
+          "personal_deviation": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-01",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-02",
+                "assessment_status": "VALID",
+                "value": null
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-03",
+                "assessment_status": "PARTIAL",
+                "value": null
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-04",
+                "assessment_status": "PARTIAL",
+                "value": null
+              }
+            ],
+            "assessable_count": 0,
+            "median": null,
+            "iqr": null
+          },
+          "instant_index": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.687
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.844,
+            "iqr": [
+              0.515,
+              1.0
+            ]
+          },
+          "short_30s_index": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.687
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.844,
+            "iqr": [
+              0.515,
+              1.0
+            ]
+          },
+          "trend_3min_index": {
+            "raw": [
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-01",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-02",
+                "assessment_status": "VALID",
+                "value": 1.0
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-03",
+                "assessment_status": "PARTIAL",
+                "value": 0.687
+              },
+              {
+                "clip_id": "P03-NEG_BOUNDARY_NORMAL-04",
+                "assessment_status": "PARTIAL",
+                "value": 0.0
+              }
+            ],
+            "assessable_count": 4,
+            "median": 0.844,
+            "iqr": [
+              0.515,
+              1.0
+            ]
+          }
+        }
+      },
+      "predeclared_median_differences": [
+        {
+          "comparison_id": "slow_small_step_minus_normal_walk",
+          "indices": {
+            "human_risk": {
+              "status": "ESTIMATED",
+              "target_count": 4,
+              "reference_count": 4,
+              "median_difference": 0.0
+            },
+            "personal_deviation": {
+              "status": "NOT_ESTIMABLE",
+              "target_count": 0,
+              "reference_count": 0,
+              "median_difference": null
+            },
+            "instant_index": {
+              "status": "ESTIMATED",
+              "target_count": 4,
+              "reference_count": 4,
+              "median_difference": 0.0
+            },
+            "short_30s_index": {
+              "status": "ESTIMATED",
+              "target_count": 4,
+              "reference_count": 4,
+              "median_difference": 0.0
+            },
+            "trend_3min_index": {
+              "status": "ESTIMATED",
+              "target_count": 4,
+              "reference_count": 4,
+              "median_difference": 0.0
+            }
+          }
+        },
+        {
+          "comparison_id": "asymmetric_l2r_minus_normal_l2r",
+          "indices": {
+            "human_risk": {
+              "status": "ESTIMATED",
+              "target_count": 2,
+              "reference_count": 2,
+              "median_difference": 0.0
+            },
+            "personal_deviation": {
+              "status": "NOT_ESTIMABLE",
+              "target_count": 0,
+              "reference_count": 0,
+              "median_difference": null
+            },
+            "instant_index": {
+              "status": "ESTIMATED",
+              "target_count": 2,
+              "reference_count": 2,
+              "median_difference": 0.0
+            },
+            "short_30s_index": {
+              "status": "ESTIMATED",
+              "target_count": 2,
+              "reference_count": 2,
+              "median_difference": 0.0
+            },
+            "trend_3min_index": {
+              "status": "ESTIMATED",
+              "target_count": 2,
+              "reference_count": 2,
+              "median_difference": 0.0
+            }
+          }
+        },
+        {
+          "comparison_id": "asymmetric_r2l_minus_normal_r2l",
+          "indices": {
+            "human_risk": {
+              "status": "ESTIMATED",
+              "target_count": 2,
+              "reference_count": 2,
+              "median_difference": 0.0
+            },
+            "personal_deviation": {
+              "status": "NOT_ESTIMABLE",
+              "target_count": 0,
+              "reference_count": 0,
+              "median_difference": null
+            },
+            "instant_index": {
+              "status": "ESTIMATED",
+              "target_count": 2,
+              "reference_count": 2,
+              "median_difference": 0.0
+            },
+            "short_30s_index": {
+              "status": "ESTIMATED",
+              "target_count": 2,
+              "reference_count": 2,
+              "median_difference": 0.0
+            },
+            "trend_3min_index": {
+              "status": "ESTIMATED",
+              "target_count": 2,
+              "reference_count": 2,
+              "median_difference": 0.0
+            }
+          }
+        }
+      ],
+      "module_status_counts": {
+        "GAIT": {
+          "FAILED": 0,
+          "LOW_QUALITY": 1,
+          "NO_EVIDENCE": 2,
+          "SUCCESS": 29,
+          "MISSING_RESULT": 0
+        },
+        "TRAJECTORY": {
+          "FAILED": 0,
+          "LOW_QUALITY": 0,
+          "NO_EVIDENCE": 12,
+          "SUCCESS": 20,
+          "MISSING_RESULT": 0
+        }
+      },
+      "assessment_status_counts": {
+        "INSUFFICIENT": 0,
+        "PARTIAL": 13,
+        "VALID": 19,
+        "MISSING": 0
+      },
+      "baseline_status_counts": {
+        "INSUFFICIENT": 32,
+        "PROVISIONAL": 0,
+        "STABLE": 0,
+        "MISSING": 0
+      },
+      "degradation_reason_counts": {
+        "GAIT_LOW_QUALITY": 1,
+        "GAIT_NO_EVIDENCE": 2,
+        "TRAJECTORY_NO_EVIDENCE": 12
+      }
+    }
+  },
+  "errors": [],
+  "claim_boundary": "Three healthy adult participants in controlled, cross-date scenarios; engineering feasibility only, not clinical or population-level validation."
+}

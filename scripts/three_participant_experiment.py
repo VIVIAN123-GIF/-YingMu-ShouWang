@@ -531,6 +531,7 @@ def freeze_rules(
     output: Path,
     *,
     allow_dirty: bool,
+    scene_calibration: Path | None = None,
 ) -> dict[str, object]:
     lock_report = verify_test_lock(lock_file)
     _require_pass(lock_report)
@@ -553,6 +554,8 @@ def freeze_rules(
         "executor": executor,
         "rehearsal_report": rehearsal_report,
     }
+    if scene_calibration is not None:
+        frozen_paths["scene_calibration"] = scene_calibration
     missing = [name for name, path in frozen_paths.items() if not path.is_file()]
     if missing:
         raise ValueError(f"freeze artifacts are missing: {', '.join(missing)}")
@@ -612,6 +615,11 @@ def verify_freeze(freeze_file: Path, lock_file: Path) -> dict[str, object]:
         path = Path(str(item.get("path", "")))
         if not path.is_file() or sha256_file(path) != item.get("sha256"):
             errors.append(f"frozen {key} is missing or changed")
+    scene_item = payload.get("scene_calibration")
+    if scene_item is not None:
+        scene_path = Path(str(scene_item.get("path", "")))
+        if not scene_path.is_file() or sha256_file(scene_path) != scene_item.get("sha256"):
+            errors.append("frozen scene_calibration is missing or changed")
     evaluation_item = payload.get("evaluation_spec", {})
     evaluation_path = Path(str(evaluation_item.get("path", "")))
     if evaluation_path.is_file():
@@ -1627,6 +1635,7 @@ def build_parser() -> argparse.ArgumentParser:
     freeze.add_argument("--rehearsal-schema", type=Path, default=DEFAULT_REHEARSAL_SCHEMA)
     freeze.add_argument("--executor", type=Path, required=True)
     freeze.add_argument("--rehearsal-report", type=Path, required=True)
+    freeze.add_argument("--scene-calibration", type=Path, required=True)
     freeze.add_argument("--output", type=Path, required=True)
     freeze.add_argument("--allow-dirty", action="store_true")
 
@@ -1679,6 +1688,7 @@ def main() -> int:
                 args.rehearsal_report,
                 args.output,
                 allow_dirty=args.allow_dirty,
+                scene_calibration=args.scene_calibration,
             )
         elif args.command == "generate-predictions":
             generate_predictions(args.manifest, args.output)

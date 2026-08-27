@@ -161,6 +161,64 @@ def test_terminate_stops_every_started_process():
     assert all(process.terminated for process in processes)
 
 
+def test_terminate_stops_windows_process_tree(monkeypatch):
+    commands = []
+
+    class Process:
+        pid = 1234
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            raise AssertionError("Windows process trees must use taskkill")
+
+        def wait(self, timeout):
+            del timeout
+            return 0
+
+        def kill(self):
+            raise AssertionError("taskkill completed successfully")
+
+    class Completed:
+        returncode = 0
+
+    def run(command, **kwargs):
+        commands.append((command, kwargs))
+        return Completed()
+
+    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher.subprocess, "run", run)
+
+    launcher._terminate([Process()])
+
+    assert commands == [(["taskkill", "/PID", "1234", "/T", "/F"], {
+        "check": False,
+        "capture_output": True,
+        "timeout": 5,
+    })]
+
+
+def test_terminate_rejects_windows_taskkill_failure(monkeypatch):
+    class Process:
+        pid = 1234
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            raise AssertionError("failed taskkill must not fall back to direct termination")
+
+    class Completed:
+        returncode = 1
+
+    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher.subprocess, "run", lambda *args, **kwargs: Completed())
+
+    with pytest.raises(RuntimeError, match="PROCESS_TREE_TERMINATION_FAILED"):
+        launcher._terminate([Process()])
+
+
 def test_terminate_waits_after_force_kill():
     class Process:
         def __init__(self):
