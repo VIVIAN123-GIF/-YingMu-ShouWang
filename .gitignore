@@ -244,6 +244,7 @@ ezviz_system.db
 /.claude/plan/
 /视频/
 /data/private/
+/data/raw/
 /private-media/
 /experiments/three-participant/private/
 /experiments/three-participant/signed-consent/

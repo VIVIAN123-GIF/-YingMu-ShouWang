@@ -1,0 +1,22 @@
+{
+  "schema_version": "authorization-summary/1.0",
+  "status": "INCOMPLETE",
+  "contains_names_or_signatures": false,
+  "source": "capture-manifest-confirmed.csv",
+  "record_count": 96,
+  "valid_recording_count": 96,
+  "event_bounds_count": 96,
+  "event_bounds_method": "PROTOCOL_TIMELINE_AUTO_20260826",
+  "event_bounds_human_spot_check_pending": true,
+  "participants": [
+    {"participant_id": "P01", "adult_confirmed": false, "signed": false, "authorization_record_id": "P01-AUTH-20260824", "clip_count": 32, "valid_clip_count": 32},
+    {"participant_id": "P02", "adult_confirmed": false, "signed": false, "authorization_record_id": "P02-AUTH-20260824", "clip_count": 32, "valid_clip_count": 32},
+    {"participant_id": "P03", "adult_confirmed": false, "signed": false, "authorization_record_id": "P03-AUTH-20260824", "clip_count": 32, "valid_clip_count": 32}
+  ],
+  "notes": [
+    "脱敏编号由拍摄负责人提供；本文件不包含姓名、签字或授权扫描件。",
+    "96段素材按负责人确认全部标记VALID；未创建ABORTED或EXCLUDED记录。",
+    "事件区间由冻结拍摄协议时间线自动推导，仍需抽样人工复核后才能作为正式授权摘要COMPLETE。",
+    "签字扫描件和成年确认状态未在本文件中伪造或推断。"
+  ]
+}
