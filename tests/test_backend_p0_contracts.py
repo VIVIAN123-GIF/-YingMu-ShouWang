@@ -120,6 +120,23 @@ def test_no_evidence_and_low_quality_require_quality_observation():
         batch(status="LOW_QUALITY", observations=[])
 
 
+def test_system_quality_gate_failure_is_valid_low_quality_evidence():
+    result = batch(
+        module="TRAJECTORY",
+        status="LOW_QUALITY",
+        evidences=[evidence(
+            "quality_gate_failed",
+            risk_domain="SYSTEM",
+            baseline_value=None,
+            current_value=0.2,
+            baseline_deviation=None,
+        )],
+    )
+
+    assert result.status == "LOW_QUALITY"
+    assert result.evidences[0].evidence_type == "quality_gate_failed"
+
+
 def test_image_job_rejects_temporal_evidence():
     image_job = job(media_type="IMAGE")
     temporal_batch = batch(evidences=[evidence()])

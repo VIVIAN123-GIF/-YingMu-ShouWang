@@ -110,6 +110,31 @@ def test_complete_alarm_window_is_selected(tmp_path):
     assert selected.coverage_seconds == 30
 
 
+def test_alarm_window_accepts_cumulative_file_timestamp_jitter(tmp_path):
+    alarm = datetime(2026, 8, 25, 13, 0, tzinfo=UTC)
+    start = alarm - timedelta(seconds=12)
+    session_dir = tmp_path / "session-one"
+    segments = [
+        segment(
+            session_dir / f"segment-{index:03d}.ts",
+            start + timedelta(seconds=index * 2),
+            seconds=1.9,
+        )
+        for index in range(17)
+    ]
+
+    selected = select_alarm_window(
+        segments,
+        alarm,
+        pre_seconds=10,
+        post_seconds=20,
+        segment_seconds=2,
+    )
+
+    assert len(selected.segments) == 15
+    assert selected.coverage_seconds == pytest.approx(29.9)
+
+
 def test_alarm_window_with_missing_leading_buffer_is_rejected(tmp_path):
     alarm = datetime(2026, 8, 25, 13, 0, tzinfo=UTC)
     segments = [
