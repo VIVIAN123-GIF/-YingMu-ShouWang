@@ -1,0 +1,33 @@
+{
+  "schema_version": "scene-calibration/1.0",
+  "scene_config_id": "c6c-pos01-20260825",
+  "camera_position_id": "C6c-pos01",
+  "location": "living_room",
+  "frame_width": 1280,
+  "frame_height": 720,
+  "zones": [
+    {
+      "zone_id": "visible-floor-safe",
+      "zone_type": "SAFE",
+      "polygon_norm": [[0.0, 0.58], [0.98, 0.56], [1.0, 1.0], [0.0, 1.0]]
+    },
+    {
+      "zone_id": "fixed-chair-support",
+      "zone_type": "SUPPORT",
+      "polygon_norm": [[0.49, 0.56], [0.60, 0.56], [0.60, 0.91], [0.49, 0.91]]
+    },
+    {
+      "zone_id": "fixed-cabinet-obstacle",
+      "zone_type": "OBSTACLE",
+      "polygon_norm": [[0.29, 0.22], [0.49, 0.22], [0.49, 0.83], [0.29, 0.83]]
+    },
+    {
+      "zone_id": "doorway-transition-risk",
+      "zone_type": "HIGH_RISK",
+      "polygon_norm": [[0.75, 0.25], [0.87, 0.25], [0.87, 0.88], [0.75, 0.88]]
+    }
+  ],
+  "effective_from": "2026-08-25T00:00:00+08:00",
+  "supersedes": null,
+  "notes": "Manual calibration from the authorized fixed C6c-pos01 1280x720 replay view. Recalibrate after any camera or furniture movement. HIGH_RISK is an engineering interaction zone, not an automatically recognized hazard."
+}
