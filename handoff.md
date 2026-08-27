@@ -348,11 +348,85 @@ npm run build
 - `scripts/validate_fresh_release.py`
 - `scripts/yingmu_launcher.py`
 
-下一位接手者的第一目标不是继续增加算法，而是恢复萤石平台到本机的稳定 Webhook 2xx，再完成 `LIVE_DEVICE/simulated=false` 的双算法、保守裁决和退出回收证据。真实正向双片段和最终机位回放标定已经完成，不需要重复执行。
+下一位接手者的第一目标不是继续增加算法，而是完成连续 3 次稳定实机告警、前端实机归档和统一退出回收。真实正向双片段和最终机位回放标定已经完成，不需要重复执行。
 
-## 10. 2026-08-27 最新交接状态
+## 10. 2026-08-27 实机告警联调增补
 
-### 10.1 本轮已经完成
+本节是 2026-08-27 的真实设备现场增补，覆盖上述“实机联调待执行”状态。所有记录均为脱敏摘要；不记录凭证、完整设备序列号、私有媒体路径、临时播放 URL 或公网临时域名。
+
+### 10.1 本次已完成
+
+- 当前运行环境读取到 `YINGMU_ENV=live`，并具备 Webhook 签名密钥、真实设备配置、私有媒体根目录、FFmpeg、已验证播放能力和已启用的 Stream Buffer 配置。
+- 萤石平台测试消息已返回成功；该消息只验证签名和传输，不创建 `RiskAlarm` 或处理任务。
+- 随后真实 `ys.alarm` 到达 FastAPI，告警被持久化并由 Alarm Worker 在一次尝试内处理完成。
+- 最新确认的真实告警（2026-08-27 22:34:33 +08:00）结果：
+  - `AlarmProcessingTask.status=COMPLETED`，`attempt_count=1`；
+  - 采集方式为 `RING_BUFFER`；
+  - Asset 为 `LIVE_DEVICE/simulated=false`，可用、`video/mp4`、`VERIFIED_LIVE_BUFFER_CAPTURE`；
+  - 产生 15 条 Observation 和 1 条 Evidence；
+  - GAIT 为 `SUCCESS`（约 17 秒），TRAJECTORY 为 `NO_EVIDENCE`（正常的无轨迹异常结论，不是失败）；
+  - 未创建 LIVE RiskEvent、Agent Job 或 InterventionResult，符合本轮真实设备“保守复核、不自动干预”的边界。
+- 更早一条实机任务曾出现 `GAIT=LOW_QUALITY` 与一次 `TRAJECTORY=FAILED`；后续调整人物全身入镜、脚部可见、稳定光照和告警前后持续入镜后，最新任务已恢复为 GAIT `SUCCESS`、TRAJECTORY `NO_EVIDENCE`。
+- 已生成最新脱敏结果摘要：`artifacts/ezviz-live-chain-result-latest.json`。它是现场证据摘要，不包含原始回调、媒体 URL、设备标识或凭证。
+- 新增高质量实时姿态采集脚本：`docs/field-acceptance/07-live-gait-high-quality-capture-script.md`。脚本要求全身和双脚完整入镜，现场目标 `valid_frame_ratio >= 0.85`，算法最低质量线为 `0.65`；禁止真实跌倒、绊脚和危险动作。
+- 前端已具备 `GET /api/v1/alarms/processing` 的轮询与任务状态展示能力。真实浏览器界面的最终截图/录屏验收尚未在本轮归档，应单独完成并保存脱敏证据。
+
+### 10.2 临时 HTTPS 通道：问题、解决方法和注意事项
+
+最初使用的 LocalTunnel 临时域名出现“服务降级”和 POST 超时：本机 `/health` 与无签名 Webhook POST 均正常，但公网地址时而可访问、时而无法连接到 `:443`。因此 LocalTunnel 不适合本轮继续联调。
+
+解决方式是改用 Cloudflare Quick Tunnel：
+
+```powershell
+& 'C:\Program Files (x86)\cloudflared\cloudflared.exe' tunnel --url 'http://127.0.0.1:8000'
+```
+
+关键点：`--url` 与 URL 之间必须有空格，或使用 `--url='http://127.0.0.1:8000'`。漏掉空格会被解析成不存在的 `-urlhttp://...` 参数，只显示帮助信息。
+
+该命令成功后，Cloudflare 会打印本次临时的 `https://*.trycloudflare.com` 域名。把它加上 `/api/v1/webhooks/ezviz` 后配置到萤石平台。不要把具体域名写进 Git 或长期文档：Quick Tunnel 无可用性保证，进程退出或重启后域名会变化。
+
+本次通道的验收顺序和结果：
+
+```text
+公网 GET  /health                         -> HTTP 200
+公网 POST /api/v1/webhooks/ezviz，无签名 -> HTTP 401
+萤石平台签名测试消息                      -> HTTP 200 + 原始 messageId
+真实 ys.alarm                             -> HTTP 200 + 真实告警任务
+```
+
+无签名 POST 返回的 `401 / EZVIZ_WEBHOOK_SIGNATURE_REQUIRED` 是预期的门禁验证，不是平台失败。萤石平台的真实请求必须携带 `t` 和 `signature`；若出现 `EZVIZ_WEBHOOK_SIGNATURE_INVALID`，核对平台配置与本机新 Webhook secret 是否完全一致；若出现 `TIMESTAMP_EXPIRED`，核对系统时钟。
+
+正式或重复验收不应依赖 Quick Tunnel。应由团队 Cloudflare 账号创建 Named Tunnel、固定自有域名和 DNS，并把入口指向 `http://127.0.0.1:8000`；每次现场联调前仍须验证公网 `/health` 与无签名 POST 的 `401`。
+
+### 10.3 当前仍未完成或需重复验证的事项
+
+1. 连续 3 次受控真实告警：每次均要求 Webhook `200`、任务 `COMPLETED`、`RING_BUFFER`、真实 Asset、GAIT/TRAJECTORY 均非 `FAILED/LOW_QUALITY`。当前只有最新一条达到该算法质量状态，不能把单次成功写成稳定性验收通过。
+2. 前端实机联调归档：启动 `frontend` 的 Vite 开发服务器，确认“告警处理任务”页面在 5 秒轮询内显示最新真实任务、`COMPLETED`、素材凭证和 `LIVE_DEVICE` 来源；应补充算法模块明细（GAIT/TRAJECTORY 状态、耗时、错误码），避免前端只显示“已完成”而掩盖降级。
+3. 稳定公网入口：替换 Quick Tunnel 为 Named Tunnel/团队稳定 HTTPS 域名。Quick Tunnel 只可用于本轮诊断。
+4. 进程治理：曾出现 `.venv` 与 `torch_gpu` 两套 API/Worker/FFmpeg 重复运行。后续只保留一套 FastAPI、Alarm Worker、Agent Worker 和 Stream Buffer Worker；启动/停止优先使用统一启动器，避免双 Worker 重复领取同一告警。
+5. 退出回收：本轮仍需补一次统一关闭后的检查，确认 8000 端口、四类 Worker、缓冲分片、`worker.lock` 和状态文件均回收，正式 Asset 与数据库记录不被清理。
+
+### 10.4 推荐的下一次现场执行顺序
+
+1. 不修改已经生效的阈值或算法结论；先执行 `python -m scripts.check_stream_buffer --assembly-probe`，确认 `ready=true` 与探针成功。
+2. 按 `docs/field-acceptance/07-live-gait-high-quality-capture-script.md` 固定机位、光照、服装和安全站位；在告警前至少 10 秒、告警后至少 20 秒保持全身和双脚入镜。
+3. 启动一套服务和稳定 Tunnel；先验证本机/公网 `/health=200`，再验证无签名 Webhook POST 为 `401`。
+4. 使用平台测试消息验证签名，再由授权健康成年人进行正常、受控的移动检测触发动作；不得实施真实跌倒。
+5. 每次任务完成后查询 `/api/v1/alarms/processing` 并保存脱敏摘要；将 GAIT/TRAJECTORY、Observation/Evidence 数量、Asset 验证状态、RiskEvent/Agent/Intervention 增量记录到台账。
+6. 三次连续达到门槛后，再进行前端演示录屏和统一关机回收检查。
+
+### 10.5 本次踩过的坑
+
+- `/health=200` 只证明 FastAPI 可用，不证明 Webhook、Worker、Buffer 或真实设备链路已经成功。
+- Webhook 路径只接受 POST；对 `/api/v1/webhooks/ezviz` 使用 GET 得到 `405 Method Not Allowed` 是正常现象。
+- PowerShell 中 `curl` 是 `Invoke-WebRequest` 别名，不支持 `curl --max-time`；使用 `curl.exe --max-time ...` 或 `Invoke-WebRequest -TimeoutSec ...`。
+- Webhook 无签名探测必须预期 `401`，不要为了让探测返回 `200` 而开启 `EZVIZ_WEBHOOK_ALLOW_UNSIGNED_TEST=true`；live 启动器会拒绝该配置。
+- `cloudflared` 安装后不一定自动加入 PATH。本机可执行文件位于 `C:\Program Files (x86)\cloudflared\cloudflared.exe`，应使用完整路径或在当前会话把该目录加入 PATH。
+- 手工分别启动 Worker 时，每个终端都必须继承同一套 live 环境变量；否则可能出现 API 是 live、Worker 读到 mock 或缺少 FFmpeg/私有根目录的错配。优先用 `scripts/yingmu_launcher.py live --config <仓库外配置>`；新增的 `scripts/start-live.ps1` 可帮助从仓库外配置启动源码版统一栈。
+- `GAIT=LOW_QUALITY` 不等于 Webhook 或取流失败。它通常指有效姿态帧不足、脚部遮挡、构图过小、逆光或人物离开缓冲窗口；应先改善采集条件，不应降低质量阈值或伪造风险结论。
+## 11. 2026-08-27 22:23 提交材料基线
+
+### 11.1 本轮已经完成
 
 - P01、P02、P03的96段实验素材全部按负责人确认标记为`VALID`，P03冻结测试已经一次性运行并保持原结果；P02基线日期确认是2026-08-24。
 - URFD官方cam0数据完成fresh raw独立复核：30段fall、40段adl，共70序列；140个源文件完成大小、SHA-256及适用的ZIP CRC校验。结果为`PUBLIC_DATASET`，未与自采数据混算，也未生成不适用的Accuracy、Precision、Recall或F1。
@@ -362,25 +436,25 @@ npm run build
 - 已生成`experiments/three-participant/results/golden-loop-results.json`和脱敏三人汇总；原始人像视频、派生媒体、数据库和详细验收报告均由`.gitignore`排除。
 - 2026-08-27 22:23运行正式组包门禁：`formal_documents`、`experiment`、`urfd`、`golden_loops`、`windows_release`和`source_release`均为`PASS`。
 
-### 10.2 当前卡住的问题
+### 11.2 当前卡住的问题
 
 - `stability`仍为`INCOMPLETE`：缺少`experiments/three-participant/results/stability-summary.json`，三次4小时或等价的12小时正式记录尚未形成。
 - `authorization`和`signed_consent_scans`仍为`INCOMPLETE`：已有三个人的脱敏授权编号，但缺成年确认、签字完成状态和P01/P02/P03三份私有PDF扫描件。不得仅凭编号把授权摘要改成`COMPLETE`。
 - `video_verification`和`final_video`仍为`INCOMPLETE`：缺少演示视频成片及其脱敏验收JSON。
 - `external_windows`仍为`INCOMPLETE`：发布包尚未在另一台未安装项目Python/Node的Windows电脑上验收。
 - `registration_form`、`platform_evidence`和`online_entry`仍未完成；Pages入口此前返回404，未恢复前不要写入提交邮件。
-- 真实设备`LIVE_DEVICE/simulated=false`闭环仍被萤石平台到本机的Webhook稳定性阻塞。回放黄金闭环通过不能替代真实设备来源继承、保守裁决和退出回收证据。
+- 22:23 组包时，真实设备`LIVE_DEVICE/simulated=false`闭环仍被萤石平台到本机的Webhook稳定性阻塞。22:34 已完成第 10 节记录的单次真实告警闭环，但连续稳定性、前端归档和退出回收证据仍未完成；回放黄金闭环不能替代这些实机证据。
 
-### 10.3 下一步计划
+### 11.3 下一步计划
 
 1. 立即启动12小时稳定性记录，按三次4小时分别记录运行时长、风险事件、人工复核误报、系统异常、重启和未处理异常；实际不足12小时就报告实际时长，不补写目标值。
 2. 同步收齐三份签字授权PDF和成年确认，只在私有目录保存扫描件；完成后更新脱敏`authorization-summary.json`，公开文件不得包含姓名或签字图像。
 3. 在另一台干净Windows电脑完成解压、启动、页面、来源标识、关闭回收、清单和敏感扫描验收，生成`external-windows-acceptance.json`。
 4. 录制5-7分钟演示视频和一份未跳切黄金闭环补充录屏，常驻标记`RECORDED_REPLAY`、`MOCK`或`LIVE_DEVICE`；生成`video-verification.json`后再进入正式组包。
-5. 更换稳定HTTPS入口并恢复萤石Webhook 2xx，完成`LIVE_DEVICE/simulated=false`的H.264、缓冲、GAIT、TRAJECTORY、来源继承、YELLOW/REVIEW保守裁决和退出回收验收。
+5. 更换稳定HTTPS入口，在单次真实告警成功基础上完成连续 3 次`LIVE_DEVICE/simulated=false`的H.264、缓冲、GAIT、TRAJECTORY、来源继承、YELLOW/REVIEW保守裁决和退出回收验收。
 6. 补齐报名表、平台调用证据和在线入口验证，最后重新运行`python -m scripts.assemble_submission final`，只有总状态不再是`INCOMPLETE`才能称为正式提交包。
 
-### 10.4 本轮踩过的坑
+### 11.4 本轮踩过的坑
 
 - 黄金闭环正式派生窗口必须按冻结脚本使用`0-30s`和`30s-end`。早期预检使用`0-45s`和`45s-end`虽通过，但不能直接作为正式口径，已用正式窗口重新运行三人验收。
 - `private-root`必须位于Git仓库之外。第一次把临时私有存储放进仓库内部时，验收器正确拒绝并返回`private media storage must be outside the repository`。

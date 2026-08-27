@@ -1,0 +1,36 @@
+{
+  "alarm_time": "2026-08-27 22:34:33.000000",
+  "received_at": "2026-08-27 22:34:41.312067",
+  "alarm_type": "IntelligentTag",
+  "task_id": "alarm-task-0833c821491d471da551cb497a1b0c76",
+  "task_status": "COMPLETED",
+  "attempt_count": 1,
+  "error_stage": null,
+  "error_code": null,
+  "capture_mode": "RING_BUFFER",
+  "asset": {
+    "source_mode": "LIVE_DEVICE",
+    "simulated": 0,
+    "available": 1,
+    "verification_status": "VERIFIED_LIVE_BUFFER_CAPTURE",
+    "content_type": "video/mp4",
+    "byte_size": 778001
+  },
+  "observations": 15,
+  "evidence": 1,
+  "modules": {
+    "GAIT": {
+      "status": "SUCCESS",
+      "elapsed_ms": 17094,
+      "error_code": null
+    },
+    "TRAJECTORY": {
+      "status": "NO_EVIDENCE",
+      "elapsed_ms": 16,
+      "error_code": null
+    }
+  },
+  "live_risk_events_since_alarm": 0,
+  "agent_jobs_since_alarm": 0,
+  "interventions_since_alarm": 0
+}
