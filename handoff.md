@@ -297,3 +297,78 @@ npm run build
 - `scripts/yingmu_launcher.py`
 
 下一位接手者的第一目标不是继续增加算法，而是完成“真实正向双片段 + 最终机位标定 + 实机保守裁决”三项证据。
+
+## 10. 2026-08-27 实机告警联调增补
+
+本节是 2026-08-27 的真实设备现场增补，覆盖上述“实机联调待执行”状态。所有记录均为脱敏摘要；不记录凭证、完整设备序列号、私有媒体路径、临时播放 URL 或公网临时域名。
+
+### 10.1 本次已完成
+
+- 当前运行环境读取到 `YINGMU_ENV=live`，并具备 Webhook 签名密钥、真实设备配置、私有媒体根目录、FFmpeg、已验证播放能力和已启用的 Stream Buffer 配置。
+- 萤石平台测试消息已返回成功；该消息只验证签名和传输，不创建 `RiskAlarm` 或处理任务。
+- 随后真实 `ys.alarm` 到达 FastAPI，告警被持久化并由 Alarm Worker 在一次尝试内处理完成。
+- 最新确认的真实告警（2026-08-27 22:34:33 +08:00）结果：
+  - `AlarmProcessingTask.status=COMPLETED`，`attempt_count=1`；
+  - 采集方式为 `RING_BUFFER`；
+  - Asset 为 `LIVE_DEVICE/simulated=false`，可用、`video/mp4`、`VERIFIED_LIVE_BUFFER_CAPTURE`；
+  - 产生 15 条 Observation 和 1 条 Evidence；
+  - GAIT 为 `SUCCESS`（约 17 秒），TRAJECTORY 为 `NO_EVIDENCE`（正常的无轨迹异常结论，不是失败）；
+  - 未创建 LIVE RiskEvent、Agent Job 或 InterventionResult，符合本轮真实设备“保守复核、不自动干预”的边界。
+- 更早一条实机任务曾出现 `GAIT=LOW_QUALITY` 与一次 `TRAJECTORY=FAILED`；后续调整人物全身入镜、脚部可见、稳定光照和告警前后持续入镜后，最新任务已恢复为 GAIT `SUCCESS`、TRAJECTORY `NO_EVIDENCE`。
+- 已生成最新脱敏结果摘要：`artifacts/ezviz-live-chain-result-latest.json`。它是现场证据摘要，不包含原始回调、媒体 URL、设备标识或凭证。
+- 新增高质量实时姿态采集脚本：`docs/field-acceptance/07-live-gait-high-quality-capture-script.md`。脚本要求全身和双脚完整入镜，现场目标 `valid_frame_ratio >= 0.85`，算法最低质量线为 `0.65`；禁止真实跌倒、绊脚和危险动作。
+- 前端已具备 `GET /api/v1/alarms/processing` 的轮询与任务状态展示能力。真实浏览器界面的最终截图/录屏验收尚未在本轮归档，应单独完成并保存脱敏证据。
+
+### 10.2 临时 HTTPS 通道：问题、解决方法和注意事项
+
+最初使用的 LocalTunnel 临时域名出现“服务降级”和 POST 超时：本机 `/health` 与无签名 Webhook POST 均正常，但公网地址时而可访问、时而无法连接到 `:443`。因此 LocalTunnel 不适合本轮继续联调。
+
+解决方式是改用 Cloudflare Quick Tunnel：
+
+```powershell
+& 'C:\Program Files (x86)\cloudflared\cloudflared.exe' tunnel --url 'http://127.0.0.1:8000'
+```
+
+关键点：`--url` 与 URL 之间必须有空格，或使用 `--url='http://127.0.0.1:8000'`。漏掉空格会被解析成不存在的 `-urlhttp://...` 参数，只显示帮助信息。
+
+该命令成功后，Cloudflare 会打印本次临时的 `https://*.trycloudflare.com` 域名。把它加上 `/api/v1/webhooks/ezviz` 后配置到萤石平台。不要把具体域名写进 Git 或长期文档：Quick Tunnel 无可用性保证，进程退出或重启后域名会变化。
+
+本次通道的验收顺序和结果：
+
+```text
+公网 GET  /health                         -> HTTP 200
+公网 POST /api/v1/webhooks/ezviz，无签名 -> HTTP 401
+萤石平台签名测试消息                      -> HTTP 200 + 原始 messageId
+真实 ys.alarm                             -> HTTP 200 + 真实告警任务
+```
+
+无签名 POST 返回的 `401 / EZVIZ_WEBHOOK_SIGNATURE_REQUIRED` 是预期的门禁验证，不是平台失败。萤石平台的真实请求必须携带 `t` 和 `signature`；若出现 `EZVIZ_WEBHOOK_SIGNATURE_INVALID`，核对平台配置与本机新 Webhook secret 是否完全一致；若出现 `TIMESTAMP_EXPIRED`，核对系统时钟。
+
+正式或重复验收不应依赖 Quick Tunnel。应由团队 Cloudflare 账号创建 Named Tunnel、固定自有域名和 DNS，并把入口指向 `http://127.0.0.1:8000`；每次现场联调前仍须验证公网 `/health` 与无签名 POST 的 `401`。
+
+### 10.3 当前仍未完成或需重复验证的事项
+
+1. 连续 3 次受控真实告警：每次均要求 Webhook `200`、任务 `COMPLETED`、`RING_BUFFER`、真实 Asset、GAIT/TRAJECTORY 均非 `FAILED/LOW_QUALITY`。当前只有最新一条达到该算法质量状态，不能把单次成功写成稳定性验收通过。
+2. 前端实机联调归档：启动 `frontend` 的 Vite 开发服务器，确认“告警处理任务”页面在 5 秒轮询内显示最新真实任务、`COMPLETED`、素材凭证和 `LIVE_DEVICE` 来源；应补充算法模块明细（GAIT/TRAJECTORY 状态、耗时、错误码），避免前端只显示“已完成”而掩盖降级。
+3. 稳定公网入口：替换 Quick Tunnel 为 Named Tunnel/团队稳定 HTTPS 域名。Quick Tunnel 只可用于本轮诊断。
+4. 进程治理：曾出现 `.venv` 与 `torch_gpu` 两套 API/Worker/FFmpeg 重复运行。后续只保留一套 FastAPI、Alarm Worker、Agent Worker 和 Stream Buffer Worker；启动/停止优先使用统一启动器，避免双 Worker 重复领取同一告警。
+5. 退出回收：本轮仍需补一次统一关闭后的检查，确认 8000 端口、四类 Worker、缓冲分片、`worker.lock` 和状态文件均回收，正式 Asset 与数据库记录不被清理。
+
+### 10.4 推荐的下一次现场执行顺序
+
+1. 不修改已经生效的阈值或算法结论；先执行 `python -m scripts.check_stream_buffer --assembly-probe`，确认 `ready=true` 与探针成功。
+2. 按 `docs/field-acceptance/07-live-gait-high-quality-capture-script.md` 固定机位、光照、服装和安全站位；在告警前至少 10 秒、告警后至少 20 秒保持全身和双脚入镜。
+3. 启动一套服务和稳定 Tunnel；先验证本机/公网 `/health=200`，再验证无签名 Webhook POST 为 `401`。
+4. 使用平台测试消息验证签名，再由授权健康成年人进行正常、受控的移动检测触发动作；不得实施真实跌倒。
+5. 每次任务完成后查询 `/api/v1/alarms/processing` 并保存脱敏摘要；将 GAIT/TRAJECTORY、Observation/Evidence 数量、Asset 验证状态、RiskEvent/Agent/Intervention 增量记录到台账。
+6. 三次连续达到门槛后，再进行前端演示录屏和统一关机回收检查。
+
+### 10.5 本次踩过的坑
+
+- `/health=200` 只证明 FastAPI 可用，不证明 Webhook、Worker、Buffer 或真实设备链路已经成功。
+- Webhook 路径只接受 POST；对 `/api/v1/webhooks/ezviz` 使用 GET 得到 `405 Method Not Allowed` 是正常现象。
+- PowerShell 中 `curl` 是 `Invoke-WebRequest` 别名，不支持 `curl --max-time`；使用 `curl.exe --max-time ...` 或 `Invoke-WebRequest -TimeoutSec ...`。
+- Webhook 无签名探测必须预期 `401`，不要为了让探测返回 `200` 而开启 `EZVIZ_WEBHOOK_ALLOW_UNSIGNED_TEST=true`；live 启动器会拒绝该配置。
+- `cloudflared` 安装后不一定自动加入 PATH。本机可执行文件位于 `C:\Program Files (x86)\cloudflared\cloudflared.exe`，应使用完整路径或在当前会话把该目录加入 PATH。
+- 手工分别启动 Worker 时，每个终端都必须继承同一套 live 环境变量；否则可能出现 API 是 live、Worker 读到 mock 或缺少 FFmpeg/私有根目录的错配。优先用 `scripts/yingmu_launcher.py live --config <仓库外配置>`；新增的 `scripts/start-live.ps1` 可帮助从仓库外配置启动源码版统一栈。
+- `GAIT=LOW_QUALITY` 不等于 Webhook 或取流失败。它通常指有效姿态帧不足、脚部遮挡、构图过小、逆光或人物离开缓冲窗口；应先改善采集条件，不应降低质量阈值或伪造风险结论。
