@@ -1,0 +1,61 @@
+{
+  "schema_version": "golden-loop-results/1.0",
+  "status": "COMPLETE",
+  "ruleset_version": "ruleset-v1.3-min",
+  "observation_clock": "RECORDED_TIMELINE",
+  "claim_boundary": "工程可行性闭环证据，不代表真实老人群体临床灵敏度、特异度或跌倒概率",
+  "reproductions": [
+    {
+      "participant_id": "P01",
+      "authorization_record_id": "P01-AUTH-20260824",
+      "status": "PASS",
+      "source_file": "视频/黄金闭环/P01.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "pixel_source": "AUTHORIZED_REAL_RECORDING",
+      "final_state": "RESOLVED",
+      "duration_s": 122.355,
+      "original_sha256": "62266A9D6E379470B1B51960F2D95DE9302F82643FF8217C482AA8F4E0781105",
+      "trigger_window": "0-30s",
+      "recovery_window": "30s-end",
+      "trigger_sha256": "B2294EED1E08CB9DB18DE456227E3FB9E38E8A5699D544E89615AB448A668ACF",
+      "recovery_sha256": "7CFDF17DD4A44D2AB74F979C65F1D4879446C84574DCC0B3E70069DC842B9412",
+      "acceptance_report": "private/golden-loop-formal-20260827/P01/acceptance-report.json"
+    },
+    {
+      "participant_id": "P02",
+      "authorization_record_id": "P02-AUTH-20260824",
+      "status": "PASS",
+      "source_file": "视频/黄金闭环/P02.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "pixel_source": "AUTHORIZED_REAL_RECORDING",
+      "final_state": "RESOLVED",
+      "duration_s": 123.399,
+      "original_sha256": "D1F9D900CC2BD3F95B0AC84C74531715CE26064BBD1F6FEA46D1AB1851C868E4",
+      "trigger_window": "0-30s",
+      "recovery_window": "30s-end",
+      "trigger_sha256": "765B60BBC4EA6B1707432AB098C7E19F98B98A93AEED0A01EBF91F945E90D8A2",
+      "recovery_sha256": "5C681AD3BD75D865E89CCCDFB26223F5D0D15931CD2FE14DCC288372BC287C42",
+      "acceptance_report": "private/golden-loop-formal-20260827/P02/acceptance-report.json"
+    },
+    {
+      "participant_id": "P03",
+      "authorization_record_id": "P03-AUTH-20260824",
+      "status": "PASS",
+      "evidence_role": "SUPPLEMENTAL_GOLDEN_LOOP",
+      "source_file": "视频/黄金闭环/P03.mp4",
+      "source_mode": "RECORDED_REPLAY",
+      "simulated": true,
+      "pixel_source": "AUTHORIZED_REAL_RECORDING",
+      "final_state": "RESOLVED",
+      "duration_s": 120.866,
+      "original_sha256": "9525DF56A983406B8D1322B9F11998543AE75DE1C884F3C899E084CFA42B3DC7",
+      "trigger_window": "0-30s",
+      "recovery_window": "30s-end",
+      "trigger_sha256": "8AF23EEE07A84D439EDD0203F0B0F6CF5C288B605A7ADF7F0AAC63EFB44AFD42",
+      "recovery_sha256": "F3F1A9EB4AEE7625D813571562F79144420E5B30713EAB738A0DB0A400522B28",
+      "acceptance_report": "private/golden-loop-formal-20260827/P03/acceptance-report.json"
+    }
+  ]
+}

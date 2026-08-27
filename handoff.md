@@ -349,3 +349,44 @@ npm run build
 - `scripts/yingmu_launcher.py`
 
 下一位接手者的第一目标不是继续增加算法，而是恢复萤石平台到本机的稳定 Webhook 2xx，再完成 `LIVE_DEVICE/simulated=false` 的双算法、保守裁决和退出回收证据。真实正向双片段和最终机位回放标定已经完成，不需要重复执行。
+
+## 10. 2026-08-27 最新交接状态
+
+### 10.1 本轮已经完成
+
+- P01、P02、P03的96段实验素材全部按负责人确认标记为`VALID`，P03冻结测试已经一次性运行并保持原结果；P02基线日期确认是2026-08-24。
+- URFD官方cam0数据完成fresh raw独立复核：30段fall、40段adl，共70序列；140个源文件完成大小、SHA-256及适用的ZIP CRC校验。结果为`PUBLIC_DATASET`，未与自采数据混算，也未生成不适用的Accuracy、Precision、Recall或F1。
+- P01、P02、P03各补录一段连续黄金闭环原片，时长分别为122.355秒、123.399秒和120.866秒。三段均从同一原片派生`0-30s`风险窗口和`30s-end`恢复窗口，并在全新隔离数据库中独立验收。
+- 三段黄金闭环的GAIT均为`SUCCESS`，TRAJECTORY均为允许的`NO_EVIDENCE`且无模块失败；三次均创建ORANGE、执行`mock_voice/simulated=true`模拟干预、进入OBSERVING并最终RESOLVED，引用完整性和读取API全部通过。
+- P03黄金片已标记为`SUPPLEMENTAL_GOLDEN_LOOP`，没有进入P03的24段独立测试集，也没有重新计算或覆盖P03正式0/4 ORANGE结果。
+- 已生成`experiments/three-participant/results/golden-loop-results.json`和脱敏三人汇总；原始人像视频、派生媒体、数据库和详细验收报告均由`.gitignore`排除。
+- 2026-08-27 22:23运行正式组包门禁：`formal_documents`、`experiment`、`urfd`、`golden_loops`、`windows_release`和`source_release`均为`PASS`。
+
+### 10.2 当前卡住的问题
+
+- `stability`仍为`INCOMPLETE`：缺少`experiments/three-participant/results/stability-summary.json`，三次4小时或等价的12小时正式记录尚未形成。
+- `authorization`和`signed_consent_scans`仍为`INCOMPLETE`：已有三个人的脱敏授权编号，但缺成年确认、签字完成状态和P01/P02/P03三份私有PDF扫描件。不得仅凭编号把授权摘要改成`COMPLETE`。
+- `video_verification`和`final_video`仍为`INCOMPLETE`：缺少演示视频成片及其脱敏验收JSON。
+- `external_windows`仍为`INCOMPLETE`：发布包尚未在另一台未安装项目Python/Node的Windows电脑上验收。
+- `registration_form`、`platform_evidence`和`online_entry`仍未完成；Pages入口此前返回404，未恢复前不要写入提交邮件。
+- 真实设备`LIVE_DEVICE/simulated=false`闭环仍被萤石平台到本机的Webhook稳定性阻塞。回放黄金闭环通过不能替代真实设备来源继承、保守裁决和退出回收证据。
+
+### 10.3 下一步计划
+
+1. 立即启动12小时稳定性记录，按三次4小时分别记录运行时长、风险事件、人工复核误报、系统异常、重启和未处理异常；实际不足12小时就报告实际时长，不补写目标值。
+2. 同步收齐三份签字授权PDF和成年确认，只在私有目录保存扫描件；完成后更新脱敏`authorization-summary.json`，公开文件不得包含姓名或签字图像。
+3. 在另一台干净Windows电脑完成解压、启动、页面、来源标识、关闭回收、清单和敏感扫描验收，生成`external-windows-acceptance.json`。
+4. 录制5-7分钟演示视频和一份未跳切黄金闭环补充录屏，常驻标记`RECORDED_REPLAY`、`MOCK`或`LIVE_DEVICE`；生成`video-verification.json`后再进入正式组包。
+5. 更换稳定HTTPS入口并恢复萤石Webhook 2xx，完成`LIVE_DEVICE/simulated=false`的H.264、缓冲、GAIT、TRAJECTORY、来源继承、YELLOW/REVIEW保守裁决和退出回收验收。
+6. 补齐报名表、平台调用证据和在线入口验证，最后重新运行`python -m scripts.assemble_submission final`，只有总状态不再是`INCOMPLETE`才能称为正式提交包。
+
+### 10.4 本轮踩过的坑
+
+- 黄金闭环正式派生窗口必须按冻结脚本使用`0-30s`和`30s-end`。早期预检使用`0-45s`和`45s-end`虽通过，但不能直接作为正式口径，已用正式窗口重新运行三人验收。
+- `private-root`必须位于Git仓库之外。第一次把临时私有存储放进仓库内部时，验收器正确拒绝并返回`private media storage must be outside the repository`。
+- 只有躯干晃动属于单一信号族，不会创建ORANGE。首段预检虽检出坐站转换、21.104度躯干摆动和3次反转，但骨盆横移、支撑宽度和补偿步都未过门，因此保持YELLOW。后续拍摄通过受控骨盆横移和小幅补偿步形成第二独立信号族。
+- `support_base_change`与`compensatory_step`都属于足部信号族，同时出现仍只算一个族；必须与躯干或骨盆横移族组合。
+- `TRAJECTORY=NO_EVIDENCE`不等于模块失败。黄金闭环通过条件允许GAIT成功且TRAJECTORY有解释地无证据，但任何模块`FAILED`都必须判失败。
+- P02早期15.399秒风险段和22.999秒恢复段曾打通工程链，但不是连续原片且总时长不足115秒，不能计入三段正式黄金闭环。
+- 组包脚本应从仓库根目录使用`python -m scripts.assemble_submission final`。直接执行文件曾出现`ModuleNotFoundError: scripts`；总门禁存在缺项时命令以非零退出，即使其中`golden_loops=PASS`也属正常拒绝。
+- 公开Git只能提交脱敏汇总、来源清单和代码。`视频/`、`data/raw/`、`results/private/`、签字扫描件、数据库和原始平台证据必须保持忽略。
