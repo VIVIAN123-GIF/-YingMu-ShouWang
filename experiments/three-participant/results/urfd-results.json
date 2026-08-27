@@ -1,0 +1,121 @@
+{
+  "schema_version": "urfd-review/1.0",
+  "status": "COMPLETE",
+  "generated_at": "2026-08-27T18:42:14+08:00",
+  "source_mode": "PUBLIC_DATASET",
+  "dataset_id": "URFD official cam0 snapshot 2026-08-27",
+  "dataset_source": "https://fenix.ur.edu.pl/~mkepski/ds/uf.html",
+  "download_date": "2026-08-27",
+  "camera_filter": "cam0",
+  "sample_count": 70,
+  "label_counts": {
+    "fall": 30,
+    "adl": 40
+  },
+  "mixed_with_self_collected": false,
+  "source_artifacts": {
+    "file_count": 140,
+    "rgb_archive_count": 70,
+    "metadata_file_count": 70,
+    "total_size_bytes": 4489202613,
+    "private_download_manifest_sha256": "1581a1fb77bc2fb7555139cb8a3de37f8b9f8290bfbbc540e9fe85288cd0ccb4",
+    "public_manifest_sha256": "1581a1fb77bc2fb7555139cb8a3de37f8b9f8290bfbbc540e9fe85288cd0ccb4"
+  },
+  "processing": {
+    "pipeline": "MediaPipe PoseLandmarker heavy -> cleaned frame features -> sequence summary",
+    "git_commit": "80714f4ab8e006f94aaf3c2ae77dc4a185b96f84",
+    "git_worktree_dirty_at_run": true,
+    "camera_filter": "cam0",
+    "frame_stride": 2,
+    "visibility_threshold": 0.5,
+    "quality_threshold": 0.65,
+    "input_sampled_frame_count": 5890,
+    "valid_pose_frame_count": 2748,
+    "processing_success_count": 25,
+    "low_quality_count": 36,
+    "failure_count": 9,
+    "artifact_sha256": {
+      "sequence_features": "7c6ea7e6bae3a4e371796d967038a5253804c4895477bf336e55a03769f04b9f",
+      "cleaned_frames": "1b7ebb8717ce8c2e3845d487251aac51ef4e6afbd766c2737e3361d770173aca",
+      "build_summary": "c75e2631570ea2b240e0b4fe9e8feff55936eb0fb0563c56a3b800755064e867",
+      "baseline_profile": "6caa83abcd1b5937db497a13c0fb985ecbda79dfb5bf131a9b7ebf8923c81eec",
+      "pose_model": "64437af838a65d18e5ba7a0d39b465540069bc8aae8308de3e318aad31fcbc7b",
+      "feature_builder": "35d08db5a799c4517dda59c2e78d42a03382e67d5048c36581fd98e0be7977b1",
+      "review_builder": "28b19ac6faeb8071ac9f440436cb05dcf99a7410852384a2eae192185787bf73"
+    }
+  },
+  "metrics": {
+    "by_label": {
+      "fall": {
+        "sample_count": 30,
+        "processing_success_count": 14,
+        "low_quality_count": 8,
+        "failure_count": 8,
+        "median_valid_frame_ratio": 0.607906,
+        "median_mean_core_visibility": 0.942497,
+        "feature_medians": {
+          "step_speed": 0.077651,
+          "sway_frequency_hz": 0.33629,
+          "step_length_asymmetry_ratio": 0.195712
+        }
+      },
+      "adl": {
+        "sample_count": 40,
+        "processing_success_count": 11,
+        "low_quality_count": 28,
+        "failure_count": 1,
+        "median_valid_frame_ratio": 0.4,
+        "median_mean_core_visibility": 0.94997,
+        "feature_medians": {
+          "step_speed": 0.081671,
+          "sway_frequency_hz": 0.319088,
+          "step_length_asymmetry_ratio": 0.329244
+        }
+      }
+    },
+    "engineering_indicator_counts": {
+      "rapid_rise": {
+        "total": 6,
+        "fall_label": 0,
+        "adl_label": 6
+      },
+      "trunk_sway": {
+        "total": 50,
+        "fall_label": 22,
+        "adl_label": 28
+      },
+      "gait_instability": {
+        "total": 4,
+        "fall_label": 1,
+        "adl_label": 3
+      },
+      "relative_speed_change": {
+        "total": 2,
+        "fall_label": 1,
+        "adl_label": 1
+      },
+      "tracking_lost": {
+        "total": 45,
+        "fall_label": 16,
+        "adl_label": 29
+      }
+    },
+    "indicator_parameters": {
+      "rapid_rise": "pelvis upward displacement >= 0.05 within 0.4-1.5 s",
+      "trunk_sway_abs_angle_deg": 8.0,
+      "gait_instability_deviation_ratio": 2.0,
+      "relative_speed_abs_deviation_ratio": 1.5,
+      "tracking_lost_valid_frame_ratio": 0.65
+    },
+    "classification_metrics": {
+      "status": "NOT_APPLICABLE",
+      "reason": "URFD fall/ADL labels are not equivalent to the frozen sit-to-stand ORANGE event definition; no Accuracy, Precision, Recall or F1 is reported."
+    }
+  },
+  "claim_boundary": "Independent public-dataset pipeline review only; not mixed with P01/P02/P03, not ORANGE accuracy, fall probability, clinical validation, or elderly-population performance. Raw source files were downloaded and hash-verified for this run.",
+  "notes": [
+    "All 30 URFD fall and 40 URFD ADL cam0 sequences were processed once in this review.",
+    "Engineering indicator counts are descriptive threshold exceedances, not fall predictions.",
+    "Low-quality sequences remain in the denominator and are not silently removed."
+  ]
+}

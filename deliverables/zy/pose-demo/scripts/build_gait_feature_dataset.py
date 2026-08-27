@@ -97,6 +97,14 @@ def parse_frame_number(image_path: pathlib.Path) -> int:
     return int(image_path.stem.split("-")[-1])
 
 
+def read_image_bgr(path: pathlib.Path) -> np.ndarray | None:
+    # cv2.imread can fail on non-ASCII Windows paths. Decode bytes explicitly.
+    encoded = np.fromfile(path, dtype=np.uint8)
+    if encoded.size == 0:
+        return None
+    return cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+
+
 def dominant_frequency_hz(signal_values: list[float], timestamps_ms: list[int]) -> float:
     if len(signal_values) < 8 or len(timestamps_ms) < 8:
         return 0.0
@@ -153,7 +161,7 @@ def extract_sequence_rows(
         frame_number = parse_frame_number(image_path)
         _ = timestamps.get(frame_number, (frame_number - 1) * 33)
         timestamp_ms = timestamp_offset_ms + sample_index * 33 * frame_stride
-        frame_bgr = cv2.imread(str(image_path))
+        frame_bgr = read_image_bgr(image_path)
         if frame_bgr is None:
             continue
         frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
