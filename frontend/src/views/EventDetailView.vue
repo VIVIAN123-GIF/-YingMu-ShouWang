@@ -93,12 +93,12 @@ const displayEvidences = computed(() => {
 const riskChartOption = computed(() => ({
   grid: { left: 42, right: 20, top: 28, bottom: 36 },
   tooltip: { trigger: 'axis', valueFormatter: (value) => `${formatRiskScore(value)}` },
-  xAxis: { type: 'category', boundaryGap: false, data: event.value?.risk_history?.map((item) => item.time) || [], axisLabel: { color: '#64736f' } },
-  yAxis: { type: 'value', min: 0, max: 1, splitLine: { lineStyle: { color: '#edf3f1' } }, axisLabel: { color: '#64736f', formatter: (value) => `${Math.round(value * 100)}` } },
+  xAxis: { type: 'category', boundaryGap: false, data: event.value?.risk_history?.map((item) => item.time) || [], axisLabel: { color: '#626260' } },
+  yAxis: { type: 'value', min: 0, max: 1, splitLine: { lineStyle: { color: '#ebe7e1' } }, axisLabel: { color: '#626260', formatter: (value) => `${Math.round(value * 100)}` } },
   series: [{
     type: 'line', smooth: true, symbolSize: 8,
     data: event.value?.risk_history?.map((item) => item.score) || [],
-    lineStyle: { width: 4, color: '#df7d32' }, itemStyle: { color: '#176b65' },
+    lineStyle: { width: 4, color: '#ff5600' }, itemStyle: { color: '#0007cb' },
     areaStyle: { color: 'rgba(223,125,50,.12)' },
   }],
 }))

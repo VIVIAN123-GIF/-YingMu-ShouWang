@@ -16,14 +16,14 @@ const careChoice = ref('')
 const verifyChoice = ref('')
 
 const trendOption = computed(() => ({
-  color: ['#176b65', '#9fb8b0', '#dd8a3c'],
+  color: ['#0007cb', '#9c9fa5', '#ff5600'],
   grid: { left: 48, right: 24, top: 48, bottom: 42 },
   tooltip: { trigger: 'axis' },
-  legend: { data: ['活动指数', '个人基线', '作息偏移'], top: 0, textStyle: { color: '#54635f', fontSize: 14 } },
-  xAxis: { type: 'category', data: report.value?.trend?.map((item) => item.date) || [], axisLabel: { color: '#64736f' } },
+  legend: { data: ['活动指数', '个人基线', '作息偏移'], top: 0, textStyle: { color: '#626260', fontSize: 14 } },
+  xAxis: { type: 'category', data: report.value?.trend?.map((item) => item.date) || [], axisLabel: { color: '#626260' } },
   yAxis: [
-    { type: 'value', name: '活动指数', min: 0, max: 100, splitLine: { lineStyle: { color: '#edf3f1' } }, axisLabel: { color: '#64736f' } },
-    { type: 'value', name: '分钟', min: 0, max: 40, splitLine: { show: false }, axisLabel: { color: '#64736f' } },
+    { type: 'value', name: '活动指数', min: 0, max: 100, splitLine: { lineStyle: { color: '#ebe7e1' } }, axisLabel: { color: '#626260' } },
+    { type: 'value', name: '分钟', min: 0, max: 40, splitLine: { show: false }, axisLabel: { color: '#626260' } },
   ],
   series: [
     { name: '活动指数', type: 'line', smooth: true, symbolSize: 8, data: report.value?.trend?.map((item) => item.activity) || [], lineStyle: { width: 4 } },

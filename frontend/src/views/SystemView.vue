@@ -7,7 +7,9 @@ import PageHeader from '../components/common/PageHeader.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
 import {
-  clearRecordedFeedback, getAllRecordedFeedback, getDeviceLiveAddress, getDeviceSnapshot, getDeviceStatus, getLatestForewarning,
+  clearRecordedFeedback, getAllRecordedFeedback,
+  // getDeviceLiveAddress,
+  getDeviceSnapshot, getDeviceStatus, getLatestForewarning,
   runtime, stopDeviceCollection,
 } from '../services/repository'
 import { useViewMode } from '../services/viewMode'
@@ -23,9 +25,10 @@ const feedbackRecords = ref([])
 const snapshot = ref(null)
 const snapshotLoading = ref(false)
 const snapshotError = ref(null)
-const liveAddress = ref(null)
-const liveLoading = ref(false)
-const liveError = ref(null)
+// 摄像头直播功能暂时停用。
+// const liveAddress = ref(null)
+// const liveLoading = ref(false)
+// const liveError = ref(null)
 const stopDialogOpen = ref(false)
 const stopLoading = ref(false)
 const controlToken = ref('')
@@ -65,6 +68,7 @@ async function captureSnapshot() {
   finally { snapshotLoading.value = false }
 }
 
+/* 摄像头直播功能暂时停用。
 async function openLive() {
   if (liveLoading.value) return
   liveLoading.value = true
@@ -78,6 +82,7 @@ async function openLive() {
     liveError.value = apiError(errorValue, '实时直播暂不可用')
   } finally { liveLoading.value = false }
 }
+*/
 
 async function confirmStop() {
   if (!controlToken.value || stopLoading.value) return
@@ -116,12 +121,14 @@ onMounted(load)
       </section>
 
       <div class="system-operations-grid">
+        <!-- 摄像头直播功能暂时停用。
         <section class="content-card live-card" data-testid="device-live">
           <div class="card-heading"><div><span class="section-kicker">实时画面</span><h2>摄像头直播</h2></div><el-button :loading="liveLoading" type="primary" @click="openLive"><el-icon><Camera /></el-icon>获取直播</el-button></div>
           <el-alert v-if="liveError" :title="liveError.message" type="error" :closable="false" show-icon />
           <video v-else-if="liveAddress" class="live-video" :src="liveAddress" controls autoplay muted playsinline />
           <el-empty v-else description="点击获取直播以加载实时画面" :image-size="72" />
         </section>
+        -->
         <section class="content-card snapshot-card" data-testid="device-snapshot">
           <div class="card-heading"><div><span class="section-kicker">设备快照</span><h2>最近一次主动抓拍</h2></div><el-button :loading="snapshotLoading" type="primary" @click="captureSnapshot"><el-icon><Camera /></el-icon>获取快照</el-button></div>
           <el-alert v-if="snapshotError" :title="snapshotError.message" type="error" :closable="false" show-icon>
