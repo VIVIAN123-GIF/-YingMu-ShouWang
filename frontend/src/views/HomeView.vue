@@ -44,19 +44,19 @@ const chartOption = computed(() => ({
     type: 'category',
     boundaryGap: false,
     data: data.value?.risk_trend?.map((item) => item.time) || [],
-    axisLabel: { color: '#64736f', fontSize: 13 },
+    axisLabel: { color: '#626260', fontSize: 13 },
     axisLine: { lineStyle: { color: '#dce8e4' } },
   },
   yAxis: {
     type: 'value', min: 0, max: 1,
-    splitLine: { lineStyle: { color: '#edf3f1' } },
-    axisLabel: { color: '#64736f', fontSize: 13, formatter: (value) => `${Math.round(value * 100)}` },
+    splitLine: { lineStyle: { color: '#ebe7e1' } },
+    axisLabel: { color: '#626260', fontSize: 13, formatter: (value) => `${Math.round(value * 100)}` },
   },
   series: [{
     type: 'line', smooth: 0.35, symbolSize: 9,
     data: data.value?.risk_trend?.map((item) => item.score) || [],
     lineStyle: { width: 4, color: '#e58b3a' },
-    itemStyle: { color: '#176b65', borderColor: '#fff', borderWidth: 2 },
+    itemStyle: { color: '#0007cb', borderColor: '#fff', borderWidth: 2 },
     areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [
       { offset: 0, color: 'rgba(229,139,58,.28)' }, { offset: 1, color: 'rgba(229,139,58,.02)' },
     ] } },
@@ -66,7 +66,7 @@ const chartOption = computed(() => ({
         { yAxis: 0.4, name: '黄色关注', lineStyle: { color: '#d6a63b', type: 'dashed' } },
         { yAxis: 0.7, name: '橙色干预', lineStyle: { color: '#dd6b20', type: 'dashed' } },
       ],
-      label: { color: '#64736f' },
+      label: { color: '#626260' },
     },
   }],
 }))
@@ -110,7 +110,6 @@ function onlineLabel(value) {
         v-if="data"
         :mode="data.device?.source_mode"
         :simulated="data.device?.simulated"
-        :show-description="true"
       />
     </PageHeader>
 

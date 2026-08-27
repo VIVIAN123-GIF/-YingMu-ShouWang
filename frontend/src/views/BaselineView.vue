@@ -23,12 +23,12 @@ const coverageDays = computed(() => baseline.value?.coverage?.coverage_days || b
 const coverageClips = computed(() => baseline.value?.coverage?.clip_count || 0)
 
 const trendOption = computed(() => ({
-  color: ['#176b65', '#d39a42'],
+  color: ['#0007cb', '#9c9fa5'],
   grid: { left: 48, right: 24, top: 48, bottom: 42 },
   tooltip: { trigger: 'axis' },
-  legend: { data: ['活动指数', '个人基线'], top: 0, textStyle: { color: '#54635f', fontSize: 14 } },
-  xAxis: { type: 'category', data: baseline.value?.trend.map((item) => item.date) || [], axisLabel: { color: '#64736f' } },
-  yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: '#edf3f1' } }, axisLabel: { color: '#64736f' } },
+  legend: { data: ['活动指数', '个人基线'], top: 0, textStyle: { color: '#626260', fontSize: 14 } },
+  xAxis: { type: 'category', data: baseline.value?.trend.map((item) => item.date) || [], axisLabel: { color: '#626260' } },
+  yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: '#ebe7e1' } }, axisLabel: { color: '#626260' } },
   series: [
     { name: '活动指数', type: 'line', smooth: true, symbolSize: 9, data: baseline.value?.trend.map((item) => item.activity_index) || [], lineStyle: { width: 4 } },
     { name: '个人基线', type: 'line', symbol: 'none', data: baseline.value?.trend.map((item) => item.baseline) || [], lineStyle: { width: 2, type: 'dashed' } },
@@ -38,11 +38,11 @@ const trendOption = computed(() => ({
 const heatmapOption = computed(() => ({
   grid: { left: 70, right: 34, top: 18, bottom: 72 },
   tooltip: { formatter: ({ value }) => `${baseline.value.activity_heatmap.days[value[0]]} ${baseline.value.activity_heatmap.periods[value[1]]}<br/>活动指数：${value[2]}` },
-  xAxis: { type: 'category', data: baseline.value?.activity_heatmap?.days || [], splitArea: { show: true }, axisLabel: { color: '#64736f' } },
-  yAxis: { type: 'category', data: baseline.value?.activity_heatmap?.periods || [], splitArea: { show: true }, axisLabel: { color: '#64736f' } },
+  xAxis: { type: 'category', data: baseline.value?.activity_heatmap?.days || [], splitArea: { show: true }, axisLabel: { color: '#626260' } },
+  yAxis: { type: 'category', data: baseline.value?.activity_heatmap?.periods || [], splitArea: { show: true }, axisLabel: { color: '#626260' } },
   visualMap: {
     min: 0, max: 100, calculable: false, orient: 'horizontal', left: 'center', bottom: 8,
-    text: ['活动较多', '活动较少'], inRange: { color: ['#edf5f2', '#8bc1b3', '#176b65'] },
+    text: ['活动较多', '活动较少'], inRange: { color: ['#f5f1ec', '#65b5ff', '#0007cb'] },
   },
   series: [{ name: '活动指数', type: 'heatmap', data: baseline.value?.activity_heatmap?.values || [], label: { show: true, color: '#243b36' } }],
 }))
@@ -82,7 +82,7 @@ onMounted(load)
 <template>
   <div v-loading="loading" data-testid="baseline-view">
     <PageHeader title="个人基线与授权实验覆盖" description="个人基线必须使用同一居民、同一台C6c、同一机位样本；本页同时展示可追溯的授权实验覆盖，不将健康成年人素材作为居民结论。">
-      <SourceBadge v-if="baseline" :mode="baseline.source_mode" :simulated="baseline.simulated" :show-description="true" />
+      <SourceBadge v-if="baseline" :mode="baseline.source_mode" :simulated="baseline.simulated" />
     </PageHeader>
 
     <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
@@ -96,7 +96,7 @@ onMounted(load)
           <p v-if="coverageMode">{{ statusLabel(baseline.overall_status) }} · 张建国个人基线待校准 · 更新于 {{ formatDateTime(baseline.as_of) }}</p>
           <p v-else>{{ statusLabel(baseline.overall_status) }} · {{ stableCount }} 项工程稳定指标 · 更新于 {{ formatDateTime(baseline.as_of) }}</p>
         </div>
-        <el-progress type="dashboard" :percentage="coverageMode ? 86 : progressPercent" :stroke-width="12" color="#176b65">
+        <el-progress type="dashboard" :percentage="coverageMode ? 86 : progressPercent" :stroke-width="12" color="#0007cb">
           <template #default="{ percentage }"><strong>{{ percentage }}%</strong><span>有效进度</span></template>
         </el-progress>
         <TechnicalDisclosure title="基线来源详情" summary="规则版本、设备和固定机位">

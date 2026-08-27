@@ -66,6 +66,12 @@ describe('系统设备运维页面', () => {
     expect(wrapper.text()).toContain('临时图片地址未向浏览器开放')
   })
 
+  it('不渲染已停用的摄像头直播入口', async () => {
+    const wrapper = mountView(); await flushPromises()
+    expect(wrapper.find('[data-testid="device-live"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('摄像头直播')
+  })
+
   it('停止失败展示后端错误码和请求 ID并清空令牌', async () => {
     setViewMode('review')
     mocks.stopDeviceCollection.mockRejectedValue(Object.assign(new Error('forbidden'), {

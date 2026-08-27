@@ -564,11 +564,13 @@ export async function getDeviceSnapshot() {
   ), () => validateDeviceSnapshot(replayData.deviceSnapshot), validateDeviceSnapshot)
 }
 
+/* 摄像头直播功能暂时停用。
 export async function getDeviceLiveAddress() {
   return resolveData('device.live-address', async () => payload(await apiClient.get('/device/live-address')), () => {
     throw Object.assign(new Error('直播仅在实时设备模式下可用'), { response: { status: 503 } })
   })
 }
+*/
 
 function controlError(code, message) {
   const error = new Error(message)

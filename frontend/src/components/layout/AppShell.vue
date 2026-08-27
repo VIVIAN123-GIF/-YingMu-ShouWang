@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ChatLineRound, Clock, DataAnalysis, DocumentChecked, Expand, Fold, House, InfoFilled, Menu, Monitor, MoreFilled, SwitchButton, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
+import { ChatLineRound, CircleCheck, Clock, DataAnalysis, DocumentChecked, Expand, Fold, House, InfoFilled, Menu, Monitor, MoreFilled, SwitchButton, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
 import { routes } from '../../router'
 import { DATA_MODES } from '../../domain/constants'
 import { getEvents, runtime, setDataMode } from '../../services/repository'
@@ -26,6 +26,10 @@ const groupConfig = [
 const navRoutes = routes.filter((item) => item.meta?.nav)
 const navGroups = groupConfig.map((group) => ({ ...group, items: group.paths.map((path) => navRoutes.find((item) => item.path === path)).filter(Boolean) }))
 const activePath = computed(() => ['event-detail', 'event-detail-empty'].includes(route.name) ? '/events/:eventId' : route.path)
+const currentPage = computed(() => ({
+  title: route.meta?.title || '统一家属端',
+  group: groupConfig.find((group) => group.paths.includes(activePath.value))?.label || '萤目守望',
+}))
 
 function logout() { logoutOfDemo(); emit('logout') }
 function createdAtTimestamp(event) { const timestamp = Date.parse(event?.created_at || ''); return Number.isNaN(timestamp) ? 0 : timestamp }
@@ -54,8 +58,8 @@ async function handleSelect(path) {
 <template>
   <div class="app-shell" :data-view-mode="viewModeState.mode">
     <aside class="sidebar" :class="{ collapsed }">
-      <div class="brand"><div class="brand-mark" aria-hidden="true">萤</div><div v-show="!collapsed" class="brand-copy"><strong>萤目守望</strong><span>统一家属端</span></div></div>
-      <nav class="navigation-groups" aria-label="主导航">
+      <div class="brand"><div class="brand-mark" aria-hidden="true">萤</div><div v-show="!collapsed" class="brand-copy"><strong>萤目守望</strong><span>家庭安全控制台</span></div></div>
+      <nav class="navigation navigation-groups" aria-label="主导航">
         <section v-for="group in navGroups" :key="group.label" class="navigation-group">
           <span v-show="!collapsed" class="navigation-label">{{ group.label }}</span>
           <button v-for="item in group.items" :key="item.path" type="button" class="navigation-item" :class="{ active: activePath === item.path }" :aria-current="activePath === item.path ? 'page' : undefined" @click="handleSelect(item.path)">
@@ -63,14 +67,24 @@ async function handleSelect(path) {
           </button>
         </section>
       </nav>
+      <div v-show="!collapsed" class="guard-status" :class="{ degraded: runtime.degraded }" role="status" aria-live="polite">
+        <span class="guard-status-icon"><el-icon><component :is="runtime.degraded ? Warning : CircleCheck" /></el-icon></span>
+        <span>
+          <strong>{{ runtime.degraded ? '离线回放模式' : '守护服务运行中' }}</strong>
+          <small>{{ runtime.degraded ? '当前不代表实时设备状态' : '风险变化将进入统一事件流' }}</small>
+        </span>
+      </div>
       <button class="collapse-button" type="button" :aria-label="collapsed ? '展开导航' : '收起导航'" @click="collapsed = !collapsed"><el-icon><component :is="collapsed ? Expand : Fold" /></el-icon><span v-show="!collapsed">收起导航</span></button>
     </aside>
-
     <div class="workspace">
       <div v-if="pagesBuild" class="public-demo-banner" role="status"><strong>脱敏评审演示</strong><span>RECORDED_REPLAY / 授权回放</span><span>非实时设备</span><span>非老年人实测</span></div>
       <header class="topbar">
         <button class="mobile-menu-button" type="button" aria-label="打开导航" @click="mobileNavigationOpen = true"><el-icon><Menu /></el-icon></button>
-        <div class="resident-identity"><el-avatar :size="40" class="resident-avatar">张</el-avatar><div><strong>张建国</strong><span>76岁 · 杭州家中</span></div></div>
+        <div class="topbar-context">
+          <div class="page-context"><span>{{ currentPage.group }}</span><strong>{{ currentPage.title }}</strong></div>
+          <div class="context-divider" aria-hidden="true"></div>
+          <div class="resident-identity"><el-avatar :size="36" class="resident-avatar">张</el-avatar><div><strong>张建国</strong><span>76岁 · 杭州家中</span></div></div>
+        </div>
         <div class="topbar-actions">
           <el-segmented :model-value="viewModeState.mode" :options="Object.entries(VIEW_MODES).map(([value, label]) => ({ value, label }))" aria-label="切换展示视图" @change="setViewMode" />
           <div v-if="runtime.degraded" class="degraded-chip" role="status"><el-icon><Warning /></el-icon>后端降级</div>

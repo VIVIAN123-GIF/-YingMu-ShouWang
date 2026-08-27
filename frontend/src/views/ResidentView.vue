@@ -50,7 +50,7 @@ const chartOption = computed(() => {
     series: [
       { name: '即时', type: 'line', smooth: true, showSymbol: points.length < 30, data: points.map((item) => item.instant.engineering_index), color: '#b64f4f' },
       { name: '30秒', type: 'line', smooth: true, showSymbol: points.length < 30, data: points.map((item) => item.short_30s.engineering_index), color: '#c28a32' },
-      { name: '3分钟', type: 'line', smooth: true, showSymbol: points.length < 30, data: points.map((item) => item.trend_3min.engineering_index), color: '#23706a' },
+      { name: '3分钟', type: 'line', smooth: true, showSymbol: points.length < 30, data: points.map((item) => item.trend_3min.engineering_index), color: '#0007cb' },
     ],
   }
 })
