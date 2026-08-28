@@ -77,7 +77,7 @@ function handleError() {
         当前浏览器不支持视频播放。
       </video>
     </div>
-    <div v-if="videoReady" class="media-verification"><el-tag type="success" size="large">授权片段已加载</el-tag><span>来源：{{ asset?.source_mode }}</span></div>
+    <div v-if="videoReady" class="media-verification"><el-tag type="success" size="large">授权片段已加载</el-tag><span>来源：授权回放</span></div>
     <div v-else class="media-placeholder">
       <div class="camera-illustration" aria-hidden="true">
         <span class="camera-lens"></span>

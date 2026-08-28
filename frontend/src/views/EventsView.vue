@@ -92,7 +92,7 @@ onBeforeUnmount(stopAlarmPolling)
 
 <template>
   <div v-loading="loading" data-testid="events-view">
-    <PageHeader title="统一事件时间轴" description="跌倒、心理趋势、访客交互和系统事件进入同一条时间轴。">
+    <PageHeader title="老人活动事件记录" description="跌倒、心理趋势、访客交互和系统状态会按时间顺序记录。">
       <el-tag size="large" effect="plain">{{ filteredEvents.length }} 条事件</el-tag>
     </PageHeader>
 
@@ -133,7 +133,7 @@ onBeforeUnmount(stopAlarmPolling)
       <label><span>风险方向</span><el-select v-model="filters.domain" clearable placeholder="全部方向"><el-option v-for="(label, value) in RISK_DOMAINS" :key="value" :label="label" :value="value" /></el-select></label>
       <label><span>风险等级</span><el-select v-model="filters.level" clearable placeholder="全部等级"><el-option v-for="(config, value) in RISK_LEVELS" :key="value" :label="config.label" :value="value" /></el-select></label>
       <label><span>事件状态</span><el-select v-model="filters.status" clearable placeholder="全部状态"><el-option v-for="(label, value) in EVENT_STATUSES" :key="value" :label="label" :value="value" /></el-select></label>
-      <label><span>数据来源</span><el-select v-model="filters.source" clearable placeholder="全部来源"><el-option v-for="(config, value) in SOURCE_MODES" :key="value" :label="`${value} · ${config.label}`" :value="value" /></el-select></label>
+      <label><span>数据来源</span><el-select v-model="filters.source" clearable placeholder="全部来源"><el-option v-for="(config, value) in SOURCE_MODES" :key="value" :label="config.label" :value="value" /></el-select></label>
       <el-button size="large" :disabled="!activeFilterCount" @click="clearFilters">清除筛选<span v-if="activeFilterCount">（{{ activeFilterCount }}）</span></el-button>
     </section>
 

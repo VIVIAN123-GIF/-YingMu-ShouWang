@@ -6,10 +6,10 @@ export const RISK_DOMAINS = Object.freeze({
 })
 
 export const RISK_LEVELS = Object.freeze({
-  GREEN: { label: '绿色 · 状态平稳', color: '#2f855a', icon: 'CircleCheckFilled' },
-  YELLOW: { label: '黄色 · 建议关注', color: '#b7791f', icon: 'WarningFilled' },
-  ORANGE: { label: '橙色 · 需要干预', color: '#c05621', icon: 'WarnTriangleFilled' },
-  RED: { label: '红色 · 人工接管', color: '#c53030', icon: 'CircleCloseFilled' },
+  GREEN: { label: '低风险', color: '#22A75D', icon: 'CircleCheckFilled' },
+  YELLOW: { label: '中风险', color: '#E6A23C', icon: 'WarningFilled' },
+  ORANGE: { label: '高风险', color: '#DC2626', icon: 'WarnTriangleFilled' },
+  RED: { label: '高风险', color: '#DC2626', icon: 'CircleCloseFilled' },
 })
 
 export const EVENT_STATUSES = Object.freeze({
@@ -24,8 +24,8 @@ export const EVENT_STATUSES = Object.freeze({
 export const SOURCE_MODES = Object.freeze({
   LIVE_DEVICE: { label: '实时设备', tone: 'success' },
   RECORDED_REPLAY: { label: '授权回放', tone: 'warning' },
-  PUBLIC_DATASET: { label: '公开数据集', tone: 'info' },
-  MOCK: { label: '模拟接口', tone: 'info' },
+  PUBLIC_DATASET: { label: '授权回放', tone: 'warning' },
+  MOCK: { label: '授权回放', tone: 'warning' },
 })
 
 export const DELIVERY_STATUSES = Object.freeze({
@@ -52,6 +52,6 @@ export const ALARM_TASK_STATUSES = Object.freeze({
  * @typedef {'FALL'|'MENTAL'|'FRAUD'|'SYSTEM'} RiskDomain
  * @typedef {'GREEN'|'YELLOW'|'ORANGE'|'RED'} RiskLevel
  * @typedef {'OPEN'|'INTERVENING'|'OBSERVING'|'RESOLVED'|'ESCALATED'|'FALSE_ALARM'} EventStatus
- * @typedef {'LIVE_DEVICE'|'RECORDED_REPLAY'|'PUBLIC_DATASET'} SourceMode
+ * @typedef {'LIVE_DEVICE'|'RECORDED_REPLAY'|'PUBLIC_DATASET'|'MOCK'} SourceMode
  * @typedef {'SUCCESS'|'FAILED'|'RETRYING'} DeliveryStatus
  */

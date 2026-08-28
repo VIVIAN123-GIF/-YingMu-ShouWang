@@ -19,7 +19,7 @@ async function submit() {
     report.value.care = { ...report.value.care, status: 'SUBMITTED', feedback_record: result }
     submitted.value = true
     ElMessage.success('关怀反馈已记录')
-  } catch (err) { ElMessage.error(`提交失败：${err.message}`) }
+  } catch (err) { ElMessage.error(`记录失败：${err.message}`) }
 }
 onMounted(load)
 </script>

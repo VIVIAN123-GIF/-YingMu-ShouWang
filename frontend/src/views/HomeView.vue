@@ -116,13 +116,21 @@ function onlineLabel(value) {
     <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
 
     <template v-if="data">
+      <section v-if="data.current_risk" class="family-advice-card" aria-labelledby="family-advice-title">
+        <div class="family-advice-icon" aria-hidden="true">💡</div>
+        <div>
+          <span class="section-kicker">给家属的建议</span>
+          <h2 id="family-advice-title">{{ data.current_risk.recommended_action || '请按当前状态陪伴老人，保持联系。' }}</h2>
+          <p>一次只做一个动作，先确认老人安全，再决定是否需要联系紧急联系人。</p>
+        </div>
+      </section>
       <section v-if="data.current_risk" class="hero-risk-card" :class="`surface-${data.current_risk.risk_level.toLowerCase()}`">
         <div class="risk-score-ring">
           <span>{{ formatRiskScore(data.current_risk.risk_score) }}</span>
           <small>综合水位</small>
         </div>
         <div class="hero-risk-copy">
-          <RiskBadge :level="data.current_risk.risk_level" />
+          <RiskBadge :level="data.current_risk.risk_level" :score="formatRiskScore(data.current_risk.risk_score)" />
           <h2>{{ data.current_risk.summary }}</h2>
           <p><strong>建议：</strong>{{ data.current_risk.recommended_action }}</p>
           <span class="last-update">更新于 {{ formatDateTime(data.current_risk.updated_at) }}</span>
@@ -189,7 +197,7 @@ function onlineLabel(value) {
       <section v-if="data.pre_fall_summary" class="content-card prefall-card">
         <div class="card-heading">
           <div><span class="section-kicker">工程风险指数 · 非概率</span><h2>个体化多源前置观察</h2></div>
-          <RiskBadge :level="data.pre_fall_summary.risk_level" />
+          <RiskBadge :level="data.pre_fall_summary.risk_level" :score="formatRiskScore(data.pre_fall_summary.instant_risk)" />
         </div>
         <div class="prefall-status-line">
           <el-tag :type="data.pre_fall_summary.assessment_status === 'VALID' ? 'success' : 'warning'" effect="plain">
@@ -245,7 +253,7 @@ function onlineLabel(value) {
 
       <section class="content-card events-card">
         <div class="card-heading">
-          <div><span class="section-kicker">统一事件时间轴</span><h2>最近需要了解的事情</h2></div>
+          <div><span class="section-kicker">老人活动事件记录</span><h2>最近需要了解的事情</h2></div>
           <el-button size="large" plain @click="router.push('/events')">查看完整时间轴</el-button>
         </div>
         <div v-if="data.recent_events.length" class="event-list">
