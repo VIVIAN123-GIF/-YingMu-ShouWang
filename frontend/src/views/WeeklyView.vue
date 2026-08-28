@@ -71,7 +71,7 @@ async function submit(kind) {
     })
     if (kind === 'care') report.value.care = { ...report.value.care, status: 'SUBMITTED', feedback_record: result }
     else report.value.visitor_case = { ...report.value.visitor_case, verification_status: 'SUBMITTED', feedback_record: result }
-    ElMessage.success('反馈已记录，将进入统一事件时间轴')
+    ElMessage.success('反馈已记录，将进入老人活动事件记录')
   } catch (err) {
     ElMessage.error(`提交失败：${err.message}`)
   } finally {

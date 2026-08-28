@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { WarningFilled } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/common/PageHeader.vue'
 import MediaPanel from '../components/common/MediaPanel.vue'
@@ -34,6 +35,8 @@ const explanationState = ref('loading')
 const submittingIntervention = ref(false)
 const interventionRequested = ref(false)
 const forewarningSnapshots = ref([])
+const highRiskDialogVisible = ref(false)
+const highRiskAcknowledged = ref(false)
 
 const POLL_INTERVAL_MS = 1500
 const TERMINAL_STATUSES = new Set(['RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
@@ -146,6 +149,32 @@ function scoreComponentsText(trace) {
   const score = trace?.score_components || {}
   if (typeof score.final_score !== 'number') return '本次规则不生成事件分数'
   return `严重度${score.severity}、置信度${score.confidence}、质量${score.data_quality}、上下文${score.context}`
+}
+
+function playHighRiskTone() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext
+    if (!AudioContext) return
+    const context = new AudioContext()
+    ;[0, 0.45, 0.9].forEach((offset) => {
+      const oscillator = context.createOscillator()
+      const gain = context.createGain()
+      oscillator.type = 'sine'
+      oscillator.frequency.value = 740
+      gain.gain.setValueAtTime(0.0001, context.currentTime + offset)
+      gain.gain.exponentialRampToValueAtTime(0.16, context.currentTime + offset + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + offset + 0.2)
+      oscillator.connect(gain).connect(context.destination)
+      oscillator.start(context.currentTime + offset)
+      oscillator.stop(context.currentTime + offset + 0.22)
+    })
+    window.setTimeout(() => context.close(), 1500)
+  } catch { /* 浏览器未授权声音时不影响告警展示 */ }
+}
+
+function acknowledgeHighRisk() {
+  highRiskDialogVisible.value = false
+  highRiskAcknowledged.value = true
 }
 
 function openTrace(evidence) {
@@ -290,6 +319,8 @@ function startEventSession() {
   error.value = ''
   syncWarning.value = ''
   syncState.value = 'loading'
+  highRiskAcknowledged.value = false
+  highRiskDialogVisible.value = false
   traceOpen.value = false
   selectedEvidence.value = null
   asset.value = null
@@ -355,6 +386,13 @@ async function requestIntervention() {
 }
 
 watch(() => [route.params.eventId, route.query.reason, runtime.mode], startEventSession, { immediate: true })
+watch(event, (nextEvent) => {
+  if (!nextEvent || highRiskAcknowledged.value) return
+  if (['ORANGE', 'RED'].includes(nextEvent.risk_level) || Number(nextEvent.risk_score) >= 0.7) {
+    highRiskDialogVisible.value = true
+    playHighRiskTone()
+  }
+}, { deep: true })
 onBeforeUnmount(stopEventSession)
 </script>
 
@@ -372,11 +410,29 @@ onBeforeUnmount(stopEventSession)
     <el-alert v-if="syncWarning" :title="syncWarning" type="warning" show-icon :closable="false" />
 
     <template v-if="event">
+      <el-dialog
+        v-model="highRiskDialogVisible"
+        width="min(92vw, 520px)"
+        class="high-risk-dialog"
+        :show-close="false"
+        :close-on-click-modal="false"
+        :close-on-press-escape="false"
+        destroy-on-close
+      >
+        <template #header>
+          <div class="high-risk-dialog-header"><el-icon><WarningFilled /></el-icon><span>高风险告警</span></div>
+        </template>
+        <div class="high-risk-dialog-body">
+          <strong>{{ event.title }}</strong>
+          <p>{{ event.recommended_action || '请先确认老人安全，并联系家属或紧急联系人。' }}</p>
+        </div>
+        <template #footer><el-button type="danger" size="large" @click="acknowledgeHighRisk">我已看到，查看处理建议</el-button></template>
+      </el-dialog>
       <section class="event-summary-card" data-testid="risk-engine-panel">
         <div class="event-summary-main">
-          <span class="section-kicker">风险引擎结果</span>
+          <span class="section-kicker">风险评估结果</span>
           <div class="summary-badges">
-            <RiskBadge :level="event.risk_level" />
+            <RiskBadge :level="event.risk_level" :score="formatRiskScore(event.risk_score)" />
             <el-tag size="large" effect="plain">{{ statusLabel(event.status) }}</el-tag>
             <SourceBadge :mode="event.source_mode" :simulated="event.simulated" />
           </div>
@@ -436,7 +492,7 @@ onBeforeUnmount(stopEventSession)
 
       <section class="content-card agent-explanation-card" data-testid="agent-explanation-panel">
         <div class="card-heading">
-          <div><span class="section-kicker">Agent Explanation</span><h2>智能体解释</h2></div>
+          <div><span class="section-kicker">解释与建议</span><h2>为什么这样建议</h2></div>
           <el-tag v-if="explanation" :type="explanationStatusMeta.type" effect="plain" data-testid="agent-explanation-status">
             {{ explanationStatusMeta.label }}
           </el-tag>
@@ -466,7 +522,7 @@ onBeforeUnmount(stopEventSession)
       <section class="event-detail-grid">
         <div class="event-primary-column">
           <article class="content-card" data-testid="evidence-panel">
-            <div class="card-heading"><div><span class="section-kicker">Evidence</span><h2>为什么系统建议关注</h2></div><span>{{ event.evidence_summary.length }} 条证据</span></div>
+            <div class="card-heading"><div><span class="section-kicker">依据</span><h2>为什么系统建议关注</h2></div><span>{{ event.evidence_summary.length }} 条依据</span></div>
             <div v-if="displayEvidences.length" class="evidence-grid">
               <article v-for="evidence in displayEvidences" :key="evidence.evidence_id" class="evidence-card">
                 <div class="evidence-top"><code>{{ evidenceTypeLabel(evidence.evidence_type) }}</code><span>{{ evidence.time_scale || '摘要' }}</span></div>
@@ -533,7 +589,7 @@ onBeforeUnmount(stopEventSession)
 
         <aside class="event-aside">
           <section v-if="['OPEN', 'INTERVENING'].includes(event.status)" class="content-card intervention-action-card" data-testid="intervention-action-panel">
-            <div class="card-heading"><div><span class="section-kicker">Intervention</span><h2>后端干预</h2></div></div>
+            <div class="card-heading"><div><span class="section-kicker">处理动作</span><h2>联系与干预</h2></div></div>
             <p>由后端选择并执行已批准的干预工具，页面不会根据智能体解释自动触发。</p>
             <el-button
               data-testid="intervention-submit"
@@ -543,7 +599,7 @@ onBeforeUnmount(stopEventSession)
               :disabled="interventionRequested"
               @click="requestIntervention"
             >
-              {{ interventionRequested ? '干预请求已提交' : '发起干预' }}
+              {{ interventionRequested ? '干预请求已提交（已受理）' : '查看处理建议' }}
             </el-button>
           </section>
 
@@ -588,7 +644,7 @@ onBeforeUnmount(stopEventSession)
         </aside>
       </section>
 
-      <el-drawer v-model="traceOpen" title="Evidence 原始来源" size="520px">
+      <el-drawer v-model="traceOpen" title="依据的详细来源" size="520px">
         <div v-if="selectedEvidence" class="trace-drawer" data-testid="evidence-trace">
           <SourceBadge :mode="selectedEvidence.source_mode" :simulated="selectedEvidence.simulated" />
           <h2>{{ evidenceTypeLabel(selectedEvidence.evidence_type) }}</h2>
@@ -602,7 +658,7 @@ onBeforeUnmount(stopEventSession)
             <div><dt>当前值</dt><dd>{{ selectedEvidence.current_value ?? '—' }}</dd></div>
             <div><dt>基线偏离</dt><dd>{{ selectedEvidence.baseline_deviation ?? '—' }}</dd></div>
           </dl>
-          <h3>关联 Observation</h3>
+          <h3>关联活动记录</h3>
           <article v-for="observation in selectedObservations" :key="observation.observation_id" class="observation-card">
             <strong>{{ observation.feature_name }}</strong>
             <code>{{ observation.observation_id }}</code>

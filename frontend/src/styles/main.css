@@ -294,11 +294,136 @@ p { font-size: 18px; line-height: 1.75; }
 
 /* Final visual polish: keep the console calm, tactile, and easy to scan. */
 :root {
+  --bg-page: #F7F9FA;
+  --card-bg: #FFFFFF;
+  --text-title: #1F2937;
+  --text-body: #4B5563;
+  --text-muted: #6B7280;
+  --border-light: #E5E7EB;
+  --brand-blue: #1677C2;
+  --brand-green: #36A864;
+  --risk-low-bg: #ECF9F0;
+  --risk-low-text: #22A75D;
+  --risk-mid-bg: #FFF9E8;
+  --risk-mid-text: #E6A23C;
+  --risk-high-bg: #FDEDED;
+  --risk-high-text: #DC2626;
+  --info-bg: #E8F4FC;
+  --info-text: #2B7BBD;
+  --btn-secondary: #6B7280;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+  --card-radius: 12px;
   --canvas: #f5f1ec;
   --surface-raised: #ffffff;
   --line-soft: #e2ddd6;
   --shadow-card: 0 10px 28px rgba(32, 28, 24, .06);
   --shadow-panel: 0 22px 56px rgba(32, 28, 24, .11);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.family-advice-card {
+  margin-bottom: 20px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  border: 1px solid #c8e4f5;
+  border-radius: var(--card-radius);
+  background: var(--info-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.family-advice-icon {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 24px;
+}
+
+.family-advice-card h2 {
+  margin: 5px 0 7px;
+  color: var(--text-title);
+  font-size: 21px;
+  line-height: 1.45;
+}
+
+.family-advice-card p {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.risk-badge {
+  min-height: 34px;
+  padding: 5px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.risk-badge .risk-icon { font-size: 16px; }
+.risk-badge .risk-score { font-size: 20px; line-height: 1; font-weight: 800; }
+.risk-badge .risk-tag-label { padding: 3px 8px; border-radius: 4px; font-size: 13px; }
+.risk-green { color: var(--risk-low-text); background: var(--risk-low-bg); }
+.risk-green .risk-tag-label { color: #fff; background: var(--risk-low-text); }
+.risk-yellow { color: #8a5a0a; background: var(--risk-mid-bg); }
+.risk-yellow .risk-tag-label { color: #1F2937; background: var(--risk-mid-text); }
+.risk-orange, .risk-red { color: var(--risk-high-text); background: var(--risk-high-bg); }
+.risk-orange .risk-tag-label, .risk-red .risk-tag-label { color: #fff; background: var(--risk-high-text); }
+.risk-unknown { color: var(--text-body); background: #f3f4f6; }
+.risk-unknown .risk-tag-label { color: #fff; background: var(--btn-secondary); }
+
+.risk-badge.compact .risk-score { font-size: 16px; }
+.risk-badge.compact .risk-tag-label { font-size: 12px; }
+
+.high-risk-dialog .el-dialog {
+  overflow: hidden;
+  padding-top: 0;
+  border-radius: var(--card-radius);
+  background: var(--risk-high-bg);
+}
+
+.high-risk-dialog .el-dialog__header {
+  margin: 0;
+  padding: 14px 20px;
+  color: #fff;
+  background: var(--risk-high-text);
+  animation: high-risk-flash 1.3s ease-in-out infinite;
+}
+
+.high-risk-dialog .el-dialog__body { padding: 24px 22px 14px; }
+.high-risk-dialog .el-dialog__footer { padding: 0 22px 22px; }
+.high-risk-dialog-header { display: flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 800; }
+.high-risk-dialog-body strong { display: block; color: var(--risk-high-text); font-size: 20px; }
+.high-risk-dialog-body p { margin: 10px 0 0; color: var(--text-body); font-size: 16px; line-height: 1.7; }
+.high-risk-dialog .el-button--danger { min-height: 48px; width: 100%; background: var(--risk-high-text); border-color: var(--risk-high-text); }
+
+@keyframes high-risk-flash {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.18); }
+}
+
+@media (max-width: 760px) {
+  .family-advice-card { padding: 17px; gap: 12px; }
+  .family-advice-card h2 { font-size: 18px; }
 }
 
 body {
@@ -824,7 +949,7 @@ body, button, input, select, textarea { letter-spacing: 0; }
 .resident-avatar { color: #111; background: #ebe7e1; border: 1px solid #d3cec6; }
 .resident-identity strong { color: #111; font-size: 14px; }.resident-identity span { color: #626260; font-size: 12px; }
 .topbar-actions { gap: 10px; }
-.topbar .el-segmented { --el-segmented-item-selected-bg-color: #111; --el-segmented-item-selected-color: #fff; color: #626260; background: #ebe7e1; border: 1px solid #d3cec6; border-radius: 10px; }
+.topbar .el-segmented { --el-segmented-item-selected-bg-color: var(--brand-blue); --el-segmented-item-selected-color: #fff; color: #626260; background: #ebe7e1; border: 1px solid #d3cec6; border-radius: 10px; }
 .topbar .el-segmented__item { min-width: 82px; border-radius: 7px; }
 .more-button, .mobile-menu-button { width: 38px; height: 38px; min-height: 38px; color: #111; background: #fff; border-color: #d3cec6; }
 .mobile-menu-button { display: none; place-items: center; border-radius: 8px; }
@@ -850,7 +975,7 @@ body, button, input, select, textarea { letter-spacing: 0; }
 .risk-badge, .risk-badge.compact { border-radius: 8px; }.source-badge, .simulation-mark { border-radius: 6px; }
 
 .el-button { min-height: 42px; border-radius: 8px; font-weight: 500; }
-.app-shell .el-button--primary { color: #fff; background: #111; border-color: #111; }.app-shell .el-button--primary:hover { color: #fff; background: #000; border-color: #000; }
+.app-shell .el-button--primary { color: #fff; background: var(--brand-blue); border-color: var(--brand-blue); }.app-shell .el-button--primary:hover { color: #fff; background: #125f9b; border-color: #125f9b; }
 .el-button:not(.el-button--primary) { color: #111; background: #fff; border-color: #d3cec6; }.el-button:not(.el-button--primary):hover { color: #111; background: #ebe7e1; border-color: #9c9fa5; }
 .el-input__wrapper, .el-select__wrapper, .el-textarea__inner, .el-date-editor.el-input__wrapper { min-height: 42px; color: #111; background: #fff; border-radius: 8px; box-shadow: 0 0 0 1px #9c9fa5 inset; }
 .el-input__wrapper:hover, .el-select__wrapper:hover { box-shadow: 0 0 0 1px #ff5600 inset; }.el-input__wrapper.is-focus, .el-select__wrapper.is-focused { box-shadow: 0 0 0 2px rgba(255,86,0,.24) inset !important; }
@@ -902,3 +1027,14 @@ body, button, input, select, textarea { letter-spacing: 0; }
   .navigation-label { font-size: 13px; }
   .page-context strong { font-size: 16px; }
 }
+
+/* v2.0 hierarchy: blue navigation, light-blue advice and risk overview. */
+.topbar { color: #fff; background: var(--brand-blue); border-bottom-color: #125f9b; }
+.topbar .page-context span, .topbar .page-context strong, .topbar .resident-identity strong, .topbar .resident-identity span { color: #fff; }
+.topbar .context-divider { background: rgba(255,255,255,.35); }
+.topbar .resident-avatar { color: var(--brand-blue); background: #fff; border-color: #fff; }
+.topbar .el-segmented { color: #fff; background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.35); }
+.topbar .more-button, .topbar .mobile-menu-button { color: var(--brand-blue); background: #fff; border-color: #fff; }
+.hero-risk-card { background: var(--info-bg) !important; border-color: #c8e4f5; }
+.hero-risk-card .risk-score-ring { border-top-color: var(--brand-blue); }
+.hero-risk-card .risk-score-ring span { color: var(--brand-blue); font-size: 48px; }

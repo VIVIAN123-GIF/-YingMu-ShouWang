@@ -77,7 +77,7 @@ async function handleSelect(path) {
       <button class="collapse-button" type="button" :aria-label="collapsed ? '展开导航' : '收起导航'" @click="collapsed = !collapsed"><el-icon><component :is="collapsed ? Expand : Fold" /></el-icon><span v-show="!collapsed">收起导航</span></button>
     </aside>
     <div class="workspace">
-      <div v-if="pagesBuild" class="public-demo-banner" role="status"><strong>脱敏评审演示</strong><span>RECORDED_REPLAY / 授权回放</span><span>非实时设备</span><span>非老年人实测</span></div>
+      <div v-if="pagesBuild" class="public-demo-banner" role="status"><strong>脱敏评审演示</strong><span>授权回放</span><span>非实时设备</span><span>非老年人实测</span></div>
       <header class="topbar">
         <button class="mobile-menu-button" type="button" aria-label="打开导航" @click="mobileNavigationOpen = true"><el-icon><Menu /></el-icon></button>
         <div class="topbar-context">
@@ -98,7 +98,7 @@ async function handleSelect(path) {
           </el-dropdown>
         </div>
       </header>
-      <div v-if="runtime.message" class="runtime-banner" :class="{ degraded: runtime.degraded }" role="status"><el-icon><InfoFilled /></el-icon><span>{{ runtime.message }}</span><small v-if="runtime.activeSource === 'replay_dataset'">RECORDED_REPLAY / 授权回放</small></div>
+      <div v-if="runtime.message" class="runtime-banner" :class="{ degraded: runtime.degraded }" role="status"><el-icon><InfoFilled /></el-icon><span>{{ runtime.message }}</span><small v-if="runtime.activeSource === 'replay_dataset'">授权回放</small></div>
       <main
         v-loading="openingEventDetail"
         element-loading-text="正在调取风险事件"
