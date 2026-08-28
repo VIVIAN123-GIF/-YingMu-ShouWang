@@ -1,12 +1,11 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { CircleCheckFilled, Connection, Monitor, Sunrise } from '@element-plus/icons-vue'
+import { CircleCheck, Connection, Monitor, QuestionFilled, Sunrise } from '@element-plus/icons-vue'
 import PageHeader from '../components/common/PageHeader.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
-import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
 import { getDashboard } from '../services/repository'
 import { domainLabel, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
@@ -14,6 +13,23 @@ const router = useRouter()
 const loading = ref(true)
 const error = ref('')
 const data = ref(null)
+const animatedRiskWaterLevel = ref(0)
+const fullRiskScores = computed(() => data.value?.risk_trend?.map((item) => Number(item.score)) || [])
+const riskRingTone = computed(() => {
+  const score = Number(data.value?.current_risk?.risk_score)
+  if (!Number.isFinite(score) || score < 0.4) return 'low'
+  if (score < 0.7) return 'mid'
+  return 'high'
+})
+const riskWaterLevel = computed(() => {
+  const score = Number(data.value?.current_risk?.risk_score)
+  return Math.round((Number.isFinite(score) ? Math.min(1, Math.max(0, score)) : 0) * 100)
+})
+
+function animateRiskWaterLevel() {
+  animatedRiskWaterLevel.value = 0
+  window.setTimeout(() => { animatedRiskWaterLevel.value = riskWaterLevel.value }, 60)
+}
 const factorLabels = {
   fall_precursor_evidence: '起身后不稳证据',
   personal_baseline_deviation: '偏离个人基线',
@@ -38,35 +54,42 @@ const trendLabels = {
 }
 
 const chartOption = computed(() => ({
+  animation: false,
   grid: { left: 46, right: 24, top: 32, bottom: 42 },
   tooltip: { trigger: 'axis', formatter: (items) => `${items[0].axisValue}<br/>风险水位：${formatRiskScore(items[0].value)}` },
   xAxis: {
     type: 'category',
     boundaryGap: false,
     data: data.value?.risk_trend?.map((item) => item.time) || [],
-    axisLabel: { color: '#626260', fontSize: 13 },
-    axisLine: { lineStyle: { color: '#dce8e4' } },
+    axisLabel: { color: '#86909c', fontSize: 13 },
+    axisLine: { lineStyle: { color: '#e5e6eb' } },
   },
   yAxis: {
     type: 'value', min: 0, max: 1,
-    splitLine: { lineStyle: { color: '#ebe7e1' } },
-    axisLabel: { color: '#626260', fontSize: 13, formatter: (value) => `${Math.round(value * 100)}` },
+    splitLine: { lineStyle: { color: '#e5e6eb' } },
+    axisLabel: { color: '#86909c', fontSize: 13, formatter: (value) => `${Math.round(value * 100)}` },
   },
   series: [{
-    type: 'line', smooth: 0.35, symbolSize: 9,
-    data: data.value?.risk_trend?.map((item) => item.score) || [],
-    lineStyle: { width: 4, color: '#e58b3a' },
-    itemStyle: { color: '#0007cb', borderColor: '#fff', borderWidth: 2 },
+    type: 'line', smooth: 0.35, symbolSize: 9, showSymbol: true,
+    animation: false,
+    data: fullRiskScores.value,
+    lineStyle: { width: 0, opacity: 0 },
+    itemStyle: { color: '#1677c2', borderColor: '#fff', borderWidth: 2 },
+  }, {
+    type: 'line', smooth: 0.35, showSymbol: false,
+    animation: false,
+    data: fullRiskScores.value,
+    lineStyle: { width: 4, color: '#ff7d00' },
     areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [
-      { offset: 0, color: 'rgba(229,139,58,.28)' }, { offset: 1, color: 'rgba(229,139,58,.02)' },
+      { offset: 0, color: 'rgba(255,125,0,.24)' }, { offset: 1, color: 'rgba(255,125,0,.02)' },
     ] } },
     markLine: {
       silent: true,
       data: [
-        { yAxis: 0.4, name: '黄色关注', lineStyle: { color: '#d6a63b', type: 'dashed' } },
-        { yAxis: 0.7, name: '橙色干预', lineStyle: { color: '#dd6b20', type: 'dashed' } },
+        { yAxis: 0.4, name: '黄色关注', lineStyle: { color: '#ff7d00', type: 'dashed' } },
+        { yAxis: 0.7, name: '高危干预', lineStyle: { color: '#f53f3f', type: 'dashed' } },
       ],
-      label: { color: '#626260' },
+      label: { color: '#86909c' },
     },
   }],
 }))
@@ -76,6 +99,7 @@ async function load() {
   error.value = ''
   try {
     data.value = await getDashboard()
+    animateRiskWaterLevel()
   } catch (err) {
     error.value = `无法读取首页数据：${err.message}`
   } finally {
@@ -103,7 +127,8 @@ function onlineLabel(value) {
 <template>
   <div v-loading="loading">
     <PageHeader
-      title="今天的安全状态，一眼看清"
+      class="home-page-header"
+      title="今天的安全状态"
       description="风险等级来自统一状态机；页面同时呈现证据、建议和处理结果。"
     >
       <SourceBadge
@@ -117,7 +142,6 @@ function onlineLabel(value) {
 
     <template v-if="data">
       <section v-if="data.current_risk" class="family-advice-card" aria-labelledby="family-advice-title">
-        <div class="family-advice-icon" aria-hidden="true">💡</div>
         <div>
           <span class="section-kicker">给家属的建议</span>
           <h2 id="family-advice-title">{{ data.current_risk.recommended_action || '请按当前状态陪伴老人，保持联系。' }}</h2>
@@ -125,7 +149,8 @@ function onlineLabel(value) {
         </div>
       </section>
       <section v-if="data.current_risk" class="hero-risk-card" :class="`surface-${data.current_risk.risk_level.toLowerCase()}`">
-        <div class="risk-score-ring">
+        <div class="risk-score-ring" :class="`risk-ring-${riskRingTone}`" :style="{ '--risk-water-level': `${animatedRiskWaterLevel}%` }">
+          <div class="risk-water" aria-hidden="true"></div>
           <span>{{ formatRiskScore(data.current_risk.risk_score) }}</span>
           <small>综合水位</small>
         </div>
@@ -136,8 +161,7 @@ function onlineLabel(value) {
           <span class="last-update">更新于 {{ formatDateTime(data.current_risk.updated_at) }}</span>
         </div>
         <div class="today-status">
-          <el-icon><CircleCheckFilled /></el-icon>
-          <div><strong>{{ statusLabel(data.current_risk.status) }}</strong><span>当前事件状态</span></div>
+          <div><span>当前事件状态</span><strong>{{ statusLabel(data.current_risk.status) }}</strong></div>
         </div>
       </section>
       <section v-else class="content-card api-empty-state">
@@ -146,32 +170,31 @@ function onlineLabel(value) {
       </section>
 
       <section class="metric-grid" aria-label="今日状态摘要">
-        <article class="metric-card">
+        <article class="metric-card card-hover-lift">
           <span class="metric-icon mint"><Sunrise /></span>
-          <div><small>今日活动</small><strong>{{ metric(data.today.activity_minutes, ' 分钟', '暂无数据') }}</strong><span>活动以个人基线为参照</span></div>
+          <div><div class="metric-label"><small>今日活动</small><el-tooltip content="今日累计活动时长，以个人基线作为参考" placement="top"><el-icon class="metric-help"><QuestionFilled /></el-icon></el-tooltip></div><strong>{{ metric(data.today.activity_minutes, ' 分钟', '暂无数据') }}</strong><span>活动以个人基线为参照</span></div>
         </article>
-        <article class="metric-card">
+        <article class="metric-card card-hover-lift">
           <span class="metric-icon blue"><Connection /></span>
-          <div><small>房间活动</small><strong>{{ metric(data.today.room_transitions, ' 次', '暂无数据') }}</strong><span>仅保存脱敏统计</span></div>
+          <div><div class="metric-label"><small>房间活动</small><el-tooltip content="今日识别到的房间间活动次数，仅保留脱敏统计" placement="top"><el-icon class="metric-help"><QuestionFilled /></el-icon></el-tooltip></div><strong>{{ metric(data.today.room_transitions, ' 次', '暂无数据') }}</strong><span>仅保存脱敏统计</span></div>
         </article>
-        <article class="metric-card">
+        <article class="metric-card card-hover-lift">
           <span class="metric-icon sand"><Monitor /></span>
-          <div><small>设备状态</small><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ data.device.name }}</span></div>
+          <div><div class="metric-label"><small>设备状态</small><el-tooltip content="摄像设备当前连接与采集状态" placement="top"><el-icon class="metric-help"><QuestionFilled /></el-icon></el-tooltip></div><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ data.device.name }}</span></div>
         </article>
-        <article class="metric-card">
-          <span class="metric-icon coral"><CircleCheckFilled /></span>
-          <div><small>家属关怀</small><strong>{{ metric(data.today.care_status, '', '尚未记录') }}</strong><span>本周最多主动汇总一次</span></div>
+        <article class="metric-card card-hover-lift">
+          <span class="metric-icon coral"><CircleCheck /></span>
+          <div><div class="metric-label"><small>家属关怀</small><el-tooltip content="本周家属联系与关怀反馈状态" placement="top"><el-icon class="metric-help"><QuestionFilled /></el-icon></el-tooltip></div><strong>{{ metric(data.today.care_status, '', '尚未记录') }}</strong><span>本周最多主动汇总一次</span></div>
         </article>
       </section>
 
-      <TechnicalDisclosure title="趋势与设备详情" summary="风险趋势、设备状态和多时标工程指数">
-      <section class="dashboard-grid">
+      <section class="dashboard-grid review-only display-grid">
         <article class="content-card chart-card">
           <div class="card-heading">
             <div><span class="section-kicker">黄金半分钟</span><h2>风险水位与回落</h2></div>
             <el-tag type="success" effect="plain" size="large">已完成观察</el-tag>
           </div>
-          <ChartPanel v-if="data.risk_trend.length" :option="chartOption" height="320px" aria-label="凌晨风险水位先升高后回落的折线图" />
+          <ChartPanel v-if="data.risk_trend.length" :option="chartOption" :replace="false" point-animation point-color="#1677c2" draw-animation draw-color="#ff7d00" :draw-delay="2400" height="320px" aria-label="凌晨风险水位先升高后回落的折线图" />
           <el-empty v-else description="后端未提供逐点风险趋势，事件状态以时间轴为准" />
           <div v-if="data.risk_trend.length" class="chart-caption">
             <span v-for="item in data.risk_trend" :key="item.time"><b>{{ item.time }}</b>{{ item.label }}</span>
@@ -194,7 +217,7 @@ function onlineLabel(value) {
         </article>
       </section>
 
-      <section v-if="data.pre_fall_summary" class="content-card prefall-card">
+      <section v-if="data.pre_fall_summary" class="content-card prefall-card review-only">
         <div class="card-heading">
           <div><span class="section-kicker">工程风险指数 · 非概率</span><h2>个体化多源前置观察</h2></div>
           <RiskBadge :level="data.pre_fall_summary.risk_level" :score="formatRiskScore(data.pre_fall_summary.instant_risk)" />
@@ -249,7 +272,6 @@ function onlineLabel(value) {
         />
         <p class="intervention-line">{{ data.pre_fall_summary.recommended_intervention }}</p>
       </section>
-      </TechnicalDisclosure>
 
       <section class="content-card events-card">
         <div class="card-heading">

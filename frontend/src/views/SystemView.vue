@@ -14,7 +14,7 @@ import {
   runtime, stopDeviceCollection,
 } from '../services/repository'
 import { useViewMode } from '../services/viewMode'
-import { formatDateTime } from '../utils/format'
+import { feedbackTone, formatDateTime } from '../utils/format'
 
 const router = useRouter()
 const { isReview } = useViewMode()
@@ -170,7 +170,7 @@ onMounted(load)
       <section class="content-card feedback-audit-card" data-testid="feedback-audit">
         <div class="card-heading"><div><span class="section-kicker">本地演示记录</span><h2>关怀与身份核验</h2></div><el-tag type="warning" effect="plain">{{ feedbackRecords.length }} 条</el-tag></div>
         <div v-if="feedbackRecords.length" class="feedback-record-list">
-          <article v-for="record in feedbackRecords.slice().reverse()" :key="record.feedback_id" class="recorded-feedback">
+          <article v-for="record in feedbackRecords.slice().reverse()" :key="record.feedback_id" class="recorded-feedback" :class="`feedback-${feedbackTone(record.value)}`">
             <strong>{{ record.feedback_kind === 'IDENTITY_VERIFICATION' ? '身份信息核验' : '家属关怀反馈' }}</strong><span>{{ record.value }}</span><small>{{ record.recorded_at }} · {{ record.operator }} · {{ record.event_id }} · {{ record.saved_in_demo ? 'RECORDED_REPLAY 本地演示' : '后端记录' }}</small>
           </article>
         </div>

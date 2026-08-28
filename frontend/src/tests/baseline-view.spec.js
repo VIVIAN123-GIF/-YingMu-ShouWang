@@ -18,6 +18,7 @@ function mountView() {
         PageHeader: { template: '<header><slot /></header>' },
         SourceBadge: { template: '<span class="source-stub" />' },
         ChartPanel: { template: '<div class="chart-stub" />' },
+        ActivityHeatmap: { template: '<div class="heatmap-stub" />' },
         'el-alert': { props: ['title'], template: '<div class="alert-stub">{{ title }}<slot /></div>' },
         'el-empty': { props: ['description'], template: '<div class="empty-stub">{{ description }}</div>' },
         'el-progress': { template: '<div class="progress-stub"><slot name="default" :percentage="100" /></div>' },
@@ -38,7 +39,8 @@ describe('个人基线页面', () => {
     expect(wrapper.text()).toContain('3 名参与者 · 96 段受控片段')
     expect(wrapper.text()).toContain('张建国待同一居民、同一机位实机样本校准')
     expect(wrapper.text()).toContain('待个人校准')
-    expect(wrapper.findAll('.chart-stub')).toHaveLength(2)
+    expect(wrapper.findAll('.chart-stub')).toHaveLength(1)
+    expect(wrapper.findAll('.heatmap-stub')).toHaveLength(1)
   })
 
   it('API 没有时序数据时展示诚实空状态', async () => {

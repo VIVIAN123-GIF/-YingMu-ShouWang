@@ -4,6 +4,7 @@ import MediaPanel from '../components/common/MediaPanel.vue'
 import PageHeader from '../components/common/PageHeader.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
+import ReplaySelector from '../components/replay/ReplaySelector.vue'
 import { getAsset, getEvent, getEvents } from '../services/repository'
 import { resolveEventAssetId } from '../services/viewModel'
 
@@ -54,16 +55,8 @@ onMounted(load)
     </PageHeader>
     <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon />
     <template v-if="events.length">
-      <section class="content-card replay-selector">
-        <div class="card-heading">
-          <div><span class="section-kicker">选择场景</span><h2>100 天关键片段</h2></div>
-          <el-select v-model="selectedId" aria-label="选择回放场景" @change="select">
-            <el-option v-for="(event, index) in selectable" :key="event.event_id" :label="`${index + 1}. ${event.title}`" :value="event.event_id" />
-          </el-select>
-        </div>
-        <p>回放不会触发真实干预，也不会改变后端风险状态。</p>
-      </section>
-      <div class="replay-stage">
+      <ReplaySelector v-model="selectedId" :events="selectable" @select="select" />
+      <div v-if="selected" class="replay-stage">
       <MediaPanel v-if="selectedAsset" :asset="selectedAsset" :source-mode="selected?.source_mode" :simulated="selected?.simulated" />
       <el-alert v-else-if="assetState === 'failed'" :title="assetMessage" type="error" :closable="false" show-icon />
       <section v-if="selected" v-loading="assetState === 'loading'" class="content-card" data-testid="replay-detail">
@@ -80,6 +73,7 @@ onMounted(load)
         <el-empty v-else description="当前事件暂无回放时间轴" />
       </section>
       </div>
+      <el-empty v-else class="content-card replay-empty" description="请选择场景查看关键片段" />
     </template>
   </div>
 </template>
