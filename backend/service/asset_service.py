@@ -1,3 +1,8 @@
+import asyncio
+import hashlib
+from datetime import datetime, timezone
+from pathlib import Path
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,6 +32,46 @@ async def get_asset(db: AsyncSession, asset_id: str):
     if not row:
         raise ServiceError(404, "ASSET_NOT_FOUND", "authorized asset does not exist")
     return asset_dict(row)
+
+
+def _validate_private_asset_for_read(row: Asset) -> tuple[Path, str]:
+    if not row.available or row.authorization_status != "AUTHORIZED" or not row.authorization_record_id:
+        raise ServiceError(403, "ASSET_MEDIA_FORBIDDEN", "asset media is not authorized for viewing")
+    if not row.retention_until or aware(row.retention_until) < datetime.now(timezone.utc):
+        raise ServiceError(410, "ASSET_MEDIA_EXPIRED", "asset media is no longer retained")
+    if not row.storage_key or not row.content_type or not row.content_sha256:
+        raise ServiceError(404, "ASSET_MEDIA_UNAVAILABLE", "asset has no private media object")
+    if row.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise ServiceError(415, "ASSET_MEDIA_TYPE_UNSUPPORTED", "asset is not a supported image")
+
+    # Kept local to avoid a module cycle: snapshot persistence already depends on this service.
+    from backend.service.snapshot_asset_service import resolve_private_asset_path
+
+    try:
+        return resolve_private_asset_path(row.storage_key), row.content_type
+    except Exception as exc:
+        raise ServiceError(404, "ASSET_MEDIA_UNAVAILABLE", "asset media is unavailable") from exc
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as content:
+        for chunk in iter(lambda: content.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+async def get_private_image_content(db: AsyncSession, asset_id: str) -> tuple[Path, str]:
+    row = (await db.execute(select(Asset).where(Asset.asset_id == asset_id))).scalar_one_or_none()
+    if row is None:
+        raise ServiceError(404, "ASSET_NOT_FOUND", "authorized asset does not exist")
+    path, content_type = _validate_private_asset_for_read(row)
+    if not path.is_file():
+        raise ServiceError(404, "ASSET_MEDIA_UNAVAILABLE", "asset media is unavailable")
+    actual_hash = await asyncio.to_thread(_sha256_file, path)
+    if actual_hash != row.content_sha256:
+        raise ServiceError(409, "ASSET_MEDIA_INTEGRITY_FAILED", "asset media integrity verification failed")
+    return path, content_type
 
 
 async def create_asset(
