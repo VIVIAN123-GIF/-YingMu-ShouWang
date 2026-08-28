@@ -27,6 +27,7 @@ const snapshot = ref(null)
 const snapshotLoading = ref(false)
 const snapshotError = ref(null)
 const snapshotAsset = ref(null)
+const autoCaptureStarted = ref(false)
 const stopDialogOpen = ref(false)
 const stopLoading = ref(false)
 const controlToken = ref('')
@@ -62,6 +63,7 @@ async function load() {
   if (forewarningResult.status === 'fulfilled') latestForewarning.value = forewarningResult.value
   feedbackRecords.value = getAllRecordedFeedback()
   loading.value = false
+  void autoInitializeMedia()
 }
 
 async function captureSnapshot() {
@@ -76,6 +78,12 @@ async function captureSnapshot() {
   }
   catch (errorValue) { snapshot.value = null; snapshotError.value = apiError(errorValue, '设备快照暂不可用') }
   finally { snapshotLoading.value = false }
+}
+
+async function autoInitializeMedia() {
+  if (!device.value || !liveAvailable.value || autoCaptureStarted.value) return
+  autoCaptureStarted.value = true
+  await captureSnapshot()
 }
 
 async function confirmStop() {
@@ -114,7 +122,7 @@ onMounted(load)
         <el-tag :type="device.online ? 'success' : 'danger'" size="large">{{ device.online ? '在线' : '离线' }}</el-tag>
       </section>
 
-      <LiveVideoPanel :available="liveAvailable" />
+      <LiveVideoPanel :available="liveAvailable" auto-start />
 
       <div class="system-operations-grid">
         <section class="content-card snapshot-card" data-testid="device-snapshot">

@@ -28,38 +28,40 @@ async function submit() {
 
 <template>
   <main class="demo-login-page">
-    <section class="demo-login-panel" aria-labelledby="demo-login-title">
-      <div class="demo-login-brand" aria-hidden="true">萤</div>
-      <div>
-        <span class="demo-login-kicker">赛事评审入口</span>
+    <section class="demo-login-shell" aria-labelledby="demo-login-title">
+      <div class="demo-login-aside">
+        <div class="demo-login-brand" aria-hidden="true">萤</div>
+        <span class="demo-login-kicker">家庭安全控制台</span>
         <h1 id="demo-login-title">萤目守望</h1>
-        <p>请输入评审账号进入脱敏演示。</p>
+        <p>受控访问设备状态、风险事件和授权媒体。</p>
+        <div class="demo-login-status"><span class="demo-login-status-dot" aria-hidden="true"></span><span>媒体会话服务就绪</span></div>
       </div>
 
-      <form class="demo-login-form" @submit.prevent="submit">
-        <label>
-          <span>用户名</span>
-          <el-input v-model="form.username" autocomplete="username" size="large" aria-label="用户名">
-            <template #prefix><el-icon><User /></el-icon></template>
-          </el-input>
-        </label>
-        <label>
-          <span>密码</span>
-          <el-input v-model="form.password" type="password" show-password autocomplete="current-password" size="large" aria-label="密码">
-            <template #prefix><el-icon><Lock /></el-icon></template>
-          </el-input>
-        </label>
-        <p v-if="errorMessage" class="demo-login-error" role="alert">{{ errorMessage }}</p>
-        <el-button native-type="submit" type="primary" size="large" :loading="submitting">进入演示</el-button>
-      </form>
+      <div class="demo-login-panel">
+        <div class="demo-login-heading"><span>受权入口</span><strong>登录控制台</strong></div>
 
-      <div class="demo-login-boundaries" aria-label="演示数据边界">
-        <span>脱敏演示数据</span>
-        <span>RECORDED_REPLAY / 授权回放</span>
-        <span>非实时设备</span>
-        <span>非老年人实测</span>
+        <form class="demo-login-form" @submit.prevent="submit">
+          <label>
+            <span>用户名</span>
+            <el-input v-model="form.username" autocomplete="username" size="large" aria-label="用户名" placeholder="输入受权用户名">
+              <template #prefix><el-icon><User /></el-icon></template>
+            </el-input>
+          </label>
+          <label>
+            <span>密码</span>
+            <el-input v-model="form.password" type="password" show-password autocomplete="current-password" size="large" aria-label="密码" placeholder="输入访问密码">
+              <template #prefix><el-icon><Lock /></el-icon></template>
+            </el-input>
+          </label>
+          <p v-if="errorMessage" class="demo-login-error" role="alert">{{ errorMessage }}</p>
+          <el-button native-type="submit" type="primary" size="large" :loading="submitting">进入控制台</el-button>
+        </form>
+
+        <div class="demo-login-boundaries" aria-label="访问范围">
+          <span>脱敏演示数据</span><span>授权媒体</span><span>非生产身份认证</span>
+        </div>
+        <small>登录仅用于当前控制台会话，站点不保存密码或媒体令牌。</small>
       </div>
-      <small>静态访问门禁，不是生产级身份认证。站点不托管敏感数据。</small>
     </section>
   </main>
 </template>

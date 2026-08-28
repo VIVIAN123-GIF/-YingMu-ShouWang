@@ -33,9 +33,9 @@ function makePlayer() {
   }
 }
 
-function mountPanel(available = true) {
+function mountPanel(available = true, autoStart = false) {
   return mount(LiveVideoPanel, {
-    props: { available },
+    props: { available, autoStart },
     global: {
       stubs: {
         'el-button': {
@@ -59,6 +59,7 @@ describe('摄像头直播面板', () => {
 
   it('通过同源媒体 BFF 创建带 Cookie 的 HTTP-FLV 播放器', async () => {
     const wrapper = mountPanel()
+    expect(wrapper.get('video').attributes('controls')).toBeUndefined()
     await wrapper.get('button').trigger('click')
     await flushPromises()
 
@@ -69,6 +70,12 @@ describe('摄像头直播面板', () => {
     expect(mocks.player.attachMediaElement).toHaveBeenCalledWith(wrapper.get('video').element)
     expect(mocks.player.load).toHaveBeenCalledTimes(1)
     expect(mocks.player.play).toHaveBeenCalledTimes(1)
+  })
+
+  it('进入页面后自动启动直播', async () => {
+    mountPanel(true, true)
+    await flushPromises()
+    expect(mocks.createPlayer).toHaveBeenCalledTimes(1)
   })
 
   it('停止直播时完整销毁播放器', async () => {

@@ -27,6 +27,7 @@ function mountView() {
     stubs: {
       PageHeader: { template: '<header><slot /></header>' }, SourceBadge: { template: '<span class="source-stub" />' },
       TechnicalDisclosure: { template: '<div class="technical-stub"><slot /></div>' },
+      LiveVideoPanel: { props: ['available', 'autoStart'], template: '<section data-testid="device-live" :data-auto-start="autoStart">摄像头直播</section>' },
       'el-button': { props: ['disabled', 'loading'], emits: ['click'], template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>' },
       'el-alert': { props: ['title'], template: '<div class="alert-stub">{{ title }}<slot /></div>' },
       'el-empty': { props: ['description'], template: '<div class="empty-stub">{{ description }}</div>' },
@@ -58,12 +59,11 @@ describe('系统设备运维页面', () => {
     expect(review.find('[data-testid="stop-collection"]').exists()).toBe(true)
   })
 
-  it('按需获取快照并明确图片不向浏览器开放', async () => {
+  it('进入页面自动获取快照并允许手动再次抓拍', async () => {
     setViewMode('review')
     const wrapper = mountView(); await flushPromises()
     await wrapper.get('.snapshot-card button').trigger('click'); await flushPromises()
-    expect(mocks.createDeviceSnapshot).toHaveBeenCalledTimes(1)
-    expect(wrapper.text()).toContain('抓拍已完成')
+    expect(mocks.createDeviceSnapshot).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toContain('抓拍已完成')
     expect(wrapper.text()).not.toContain('图片通过受控媒体会话加载')
   })
