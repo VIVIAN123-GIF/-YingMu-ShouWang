@@ -5,11 +5,12 @@ import { ElMessage } from 'element-plus'
 import { Camera, CircleCheck, CircleClose, Location, VideoPause } from '@element-plus/icons-vue'
 import PageHeader from '../components/common/PageHeader.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
+import PrivateImage from '../components/common/PrivateImage.vue'
+import LiveVideoPanel from '../components/common/LiveVideoPanel.vue'
 import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
 import {
   clearRecordedFeedback, getAllRecordedFeedback,
-  // getDeviceLiveAddress,
-  getDeviceSnapshot, getDeviceStatus, getLatestForewarning,
+  createDeviceSnapshot, getDeviceSnapshot, getDeviceStatus, getLatestForewarning,
   runtime, stopDeviceCollection,
 } from '../services/repository'
 import { useViewMode } from '../services/viewMode'
@@ -25,10 +26,7 @@ const feedbackRecords = ref([])
 const snapshot = ref(null)
 const snapshotLoading = ref(false)
 const snapshotError = ref(null)
-// 摄像头直播功能暂时停用。
-// const liveAddress = ref(null)
-// const liveLoading = ref(false)
-// const liveError = ref(null)
+const snapshotAsset = ref(null)
 const stopDialogOpen = ref(false)
 const stopLoading = ref(false)
 const controlToken = ref('')
@@ -37,6 +35,13 @@ const controlError = ref(null)
 const sceneConfigId = computed(() => latestForewarning.value?.scene_config_id || '')
 const controlAvailable = computed(() => (
   device.value?.collection_active
+  && device.value?.source_mode === 'LIVE_DEVICE'
+  && !device.value?.simulated
+  && runtime.mode !== 'replay'
+))
+const liveAvailable = computed(() => (
+  device.value?.online
+  && device.value?.collection_active
   && device.value?.source_mode === 'LIVE_DEVICE'
   && !device.value?.simulated
   && runtime.mode !== 'replay'
@@ -63,26 +68,15 @@ async function captureSnapshot() {
   if (snapshotLoading.value) return
   snapshotLoading.value = true
   snapshotError.value = null
-  try { snapshot.value = await getDeviceSnapshot() }
+  try {
+    // Keep the legacy GET fixture usable in isolated UI tests and replay-only builds.
+    const capture = createDeviceSnapshot || getDeviceSnapshot
+    snapshotAsset.value = await capture()
+    snapshot.value = snapshotAsset.value
+  }
   catch (errorValue) { snapshot.value = null; snapshotError.value = apiError(errorValue, '设备快照暂不可用') }
   finally { snapshotLoading.value = false }
 }
-
-/* 摄像头直播功能暂时停用。
-async function openLive() {
-  if (liveLoading.value) return
-  liveLoading.value = true
-  liveError.value = null
-  try {
-    const result = await getDeviceLiveAddress()
-    if (!result?.temporary_url) throw new Error('设备未返回可用直播地址')
-    liveAddress.value = result.temporary_url
-  } catch (errorValue) {
-    liveAddress.value = null
-    liveError.value = apiError(errorValue, '实时直播暂不可用')
-  } finally { liveLoading.value = false }
-}
-*/
 
 async function confirmStop() {
   if (!controlToken.value || stopLoading.value) return
@@ -120,25 +114,20 @@ onMounted(load)
         <el-tag :type="device.online ? 'success' : 'danger'" size="large">{{ device.online ? '在线' : '离线' }}</el-tag>
       </section>
 
+      <LiveVideoPanel :available="liveAvailable" />
+
       <div class="system-operations-grid">
-        <!-- 摄像头直播功能暂时停用。
-        <section class="content-card live-card" data-testid="device-live">
-          <div class="card-heading"><div><span class="section-kicker">实时画面</span><h2>摄像头直播</h2></div><el-button :loading="liveLoading" type="primary" @click="openLive"><el-icon><Camera /></el-icon>获取直播</el-button></div>
-          <el-alert v-if="liveError" :title="liveError.message" type="error" :closable="false" show-icon />
-          <video v-else-if="liveAddress" class="live-video" :src="liveAddress" controls autoplay muted playsinline />
-          <el-empty v-else description="点击获取直播以加载实时画面" :image-size="72" />
-        </section>
-        -->
         <section class="content-card snapshot-card" data-testid="device-snapshot">
           <div class="card-heading"><div><span class="section-kicker">设备快照</span><h2>最近一次主动抓拍</h2></div><el-button :loading="snapshotLoading" type="primary" @click="captureSnapshot"><el-icon><Camera /></el-icon>获取快照</el-button></div>
           <el-alert v-if="snapshotError" :title="snapshotError.message" type="error" :closable="false" show-icon>
             <template #default><span>错误码：{{ snapshotError.code }}</span><span v-if="snapshotError.requestId"> · 请求 ID：{{ snapshotError.requestId }}</span></template>
           </el-alert>
           <div v-else-if="snapshot" class="snapshot-result">
-            <div class="snapshot-unavailable"><el-icon><Camera /></el-icon><strong>抓拍已完成</strong><span>临时图片地址未向浏览器开放</span></div>
+            <PrivateImage :asset-id="snapshotAsset?.asset_id" alt="授权主动抓拍" />
+            <div class="snapshot-unavailable"><el-icon><Camera /></el-icon><strong>抓拍已完成</strong></div>
             <dl class="detail-list compact-detail-list">
               <div><dt>抓拍时间</dt><dd>{{ formatDateTime(snapshot.captured_at) }}</dd></div><div><dt>设备引用</dt><dd>{{ snapshot.device_ref }}</dd></div>
-              <div><dt>通道</dt><dd>{{ snapshot.channel_no }}</dd></div><div><dt>平台延迟</dt><dd>{{ snapshot.provider_latency_ms }} ms</dd></div>
+              <div><dt>素材类型</dt><dd>{{ snapshot.content_type }}</dd></div><div><dt>素材大小</dt><dd>{{ snapshot.byte_size }} bytes</dd></div>
             </dl>
             <SourceBadge :mode="snapshot.source_mode" :simulated="snapshot.simulated" />
           </div>

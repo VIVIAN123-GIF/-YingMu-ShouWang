@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.exception_handlers import service_error_handler, unexpected_error_handler, validation_error_handler
 from fastapi.exceptions import RequestValidationError
+from backend.api.v1.media import proxy_router
 from backend.api.v1.router import router
 from backend.config import CORS_ORIGINS, RULESET_VERSION, SCHEMA_VERSION
 from backend.db.init_db import init_default_config, init_tables
@@ -40,4 +41,5 @@ async def health():
     return {"status": "ok", "schema_version": SCHEMA_VERSION, "ruleset_version": RULESET_VERSION}
 
 app.include_router(router)
+app.include_router(proxy_router)
 mount_frontend(app)
