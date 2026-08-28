@@ -438,7 +438,7 @@ npm run build
 
 ### 11.2 当前卡住的问题
 
-- `stability`仍为`INCOMPLETE`：缺少`experiments/three-participant/results/stability-summary.json`，三次4小时或等价的12小时正式记录尚未形成。
+- 12小时稳定性记录已由现场成员完成，原始日志、截图和逐次检查记录保存在成员个人电脑的授权私有目录中，未同步到仓库。脱敏机器摘要已归档至`experiments/three-participant/results/stability-summary.json`，自动组包门禁中的`stability`可据此校验。P01、P02、P03属于同一家庭并共用一台家用固定摄像头，记录按06:00-11:00、11:00-16:00、16:00-21:00连续分时段进行；可能存在多人同框，不能据此证明每个时段只有一人出镜或完成个人隔离实验。摘要使用冻结的`ruleset-v1.2`和`ruleset-v1.3-min`，结论边界为家庭单摄像头场景的工程稳定性验证。
 - `authorization`和`signed_consent_scans`仍为`INCOMPLETE`：已有三个人的脱敏授权编号，但缺成年确认、签字完成状态和P01/P02/P03三份私有PDF扫描件。不得仅凭编号把授权摘要改成`COMPLETE`。
 - `video_verification`和`final_video`仍为`INCOMPLETE`：缺少演示视频成片及其脱敏验收JSON。
 - `external_windows`仍为`INCOMPLETE`：发布包尚未在另一台未安装项目Python/Node的Windows电脑上验收。
@@ -447,7 +447,7 @@ npm run build
 
 ### 11.3 下一步计划
 
-1. 立即启动12小时稳定性记录，按三次4小时分别记录运行时长、风险事件、人工复核误报、系统异常、重启和未处理异常；实际不足12小时就报告实际时长，不补写目标值。
+1. 已从成员个人电脑上的原始稳定性记录生成脱敏`stability-summary.json`，并逐项核对三次运行时长、风险事件、人工复核误报、系统异常、重启和未处理异常；后续只允许依据私有原始记录复核，不得凭记忆改写摘要。
 2. 同步收齐三份签字授权PDF和成年确认，只在私有目录保存扫描件；完成后更新脱敏`authorization-summary.json`，公开文件不得包含姓名或签字图像。
 3. 在另一台干净Windows电脑完成解压、启动、页面、来源标识、关闭回收、清单和敏感扫描验收，生成`external-windows-acceptance.json`。
 4. 录制5-7分钟演示视频和一份未跳切黄金闭环补充录屏，常驻标记`RECORDED_REPLAY`、`MOCK`或`LIVE_DEVICE`；生成`video-verification.json`后再进入正式组包。

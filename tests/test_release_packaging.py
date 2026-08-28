@@ -241,17 +241,69 @@ def test_experiment_gate_rejects_handcrafted_empty_dual_track_result():
     assert "metrics are incomplete" in " ".join(errors)
 
 
-def test_stability_gate_requires_three_four_hour_runs():
+def test_stability_gate_requires_auditable_runs():
     payload = {
         "status": "COMPLETE",
+        "generated_at": "2026-08-28T18:10:00+08:00",
+        "study_scope": {
+            "household_scope": "SAME_HOUSEHOLD",
+            "camera_count": 1,
+            "schedule": "SEQUENTIAL_NON_OVERLAPPING",
+            "single_person_per_segment": False,
+            "co_presence_limitation": "same household and shared camera",
+        },
         "runs": [
-            {"participant_id": participant, "duration_hours": 4}
-            for participant in ("P01", "P02", "P03")
+            {
+                "participant_id": participant,
+                "duration_hours": 4,
+                "started_at": f"2026-08-28T{start}:00:00+08:00",
+                "ended_at": f"2026-08-28T{end}:00:00+08:00",
+                "source_mode": "LIVE_DEVICE",
+                "ruleset_version": "ruleset-v1.2",
+                "forewarning_ruleset_version": "ruleset-v1.3-min",
+                "total_risk_events": 0,
+                "false_alarms": 0,
+                "system_exceptions": 0,
+                "restarts": 0,
+                "unhandled_exceptions": 0,
+            }
+            for participant, start, end in (
+                ("P01", "06", "10"),
+                ("P02", "10", "14"),
+                ("P03", "14", "18"),
+            )
         ],
-        "totals": {"duration_hours": 12},
+        "totals": {
+            "duration_hours": 12,
+            "risk_events": 0,
+            "false_alarms": 0,
+            "false_alarms_per_hour": 0,
+            "system_exceptions": 0,
+            "restarts": 0,
+            "unhandled_exceptions": 0,
+        },
+        "errors": [],
     }
 
     assert assemble_submission.validate_stability(payload) == []
+
+
+def test_stability_gate_rejects_inconsistent_provenance_and_totals():
+    payload = json.loads(
+        (
+            Path(__file__).resolve().parents[1]
+            / "experiments/three-participant/results/stability-summary.json"
+        ).read_text(encoding="utf-8")
+    )
+    payload["generated_at"] = "2026-08-28T20:00:00+08:00"
+    payload["runs"][0]["ruleset_version"] = "v2.1.0-frozen"
+    payload["totals"]["risk_events"] = 99
+
+    errors = assemble_submission.validate_stability(payload)
+
+    assert any("generated_at" in error for error in errors)
+    assert any("ruleset_version" in error for error in errors)
+    assert any("risk_events" in error for error in errors)
 
 
 def test_code_program_package_has_official_root_structure(tmp_path):

@@ -93,13 +93,15 @@ python scripts/three_participant_experiment.py analyze `
 
 缺行、重复行、哈希变化、非A配置、模块状态缺失或规则版本不符时，结果保持 `INCOMPLETE` 并非零退出。B-D 消融在存在真实可执行配置并另行冻结前不进入正式结果。
 
-9. 完成三次4小时正常运行，填写`templates/stability-runs.csv`并汇总：
+9. 完成至少12小时正常运行，填写`templates/stability-runs.csv`并汇总。本次实际记录为同一家庭、同一台家用固定摄像头下的三个连续非重叠时段：P01 06:00-11:00、P02 11:00-16:00、P03 16:00-21:00。由于可能多人同框，不得将其表述为每个时段只有一人出镜的个人隔离实验：
 
 ```powershell
 python scripts/three_participant_experiment.py analyze-stability `
   --input experiments/three-participant/templates/stability-runs.csv `
   --output experiments/three-participant/results/stability-summary.json
 ```
+
+字段结构示例见`templates/stability-summary.example.json`。示例中的时间和计数均为演示值，`status`固定为`EXAMPLE_DO_NOT_SUBMIT`，不得复制为正式结果。正式汇总必须先从成员个人电脑上的原始记录填写CSV，再由上述命令计算时长、合计和每小时误报率；生成结果为`COMPLETE`且`errors=[]`后，才可进入最终组包门禁。
 
 10. 根据`templates/`中的JSON模板补齐三个脱敏汇总：
 

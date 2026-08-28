@@ -1,0 +1,70 @@
+{
+  "schema_version": "three-participant-stability/1.0",
+  "status": "COMPLETE",
+  "generated_at": "2026-08-28T21:10:00+08:00",
+  "study_scope": {
+    "household_scope": "SAME_HOUSEHOLD",
+    "camera_count": 1,
+    "camera_context": "固定摄像头位于参与者共同居住的家庭环境",
+    "schedule": "SEQUENTIAL_NON_OVERLAPPING",
+    "single_person_per_segment": false,
+    "co_presence_limitation": "P01、P02、P03属于同一家庭并共用一台家用摄像头；各时段可能出现多人同框，因此本记录不能证明每个时段只有一名参与者出现在摄像头内，也不构成三名参与者的个人隔离实验。结果仅用于家庭单摄像头场景下的工程稳定性验证。"
+  },
+  "runs": [
+    {
+      "run_id": "STABILITY-P01",
+      "participant_id": "P01",
+      "duration_hours": 5.0,
+      "started_at": "2026-08-28T06:00:00+08:00",
+      "ended_at": "2026-08-28T11:00:00+08:00",
+      "source_mode": "LIVE_DEVICE",
+      "ruleset_version": "ruleset-v1.2",
+      "forewarning_ruleset_version": "ruleset-v1.3-min",
+      "total_risk_events": 2,
+      "false_alarms": 1,
+      "system_exceptions": 0,
+      "restarts": 0,
+      "unhandled_exceptions": 0
+    },
+    {
+      "run_id": "STABILITY-P02",
+      "participant_id": "P02",
+      "duration_hours": 5.0,
+      "started_at": "2026-08-28T11:00:00+08:00",
+      "ended_at": "2026-08-28T16:00:00+08:00",
+      "source_mode": "LIVE_DEVICE",
+      "ruleset_version": "ruleset-v1.2",
+      "forewarning_ruleset_version": "ruleset-v1.3-min",
+      "total_risk_events": 1,
+      "false_alarms": 0,
+      "system_exceptions": 0,
+      "restarts": 0,
+      "unhandled_exceptions": 0
+    },
+    {
+      "run_id": "STABILITY-P03",
+      "participant_id": "P03",
+      "duration_hours": 5.0,
+      "started_at": "2026-08-28T16:00:00+08:00",
+      "ended_at": "2026-08-28T21:00:00+08:00",
+      "source_mode": "LIVE_DEVICE",
+      "ruleset_version": "ruleset-v1.2",
+      "forewarning_ruleset_version": "ruleset-v1.3-min",
+      "total_risk_events": 0,
+      "false_alarms": 0,
+      "system_exceptions": 0,
+      "restarts": 0,
+      "unhandled_exceptions": 0
+    }
+  ],
+  "totals": {
+    "duration_hours": 15.0,
+    "risk_events": 3,
+    "false_alarms": 1,
+    "false_alarms_per_hour": 0.0666667,
+    "system_exceptions": 0,
+    "restarts": 0,
+    "unhandled_exceptions": 0
+  },
+  "errors": []
+}

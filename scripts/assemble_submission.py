@@ -66,17 +66,115 @@ def validate_experiment(payload: dict) -> list[str]:
 
 def validate_stability(payload: dict) -> list[str]:
     errors = []
+    expected_ruleset = "ruleset-v1.2"
+    expected_forewarning_ruleset = "ruleset-v1.3-min"
     if payload.get("status") != "COMPLETE":
         errors.append("stability status is not COMPLETE")
+    if payload.get("errors") != []:
+        errors.append("stability errors must be an empty list")
+    scope = payload.get("study_scope")
+    if not isinstance(scope, dict):
+        errors.append("stability study_scope is required")
+    else:
+        if scope.get("household_scope") != "SAME_HOUSEHOLD":
+            errors.append("stability household_scope must be SAME_HOUSEHOLD")
+        if scope.get("camera_count") != 1:
+            errors.append("stability camera_count must be 1")
+        if scope.get("schedule") != "SEQUENTIAL_NON_OVERLAPPING":
+            errors.append("stability schedule must be SEQUENTIAL_NON_OVERLAPPING")
+        if scope.get("single_person_per_segment") is not False:
+            errors.append("stability single_person_per_segment must be false")
+        if not str(scope.get("co_presence_limitation", "")).strip():
+            errors.append("stability co_presence_limitation is required")
+    try:
+        generated_at = datetime.fromisoformat(str(payload.get("generated_at", "")))
+        if generated_at.utcoffset() is None:
+            raise ValueError
+    except ValueError:
+        generated_at = None
+        errors.append("stability generated_at must be timezone-aware ISO 8601")
     runs = payload.get("runs", [])
-    if not isinstance(runs, list) or {run.get("participant_id") for run in runs} != {"P01", "P02", "P03"}:
+    parsed_runs: list[tuple[dict, datetime, datetime]] = []
+    if not isinstance(runs, list) or len(runs) != 3 or {run.get("participant_id") for run in runs} != {"P01", "P02", "P03"}:
         errors.append("stability result must contain P01, P02, and P03 runs")
     else:
         for run in runs:
-            if float(run.get("duration_hours", 0)) < 4:
-                errors.append(f"{run.get('participant_id')} stability run is shorter than 4 hours")
-    if float(payload.get("totals", {}).get("duration_hours", 0)) < 12:
+            participant = run.get("participant_id")
+            if run.get("source_mode") != "LIVE_DEVICE":
+                errors.append(f"{participant} stability source_mode must be LIVE_DEVICE")
+            if run.get("ruleset_version") != expected_ruleset:
+                errors.append(f"{participant} stability ruleset_version must be {expected_ruleset}")
+            if run.get("forewarning_ruleset_version") != expected_forewarning_ruleset:
+                errors.append(
+                    f"{participant} stability forewarning_ruleset_version must be {expected_forewarning_ruleset}"
+                )
+            try:
+                start = datetime.fromisoformat(str(run.get("started_at", "")))
+                end = datetime.fromisoformat(str(run.get("ended_at", "")))
+                if start.utcoffset() is None or end.utcoffset() is None or end <= start:
+                    raise ValueError
+                parsed_runs.append((run, start, end))
+                measured_hours = (end - start).total_seconds() / 3600
+                declared_hours = float(run.get("duration_hours", 0))
+                if abs(declared_hours - measured_hours) > 1e-6:
+                    errors.append(f"{participant} stability duration does not match timestamps")
+                if measured_hours < 4:
+                    errors.append(f"{participant} stability run is shorter than 4 hours")
+            except (TypeError, ValueError):
+                errors.append(f"{participant} stability timestamps must be valid timezone-aware ISO 8601")
+            for field in (
+                "total_risk_events",
+                "false_alarms",
+                "system_exceptions",
+                "restarts",
+                "unhandled_exceptions",
+            ):
+                value = run.get(field)
+                if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                    errors.append(f"{participant} stability {field} must be a nonnegative integer")
+            if (
+                isinstance(run.get("false_alarms"), int)
+                and isinstance(run.get("total_risk_events"), int)
+                and run["false_alarms"] > run["total_risk_events"]
+            ):
+                errors.append(f"{participant} false_alarms cannot exceed total_risk_events")
+
+    ordered_runs = sorted(parsed_runs, key=lambda item: item[1])
+    for previous, current in zip(ordered_runs, ordered_runs[1:]):
+        if previous[2] > current[1]:
+            errors.append("stability run timestamps must not overlap")
+    if generated_at is not None and parsed_runs and generated_at < max(item[2] for item in parsed_runs):
+        errors.append("stability generated_at must not precede the final run end")
+
+    totals = payload.get("totals", {})
+    try:
+        total_hours = float(totals.get("duration_hours", 0))
+    except (AttributeError, TypeError, ValueError):
+        total_hours = 0
+        errors.append("stability total duration is invalid")
+    if total_hours < 12:
         errors.append("total stability duration is shorter than 12 hours")
+    if len(parsed_runs) == 3:
+        measured_total = sum((end - start).total_seconds() / 3600 for _, start, end in parsed_runs)
+        if abs(total_hours - measured_total) > 1e-6:
+            errors.append("stability total duration does not match runs")
+        total_fields = {
+            "risk_events": "total_risk_events",
+            "false_alarms": "false_alarms",
+            "system_exceptions": "system_exceptions",
+            "restarts": "restarts",
+            "unhandled_exceptions": "unhandled_exceptions",
+        }
+        for total_field, run_field in total_fields.items():
+            expected = sum(run.get(run_field, 0) for run in runs)
+            if totals.get(total_field) != expected:
+                errors.append(f"stability total {total_field} does not match runs")
+        expected_rate = totals.get("false_alarms", 0) / total_hours if total_hours else None
+        try:
+            if expected_rate is None or abs(float(totals.get("false_alarms_per_hour")) - expected_rate) > 1e-6:
+                errors.append("stability false_alarms_per_hour does not match totals")
+        except (TypeError, ValueError):
+            errors.append("stability false_alarms_per_hour is invalid")
     return errors
 
 
