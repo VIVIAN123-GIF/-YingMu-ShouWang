@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setViewMode } from '../services/viewMode'
 
 const mocks = vi.hoisted(() => ({
-  getDeviceStatus: vi.fn(), getLatestForewarning: vi.fn(), getDeviceSnapshot: vi.fn(),
+  getDeviceStatus: vi.fn(), getLatestForewarning: vi.fn(), getDeviceSnapshot: vi.fn(), createDeviceSnapshot: vi.fn(),
   stopDeviceCollection: vi.fn(), push: vi.fn(),
 }))
 
@@ -11,7 +11,7 @@ vi.mock('vue-router', () => ({ useRouter: () => ({ push: mocks.push }) }))
 vi.mock('../services/repository', () => ({
   clearRecordedFeedback: vi.fn(), getAllRecordedFeedback: () => [],
   getDeviceStatus: mocks.getDeviceStatus, getLatestForewarning: mocks.getLatestForewarning,
-  getDeviceSnapshot: mocks.getDeviceSnapshot, stopDeviceCollection: mocks.stopDeviceCollection,
+  getDeviceSnapshot: mocks.getDeviceSnapshot, createDeviceSnapshot: mocks.createDeviceSnapshot, stopDeviceCollection: mocks.stopDeviceCollection,
   runtime: { mode: 'api', activeSource: 'api' },
 }))
 
@@ -44,6 +44,7 @@ describe('系统设备运维页面', () => {
     mocks.getDeviceStatus.mockResolvedValue(structuredClone(device))
     mocks.getLatestForewarning.mockResolvedValue(structuredClone(latest))
     mocks.getDeviceSnapshot.mockResolvedValue(structuredClone(snapshot))
+    mocks.createDeviceSnapshot.mockResolvedValue(structuredClone(snapshot))
   })
   afterEach(() => setViewMode('family'))
 
@@ -61,15 +62,16 @@ describe('系统设备运维页面', () => {
     setViewMode('review')
     const wrapper = mountView(); await flushPromises()
     await wrapper.get('.snapshot-card button').trigger('click'); await flushPromises()
-    expect(mocks.getDeviceSnapshot).toHaveBeenCalledTimes(1)
+    expect(mocks.createDeviceSnapshot).toHaveBeenCalledTimes(1)
     expect(wrapper.text()).toContain('抓拍已完成')
-    expect(wrapper.text()).toContain('临时图片地址未向浏览器开放')
+    expect(wrapper.text()).toContain('抓拍已完成')
+    expect(wrapper.text()).not.toContain('图片通过受控媒体会话加载')
   })
 
-  it('不渲染已停用的摄像头直播入口', async () => {
+  it('在当前设备卡片下方渲染摄像头直播入口', async () => {
     const wrapper = mountView(); await flushPromises()
-    expect(wrapper.find('[data-testid="device-live"]').exists()).toBe(false)
-    expect(wrapper.text()).not.toContain('摄像头直播')
+    expect(wrapper.find('[data-testid="device-live"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('摄像头直播')
   })
 
   it('停止失败展示后端错误码和请求 ID并清空令牌', async () => {

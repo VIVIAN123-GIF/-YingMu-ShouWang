@@ -29,6 +29,7 @@ const initialMode = PAGES_BUILD ? 'replay' : (sessionStorage.getItem('yingmu-dat
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   // Device status may require a round trip to the live provider; keep the
   // dashboard from failing while the other API calls are still healthy.
   timeout: 8000,
@@ -562,6 +563,32 @@ export async function getDeviceSnapshot() {
   return resolveData('device.snapshot', async () => validateDeviceSnapshot(
     payload(await apiClient.get('/device/snapshot')),
   ), () => validateDeviceSnapshot(replayData.deviceSnapshot), validateDeviceSnapshot)
+}
+
+export async function createDeviceSnapshot() {
+  return resolveData('device.snapshot.capture', async () => {
+    // A live capture includes provider capture plus private-media download;
+    // keep the normal dashboard timeout for all other API calls.
+    const response = await apiClient.post('/device/snapshot', null, { timeout: 90000 })
+    return response.data?.asset || response.data
+  }, () => null)
+}
+
+export async function getPrivateAssetBlob(assetId) {
+  if (!assetId) throw new Error('asset_id is required')
+  const response = await fetch(`/media/assets/${encodeURIComponent(assetId)}`, {
+    credentials: 'include',
+    headers: { Accept: 'image/jpeg,image/png,image/webp' },
+  })
+  if (!response.ok) {
+    let detail = null
+    try { detail = await response.json() } catch { /* Response may not be JSON. */ }
+    const error = new Error(detail?.error?.message || `媒体加载失败（${response.status}）`)
+    error.api = { code: detail?.error?.code || 'MEDIA_REQUEST_FAILED', message: error.message, request_id: detail?.error?.request_id || null }
+    error.response = { status: response.status }
+    throw error
+  }
+  return response.blob()
 }
 
 /* 摄像头直播功能暂时停用。

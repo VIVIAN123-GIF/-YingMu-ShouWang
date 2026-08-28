@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 
 const SESSION_KEY = 'yingmu-demo-authenticated'
+const MEDIA_BFF_ENABLED = import.meta.env.VITE_MEDIA_BFF_ENABLED !== 'false'
 
 export const demoLoginConfig = Object.freeze({
   enabled: import.meta.env.VITE_DEMO_LOGIN_ENABLED === 'true',
@@ -34,6 +35,15 @@ export async function loginToDemo(username, password) {
     return true
   }
   const accepted = await verifyDemoCredentials(username, password)
+  if (accepted && MEDIA_BFF_ENABLED) {
+    const response = await fetch('/api/v1/media/session', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+    if (!response.ok) return false
+  }
   if (accepted) {
     sessionStorage.setItem(SESSION_KEY, 'true')
     demoAuthState.authenticated = true
@@ -44,4 +54,7 @@ export async function loginToDemo(username, password) {
 export function logoutOfDemo() {
   sessionStorage.removeItem(SESSION_KEY)
   demoAuthState.authenticated = !demoLoginConfig.enabled
+  if (MEDIA_BFF_ENABLED) {
+    void fetch('/api/v1/media/session', { method: 'DELETE', credentials: 'include' }).catch(() => {})
+  }
 }
