@@ -2,14 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ChatLineRound, CircleCheck, Clock, DataAnalysis, DocumentChecked, House, InfoFilled, Menu, Monitor, MoreFilled, SwitchButton, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
+import { ChatLineRound, CircleCheck, Clock, DataAnalysis, DocumentChecked, House, InfoFilled, Menu, Monitor, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
 import { routes } from '../../router'
 import { DATA_MODES } from '../../domain/constants'
 import { getEvents, runtime, setDataMode } from '../../services/repository'
-import { demoLoginConfig, logoutOfDemo } from '../../services/demoAuth'
-import { VIEW_MODES, setViewMode, viewModeState } from '../../services/viewMode'
 
-const emit = defineEmits(['logout'])
 const route = useRoute()
 const router = useRouter()
 const collapsed = ref(true)
@@ -27,13 +24,16 @@ const groupConfig = [
 ]
 const navRoutes = routes.filter((item) => item.meta?.nav)
 const navGroups = groupConfig.map((group) => ({ ...group, items: group.paths.map((path) => navRoutes.find((item) => item.path === path)).filter(Boolean) }))
+const dataModeOptions = Object.entries(DATA_MODES)
+  .filter(([value]) => value !== 'auto')
+  .map(([value, label]) => ({ value, label }))
+const selectedDataMode = computed(() => runtime.mode === 'replay' ? 'replay' : 'api')
 const activePath = computed(() => ['event-detail', 'event-detail-empty'].includes(route.name) ? '/events/:eventId' : route.path)
 const currentPage = computed(() => ({
   title: route.meta?.title || '统一家属端',
   group: groupConfig.find((group) => group.paths.includes(activePath.value))?.label || '萤目守望',
 }))
 
-function logout() { logoutOfDemo(); emit('logout') }
 function createdAtTimestamp(event) { const timestamp = Date.parse(event?.created_at || ''); return Number.isNaN(timestamp) ? 0 : timestamp }
 function expandSidebar() { collapsed.value = false }
 function collapseSidebar() { collapsed.value = true }
@@ -72,14 +72,14 @@ async function handleSelect(path) {
     }
     await router.push({ name: 'event-detail', params: { eventId: latestEvent.event_id } })
   } catch {
-    ElMessage.error('风险事件调取失败：FastAPI 服务不可达')
+    ElMessage.error('风险事件调取失败：后端接口服务不可达')
     await router.push({ name: 'event-detail-empty', query: { reason: 'unavailable' } })
   } finally { openingEventDetail.value = false }
 }
 </script>
 
 <template>
-  <div class="app-shell" :data-view-mode="viewModeState.mode">
+  <div class="app-shell">
     <aside class="sidebar" :class="{ collapsed }" @mouseenter="expandSidebar" @mouseleave="collapseSidebar" @focusin="expandSidebar" @focusout="handleSidebarFocusOut">
       <div class="brand"><div class="brand-mark" aria-hidden="true">萤</div><div v-show="!collapsed" class="brand-copy"><strong>萤目守望</strong><span>家庭安全控制台</span></div></div>
       <nav class="navigation navigation-groups" aria-label="主导航">
@@ -108,16 +108,14 @@ async function handleSelect(path) {
           <div class="resident-identity"><el-avatar :size="36" class="resident-avatar">张</el-avatar><div><strong>张建国</strong><span>76岁 · 杭州家中</span></div></div>
         </div>
         <div class="topbar-actions">
-          <el-segmented :model-value="viewModeState.mode" :options="Object.entries(VIEW_MODES).map(([value, label]) => ({ value, label }))" aria-label="切换展示视图" @change="setViewMode" />
+          <el-segmented
+            :model-value="selectedDataMode"
+            :options="dataModeOptions"
+            :disabled="pagesBuild"
+            aria-label="数据连接模式"
+            @change="setDataMode"
+          />
           <div v-if="runtime.degraded" class="degraded-chip" role="status"><el-icon><Warning /></el-icon>后端降级</div>
-          <el-dropdown trigger="click">
-            <el-button class="more-button" circle aria-label="数据与会话设置"><el-icon><MoreFilled /></el-icon></el-button>
-            <template #dropdown><el-dropdown-menu>
-              <el-dropdown-item v-if="!pagesBuild" disabled>数据模式：{{ DATA_MODES[runtime.mode] }}</el-dropdown-item>
-              <el-dropdown-item v-if="!pagesBuild" v-for="(label, value) in DATA_MODES" :key="value" @click="setDataMode(value)">{{ label }}</el-dropdown-item>
-              <el-dropdown-item v-if="demoLoginConfig.enabled" divided @click="logout"><el-icon><SwitchButton /></el-icon>退出评审入口</el-dropdown-item>
-            </el-dropdown-menu></template>
-          </el-dropdown>
         </div>
       </header>
       <Transition name="runtime-peek">

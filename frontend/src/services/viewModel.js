@@ -1,3 +1,5 @@
+import { DELIVERY_STATUSES, EVENT_STATUSES } from '../domain/constants'
+
 const DOMAIN_TITLES = Object.freeze({
   FALL: '跌倒风险事件',
   MENTAL: '心理趋势事件',
@@ -39,20 +41,22 @@ export function resolveEventAssetId(event) {
 function transitionDetail(trace) {
   const previous = trace.previous_status || trace.previous_state || '未知状态'
   const next = trace.next_status || trace.next_state || previous
-  return previous === next ? `状态保持 ${next}` : `${previous} → ${next}`
+  const previousLabel = EVENT_STATUSES[previous] || previous
+  const nextLabel = EVENT_STATUSES[next] || next
+  return previous === next ? `状态保持 ${nextLabel}` : `${previousLabel} → ${nextLabel}`
 }
 
 function timelineFrom(event, traces) {
   const traceItems = traces.map((trace) => ({
     time: trace.evaluated_at,
-    title: `${trace.matched_rule || '规则评估'} · ${trace.next_status || trace.next_state || '已评估'}`,
+    title: `${trace.matched_rule || '规则评估'} · ${EVENT_STATUSES[trace.next_status || trace.next_state] || '已评估'}`,
     detail: transitionDetail(trace),
     status: trace.next_status || trace.next_state || trace.matched_rule || '已评估',
     kind: 'RULE',
   }))
   const interventionItems = asArray(event.interventions).map((result) => ({
     time: result.completed_at || result.started_at,
-    title: `${result.tool_name} · ${result.delivery_status}`,
+    title: `工具执行 · ${DELIVERY_STATUSES[result.delivery_status]?.label || result.delivery_status}`,
     detail: result.family_feedback
       ? `家属反馈：${result.family_feedback}`
       : (result.resolution_reason || result.resident_response || '工具结果已回写'),
@@ -68,7 +72,7 @@ function feedbackTimelineItems(records) {
   return asArray(records).map((record) => ({
     time: record.recorded_at,
     title: record.feedback_kind === 'IDENTITY_VERIFICATION' ? '身份信息核验已记录' : '家属关怀反馈已记录',
-    detail: `${record.value} · 操作人：${record.operator || 'family'}${record.saved_in_demo ? ' · 本地演示记录' : ''}`,
+    detail: `${record.value} · 操作人：${record.operator === 'system' ? '系统' : '家属'}${record.saved_in_demo ? ' · 本地演示记录' : ''}`,
     status: 'RECORDED',
     kind: 'FAMILY_FEEDBACK',
   }))
@@ -159,7 +163,7 @@ export function normalizeBaseline(baseline = {}) {
   const metrics = Object.entries(baseline.baselines || {}).map(([key, value]) => ({
     key,
     label: METRIC_META[key]?.label || key,
-    unit: METRIC_META[key]?.unit || '',
+    unit: value?.unit || METRIC_META[key]?.unit || '',
     median: value?.median ?? null,
     mad: value?.mad ?? null,
     display_value: value?.display_value || null,

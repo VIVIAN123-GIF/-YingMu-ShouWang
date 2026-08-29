@@ -7,7 +7,7 @@ import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { getDashboard } from '../services/repository'
-import { domainLabel, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
+import { displayValueLabel, domainLabel, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const router = useRouter()
 const loading = ref(true)
@@ -55,7 +55,7 @@ const trendLabels = {
 
 const chartOption = computed(() => ({
   animation: false,
-  grid: { left: 46, right: 24, top: 32, bottom: 42 },
+  grid: { left: 48, right: 48, top: 32, bottom: 42 },
   tooltip: { trigger: 'axis', formatter: (items) => `${items[0].axisValue}<br/>风险水位：${formatRiskScore(items[0].value)}` },
   xAxis: {
     type: 'category',
@@ -146,6 +146,7 @@ function onlineLabel(value) {
           <span class="section-kicker">给家属的建议</span>
           <h2 id="family-advice-title">{{ data.current_risk.recommended_action || '请按当前状态陪伴老人，保持联系。' }}</h2>
           <p>一次只做一个动作，先确认老人安全，再决定是否需要联系紧急联系人。</p>
+          <small class="family-advice-note">建议用于家属关怀决策，不替代专业医疗判断。</small>
         </div>
       </section>
       <section v-if="data.current_risk" class="hero-risk-card" :class="`surface-${data.current_risk.risk_level.toLowerCase()}`">
@@ -160,13 +161,13 @@ function onlineLabel(value) {
           <p><strong>建议：</strong>{{ data.current_risk.recommended_action }}</p>
           <span class="last-update">更新于 {{ formatDateTime(data.current_risk.updated_at) }}</span>
         </div>
-        <div class="today-status">
+        <div class="today-status" :class="{ 'status-intervening': data.current_risk.status === 'INTERVENING' }">
           <div><span>当前事件状态</span><strong>{{ statusLabel(data.current_risk.status) }}</strong></div>
         </div>
       </section>
       <section v-else class="content-card api-empty-state">
         <el-empty description="后端当前没有该居民的风险事件" />
-        <p>页面保持 API 数据源，不使用固定 Mock 风险水位填充。</p>
+        <p>页面保持接口数据源，不使用固定模拟风险水位填充。</p>
       </section>
 
       <section class="metric-grid" aria-label="今日状态摘要">
@@ -180,7 +181,7 @@ function onlineLabel(value) {
         </article>
         <article class="metric-card card-hover-lift">
           <span class="metric-icon sand"><Monitor /></span>
-          <div><div class="metric-label"><small>设备状态</small><el-tooltip content="摄像设备当前连接与采集状态" placement="top"><el-icon class="metric-help"><QuestionFilled /></el-icon></el-tooltip></div><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ data.device.name }}</span></div>
+          <div><div class="metric-label"><small>设备状态</small><el-tooltip content="摄像设备当前连接与采集状态" placement="top"><el-icon class="metric-help"><QuestionFilled /></el-icon></el-tooltip></div><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ displayValueLabel(data.device.name) }}</span></div>
         </article>
         <article class="metric-card card-hover-lift">
           <span class="metric-icon coral"><CircleCheck /></span>
@@ -188,7 +189,7 @@ function onlineLabel(value) {
         </article>
       </section>
 
-      <section class="dashboard-grid review-only display-grid">
+      <section class="dashboard-grid display-grid">
         <article class="content-card chart-card">
           <div class="card-heading">
             <div><span class="section-kicker">黄金半分钟</span><h2>风险水位与回落</h2></div>
@@ -197,7 +198,11 @@ function onlineLabel(value) {
           <ChartPanel v-if="data.risk_trend.length" :option="chartOption" :replace="false" point-animation point-color="#1677c2" draw-animation draw-color="#ff7d00" :draw-delay="2400" height="320px" aria-label="凌晨风险水位先升高后回落的折线图" />
           <el-empty v-else description="后端未提供逐点风险趋势，事件状态以时间轴为准" />
           <div v-if="data.risk_trend.length" class="chart-caption">
-            <span v-for="item in data.risk_trend" :key="item.time"><b>{{ item.time }}</b>{{ item.label }}</span>
+            <span
+              v-for="(item, index) in data.risk_trend"
+              :key="item.time"
+              :style="{ left: `${data.risk_trend.length > 1 ? (index / (data.risk_trend.length - 1)) * 100 : 50}%` }"
+            ><b>{{ item.time }}</b>{{ item.label }}</span>
           </div>
         </article>
 
@@ -208,8 +213,8 @@ function onlineLabel(value) {
             <div><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ data.device.collection_active ? '采集运行中' : '采集已停止' }}</span></div>
           </div>
           <dl class="detail-list">
-            <div><dt>设备别名</dt><dd>{{ data.device.device_alias }}</dd></div>
-            <div><dt>适配器模式</dt><dd>{{ data.device.adapter_mode }}</dd></div>
+            <div><dt>设备别名</dt><dd>{{ displayValueLabel(data.device.device_alias) }}</dd></div>
+            <div><dt>适配器模式</dt><dd>{{ displayValueLabel(data.device.adapter_mode) }}</dd></div>
             <div><dt>采集状态</dt><dd>{{ data.device.collection_active ? '运行中' : '已停止' }}</dd></div>
           </dl>
           <SourceBadge :mode="data.device.source_mode" :simulated="data.device.simulated" />
@@ -217,7 +222,8 @@ function onlineLabel(value) {
         </article>
       </section>
 
-      <section v-if="data.pre_fall_summary" class="content-card prefall-card review-only">
+      <div class="home-lower-grid">
+      <section v-if="data.pre_fall_summary" class="content-card prefall-card">
         <div class="card-heading">
           <div><span class="section-kicker">工程风险指数 · 非概率</span><h2>个体化多源前置观察</h2></div>
           <RiskBadge :level="data.pre_fall_summary.risk_level" :score="formatRiskScore(data.pre_fall_summary.instant_risk)" />
@@ -276,7 +282,7 @@ function onlineLabel(value) {
       <section class="content-card events-card">
         <div class="card-heading">
           <div><span class="section-kicker">老人活动事件记录</span><h2>最近需要了解的事情</h2></div>
-          <el-button size="large" plain @click="router.push('/events')">查看完整时间轴</el-button>
+          <el-button class="timeline-link" size="large" plain @click="router.push('/events')">查看完整时间轴</el-button>
         </div>
         <div v-if="data.recent_events.length" class="event-list">
           <button
@@ -293,8 +299,9 @@ function onlineLabel(value) {
             <span class="row-arrow" aria-hidden="true">→</span>
           </button>
         </div>
-        <el-empty v-else description="当前 API 中没有最近事件" />
+        <el-empty v-else description="当前接口中没有最近事件" />
       </section>
+      </div>
     </template>
   </div>
 </template>

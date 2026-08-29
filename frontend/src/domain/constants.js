@@ -6,10 +6,10 @@ export const RISK_DOMAINS = Object.freeze({
 })
 
 export const RISK_LEVELS = Object.freeze({
-  GREEN: { label: '低风险', color: '#22A75D', icon: 'CircleCheckFilled' },
-  YELLOW: { label: '中风险', color: '#E6A23C', icon: 'WarningFilled' },
-  ORANGE: { label: '高风险', color: '#DC2626', icon: 'WarnTriangleFilled' },
-  RED: { label: '高风险', color: '#DC2626', icon: 'CircleCloseFilled' },
+  GREEN: { label: '低风险', color: '#00B42A', icon: 'CircleCheckFilled' },
+  YELLOW: { label: '中风险', color: '#FF7D00', icon: 'WarningFilled' },
+  ORANGE: { label: '高风险', color: '#F53F3F', icon: 'WarnTriangleFilled' },
+  RED: { label: '高风险', color: '#F53F3F', icon: 'CircleCloseFilled' },
 })
 
 export const EVENT_STATUSES = Object.freeze({
@@ -29,15 +29,15 @@ export const SOURCE_MODES = Object.freeze({
 })
 
 export const DELIVERY_STATUSES = Object.freeze({
-  SUCCESS: { label: 'SUCCESS · 已送达', type: 'success' },
-  FAILED: { label: 'FAILED · 调用失败', type: 'danger' },
-  RETRYING: { label: 'RETRYING · 正在重试', type: 'warning' },
+  SUCCESS: { label: '已送达', type: 'success' },
+  FAILED: { label: '调用失败', type: 'danger' },
+  RETRYING: { label: '正在重试', type: 'warning' },
 })
 
 export const DATA_MODES = Object.freeze({
   auto: '自动切换',
-  api: '仅 FastAPI',
-  replay: '离线授权回放',
+  api: '实时连接',
+  replay: '离线回放',
 })
 
 export const ALARM_TASK_STATUSES = Object.freeze({

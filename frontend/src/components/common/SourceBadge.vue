@@ -16,6 +16,6 @@ const config = computed(() => SOURCE_MODES[props.mode] || { label: props.mode, t
       {{ config.label }}
     </el-tag>
     <span v-if="simulated" class="simulation-mark">授权回放</span>
-    <span class="sr-only">{{ mode }} 模拟实验回放</span>
+    <span class="sr-only">{{ config.label }}{{ simulated ? '，模拟实验回放' : '' }}</span>
   </span>
 </template>

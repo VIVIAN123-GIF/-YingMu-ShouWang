@@ -49,7 +49,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-loading="loading">
+  <div v-loading="loading" data-testid="replay-view">
     <PageHeader title="场景回放" description="按故事顺序查看关键事件；每个片段都明确标记为授权回放，不代表实时设备或老人实测。">
       <SourceBadge v-if="selected" :mode="selected.source_mode" :simulated="selected.simulated" />
     </PageHeader>

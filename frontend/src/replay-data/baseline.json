@@ -5,28 +5,26 @@
   "source_mode": "RECORDED_REPLAY",
   "simulated": true,
   "overall_status": "PROVISIONAL",
-  "coverage_type": "AUTHORIZED_EXPERIMENT",
-  "baseline_progress": { "observed_days": 6, "provisional_target_days": 3, "stable_target_days": 7, "label": "授权实验覆盖日，不等同于居民个人基线" },
+  "coverage_type": "PERSONAL_BASELINE_VIDEO",
+  "baseline_progress": { "observed_days": 3, "provisional_target_days": 3, "stable_target_days": 7, "label": "三天个人基线视频已完成初步标定，待达到七天后提升为稳定基线" },
   "coverage": {
-    "participants": 3,
-    "participant_ids": ["P01", "P02", "P03"],
-    "clip_count": 96,
-    "coverage_days": 6,
-    "baseline_clips": 41,
-    "evaluation_clips": 55,
-    "resident_calibration": "NOT_CALIBRATED",
-    "resident_calibration_label": "张建国待同一居民、同一机位实机样本校准",
+    "participants": 1,
+    "participant_ids": ["resident-001"],
+    "clip_count": 18,
+    "coverage_days": 3,
+    "baseline_clips": 18,
+    "evaluation_clips": 0,
+    "resident_calibration": "PROVISIONAL",
+    "resident_calibration_label": "三天个人基线视频已完成初步标定，待更多日期视频进一步验证",
     "sources": [
-      { "package": "3人96段.zip", "participant": "P01-P03", "purpose": "受控动作与日常基线覆盖" },
-      { "package": "daily-baseline-replay.mp4", "participant": "P03", "purpose": "日常基线回放" },
-      { "package": "验证视频.zip", "participant": "匿名参与者", "purpose": "区域路线回放" }
+      { "package": "三天个人基线视频.zip", "participant": "resident-001", "purpose": "D1-D3 个人基线标准提取" }
     ]
   },
-  "provenance": { "device_model": "萤石 C6c（授权回放）", "camera_position_id": "scene-recorded-demo-v1", "authorization": "受控实验授权，RECORDED_REPLAY/simulated=true", "data_boundary": "实验覆盖用于工程展示，不产生张建国医学结论" },
+  "provenance": { "device_model": "视频包未提供设备型号", "camera_position_id": "baseline-video-package", "authorization": "三天个人基线视频包内样本，RECORDED_REPLAY/simulated=true", "data_boundary": "当前为三天初步基线，仅用于工程比较；达到七天并复核机位后再提升稳定性" },
   "baselines": {
-    "rise_duration": { "median": null, "mad": null, "display_value": "待个人校准", "sample_count": 96, "distinct_days": 6, "status": "PROVISIONAL", "coverage_note": "96 段授权实验覆盖，未写入居民个人基线" },
-    "relative_gait_speed": { "median": null, "mad": null, "display_value": "待个人校准", "sample_count": 96, "distinct_days": 6, "status": "PROVISIONAL", "coverage_note": "96 段授权实验覆盖，未写入居民个人基线" },
-    "trunk_sway": { "median": null, "mad": null, "display_value": "待个人校准", "sample_count": 96, "distinct_days": 6, "status": "PROVISIONAL", "coverage_note": "96 段授权实验覆盖，未写入居民个人基线" }
+    "rise_duration": { "median": 0.6, "mad": 0, "display_value": "0.60 秒", "sample_count": 6, "distinct_days": 3, "status": "PROVISIONAL", "coverage_note": "D1-D3 共 6 段起身视频的中位数；达到初步基线门槛，待第 7 天后复核" },
+    "relative_gait_speed": { "median": 0.745488, "mad": 0.050956, "unit": "米/秒", "display_value": "0.75 米/秒", "sample_count": 9, "distinct_days": 3, "status": "PROVISIONAL", "coverage_note": "按 1 个画面高度 = 11.5 米换算；D1-D3 共 9 段步行视频的中位数，需继续采集后确认" },
+    "trunk_sway": { "median": 2.902108, "mad": 0.600457, "display_value": "2.90 度", "sample_count": 6, "distinct_days": 3, "status": "PROVISIONAL", "coverage_note": "D1-D3 共 6 段起身视频起身后 5 秒摆幅中位数；仅作为工程基线，不作医学结论" }
   },
   "trend": [
     { "date": "07-18", "activity_index": 72, "baseline": 70, "sleep_offset": 5 },

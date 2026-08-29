@@ -13,11 +13,9 @@ import {
   createDeviceSnapshot, getDeviceSnapshot, getDeviceStatus, getLatestForewarning,
   runtime, stopDeviceCollection,
 } from '../services/repository'
-import { useViewMode } from '../services/viewMode'
-import { feedbackTone, formatDateTime } from '../utils/format'
+import { displayValueLabel, feedbackTone, formatDateTime } from '../utils/format'
 
 const router = useRouter()
-const { isReview } = useViewMode()
 const loading = ref(true)
 const error = ref('')
 const device = ref(null)
@@ -135,7 +133,7 @@ onMounted(load)
             <div class="snapshot-unavailable"><el-icon><Camera /></el-icon><strong>抓拍已完成</strong></div>
             <dl class="detail-list compact-detail-list">
               <div><dt>抓拍时间</dt><dd>{{ formatDateTime(snapshot.captured_at) }}</dd></div><div><dt>设备引用</dt><dd>{{ snapshot.device_ref }}</dd></div>
-              <div><dt>素材类型</dt><dd>{{ snapshot.content_type }}</dd></div><div><dt>素材大小</dt><dd>{{ snapshot.byte_size }} bytes</dd></div>
+              <div><dt>素材类型</dt><dd>{{ snapshot.content_type }}</dd></div><div><dt>素材大小</dt><dd>{{ snapshot.byte_size }} 字节</dd></div>
             </dl>
             <SourceBadge :mode="snapshot.source_mode" :simulated="snapshot.simulated" />
           </div>
@@ -156,14 +154,14 @@ onMounted(load)
       <TechnicalDisclosure title="设备与适配器详情" summary="适配器模式、数据来源、采集状态和设备别名">
         <section class="content-card">
           <dl class="detail-list">
-            <div><dt>适配器模式</dt><dd>{{ device.adapter_mode }}</dd></div><div><dt>数据来源</dt><dd>{{ device.source_mode }}</dd></div>
-            <div><dt>采集状态</dt><dd>{{ device.collection_active ? '采集运行中' : '采集已停止' }}</dd></div><div><dt>设备别名</dt><dd>{{ device.device_alias }}</dd></div>
+            <div><dt>适配器模式</dt><dd>{{ displayValueLabel(device.adapter_mode) }}</dd></div><div><dt>数据来源</dt><dd>{{ displayValueLabel(device.source_mode) }}</dd></div>
+            <div><dt>采集状态</dt><dd>{{ device.collection_active ? '采集运行中' : '采集已停止' }}</dd></div><div><dt>设备别名</dt><dd>{{ displayValueLabel(device.device_alias) }}</dd></div>
           </dl>
           <div class="technical-device-actions">
             <SourceBadge :mode="device.source_mode" :simulated="device.simulated" />
-            <el-button v-if="isReview" type="danger" plain :disabled="!controlAvailable" data-testid="stop-collection" @click="stopDialogOpen = true"><el-icon><VideoPause /></el-icon>停止采集</el-button>
+            <el-button type="danger" plain :disabled="!controlAvailable" data-testid="stop-collection" @click="stopDialogOpen = true"><el-icon><VideoPause /></el-icon>停止采集</el-button>
           </div>
-          <el-alert v-if="isReview && !controlAvailable && device.collection_active" title="回放或降级来源不能执行设备控制" type="warning" :closable="false" show-icon />
+          <el-alert v-if="!controlAvailable && device.collection_active" title="回放或降级来源不能执行设备控制" type="warning" :closable="false" show-icon />
         </section>
       </TechnicalDisclosure>
 
@@ -171,7 +169,7 @@ onMounted(load)
         <div class="card-heading"><div><span class="section-kicker">本地演示记录</span><h2>关怀与身份核验</h2></div><el-tag type="warning" effect="plain">{{ feedbackRecords.length }} 条</el-tag></div>
         <div v-if="feedbackRecords.length" class="feedback-record-list">
           <article v-for="record in feedbackRecords.slice().reverse()" :key="record.feedback_id" class="recorded-feedback" :class="`feedback-${feedbackTone(record.value)}`">
-            <strong>{{ record.feedback_kind === 'IDENTITY_VERIFICATION' ? '身份信息核验' : '家属关怀反馈' }}</strong><span>{{ record.value }}</span><small>{{ record.recorded_at }} · {{ record.operator }} · {{ record.event_id }} · {{ record.saved_in_demo ? 'RECORDED_REPLAY 本地演示' : '后端记录' }}</small>
+            <strong>{{ record.feedback_kind === 'IDENTITY_VERIFICATION' ? '身份信息核验' : '家属关怀反馈' }}</strong><span>{{ record.value }}</span><small>{{ record.recorded_at }} · {{ displayValueLabel(record.operator) }} · {{ record.event_id }} · {{ record.saved_in_demo ? '授权回放本地演示' : '后端记录' }}</small>
           </article>
         </div>
         <el-empty v-else description="尚未记录关怀反馈或身份核验" />

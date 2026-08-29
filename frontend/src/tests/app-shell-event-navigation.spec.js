@@ -49,6 +49,16 @@ describe('风险事件详情导航入口', () => {
     messageMock.error.mockReset()
   })
 
+  it('顶部直接显示数据连接模式且不显示自动模式', async () => {
+    const { wrapper } = await mountShell()
+    const modePicker = wrapper.get('.topbar el-segmented-stub')
+    expect(modePicker.exists()).toBe(true)
+    expect(modePicker.attributes('aria-label')).toBe('数据连接模式')
+    expect(wrapper.html()).not.toContain('自动切换')
+    expect(wrapper.html()).toContain('options="[object Object],[object Object]"')
+    expect(wrapper.get('.app-shell').attributes('data-view-mode')).toBeUndefined()
+  })
+
   it('读取后端事件列表并进入创建时间最新的真实事件', async () => {
     getEventsMock.mockResolvedValue([
       { event_id: 'event-old', created_at: '2026-08-15T10:00:00+08:00' },
@@ -110,7 +120,7 @@ describe('风险事件详情导航入口', () => {
 
     expect(router.currentRoute.value.name).toBe('event-detail-empty')
     expect(router.currentRoute.value.query.reason).toBe('unavailable')
-    expect(messageMock.error).toHaveBeenCalledWith('风险事件调取失败：FastAPI 服务不可达')
+    expect(messageMock.error).toHaveBeenCalledWith('风险事件调取失败：后端接口服务不可达')
     expect(messageMock.error.mock.calls[0][0]).not.toContain('private backend detail')
   })
 })

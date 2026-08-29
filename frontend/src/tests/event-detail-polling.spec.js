@@ -176,6 +176,28 @@ describe('事件详情 API 自动同步', () => {
     wrapper.unmount()
   })
 
+  it('没有依据、工具记录和时间轴时不渲染空卡片', async () => {
+    const current = apiEvent('RESOLVED')
+    Object.assign(current, {
+      primary_domain: 'MENTAL',
+      evidence_summary: [],
+      evidences: [],
+      observations: [],
+      interventions: [],
+      rule_traces: [],
+      timeline: [],
+      risk_history: [],
+    })
+    getEventMock.mockResolvedValueOnce(current)
+    const { wrapper } = await mountView()
+
+    expect(wrapper.find('[data-testid="evidence-panel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="intervention-result-panel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="event-action-panel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="event-detail-grid"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('等待当前请求结束后才安排下一轮，不产生重叠请求', async () => {
     let resolvePending
     const pending = new Promise((resolve) => { resolvePending = resolve })

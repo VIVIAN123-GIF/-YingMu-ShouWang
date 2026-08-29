@@ -31,7 +31,7 @@ const emit = defineEmits(['select'])
 
 <style scoped>
 .replay-selector {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   padding: 24px;
   text-align: left;
   background: #fff;
@@ -82,9 +82,9 @@ const emit = defineEmits(['select'])
 }
 
 .replay-selector :deep(.el-select__wrapper) {
-  min-height: 50px;
-  padding: 0 16px;
-  font-size: 16px;
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
 }
 
 .replay-selector :deep(.el-select__wrapper:hover) {
@@ -96,14 +96,14 @@ const emit = defineEmits(['select'])
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #6b7280;
+  color: #86909c;
   font-size: 12px;
   line-height: 1.5;
 }
 
 .replay-selector > p .el-icon {
   flex: 0 0 auto;
-  color: #6b7280;
+  color: #86909c;
   font-size: 16px;
 }
 

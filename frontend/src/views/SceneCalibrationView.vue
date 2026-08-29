@@ -15,6 +15,7 @@ const associatedForewarning = ref(null)
 const error = ref(null)
 const sceneConfigId = computed(() => String(route.params.sceneConfigId || ''))
 const zoneColors = { HIGH_RISK: '#c94b4b', SUPPORT: '#237451', OBSTACLE: '#d18a2f', SAFE: '#3d7ea6' }
+const zoneLabels = { HIGH_RISK: '高风险区', SUPPORT: '支撑区', OBSTACLE: '障碍区', SAFE: '安全区' }
 const provenance = computed(() => {
   if (associatedForewarning.value?.scene_config_id === calibration.value?.scene_config_id) return associatedForewarning.value
   if (runtime.activeSource === 'replay_dataset') return { source_mode: 'RECORDED_REPLAY', simulated: true }
@@ -59,7 +60,7 @@ onMounted(load)
   <div v-loading="loading">
     <PageHeader title="场景标定详情" description="核对固定机位、画面尺寸和归一化区域参数。">
       <SourceBadge v-if="provenance" :mode="provenance.source_mode" :simulated="provenance.simulated" />
-      <el-tag v-else type="info" effect="plain" size="large">FastAPI 配置 · 未关联数据来源</el-tag>
+      <el-tag v-else type="info" effect="plain" size="large">后端接口配置 · 未关联数据来源</el-tag>
     </PageHeader>
     <el-button class="back-button" plain @click="router.push({ name: 'system' })"><el-icon><ArrowLeft /></el-icon>返回系统状态</el-button>
     <el-alert v-if="error" :title="error.message" type="error" :closable="false" show-icon class="calibration-error">
@@ -86,14 +87,14 @@ onMounted(load)
               <text :x="zone.polygon_norm[0][0] * calibration.frame_width" :y="zone.polygon_norm[0][1] * calibration.frame_height - 8" :font-size="Math.max(calibration.frame_width / 55, 14)" :fill="zoneColors[zone.zone_type]">{{ zone.zone_id }}</text>
             </g>
           </svg>
-          <div class="calibration-legend"><span v-for="(color, type) in zoneColors" :key="type"><i :style="{ backgroundColor: color }" />{{ type }}</span></div>
+          <div class="calibration-legend"><span v-for="(color, type) in zoneColors" :key="type"><i :style="{ backgroundColor: color }" />{{ zoneLabels[type] }}</span></div>
         </div>
 
         <div class="calibration-zone-table">
           <div class="card-heading"><div><span class="section-kicker">区域参数</span><h2>区域边界</h2></div></div>
           <el-table :data="calibration.zones" max-height="430" empty-text="未配置区域">
             <el-table-column prop="zone_id" label="区域标识" min-width="150" />
-            <el-table-column prop="zone_type" label="类型" width="120" />
+            <el-table-column label="类型" width="120"><template #default="{ row }">{{ zoneLabels[row.zone_type] || row.zone_type }}</template></el-table-column>
             <el-table-column label="归一化坐标" min-width="260"><template #default="{ row }"><span class="coordinate-text">{{ coordinateText(row) }}</span></template></el-table-column>
           </el-table>
         </div>

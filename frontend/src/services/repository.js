@@ -39,6 +39,8 @@ export const apiClient = axios.create({
 export function normalizeApiError(error) {
   const body = error?.response?.data
   const detail = body?.error || body?.detail
+  if (!detail && error?.message === 'Network Error') error.message = '网络连接失败'
+  if (!detail && error?.code === 'ECONNABORTED') error.message = '请求超时'
   if (detail && typeof detail === 'object') {
     const requestId = detail.request_id || body?.request_id
     const message = detail.message || error.message
@@ -240,11 +242,11 @@ async function resolveData(operation, apiRequest, replayFactory, validate = (val
     recordAudit(operation, 'SUCCESS', { detail: 'fastapi', event_id: result?.event_id, ruleset_version: result?.ruleset_version })
     return result
   } catch (error) {
-    runtime.lastError = error?.message || 'FastAPI 请求失败'
+    runtime.lastError = error?.message || '后端接口请求失败'
     if (runtime.mode === 'auto' && canFallback(error)) {
       runtime.activeSource = 'replay_dataset'
       runtime.degraded = true
-      runtime.message = 'FastAPI 暂不可用，已切换离线授权回放数据集'
+      runtime.message = '后端接口暂不可用，已切换离线授权回放数据集'
       const result = validate(structuredClone(replayFactory()))
       recordAudit(operation, 'DEGRADED_REPLAY', { detail: error?.message || 'FastAPI unavailable', event_id: result?.event_id, ruleset_version: result?.ruleset_version })
       return result
@@ -317,10 +319,11 @@ export async function getRiskReviews(residentId = RESIDENT_ID, limit = 20) {
 }
 
 export async function getEvent(eventId) {
+  const encodedEventId = encodeURIComponent(eventId)
   return resolveData('event.detail', async () => {
     const [eventResponse, snapshotResponse] = await Promise.all([
-      apiClient.get(`/events/${eventId}`),
-      apiClient.get(`/events/${encodeURIComponent(eventId)}/forewarning`),
+      apiClient.get(`/events/${encodedEventId}`),
+      apiClient.get(`/events/${encodedEventId}/forewarning`),
     ])
     const event = payload(eventResponse)
     validateEventViewModel(event)
@@ -353,7 +356,7 @@ export function getReplayExplanation(eventId) {
   if (!template) throw new Error('本地回放解释不可用')
   const createdAtSource = replayData.events.find((event) => event.event_id === eventId)?.created_at || null
   const createdAt = replayTimePlusSeconds(createdAtSource, 0)
-  return validateAgentExplanationJob({ event_id: eventId, status: 'FALLBACK', request_id: `replay-${eventId}`, event_version_hash: 'replay-explanation-v1', generated_by: 'replay-explanation-v1', fallback_used: true, attempt_count: 1, error_code: null, created_at: createdAt, completed_at: replayTimePlusSeconds(createdAtSource, 5), explanation: { schema_version: 'agent-explanation/1.0', request_id: `replay-${eventId}`, event_id: eventId, ...template, capability_notice: 'RECORDED_REPLAY / 授权回放', generated_by: 'replay-explanation-v1', fallback_used: true } })
+  return validateAgentExplanationJob({ event_id: eventId, status: 'FALLBACK', request_id: `replay-${eventId}`, event_version_hash: 'replay-explanation-v1', generated_by: 'replay-explanation-v1', fallback_used: true, attempt_count: 1, error_code: null, created_at: createdAt, completed_at: replayTimePlusSeconds(createdAtSource, 5), explanation: { schema_version: 'agent-explanation/1.0', request_id: `replay-${eventId}`, event_id: eventId, ...template, capability_notice: '授权回放', generated_by: 'replay-explanation-v1', fallback_used: true } })
 }
 
 export async function getEventExplanation(eventId) {
@@ -380,10 +383,10 @@ export async function getEventExplanation(eventId) {
         schema_version: 'agent-explanation/1.0',
         request_id: `static-${eventId}`,
         event_id: eventId,
-        summary: '基于固定 Evidence 的脱敏解释',
+        summary: '基于固定依据的脱敏解释',
         reasoning_points: ['当前页面仅回放预置证据，不连接后端或外部模型。'],
         recommended_action_text: '按演示事件中的分级干预流程继续查看。',
-        capability_notice: 'RECORDED_REPLAY / 授权回放，仅用于赛事评审走查。',
+        capability_notice: '授权回放，仅用于赛事评审走查。',
         generated_by: 'static-demo',
         fallback_used: true,
       },
@@ -798,7 +801,7 @@ export async function submitFamilyFeedback(eventId, feedback) {
 
   if (runtime.mode !== 'replay') {
     try {
-      const response = await apiClient.post(`/events/${eventId}/feedback`, requestBody, {
+      const response = await apiClient.post(`/events/${encodeURIComponent(eventId)}/feedback`, requestBody, {
         headers: { 'Idempotency-Key': feedbackId, 'Content-Type': 'application/json; charset=utf-8' },
       })
       runtime.activeSource = 'api'

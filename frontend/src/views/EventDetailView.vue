@@ -12,7 +12,7 @@ import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
 import { getAsset, getEvent, getEventExplanation, interveneEvent, runtime, submitInterventionResult } from '../services/repository'
 import { resolveEventAssetId } from '../services/viewModel'
-import { domainLabel, evidenceTypeLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
+import { displayValueLabel, domainLabel, evidenceTypeLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel, timeScaleLabel, unitLabel } from '../utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -59,7 +59,7 @@ const syncLabel = computed(() => ({
   polling: '自动同步中',
   retrying: '同步重试中',
   complete: '同步已完成',
-  idle: runtime.mode === 'replay' ? '离线授权回放模式' : '等待同步',
+  idle: runtime.mode === 'replay' ? '离线授权回放' : '等待同步',
 }[syncState.value]))
 
 const syncTagType = computed(() => ({
@@ -107,6 +107,21 @@ const riskChartOption = computed(() => ({
 }))
 
 const displayRuleTraces = computed(() => event.value?.rule_traces || [])
+const hasPrimaryDetailContent = computed(() => Boolean(
+  displayEvidences.value.length
+  || displayRuleTraces.value.length
+  || event.value?.timeline?.length
+  || event.value?.risk_history?.length
+))
+const hasAsideDetailContent = computed(() => Boolean(
+  event.value
+  && (
+    ['OPEN', 'INTERVENING'].includes(event.value.status)
+    || event.value.interventions?.length
+    || (event.value.primary_domain === 'FALL' && event.value.status !== 'RESOLVED')
+  )
+))
+const hasDetailGridContent = computed(() => hasPrimaryDetailContent.value || hasAsideDetailContent.value)
 const preInterventionSnapshot = computed(() => (
   forewarningSnapshots.value.find((item) => item.phase === 'PRE_INTERVENTION') || forewarningSnapshots.value[0] || null
 ))
@@ -334,7 +349,7 @@ function startEventSession() {
   if (!route.params.eventId) {
     loading.value = false
     error.value = route.query.reason === 'unavailable'
-      ? '风险事件调取失败：FastAPI 服务不可达，请检查后端服务和网络连接'
+      ? '风险事件调取失败：后端接口服务不可达，请检查后端服务和网络连接'
       : '风险事件调取失败：当前居民暂无可用事件'
     syncState.value = 'idle'
     return
@@ -438,8 +453,8 @@ onBeforeUnmount(stopEventSession)
           </div>
           <h2>{{ event.title }}</h2>
           <p>{{ event.recommended_action }}</p>
-          <div class="meta-line review-only">
-            <span>事件 {{ event.event_id }}</span><span>风险等级 {{ event.risk_level }}</span><span>事件状态 {{ event.status }}</span><span>规则版本 {{ event.ruleset_version }}</span><span>{{ formatDateTime(event.created_at) }}</span>
+          <div class="meta-line">
+            <span>事件 {{ event.event_id }}</span><span>风险等级 {{ displayValueLabel(event.risk_level) }}</span><span>事件状态 {{ statusLabel(event.status) }}</span><span>规则版本 {{ event.ruleset_version }}</span><span>{{ formatDateTime(event.created_at) }}</span>
           </div>
         </div>
         <div class="event-score"><span>{{ formatRiskScore(event.risk_score) }}</span><small>风险分数</small></div>
@@ -461,7 +476,7 @@ onBeforeUnmount(stopEventSession)
           <article>
             <small>干预前即时指数</small>
             <strong>{{ formatRiskScore(preInterventionSnapshot.instant.engineering_index) }}</strong>
-            <span>{{ assessmentLabel(preInterventionSnapshot.assessment_status) }} · 置信 {{ preInterventionSnapshot.confidence_level }}</span>
+            <span>{{ assessmentLabel(preInterventionSnapshot.assessment_status) }} · 置信 {{ displayValueLabel(preInterventionSnapshot.confidence_level) }}</span>
           </article>
           <article>
             <small>干预后即时指数</small>
@@ -501,59 +516,62 @@ onBeforeUnmount(stopEventSession)
         <el-alert v-else-if="!explanation || ['PENDING', 'PROCESSING'].includes(explanation.status)" title="解释生成中" type="info" show-icon :closable="false" data-testid="agent-explanation-pending" />
         <el-alert v-else-if="explanation.status === 'RETRY'" title="解释生成重试中" type="warning" show-icon :closable="false" data-testid="agent-explanation-retry" />
         <el-alert v-else-if="explanation.status === 'NOT_REQUESTED'" title="暂无智能体解释" type="info" show-icon :closable="false" data-testid="agent-explanation-not-requested" />
-        <el-alert v-else-if="explanation.status === 'FAILED'" title="解释生成失败，但风险事件与 Evidence 仍正常展示。" type="error" show-icon :closable="false" data-testid="agent-explanation-failed" />
+        <el-alert v-else-if="explanation.status === 'FAILED'" title="解释生成失败，但风险事件与依据仍正常展示。" type="error" show-icon :closable="false" data-testid="agent-explanation-failed" />
         <div v-else-if="explanation.explanation" class="agent-explanation-content" data-testid="agent-explanation-content">
-          <h3>{{ explanation.explanation.summary }}</h3>
-          <ul>
-            <li v-for="(point, index) in explanation.explanation.reasoning_points" :key="`${index}-${point}`">{{ point }}</li>
-          </ul>
-          <p><strong>建议：</strong>{{ explanation.explanation.recommended_action_text }}</p>
-          <p class="agent-capability-notice">{{ explanation.explanation.capability_notice }}</p>
-          <dl class="detail-list agent-explanation-meta">
-            <div><dt>generated_by</dt><dd data-testid="agent-explanation-generated-by">{{ explanationGeneratedBy }}</dd></div>
-            <div><dt>fallback_used</dt><dd data-testid="agent-explanation-fallback-used">{{ explanationFallbackUsed }}</dd></div>
-            <div><dt>创建时间（北京时间）</dt><dd data-testid="agent-explanation-created-at">{{ formatDateTime(explanation.created_at) }}</dd></div>
-            <div><dt>完成时间（北京时间）</dt><dd data-testid="agent-explanation-completed-at">{{ formatDateTime(explanation.completed_at) }}</dd></div>
-          </dl>
-          <el-tag v-if="explanationFallbackUsed" type="warning" effect="plain" data-testid="agent-explanation-fallback">模板降级解释</el-tag>
+          <div class="agent-explanation-narrative">
+            <h3>{{ explanation.explanation.summary }}</h3>
+            <ul>
+              <li v-for="(point, index) in explanation.explanation.reasoning_points" :key="`${index}-${point}`">{{ point }}</li>
+            </ul>
+            <p><strong>建议：</strong>{{ explanation.explanation.recommended_action_text }}</p>
+            <p class="agent-capability-notice">{{ explanation.explanation.capability_notice }}</p>
+          </div>
+          <div class="agent-explanation-side">
+            <dl class="detail-list agent-explanation-meta">
+              <div><dt>生成来源</dt><dd data-testid="agent-explanation-generated-by">{{ explanationGeneratedBy }}</dd></div>
+              <div><dt>是否使用降级解释</dt><dd data-testid="agent-explanation-fallback-used">{{ explanationFallbackUsed ? '是' : '否' }}</dd></div>
+              <div><dt>创建时间（北京时间）</dt><dd data-testid="agent-explanation-created-at">{{ formatDateTime(explanation.created_at) }}</dd></div>
+              <div><dt>完成时间（北京时间）</dt><dd data-testid="agent-explanation-completed-at">{{ formatDateTime(explanation.completed_at) }}</dd></div>
+            </dl>
+            <el-tag v-if="explanationFallbackUsed" type="warning" effect="plain" data-testid="agent-explanation-fallback">模板降级解释</el-tag>
+          </div>
         </div>
       </section>
 
-      <section class="event-detail-grid">
-        <div class="event-primary-column">
-          <article class="content-card" data-testid="evidence-panel">
+      <section v-if="hasDetailGridContent" class="event-detail-grid" data-testid="event-detail-grid">
+        <div v-if="hasPrimaryDetailContent" class="event-primary-column">
+          <article v-if="displayEvidences.length" class="content-card" data-testid="evidence-panel">
             <div class="card-heading"><div><span class="section-kicker">依据</span><h2>为什么系统建议关注</h2></div><span>{{ event.evidence_summary.length }} 条依据</span></div>
-            <div v-if="displayEvidences.length" class="evidence-grid">
+            <div class="evidence-grid">
               <article v-for="evidence in displayEvidences" :key="evidence.evidence_id" class="evidence-card">
-                <div class="evidence-top"><code>{{ evidenceTypeLabel(evidence.evidence_type) }}</code><span>{{ evidence.time_scale || '摘要' }}</span></div>
+                <div class="evidence-top"><code>{{ evidenceTypeLabel(evidence.evidence_type) }}</code><span>{{ timeScaleLabel(evidence.time_scale) }}</span></div>
                 <h3>{{ evidence.explanation }}</h3>
-                <div class="evidence-metrics review-only display-grid">
+                <div class="evidence-metrics display-grid">
                   <span><small>当前值</small><b>{{ evidence.current_value ?? '—' }}</b></span>
                   <span><small>个人基线</small><b>{{ evidence.baseline_value ?? '—' }}</b></span>
                   <span><small>异常程度</small><b>{{ formatPercent(evidence.severity) }}</b></span>
                   <span><small>置信度</small><b>{{ formatPercent(evidence.confidence) }}</b></span>
                   <span><small>数据质量</small><b>{{ formatPercent(evidence.data_quality) }}</b></span>
                 </div>
-                <div class="evidence-trace-summary review-only">
-                  <span>{{ (evidence.observation_ids || []).length }} 条 Observation</span>
+                <div class="evidence-trace-summary">
+                  <span>{{ (evidence.observation_ids || []).length }} 条原始观测</span>
                   <span>{{ evidence.adapter_version || '暂无适配器详情' }}</span>
                 </div>
                 <SourceBadge v-if="evidence.source_mode" :mode="evidence.source_mode" :simulated="evidence.simulated" />
                 <el-button v-if="evidence.observation_ids?.length" class="trace-button" size="large" plain @click="openTrace(evidence)">查看原始观测</el-button>
               </article>
             </div>
-            <el-empty v-else description="该绿色事件没有异常 Evidence" />
           </article>
 
           <TechnicalDisclosure v-if="displayRuleTraces.length" title="规则判断与质量门槛" summary="状态迁移、评分分量、个人基线和查询窗口">
           <article class="content-card" data-testid="rule-trace-panel">
-            <div class="card-heading"><div><span class="section-kicker">RuleTrace</span><h2>后端实际规则判断</h2></div><span>{{ displayRuleTraces.length }} 次评估</span></div>
+            <div class="card-heading"><div><span class="section-kicker">规则轨迹</span><h2>后端实际规则判断</h2></div><span>{{ displayRuleTraces.length }} 次评估</span></div>
             <div class="tool-results">
               <article v-for="trace in displayRuleTraces" :key="trace.trace_id">
                 <el-tag effect="dark">{{ trace.matched_rule }}</el-tag>
                 <h3>{{ trace.reason || '后端未返回规则解释' }}</h3>
                 <dl class="detail-list">
-                  <div><dt>状态迁移</dt><dd>{{ trace.previous_status || trace.previous_state }} → {{ trace.next_status || trace.next_state }}</dd></div>
+                  <div><dt>状态迁移</dt><dd>{{ displayValueLabel(trace.previous_status || trace.previous_state) }} → {{ displayValueLabel(trace.next_status || trace.next_state) }}</dd></div>
                   <div><dt>实际评分</dt><dd>{{ traceScore(trace) }}</dd></div>
                   <div><dt>评分分量</dt><dd>{{ scoreComponentsText(trace) }}</dd></div>
                   <div><dt>质量门槛</dt><dd>{{ trace.thresholds?.data_quality ?? '—' }}</dd></div>
@@ -567,14 +585,13 @@ onBeforeUnmount(stopEventSession)
           </article>
           </TechnicalDisclosure>
 
-          <article class="content-card">
+          <article v-if="event.timeline?.length" class="content-card" data-testid="event-action-panel">
             <div class="card-heading"><div><span class="section-kicker">系统动作</span><h2>干预与观察时间轴</h2></div></div>
-            <el-timeline v-if="event.timeline?.length" class="action-timeline" data-testid="event-action-timeline">
+            <el-timeline class="action-timeline" data-testid="event-action-timeline">
               <el-timeline-item v-for="item in event.timeline" :key="`${item.time}-${item.title}`" :timestamp="item.time" placement="top">
-                <div class="timeline-card"><strong>{{ item.title }}</strong><p>{{ item.detail }}</p><el-tag effect="plain" :type="item.kind === 'FAMILY_FEEDBACK' ? 'warning' : undefined">{{ item.kind === 'FAMILY_FEEDBACK' ? '家属记录' : item.status }}</el-tag></div>
+                <div class="timeline-card"><strong>{{ item.title }}</strong><p>{{ item.detail }}</p><el-tag effect="plain" :type="item.kind === 'FAMILY_FEEDBACK' ? 'warning' : undefined">{{ item.kind === 'FAMILY_FEEDBACK' ? '家属记录' : displayValueLabel(item.status) }}</el-tag></div>
               </el-timeline-item>
             </el-timeline>
-            <el-empty v-else description="当前事件暂无系统动作时间轴" />
           </article>
 
           <article v-if="event.risk_history?.length" class="content-card">
@@ -587,7 +604,7 @@ onBeforeUnmount(stopEventSession)
           </article>
         </div>
 
-        <aside class="event-aside">
+        <aside v-if="hasAsideDetailContent" class="event-aside">
           <section v-if="['OPEN', 'INTERVENING'].includes(event.status)" class="content-card intervention-action-card" data-testid="intervention-action-panel">
             <div class="card-heading"><div><span class="section-kicker">处理动作</span><h2>联系与干预</h2></div></div>
             <p>由后端选择并执行已批准的干预工具，页面不会根据智能体解释自动触发。</p>
@@ -603,26 +620,25 @@ onBeforeUnmount(stopEventSession)
             </el-button>
           </section>
 
-          <section class="content-card tool-card" data-testid="intervention-result-panel">
+          <section v-if="event.interventions?.length" class="content-card tool-card" data-testid="intervention-result-panel">
             <div class="card-heading"><div><span class="section-kicker">工具结果</span><h2>执行记录</h2></div></div>
-            <div v-if="event.interventions?.length" class="tool-results">
+            <div class="tool-results">
               <article v-for="result in event.interventions" :key="result.result_id">
                 <el-tag :type="DELIVERY_STATUSES[result.delivery_status]?.type || 'info'" size="large" effect="dark">
-                  {{ DELIVERY_STATUSES[result.delivery_status]?.label || result.delivery_status }}
+                  {{ DELIVERY_STATUSES[result.delivery_status]?.label || displayValueLabel(result.delivery_status) }}
                 </el-tag>
-                <h3>{{ result.tool_name }}</h3>
+                <h3>{{ displayValueLabel(result.tool_name) }}</h3>
                 <dl class="detail-list">
-                  <div><dt>执行方式</dt><dd>{{ result.action_type }}</dd></div>
+                  <div><dt>执行方式</dt><dd>{{ displayValueLabel(result.action_type) }}</dd></div>
                   <div><dt>老人反馈</dt><dd>{{ result.resident_response || '暂无' }}</dd></div>
                   <div v-if="result.family_feedback"><dt>家属反馈</dt><dd>{{ result.family_feedback }}</dd></div>
                   <div><dt>干预后水位</dt><dd>{{ formatRiskScore(result.risk_after) }}</dd></div>
-                  <div><dt>是否解除</dt><dd>{{ result.resolved }}</dd></div>
+                  <div><dt>是否解除</dt><dd>{{ result.resolved ? '是' : '否' }}</dd></div>
                   <div><dt>结果</dt><dd>{{ result.resolution_reason || '等待结果' }}</dd></div>
                 </dl>
                 <el-alert v-if="result.delivery_status === 'FAILED'" title="工具调用失败已如实保留，未标记为干预成功。" type="error" show-icon :closable="false" />
               </article>
             </div>
-            <el-empty v-else description="该事件没有调用工具" />
           </section>
 
           <section v-if="event.primary_domain === 'FALL' && event.status !== 'RESOLVED'" class="elder-action-card" data-testid="elder-single-action">
@@ -639,7 +655,7 @@ onBeforeUnmount(stopEventSession)
             >
               {{ residentResponseRecorded ? '坐稳确认已记录' : '我已坐稳' }}
             </el-button>
-            <p v-if="residentResponseRecorded" class="elder-action-note">确认不会直接关闭事件，仍由后端 Evidence 和观察期决定风险是否回落。</p>
+            <p v-if="residentResponseRecorded" class="elder-action-note">确认不会直接关闭事件，仍由后端依据和观察期决定风险是否回落。</p>
           </section>
         </aside>
       </section>
@@ -650,7 +666,7 @@ onBeforeUnmount(stopEventSession)
           <h2>{{ evidenceTypeLabel(selectedEvidence.evidence_type) }}</h2>
           <p>{{ selectedEvidence.explanation }}</p>
           <dl class="detail-list">
-            <div><dt>Evidence ID</dt><dd>{{ selectedEvidence.evidence_id }}</dd></div>
+            <div><dt>依据标识</dt><dd>{{ selectedEvidence.evidence_id }}</dd></div>
             <div><dt>风险方向</dt><dd>{{ domainLabel(selectedEvidence.risk_domain) }}</dd></div>
             <div><dt>生成时间</dt><dd>{{ formatDateTime(selectedEvidence.timestamp) }}</dd></div>
             <div><dt>适配器版本</dt><dd>{{ selectedEvidence.adapter_version }}</dd></div>
@@ -660,17 +676,17 @@ onBeforeUnmount(stopEventSession)
           </dl>
           <h3>关联活动记录</h3>
           <article v-for="observation in selectedObservations" :key="observation.observation_id" class="observation-card">
-            <strong>{{ observation.feature_name }}</strong>
+            <strong>{{ evidenceTypeLabel(observation.feature_name) }}</strong>
             <code>{{ observation.observation_id }}</code>
-            <p>{{ observation.feature_value }} {{ observation.unit || '' }} · {{ formatDateTime(observation.timestamp) }}</p>
+            <p>{{ observation.feature_value }} {{ unitLabel(observation.unit) }} · {{ formatDateTime(observation.timestamp) }}</p>
             <dl class="detail-list compact-list">
-              <div><dt>来源</dt><dd>{{ observation.source }}</dd></div>
+              <div><dt>来源</dt><dd>{{ displayValueLabel(observation.source) }}</dd></div>
               <div><dt>置信度</dt><dd>{{ formatPercent(observation.confidence) }}</dd></div>
               <div><dt>质量</dt><dd>{{ formatPercent(observation.data_quality) }}</dd></div>
               <div><dt>素材标识</dt><dd>{{ formatAssetId(observation.asset_id) }}</dd></div>
             </dl>
           </article>
-          <el-alert v-if="!selectedObservations.length" title="接口尚未返回关联 Observation，当前只能追溯到 Evidence ID。" type="warning" show-icon :closable="false" />
+          <el-alert v-if="!selectedObservations.length" title="接口尚未返回关联原始观测，当前只能追溯到依据标识。" type="warning" show-icon :closable="false" />
         </div>
       </el-drawer>
     </template>

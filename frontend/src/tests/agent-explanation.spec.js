@@ -94,7 +94,7 @@ describe('agent explanation frontend contract', () => {
     expect(wrapper.get('[data-testid="agent-explanation-content"]').text()).toContain('Fallback summary')
     expect(wrapper.get('[data-testid="agent-explanation-status"]').text()).toBe('模板降级解释')
     expect(wrapper.get('[data-testid="agent-explanation-generated-by"]').text()).toBe('template-fallback-v1')
-    expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('true')
+    expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('是')
     expect(wrapper.get('[data-testid="agent-explanation-fallback"]').exists()).toBe(true)
     wrapper.unmount()
   })
@@ -152,7 +152,7 @@ describe('agent explanation frontend contract', () => {
     }
     expect(wrapper.get('[data-testid="agent-explanation-content"]').text()).toContain('LLM summary')
     expect(wrapper.get('[data-testid="agent-explanation-generated-by"]').text()).toBe('qwen3.6-flash')
-    expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('false')
+    expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('否')
 
     await vi.advanceTimersByTimeAsync(6000)
     expect(getEventExplanationMock).toHaveBeenCalledTimes(5)
@@ -168,7 +168,7 @@ describe('agent explanation frontend contract', () => {
     const wrapper = await mountView()
 
     if (status === 'FAILED') {
-      expect(wrapper.get('[data-testid="agent-explanation-failed"]').text()).toContain('风险事件与 Evidence 仍正常展示')
+      expect(wrapper.get('[data-testid="agent-explanation-failed"]').text()).toContain('风险事件与依据仍正常展示')
       expect(wrapper.text()).toContain('Fast rise')
     }
     await vi.advanceTimersByTimeAsync(6000)

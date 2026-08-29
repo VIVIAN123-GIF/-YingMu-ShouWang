@@ -1,19 +1,35 @@
 import { describe, expect, it } from 'vitest'
-import { DELIVERY_STATUSES, EVENT_STATUSES, RISK_LEVELS, SOURCE_MODES } from '../domain/constants'
+import { DATA_MODES, DELIVERY_STATUSES, EVENT_STATUSES, RISK_LEVELS, SOURCE_MODES } from '../domain/constants'
 import { shouldFallback } from '../services/repository'
 import { DataContractError, validateDashboard, validateForewarningSnapshot } from '../domain/validation'
+import { displayValueLabel, evidenceTypeLabel, timeScaleLabel, unitLabel } from '../utils/format'
 
 describe('冻结枚举', () => {
   it('保留四级风险、六种事件状态和四种来源', () => {
     expect(Object.keys(RISK_LEVELS)).toEqual(['GREEN', 'YELLOW', 'ORANGE', 'RED'])
     expect(Object.keys(EVENT_STATUSES)).toEqual(['OPEN', 'INTERVENING', 'OBSERVING', 'RESOLVED', 'ESCALATED', 'FALSE_ALARM'])
     expect(Object.keys(SOURCE_MODES)).toEqual(['LIVE_DEVICE', 'RECORDED_REPLAY', 'PUBLIC_DATASET', 'MOCK'])
+    expect(DATA_MODES.api).toBe('实时连接')
   })
 
   it('工具失败不会映射成成功', () => {
     expect(DELIVERY_STATUSES.FAILED.type).toBe('danger')
-    expect(DELIVERY_STATUSES.FAILED.label).toContain('FAILED')
+    expect(DELIVERY_STATUSES.FAILED.label).toBe('调用失败')
     expect(DELIVERY_STATUSES.FAILED.label).not.toContain('成功')
+  })
+})
+
+describe('用户可见枚举中文化', () => {
+  it('翻译状态、来源、证据、时间尺度和单位', () => {
+    expect(displayValueLabel('VALID')).toBe('完整评估')
+    expect(displayValueLabel('RECORDED_REPLAY')).toBe('授权回放')
+    expect(evidenceTypeLabel('activity_range_decline')).toBe('活动范围下降')
+    expect(timeScaleLabel('LONG')).toBe('长期')
+    expect(unitLabel('second')).toBe('秒')
+  })
+
+  it('保留未知固定标识以便追溯', () => {
+    expect(displayValueLabel('ruleset-v2')).toBe('ruleset-v2')
   })
 })
 

@@ -1,8 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import baselineMock from '../replay-data/baseline.json'
 import { normalizeBaseline } from '../services/viewModel'
-import { setViewMode } from '../services/viewMode'
 
 const { getBaselineMock } = vi.hoisted(() => ({ getBaselineMock: vi.fn() }))
 
@@ -29,16 +28,17 @@ function mountView() {
 }
 
 describe('个人基线页面', () => {
-  beforeEach(() => { getBaselineMock.mockReset(); setViewMode('review') })
-  afterEach(() => setViewMode('family'))
+  beforeEach(() => { getBaselineMock.mockReset() })
 
   it('授权回放展示实验覆盖且不冒充居民个人基线', async () => {
     getBaselineMock.mockResolvedValue(normalizeBaseline(structuredClone(baselineMock)))
     const wrapper = mountView()
     await flushPromises()
-    expect(wrapper.text()).toContain('3 名参与者 · 96 段受控片段')
-    expect(wrapper.text()).toContain('张建国待同一居民、同一机位实机样本校准')
-    expect(wrapper.text()).toContain('待个人校准')
+    expect(wrapper.text()).toContain('3 / 3 个初步有效日')
+    expect(wrapper.text()).toContain('0.60 秒')
+    expect(wrapper.text()).toContain('0.75 米/秒')
+    expect(wrapper.text()).toContain('2.90 度')
+    expect(wrapper.text()).not.toContain('待个人校准')
     expect(wrapper.findAll('.chart-stub')).toHaveLength(1)
     expect(wrapper.findAll('.heatmap-stub')).toHaveLength(1)
   })
@@ -51,8 +51,8 @@ describe('个人基线页面', () => {
     }))
     const wrapper = mountView()
     await flushPromises()
-    expect(wrapper.text()).toContain('当前 API 未提供活动时序数据')
-    expect(wrapper.text()).toContain('当前 API 暂无活动热力图时序数据')
+    expect(wrapper.text()).toContain('当前接口未提供活动时序数据')
+    expect(wrapper.text()).toContain('当前接口暂无活动热力图时序数据')
     expect(wrapper.text()).not.toContain('模拟实验回放')
   })
 })
