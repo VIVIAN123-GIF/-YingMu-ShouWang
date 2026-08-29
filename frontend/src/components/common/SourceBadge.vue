@@ -12,7 +12,7 @@ const config = computed(() => SOURCE_MODES[props.mode] || { label: props.mode, t
 
 <template>
   <span class="source-wrap">
-    <el-tag class="source-badge" :type="config.tone" effect="plain" size="large">
+    <el-tag v-if="!simulated" class="source-badge" :type="config.tone" effect="plain" size="large">
       {{ config.label }}
     </el-tag>
     <span v-if="simulated" class="simulation-mark">授权回放</span>

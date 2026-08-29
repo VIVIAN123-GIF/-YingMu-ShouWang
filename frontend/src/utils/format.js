@@ -46,3 +46,10 @@ export function statusLabel(value) {
 export function evidenceTypeLabel(value) {
   return EVIDENCE_TYPE_LABELS[value] || value || '未知证据'
 }
+
+export function feedbackTone(value) {
+  const text = String(value || '')
+  if (/(正常|确认|无需)/.test(text)) return 'positive'
+  if (/(无法|风险|转人工)/.test(text)) return 'risk'
+  return 'attention'
+}

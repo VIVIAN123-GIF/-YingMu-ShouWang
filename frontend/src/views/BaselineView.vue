@@ -1,8 +1,9 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import PageHeader from '../components/common/PageHeader.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
+import ActivityHeatmap from '../components/baseline/ActivityHeatmap.vue'
 import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
 import { getBaseline } from '../services/repository'
 import { formatDateTime } from '../utils/format'
@@ -10,6 +11,8 @@ import { formatDateTime } from '../utils/format'
 const loading = ref(true)
 const error = ref('')
 const baseline = ref(null)
+const displayProgress = ref(0)
+let progressAnimationFrame = 0
 
 const progressPercent = computed(() => {
   const observed = baseline.value?.baseline_progress?.observed_days || 0
@@ -22,29 +25,32 @@ const coverageMode = computed(() => baseline.value?.coverage_type === 'AUTHORIZE
 const coverageDays = computed(() => baseline.value?.coverage?.coverage_days || baseline.value?.baseline_progress?.observed_days || 0)
 const coverageClips = computed(() => baseline.value?.coverage?.clip_count || 0)
 
+function animateProgress(target) {
+  if (progressAnimationFrame) cancelAnimationFrame(progressAnimationFrame)
+  displayProgress.value = 0
+  const startedAt = performance.now()
+  const duration = 2200
+  const tick = (now) => {
+    const raw = Math.min(1, (now - startedAt) / duration)
+    const progress = 1 - ((1 - raw) ** 3)
+    displayProgress.value = Math.round(target * progress)
+    if (raw < 1) progressAnimationFrame = requestAnimationFrame(tick)
+    else progressAnimationFrame = 0
+  }
+  progressAnimationFrame = requestAnimationFrame(tick)
+}
+
 const trendOption = computed(() => ({
-  color: ['#0007cb', '#9c9fa5'],
+  color: ['#1677c2', '#86909c'],
   grid: { left: 48, right: 24, top: 48, bottom: 42 },
   tooltip: { trigger: 'axis' },
-  legend: { data: ['活动指数', '个人基线'], top: 0, textStyle: { color: '#626260', fontSize: 14 } },
-  xAxis: { type: 'category', data: baseline.value?.trend.map((item) => item.date) || [], axisLabel: { color: '#626260' } },
-  yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: '#ebe7e1' } }, axisLabel: { color: '#626260' } },
+  legend: { data: ['活动指数', '个人基线'], top: 0, textStyle: { color: '#4e5969', fontSize: 14 } },
+  xAxis: { type: 'category', data: baseline.value?.trend.map((item) => item.date) || [], axisLabel: { color: '#86909c' } },
+  yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: '#e5e6eb' } }, axisLabel: { color: '#86909c' } },
   series: [
     { name: '活动指数', type: 'line', smooth: true, symbolSize: 9, data: baseline.value?.trend.map((item) => item.activity_index) || [], lineStyle: { width: 4 } },
     { name: '个人基线', type: 'line', symbol: 'none', data: baseline.value?.trend.map((item) => item.baseline) || [], lineStyle: { width: 2, type: 'dashed' } },
   ],
-}))
-
-const heatmapOption = computed(() => ({
-  grid: { left: 70, right: 34, top: 18, bottom: 72 },
-  tooltip: { formatter: ({ value }) => `${baseline.value.activity_heatmap.days[value[0]]} ${baseline.value.activity_heatmap.periods[value[1]]}<br/>活动指数：${value[2]}` },
-  xAxis: { type: 'category', data: baseline.value?.activity_heatmap?.days || [], splitArea: { show: true }, axisLabel: { color: '#626260' } },
-  yAxis: { type: 'category', data: baseline.value?.activity_heatmap?.periods || [], splitArea: { show: true }, axisLabel: { color: '#626260' } },
-  visualMap: {
-    min: 0, max: 100, calculable: false, orient: 'horizontal', left: 'center', bottom: 8,
-    text: ['活动较多', '活动较少'], inRange: { color: ['#f5f1ec', '#65b5ff', '#0007cb'] },
-  },
-  series: [{ name: '活动指数', type: 'heatmap', data: baseline.value?.activity_heatmap?.values || [], label: { show: true, color: '#243b36' } }],
 }))
 
 function statusLabel(status) {
@@ -69,6 +75,7 @@ async function load() {
   error.value = ''
   try {
     baseline.value = await getBaseline()
+    animateProgress(coverageMode.value ? 86 : progressPercent.value)
   } catch (err) {
     error.value = `无法读取个人基线：${err.message}`
   } finally {
@@ -77,6 +84,7 @@ async function load() {
 }
 
 onMounted(load)
+onBeforeUnmount(() => { if (progressAnimationFrame) cancelAnimationFrame(progressAnimationFrame) })
 </script>
 
 <template>
@@ -96,7 +104,7 @@ onMounted(load)
           <p v-if="coverageMode">{{ statusLabel(baseline.overall_status) }} · 张建国个人基线待校准 · 更新于 {{ formatDateTime(baseline.as_of) }}</p>
           <p v-else>{{ statusLabel(baseline.overall_status) }} · {{ stableCount }} 项工程稳定指标 · 更新于 {{ formatDateTime(baseline.as_of) }}</p>
         </div>
-        <el-progress type="dashboard" :percentage="coverageMode ? 86 : progressPercent" :stroke-width="12" color="#0007cb">
+        <el-progress type="dashboard" :percentage="displayProgress" :stroke-width="12" color="#1677c2">
           <template #default="{ percentage }"><strong>{{ percentage }}%</strong><span>有效进度</span></template>
         </el-progress>
         <TechnicalDisclosure title="基线来源详情" summary="规则版本、设备和固定机位">
@@ -113,7 +121,7 @@ onMounted(load)
 
       <section v-if="baseline.metrics.length" class="baseline-metric-grid" aria-label="个人基线指标">
         <article v-for="item in baseline.metrics" :key="item.key" class="content-card baseline-metric-card">
-          <div class="card-heading"><div><span class="section-kicker">{{ item.key }}</span><h2>{{ item.label }}</h2></div><el-tag :type="statusType(item.status)" size="large">{{ statusLabel(item.status) }}</el-tag></div>
+          <div class="card-heading"><div><h2>{{ item.label }}</h2></div><el-tag :type="statusType(item.status)" size="large">{{ statusLabel(item.status) }}</el-tag></div>
           <div class="baseline-number">{{ metricDisplay(item) }}</div>
           <dl class="detail-list review-only">
             <div><dt>MAD</dt><dd>{{ item.display_value ? '待个人校准' : metricValue(item.mad, item.unit) }}</dd></div>
@@ -139,14 +147,12 @@ onMounted(load)
       <section class="baseline-charts">
         <article class="content-card">
           <div class="card-heading"><div><span class="section-kicker">多日趋势</span><h2>活动指数与个人基线</h2></div></div>
-          <ChartPanel v-if="baseline.trend.length" :option="trendOption" height="330px" aria-label="近七日活动指数与个人基线趋势" />
+          <ChartPanel v-if="baseline.trend.length" :option="trendOption" :replace="false" draw-animation draw-color="#1677c2,#86909c" :draw-delay="700" height="330px" aria-label="近七日活动指数与个人基线趋势" />
           <el-empty v-else description="当前 API 未提供活动时序数据" />
         </article>
         <article class="content-card heatmap-card">
-          <div class="card-heading"><div><span class="section-kicker">日期 × 时段</span><h2>近七日活动热力图</h2></div><el-tag v-if="baseline.activity_heatmap && baseline.simulated" type="danger" effect="dark">模拟实验回放</el-tag></div>
-          <ChartPanel v-if="baseline.activity_heatmap?.values?.length" :option="heatmapOption" height="330px" aria-label="近七日不同时段的模拟活动热力图" />
+          <ActivityHeatmap v-if="baseline.activity_heatmap?.values?.length" :data="baseline.activity_heatmap" enable-play-animation />
           <el-empty v-else description="当前 API 暂无活动热力图时序数据" />
-          <p v-if="baseline.activity_heatmap" class="privacy-note">热力图只表达分时活动强度，不代表真实房间轨迹；房间区域数据待区域标定完成后接入。</p>
         </article>
       </section>
 

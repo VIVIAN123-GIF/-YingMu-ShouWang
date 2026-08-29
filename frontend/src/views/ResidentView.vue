@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { User } from '@element-plus/icons-vue'
 import PageHeader from '../components/common/PageHeader.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
@@ -50,7 +51,7 @@ const chartOption = computed(() => {
     series: [
       { name: '即时', type: 'line', smooth: true, showSymbol: points.length < 30, data: points.map((item) => item.instant.engineering_index), color: '#b64f4f' },
       { name: '30秒', type: 'line', smooth: true, showSymbol: points.length < 30, data: points.map((item) => item.short_30s.engineering_index), color: '#c28a32' },
-      { name: '3分钟', type: 'line', smooth: true, showSymbol: points.length < 30, data: points.map((item) => item.trend_3min.engineering_index), color: '#0007cb' },
+      { name: '3分钟', type: 'line', smooth: true, showSymbol: points.length < 30, data: points.map((item) => item.trend_3min.engineering_index), color: '#1677c2' },
     ],
   }
 })
@@ -117,7 +118,13 @@ onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
     </div>
 
     <section class="content-card latest-forewarning-card" data-testid="latest-forewarning" v-loading="latestLoading">
-      <div class="card-heading"><div><span class="section-kicker">最新预警摘要</span><h2>居民当前工程观察</h2></div><el-tag v-if="latestForewarning" :type="attentionConfig[latestAttention]?.type" effect="plain">{{ attentionConfig[latestAttention]?.label }}</el-tag></div>
+      <div class="card-heading">
+        <div><span class="section-kicker">最新预警摘要</span><h2>居民当前工程观察</h2></div>
+        <div v-if="latestForewarning" class="forewarning-heading-actions">
+          <SourceBadge :mode="latestForewarning.source_mode" :simulated="latestForewarning.simulated" />
+          <el-tag :type="attentionConfig[latestAttention]?.type" effect="plain">{{ attentionConfig[latestAttention]?.label }}</el-tag>
+        </div>
+      </div>
       <el-alert v-if="latestError" :title="latestError" type="error" :closable="false" show-icon />
       <template v-else-if="latestForewarning">
         <div class="forewarning-horizon-grid">
@@ -127,7 +134,6 @@ onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
         </div>
         <div class="latest-forewarning-meta">
           <dl class="detail-list compact-detail-list"><div><dt>评估时间</dt><dd>{{ formatDateTime(latestForewarning.evaluated_at) }}</dd></div><div><dt>评估状态</dt><dd>{{ latestForewarning.assessment_status }}</dd></div><div><dt>置信度</dt><dd>{{ latestForewarning.confidence_level }}</dd></div><div><dt>规则版本</dt><dd>{{ latestForewarning.ruleset_version }}</dd></div></dl>
-          <SourceBadge :mode="latestForewarning.source_mode" :simulated="latestForewarning.simulated" />
         </div>
         <el-alert :title="latestForewarning.recommended_action" type="info" :closable="false" show-icon />
       </template>
@@ -164,7 +170,12 @@ onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
 
     <template v-if="dashboard">
       <section class="content-card questionnaire-card">
-        <div class="card-heading"><div><span class="section-kicker">3分钟初始问卷</span><h2>风险画像与授权偏好</h2></div><el-tag type="warning" effect="plain">{{ profile.filledBy }} · 离线演示档案</el-tag></div>
+        <div class="card-heading">
+          <div><span class="section-kicker">3分钟初始问卷</span><h2>风险画像与授权偏好</h2></div>
+          <div class="questionnaire-provenance" role="status" :aria-label="`${profile.filledBy}，离线演示档案`">
+            <el-icon><User /></el-icon><strong>{{ profile.filledBy }}</strong><span aria-hidden="true"></span><small>离线演示档案</small>
+          </div>
+        </div>
         <el-form label-position="top" @change="saveProfile">
           <div class="questionnaire-grid">
             <el-form-item label="行动能力"><el-input v-model="profile.mobility" /></el-form-item><el-form-item label="关节/疼痛情况"><el-input v-model="profile.jointIssues" /></el-form-item><el-form-item label="既往跌倒"><el-input v-model="profile.fallHistory" /></el-form-item>

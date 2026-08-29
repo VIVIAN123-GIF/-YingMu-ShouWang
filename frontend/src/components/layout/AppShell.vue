@@ -1,8 +1,8 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ChatLineRound, CircleCheck, Clock, DataAnalysis, DocumentChecked, Expand, Fold, House, InfoFilled, Menu, Monitor, MoreFilled, SwitchButton, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
+import { ChatLineRound, CircleCheck, Clock, DataAnalysis, DocumentChecked, House, InfoFilled, Menu, Monitor, MoreFilled, SwitchButton, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
 import { routes } from '../../router'
 import { DATA_MODES } from '../../domain/constants'
 import { getEvents, runtime, setDataMode } from '../../services/repository'
@@ -12,9 +12,11 @@ import { VIEW_MODES, setViewMode, viewModeState } from '../../services/viewMode'
 const emit = defineEmits(['logout'])
 const route = useRoute()
 const router = useRouter()
-const collapsed = ref(false)
+const collapsed = ref(true)
 const mobileNavigationOpen = ref(false)
 const openingEventDetail = ref(false)
+const runtimeBannerVisible = ref(false)
+let runtimeBannerTimer
 const pagesBuild = import.meta.env.VITE_PAGES_BUILD === 'true'
 const iconMap = { ChatLineRound, Clock, DataAnalysis, DocumentChecked, House, Monitor, TrendCharts, User, VideoPlay }
 const groupConfig = [
@@ -33,6 +35,27 @@ const currentPage = computed(() => ({
 
 function logout() { logoutOfDemo(); emit('logout') }
 function createdAtTimestamp(event) { const timestamp = Date.parse(event?.created_at || ''); return Number.isNaN(timestamp) ? 0 : timestamp }
+function expandSidebar() { collapsed.value = false }
+function collapseSidebar() { collapsed.value = true }
+function handleSidebarFocusOut(event) {
+  if (!event.currentTarget.contains(event.relatedTarget)) collapseSidebar()
+}
+function hideRuntimeBanner() {
+  runtimeBannerVisible.value = false
+  runtimeBannerTimer = undefined
+}
+function handleTopWheel(event) {
+  if (window.scrollY > 1 || event.deltaY >= 0 || !runtime.message) return
+  runtimeBannerVisible.value = true
+  clearTimeout(runtimeBannerTimer)
+  runtimeBannerTimer = window.setTimeout(hideRuntimeBanner, 550)
+}
+
+onMounted(() => window.addEventListener('wheel', handleTopWheel, { passive: true }))
+onBeforeUnmount(() => {
+  window.removeEventListener('wheel', handleTopWheel)
+  clearTimeout(runtimeBannerTimer)
+})
 
 async function handleSelect(path) {
   mobileNavigationOpen.value = false
@@ -57,7 +80,7 @@ async function handleSelect(path) {
 
 <template>
   <div class="app-shell" :data-view-mode="viewModeState.mode">
-    <aside class="sidebar" :class="{ collapsed }">
+    <aside class="sidebar" :class="{ collapsed }" @mouseenter="expandSidebar" @mouseleave="collapseSidebar" @focusin="expandSidebar" @focusout="handleSidebarFocusOut">
       <div class="brand"><div class="brand-mark" aria-hidden="true">萤</div><div v-show="!collapsed" class="brand-copy"><strong>萤目守望</strong><span>家庭安全控制台</span></div></div>
       <nav class="navigation navigation-groups" aria-label="主导航">
         <section v-for="group in navGroups" :key="group.label" class="navigation-group">
@@ -74,7 +97,6 @@ async function handleSelect(path) {
           <small>{{ runtime.degraded ? '当前不代表实时设备状态' : '风险变化将进入统一事件流' }}</small>
         </span>
       </div>
-      <button class="collapse-button" type="button" :aria-label="collapsed ? '展开导航' : '收起导航'" @click="collapsed = !collapsed"><el-icon><component :is="collapsed ? Expand : Fold" /></el-icon><span v-show="!collapsed">收起导航</span></button>
     </aside>
     <div class="workspace">
       <div v-if="pagesBuild" class="public-demo-banner" role="status"><strong>脱敏评审演示</strong><span>授权回放</span><span>非实时设备</span><span>非老年人实测</span></div>
@@ -98,7 +120,9 @@ async function handleSelect(path) {
           </el-dropdown>
         </div>
       </header>
-      <div v-if="runtime.message" class="runtime-banner" :class="{ degraded: runtime.degraded }" role="status"><el-icon><InfoFilled /></el-icon><span>{{ runtime.message }}</span><small v-if="runtime.activeSource === 'replay_dataset'">授权回放</small></div>
+      <Transition name="runtime-peek">
+        <div v-if="runtime.message && runtimeBannerVisible" class="runtime-banner transient-runtime-banner" :class="{ degraded: runtime.degraded }" role="status"><el-icon><InfoFilled /></el-icon><span>{{ runtime.message }}</span><small v-if="runtime.activeSource === 'replay_dataset'">授权回放</small></div>
+      </Transition>
       <main
         v-loading="openingEventDetail"
         element-loading-text="正在调取风险事件"
