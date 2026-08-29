@@ -1,9 +1,12 @@
 """Keep every test process isolated from local live-device configuration."""
 
 import os
+import tempfile
+from pathlib import Path
 
 
-os.environ["YINGMU_DB_PATH"] = "test_risk_api.db"
+_TEST_DATABASE_DIR = Path(tempfile.mkdtemp(prefix="yingmu-pytest-"))
+os.environ["YINGMU_DB_PATH"] = str(_TEST_DATABASE_DIR / "test.db")
 os.environ["YINGMU_ENV"] = "mock"
 os.environ["YINGMU_CONTROL_TOKEN"] = "test-control-token"
 os.environ["EZVIZ_WEBHOOK_SECRET"] = "test-webhook-secret"

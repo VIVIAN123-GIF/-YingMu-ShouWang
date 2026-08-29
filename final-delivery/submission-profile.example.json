@@ -4,6 +4,7 @@
   "mobile": "<11位手机号>",
   "submission_deadline": "2026-09-05",
   "retention_until": "2027-03-31",
-  "online_url": "https://<账号>.github.io/<仓库>/",
-  "online_username": "judge"
+  "online_entry_required": false,
+  "online_url": "",
+  "online_username": ""
 }

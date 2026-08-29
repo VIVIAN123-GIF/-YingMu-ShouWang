@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-from contracts.v1.ruleset import load_ruleset
+from contracts.v1.ruleset import load_ruleset_version
 
 load_dotenv()
 
@@ -104,8 +104,12 @@ CORS_ORIGINS = tuple(
 )
 
 TOKEN_REFRESH_OFFSET = 60
-_RULESET = load_ruleset()
+_RULESET = load_ruleset_version(os.getenv("YINGMU_RULESET_VERSION", "ruleset-v1.2"))
 RULESET_VERSION = _RULESET.version
+FOREWARNING_RULESET_VERSION = os.getenv(
+    "YINGMU_FOREWARNING_RULESET_VERSION",
+    RULESET_VERSION if RULESET_VERSION in {"ruleset-v1.4", "ruleset-v1.5"} else "ruleset-v1.3-min",
+)
 SCHEMA_VERSION = "1.0"
 # Risk thresholds have one source of truth: the active versioned ruleset. Environment
 # overrides previously let FastAPI and the agent assign different meanings.

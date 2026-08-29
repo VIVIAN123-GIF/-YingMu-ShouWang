@@ -662,7 +662,7 @@ def test_video_worker_recomputes_snapshot_after_all_evidence_is_persisted(monkey
     async def persist_batches(_db, _task, batches):
         assert [batch.module for batch in batches] == [AlgorithmModule.GAIT, AlgorithmModule.TRAJECTORY]
         state["persisted"] = True
-        return 2, 2
+        return 2, 2, {"status": "NOT_APPLICABLE", "reason": "NO_V14_SPEED_OBSERVATION"}
 
     async def evaluate_forewarning(_db, resident_id, evaluated_at, **kwargs):
         assert state["persisted"] is True
@@ -696,6 +696,7 @@ def test_video_worker_recomputes_snapshot_after_all_evidence_is_persisted(monkey
     assert status == "COMPLETED"
     assert state["evaluated"] is True
     assert summary["forewarning_snapshot_id"] == "forewarning-final-snapshot"
+    assert summary["personal_gait"]["status"] == "NOT_APPLICABLE"
 
 
 def test_public_api_rejects_internal_evidence_and_controls_explanation_enqueue(tmp_path):

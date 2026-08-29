@@ -42,6 +42,51 @@ class BaselineStats:
         }
 
 
+def assess_relative_gait_speed(
+    current: float, stats: dict[str, Any], ruleset: Ruleset,
+) -> dict[str, Any]:
+    """Return one auditable personal-speed decision shared by runtime and evals."""
+    status = str(stats.get("status", "INSUFFICIENT"))
+    center = stats.get("median")
+    mad = stats.get("mad")
+    if (
+        status not in {BaselineStatus.PROVISIONAL.value, BaselineStatus.STABLE.value}
+        or not isinstance(center, (int, float))
+        or not isinstance(mad, (int, float))
+    ):
+        return {"status": "DEGRADED", "reason": "PERSONAL_BASELINE_INSUFFICIENT"}
+
+    center_value = float(center)
+    mad_value = max(float(mad), 0.0)
+    denominator = max(abs(center_value), 1e-6)
+    deviation = (float(current) - center_value) / denominator
+    relative_threshold = float(ruleset.thresholds["relative_speed_deviation_ratio"])
+    mad_multiplier = float(ruleset.thresholds[
+        "stable_mad_multiplier"
+        if status == BaselineStatus.STABLE.value
+        else "provisional_mad_multiplier"
+    ])
+    mad_threshold = mad_multiplier * mad_value / denominator
+    effective_threshold = max(relative_threshold, mad_threshold)
+    saturation = float((ruleset.severity_saturation or {})["relative_speed_change"])
+    severity = min(max(
+        (abs(deviation) - effective_threshold)
+        / max(saturation - effective_threshold, 1e-6),
+        0.0,
+    ), 1.0)
+    return {
+        "status": "EVIDENCE" if abs(deviation) >= effective_threshold else "WITHIN_BASELINE",
+        "baseline_status": status,
+        "baseline_median": round(center_value, 3),
+        "baseline_mad": round(mad_value, 3),
+        "deviation": round(deviation, 3),
+        "relative_threshold": round(relative_threshold, 3),
+        "mad_threshold": round(mad_threshold, 3),
+        "effective_threshold": round(effective_threshold, 3),
+        "severity": round(severity, 3),
+    }
+
+
 class MemoryStore:
     """Evidence/time-window memory plus conservative baseline admission."""
 
@@ -86,9 +131,11 @@ class MemoryStore:
     }
     METRIC_BY_FEATURE = {
         "sit_to_stand_duration": "rise_duration",
+        "rise_duration_s": "rise_duration",
         "trunk_sway_angle": "trunk_sway",
         "gait_stability_score": "gait_stability",
         "relative_gait_speed": "relative_gait_speed",
+        "step_speed_norm_s": "relative_gait_speed",
         "stable_trunk_angle_deg": "stable_trunk_angle_deg",
         "trunk_sway_angle_deg": "trunk_sway",
         "post_rise_pelvis_lateral_excursion_norm": "pelvis_lateral_excursion",
@@ -167,7 +214,9 @@ class MemoryStore:
         return decision
 
     def _prune(self, resident_id: str, now: datetime) -> None:
-        cutoff = now - timedelta(days=self.ruleset.windows["long_days"])
+        cutoff = now - timedelta(days=self.ruleset.windows.get(
+            "baseline_lookback_days", self.ruleset.windows["long_days"]
+        ))
         for metric, samples in self.baseline_samples.get(resident_id, {}).items():
             self.baseline_samples[resident_id][metric] = [item for item in samples if item[0] >= cutoff]
 
@@ -205,9 +254,9 @@ class MemoryStore:
             center = median(values) if values else None
             deviations = [abs(value - center) for value in values] if center is not None else []
             mad = median(deviations) if deviations else None
-            if len(days) >= self.ruleset.windows["long_days"]:
+            if len(days) >= self.ruleset.windows.get("stable_target_days", self.ruleset.windows["long_days"]):
                 status = BaselineStatus.STABLE
-            elif len(days) >= 3:
+            elif len(days) >= self.ruleset.windows.get("provisional_target_days", 3):
                 status = BaselineStatus.PROVISIONAL
             else:
                 status = BaselineStatus.INSUFFICIENT

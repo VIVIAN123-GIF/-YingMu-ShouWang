@@ -11,7 +11,7 @@ import subprocess
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 import fitz
 
@@ -306,7 +306,7 @@ def _gate(name: str, errors: list[str]) -> dict[str, object]:
     return {"gate": name, "status": "PASS" if not errors else "INCOMPLETE", "errors": errors}
 
 
-def _find_work_pdf(root: Path, mode: str, document_id: str, label: str, profile: dict[str, str]) -> Path:
+def _find_work_pdf(root: Path, mode: str, document_id: str, label: str, profile: dict[str, Any]) -> Path:
     return root / "output" / "submission-work" / mode / "pdf" / (
         official_stem(document_id, label, profile, mode) + ".pdf"
     )
@@ -336,7 +336,7 @@ def _consent_scan_paths(root: Path) -> tuple[list[Path], list[str]]:
     return paths, errors
 
 
-def _validate_online_verification(path: Path, profile: dict[str, str]) -> list[str]:
+def _validate_online_verification(path: Path, profile: dict[str, Any]) -> list[str]:
     if not path.is_file():
         return [f"missing {ONLINE_VERIFICATION.as_posix()}"]
     try:
@@ -354,7 +354,7 @@ def _validate_online_verification(path: Path, profile: dict[str, str]) -> list[s
     return errors
 
 
-def evaluate_gates(root: Path, mode: str, profile: dict[str, str]) -> tuple[list[dict[str, object]], dict[str, Path]]:
+def evaluate_gates(root: Path, mode: str, profile: dict[str, Any]) -> tuple[list[dict[str, object]], dict[str, Path]]:
     gates: list[dict[str, object]] = []
     artifacts: dict[str, Path] = {}
 
@@ -444,7 +444,14 @@ def evaluate_gates(root: Path, mode: str, profile: dict[str, str]) -> tuple[list
         artifacts["08"] = platform
     gates.append(_gate("platform_evidence", platform_errors))
 
-    gates.append(_gate("online_entry", _validate_online_verification(root / ONLINE_VERIFICATION, profile)))
+    if profile.get("online_entry_required") is True:
+        gates.append(_gate("online_entry", _validate_online_verification(root / ONLINE_VERIFICATION, profile)))
+    else:
+        gates.append({
+            "gate": "online_entry",
+            "status": "SKIPPED_OPTIONAL",
+            "errors": [],
+        })
     return gates, artifacts
 
 
@@ -464,7 +471,7 @@ def _copy_zip_tree(source_zip: Path, target: zipfile.ZipFile, prefix: str) -> li
     return manifest
 
 
-def build_code_program_package(source_zip: Path, windows_zip: Path, output: Path, profile: dict[str, str]) -> None:
+def build_code_program_package(source_zip: Path, windows_zip: Path, output: Path, profile: dict[str, Any]) -> None:
     temporary = output.with_name(output.name + ".tmp")
     temporary.parent.mkdir(parents=True, exist_ok=True)
     if temporary.exists():
@@ -525,7 +532,8 @@ def assemble(root: Path, output_root: Path, mode: str) -> dict[str, object]:
     output_root = output_root.resolve()
     profile = load_profile(root / PROFILE)
     gates, artifacts = evaluate_gates(root, mode, profile)
-    status = "READY" if mode == "final" and all(item["status"] == "PASS" for item in gates) else "INCOMPLETE"
+    accepted_gate_states = {"PASS", "SKIPPED_OPTIONAL"}
+    status = "READY" if mode == "final" and all(item["status"] in accepted_gate_states for item in gates) else "INCOMPLETE"
     package_name = "萤目守望-正式提交材料" if mode == "final" else "萤目守望-提交材料-draft"
     staging = output_root / f".{package_name}.staging"
     package_dir = output_root / package_name
@@ -537,7 +545,8 @@ def assemble(root: Path, output_root: Path, mode: str) -> dict[str, object]:
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "gates": gates,
         "claim_boundary": "Three healthy adult participants; engineering feasibility only, not clinical validation.",
-        "online_url": profile["online_url"],
+        "online_entry_required": profile["online_entry_required"],
+        "online_url": profile.get("online_url", ""),
     }
     if mode == "final" and status != "READY":
         output_root.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,33 @@
+{
+  "schema_version": "supplemental-v14-ablation-run/1.0",
+  "status": "COMPLETE",
+  "lock_sha256": "32f0f1f9ca7cc59fe37dd015afffcbfbe17f4173bce58f48a41a1711914ef773",
+  "baseline_results_sha256": "0f336bd603361734aaa2b9480fd95347be4d5962ac8b7756b5d87a51ab32d66b",
+  "configs": {
+    "A": {
+      "records_sha256": "b16185971deafe87a36e99b1e535d77ba329b729c3350125dff59171dfa05cb5",
+      "record_count": 28
+    },
+    "B": {
+      "records_sha256": "a80e0a61b35ffd5df12022810d4bf3c7c6d213e2f69ef95ca64c55789072ff07",
+      "record_count": 28
+    },
+    "C": {
+      "records_sha256": "22bd5bf7e524dcefe217a97907cdd252853a107943ed06c02282a3f641e357c3",
+      "record_count": 28
+    },
+    "D": {
+      "records_sha256": "2eda617b321b4d296e2bbbb0c39bdc16317809d33c590d938c20ac51341084f0",
+      "record_count": 28
+    }
+  },
+  "performance_record_count": 28,
+  "golden_loop": {
+    "status": "FAIL",
+    "result_path": "D:\\OneDrive\\Desktop\\荧目守望\\experiments\\supplemental-validation-v1.4\\results\\formal-20260829-r1-run\\golden-loop\\golden-loop-results.json",
+    "audio": "SCRIPTED_AUDIO_PROMPT",
+    "intervention": "mock_voice",
+    "simulated": true,
+    "included_in_metrics": false
+  }
+}

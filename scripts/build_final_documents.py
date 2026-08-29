@@ -8,6 +8,7 @@ import re
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 from docx import Document
 from docx.enum.section import WD_SECTION
@@ -565,21 +566,33 @@ def build_document(
     )
 
 
-def load_profile(path: Path) -> dict[str, str]:
+def load_profile(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     required = {
         "school", "contact_name", "mobile", "submission_deadline", "retention_until",
-        "online_url", "online_username",
     }
+    online_required = payload.get("online_entry_required", False)
+    if not isinstance(online_required, bool):
+        raise ValueError("submission profile online_entry_required must be boolean")
+    if online_required:
+        required.update({"online_url", "online_username"})
     missing = sorted(field for field in required if not str(payload.get(field, "")).strip())
     if missing:
         raise ValueError(f"submission profile is missing: {', '.join(missing)}")
     if not re.fullmatch(r"1\d{10}", str(payload["mobile"])):
         raise ValueError("submission profile mobile must be an 11-digit Chinese mobile number")
-    return {key: str(value).strip() for key, value in payload.items()}
+    profile: dict[str, Any] = {
+        key: str(value).strip()
+        for key, value in payload.items()
+        if key != "online_entry_required"
+    }
+    profile["online_entry_required"] = online_required
+    profile.setdefault("online_url", "")
+    profile.setdefault("online_username", "")
+    return profile
 
 
-def official_stem(document_id: str, label: str, profile: dict[str, str], mode: str) -> str:
+def official_stem(document_id: str, label: str, profile: dict[str, Any], mode: str) -> str:
     identity = f"{profile['school']}—{profile['contact_name']}—{profile['mobile']}"
     prefix = "DRAFT_" if mode == "draft" else ""
     return f"{prefix}{document_id}_{label}_{identity}"
@@ -599,7 +612,7 @@ def _demote_headings(lines: list[str]) -> list[str]:
 def compose_document_lines(
     root: Path,
     entry: dict[str, object],
-    profile: dict[str, str],
+    profile: dict[str, Any],
     mode: str,
 ) -> list[str]:
     source_paths = [root / Path(value) for value in entry["sources"]]

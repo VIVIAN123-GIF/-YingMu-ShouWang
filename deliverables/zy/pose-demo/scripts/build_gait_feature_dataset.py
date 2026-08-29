@@ -6,13 +6,10 @@ import json
 import math
 import pathlib
 from dataclasses import dataclass
+from typing import Any
 
 import cv2
-import mediapipe as mp
 import numpy as np
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
-from scipy.signal import find_peaks
 
 from recorded_replay_adapter import (
     CORE_IDS,
@@ -35,7 +32,10 @@ class SequencePaths:
     metadata_csv: pathlib.Path
 
 
-def build_landmarker(model_path: pathlib.Path) -> vision.PoseLandmarker:
+def build_landmarker(model_path: pathlib.Path) -> Any:
+    from mediapipe.tasks import python
+    from mediapipe.tasks.python import vision
+
     # Match the C6c replay adapter and avoid native-path encoding failures on
     # Windows workspaces with non-ASCII directory names.
     base_options = python.BaseOptions(model_asset_buffer=model_path.read_bytes())
@@ -126,6 +126,8 @@ def dominant_frequency_hz(signal_values: list[float], timestamps_ms: list[int]) 
 
 
 def asymmetry_ratio(left_series: list[float], right_series: list[float]) -> float:
+    from scipy.signal import find_peaks
+
     left = np.asarray(left_series, dtype=np.float64)
     right = np.asarray(right_series, dtype=np.float64)
     if left.size == 0 or right.size == 0:
@@ -145,13 +147,15 @@ def asymmetry_ratio(left_series: list[float], right_series: list[float]) -> floa
 
 
 def extract_sequence_rows(
-    detector: vision.PoseLandmarker,
+    detector: Any,
     sequence: SequencePaths,
     timestamps: dict[int, int],
     visibility_threshold: float,
     frame_stride: int,
     timestamp_offset_ms: int,
 ) -> tuple[list[dict[str, float | int | str]], dict[str, float | int | str]]:
+    import mediapipe as mp
+
     image_paths = sorted(path for path in sequence.image_dir.iterdir() if path.suffix.lower() == ".png")[::frame_stride]
     frame_rows: list[dict[str, float | int | str]] = []
     total_frames = len(image_paths)

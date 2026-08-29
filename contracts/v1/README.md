@@ -10,7 +10,7 @@
 - `engine.py`：只用于一期Mock联调的确定性状态机；
 - `rehearsal.py`：可复用的GREEN到RESOLVED演练流程。
 - `memory.py`：短时30秒、中时24小时、长时7天的内存查询和中位数＋MAD基线；
-- `ruleset.py`与`rulesets/ruleset-v1.2.json`：当前规则、门槛、信号族、权重和`RuleTrace`的唯一来源；
+- `ruleset.py`与版本化`rulesets/*.json`：按活动版本提供规则、门槛、信号族、权重和`RuleTrace`的唯一来源；默认兼容入口为冻结的v1.2，补充验证显式使用v1.4；
 - `forewarning.py`与`rulesets/ruleset-v1.3-min.json`：独立工程预警快照、场景多边形、三时间尺度和基线权重；
 - `examples/mock_memory_history.json`：明确标注为模拟的7天安全历史。
 
@@ -61,4 +61,6 @@ python scripts/run_memory_ruleset_rehearsal.py --runs 3
 - `MemorySnapshot`和`RuleTrace`是智能体内部决策追踪对象，不扩展四对象契约；
 - `ruleset-v1.2`中的阈值和权重是工程初值，不是实验或医学结论；
 - `ruleset-v1.3-min`输出工程风险指数，不是未来跌倒概率，也不替代`RiskEvent`裁决；
+- `ruleset-v1.4`仅用于独立补充验证及明确选择该版本的运行环境，不改写v1.2/v1.3-min或P03结果；
+- `ruleset-v1.5`仅用于已知素材的探索性软件整改，增加活动上下文、两周期准入和持续趋势门控；它不是新的正式盲测版本，生产默认仍保持v1.4；
 - 前端、后端和算法联调统一使用`examples/four_objects.json`，不得复制后自行扩展v1.0字段。

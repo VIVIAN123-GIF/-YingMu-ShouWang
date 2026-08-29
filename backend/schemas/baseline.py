@@ -17,6 +17,7 @@ class BaselineProgress(BaseModel):
     observed_days: int
     provisional_target_days: int = 3
     stable_target_days: int = 7
+    lookback_days: int = 30
 
 
 class BaselineProvenance(BaseModel):

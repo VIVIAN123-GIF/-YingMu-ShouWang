@@ -1,0 +1,16 @@
+{
+  "schema_version": "p03-frozen-integrity/1.0",
+  "files": {
+    "experiments/three-participant/results/final/experiment-results.json": "7d327277d7c6c143771a09218d43b689a432816185a523fd69dab75b57678733",
+    "experiments/three-participant/results/final/experiment-results.md": "6d48a0ddc650f1048882517c77907c0b3a8fc88f52b27668d3467c86a0a1cb37"
+  },
+  "expected_metrics": {
+    "transition_detection": [11, 12],
+    "instability_family_detection": [0, 4],
+    "multi_family_formation": [0, 4],
+    "orange_production": [0, 4],
+    "slow_small_step_target_evidence": [0, 4],
+    "asymmetric_step_target_evidence": [0, 4],
+    "baseline_status_counts": {"INSUFFICIENT": 32, "PROVISIONAL": 0, "STABLE": 0, "MISSING": 0}
+  }
+}

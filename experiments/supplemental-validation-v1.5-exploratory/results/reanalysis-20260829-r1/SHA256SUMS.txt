@@ -1,0 +1,8 @@
+6ec98943858703f0d1bad53d31fd4cd5e0e648b7614dc220f79ad28da42f5dbe  exploratory-results.json
+f087b14d6f24973d00d73c24281e390da13a63859eafa3ec8fb1f2ae523ee20b  D:\OneDrive\Desktop\荧目守望\experiments\supplemental-validation-v1.4\capture-manifest.json
+0f336bd603361734aaa2b9480fd95347be4d5962ac8b7756b5d87a51ab32d66b  D:\OneDrive\Desktop\荧目守望\experiments\supplemental-validation-v1.4\results\baseline-d1-d3-v14-r3\baseline-results.json
+cac3654230d7dc516190576cc77f14109be6d88d37c7a588647d09ca14125420  D:\OneDrive\Desktop\荧目守望\experiments\supplemental-validation-v1.4\results\formal-20260829-r1-metrics.json
+c461e2c5b941ff198f19763fe07734e5bd5c54265b750b091edd54cb49da2db4  D:\OneDrive\Desktop\荧目守望\contracts\v1\rulesets\ruleset-v1.5.json
+ba9f95c5414cf94df1e69c75ed6ca1c6faf85232c0f66724de4594129def451f  D:\OneDrive\Desktop\荧目守望\contracts\v1\gait_adapter_v15.py
+32adfd6b92cd4bfde37d2b912a9ffa245fc2b800f33f62ab477624e6721b63a7  D:\OneDrive\Desktop\荧目守望\contracts\v1\gait_video.py
+85e39f32621a19cb9aef4d6f9c692714a1e5352084db05de7de0c10f953c3831  D:\OneDrive\Desktop\荧目守望\scripts\exploratory_reanalysis_v15.py

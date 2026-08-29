@@ -49,9 +49,10 @@ python -m backend.worker.alarm_worker
 
 ## 决策规则来源
 
-后端不维护第二套风险阈值。张薇已合并的
-`contracts/v1/rulesets/ruleset-v1.2.json` 是当前规则版本、短中长时间窗和
-观察阈值的唯一来源；`contracts/v1/engine.py` 是对应的确定性 Mock
+后端不维护第二套风险阈值。兼容默认入口仍使用冻结的
+`contracts/v1/rulesets/ruleset-v1.2.json`；补充验证和发布环境通过
+`YINGMU_RULESET_VERSION=ruleset-v1.4` 显式选择独立 v1.4。每个活动版本的
+JSON 都是该版本时间窗、观察阈值和信号族的唯一来源；`contracts/v1/engine.py` 是对应的确定性 Mock
 状态机。`backend/service/risk_service.py` 负责把该规则集适配到持久化
 RiskEvent、Evidence 和 RuleTrace。
 

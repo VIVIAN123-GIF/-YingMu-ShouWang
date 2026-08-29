@@ -1,0 +1,2336 @@
+{
+  "schema_version": "p01-p02-v14-reanalysis/1.0",
+  "status": "COMPLETE",
+  "ruleset_version": "ruleset-v1.4",
+  "participants": [
+    "P01",
+    "P02"
+  ],
+  "record_count": 64,
+  "purpose": "Calibration/validation feature-distribution audit only.",
+  "not_formal_test": true,
+  "p03_modified": false,
+  "new_supplemental_media_inspected": false,
+  "execution": {
+    "workers": 4,
+    "per_clip_model_and_parameters_identical": true,
+    "result_order": "manifest_order"
+  },
+  "bindings": {
+    "manifest_sha256": "8e55fde1805b5cbdb61e78cf7fd73b23752fd87f62b93bb631331f2c62a0f59a",
+    "ruleset_sha256": "604d2543048dc0e3f3bf1389bc08a25c0b99c848a6e1816a1ebd521556ef99e5",
+    "model_sha256": "64437af838a65d18e5ba7a0d39b465540069bc8aae8308de3e318aad31fcbc7b",
+    "executor_sha256": "47c54cc47295b71f99a90851348fab8531a153c9a3f88d27d69d840ce5c4d80f"
+  },
+  "distributions": {
+    "P01:BASELINE": {
+      "record_count": 8,
+      "adapter_status_counts": {
+        "NO_EVIDENCE": 1,
+        "SUCCESS": 7
+      },
+      "quality_gate_failure_count": 0,
+      "evidence_type_counts": {
+        "posture_recovered": 7,
+        "sit_to_stand_transition": 2,
+        "rapid_rise": 2
+      },
+      "features": {
+        "rise_duration_s": {
+          "count": 3,
+          "min": 0.4,
+          "p25": 0.5,
+          "median": 0.6,
+          "p75": 0.6,
+          "max": 0.6
+        },
+        "trunk_sway_angle_deg": {
+          "count": 8,
+          "min": 1.062,
+          "p25": 2.08275,
+          "median": 2.5875,
+          "p75": 3.55925,
+          "max": 4.603
+        },
+        "step_speed_norm_s": {
+          "count": 8,
+          "min": 0.27,
+          "p25": 0.29825,
+          "median": 0.3125,
+          "p75": 0.32975,
+          "max": 0.403
+        },
+        "step_asymmetry_ratio": {
+          "count": 8,
+          "min": 0.017,
+          "p25": 0.03175,
+          "median": 0.056,
+          "p75": 0.1145,
+          "max": 0.338
+        },
+        "valid_frame_ratio": {
+          "count": 8,
+          "min": 0.716,
+          "p25": 0.999,
+          "median": 1.0,
+          "p75": 1.0,
+          "max": 1.0
+        },
+        "locomotion_duration_s": {
+          "count": 8,
+          "min": 9.002,
+          "p25": 9.96575,
+          "median": 11.5995,
+          "p75": 12.031,
+          "max": 12.401
+        },
+        "feet_visibility_mean": {
+          "count": 8,
+          "min": 0.718,
+          "p25": 0.857,
+          "median": 0.921,
+          "p75": 0.99175,
+          "max": 0.994
+        },
+        "illumination_norm": {
+          "count": 8,
+          "min": 0.543,
+          "p25": 0.54375,
+          "median": 0.5445,
+          "p75": 0.54625,
+          "max": 0.547
+        }
+      },
+      "speed_semantics_comparison": {
+        "legacy_whole_clip": {
+          "count": 8,
+          "min": 0.016,
+          "p25": 0.02875,
+          "median": 0.0355,
+          "p75": 0.041,
+          "max": 0.05
+        },
+        "v14_active_locomotion": {
+          "count": 8,
+          "min": 0.27,
+          "p25": 0.29825,
+          "median": 0.3125,
+          "p75": 0.32975,
+          "max": 0.403
+        }
+      }
+    },
+    "P01:EVALUATION": {
+      "record_count": 24,
+      "adapter_status_counts": {
+        "SUCCESS": 23,
+        "LOW_QUALITY": 1
+      },
+      "quality_gate_failure_count": 1,
+      "evidence_type_counts": {
+        "gait_instability": 8,
+        "posture_recovered": 23,
+        "assessment_indeterminate": 1
+      },
+      "features": {
+        "rise_duration_s": {
+          "count": 12,
+          "min": 0.4,
+          "p25": 0.4,
+          "median": 0.4,
+          "p75": 0.4,
+          "max": 0.533
+        },
+        "trunk_sway_angle_deg": {
+          "count": 24,
+          "min": 1.132,
+          "p25": 2.5265,
+          "median": 4.1985,
+          "p75": 5.27825,
+          "max": 6.726
+        },
+        "step_speed_norm_s": {
+          "count": 24,
+          "min": 0.175,
+          "p25": 0.22775,
+          "median": 0.2605,
+          "p75": 0.277,
+          "max": 0.546
+        },
+        "step_asymmetry_ratio": {
+          "count": 24,
+          "min": 0.039,
+          "p25": 0.2225,
+          "median": 0.2885,
+          "p75": 0.39175,
+          "max": 0.602
+        },
+        "valid_frame_ratio": {
+          "count": 24,
+          "min": 0.531,
+          "p25": 1.0,
+          "median": 1.0,
+          "p75": 1.0,
+          "max": 1.0
+        },
+        "locomotion_duration_s": {
+          "count": 24,
+          "min": 2.532,
+          "p25": 9.24825,
+          "median": 11.431,
+          "p75": 13.53525,
+          "max": 19.665
+        },
+        "feet_visibility_mean": {
+          "count": 24,
+          "min": 0.857,
+          "p25": 0.97375,
+          "median": 0.9975,
+          "p75": 1.0,
+          "max": 1.0
+        },
+        "illumination_norm": {
+          "count": 24,
+          "min": 0.552,
+          "p25": 0.554,
+          "median": 0.5565,
+          "p75": 0.559,
+          "max": 0.564
+        }
+      },
+      "speed_semantics_comparison": {
+        "legacy_whole_clip": {
+          "count": 24,
+          "min": 0.009,
+          "p25": 0.016,
+          "median": 0.031,
+          "p75": 0.03725,
+          "max": 0.067
+        },
+        "v14_active_locomotion": {
+          "count": 24,
+          "min": 0.175,
+          "p25": 0.22775,
+          "median": 0.2605,
+          "p75": 0.277,
+          "max": 0.546
+        }
+      }
+    },
+    "P02:BASELINE": {
+      "record_count": 8,
+      "adapter_status_counts": {
+        "SUCCESS": 8
+      },
+      "quality_gate_failure_count": 0,
+      "evidence_type_counts": {
+        "posture_recovered": 7,
+        "gait_instability": 1
+      },
+      "features": {
+        "rise_duration_s": {
+          "count": 3,
+          "min": 0.4,
+          "p25": 0.4335,
+          "median": 0.467,
+          "p75": 0.9,
+          "max": 1.333
+        },
+        "trunk_sway_angle_deg": {
+          "count": 8,
+          "min": 1.626,
+          "p25": 2.81225,
+          "median": 3.0315,
+          "p75": 3.86275,
+          "max": 5.108
+        },
+        "step_speed_norm_s": {
+          "count": 8,
+          "min": 0.173,
+          "p25": 0.2005,
+          "median": 0.2175,
+          "p75": 0.23525,
+          "max": 0.276
+        },
+        "step_asymmetry_ratio": {
+          "count": 8,
+          "min": 0.009,
+          "p25": 0.017,
+          "median": 0.1025,
+          "p75": 0.194,
+          "max": 0.57
+        },
+        "valid_frame_ratio": {
+          "count": 8,
+          "min": 0.861,
+          "p25": 0.891,
+          "median": 0.965,
+          "p75": 1.0,
+          "max": 1.0
+        },
+        "locomotion_duration_s": {
+          "count": 8,
+          "min": 9.066,
+          "p25": 12.1155,
+          "median": 14.367,
+          "p75": 14.747,
+          "max": 15.865
+        },
+        "feet_visibility_mean": {
+          "count": 8,
+          "min": 0.831,
+          "p25": 0.8715,
+          "median": 0.8905,
+          "p75": 0.9415,
+          "max": 0.991
+        },
+        "illumination_norm": {
+          "count": 8,
+          "min": 0.541,
+          "p25": 0.542,
+          "median": 0.543,
+          "p75": 0.54425,
+          "max": 0.546
+        }
+      },
+      "speed_semantics_comparison": {
+        "legacy_whole_clip": {
+          "count": 8,
+          "min": 0.017,
+          "p25": 0.0275,
+          "median": 0.037,
+          "p75": 0.04025,
+          "max": 0.049
+        },
+        "v14_active_locomotion": {
+          "count": 8,
+          "min": 0.173,
+          "p25": 0.2005,
+          "median": 0.2175,
+          "p75": 0.23525,
+          "max": 0.276
+        }
+      }
+    },
+    "P02:EVALUATION": {
+      "record_count": 24,
+      "adapter_status_counts": {
+        "SUCCESS": 23,
+        "LOW_QUALITY": 1
+      },
+      "quality_gate_failure_count": 1,
+      "evidence_type_counts": {
+        "gait_instability": 5,
+        "posture_recovered": 23,
+        "assessment_indeterminate": 1
+      },
+      "features": {
+        "rise_duration_s": {
+          "count": 12,
+          "min": 0.4,
+          "p25": 0.4,
+          "median": 0.4,
+          "p75": 0.46625,
+          "max": 0.666
+        },
+        "trunk_sway_angle_deg": {
+          "count": 24,
+          "min": 0.572,
+          "p25": 1.616,
+          "median": 2.8705,
+          "p75": 4.06075,
+          "max": 9.365
+        },
+        "step_speed_norm_s": {
+          "count": 24,
+          "min": 0.153,
+          "p25": 0.21175,
+          "median": 0.2565,
+          "p75": 0.27625,
+          "max": 0.479
+        },
+        "step_asymmetry_ratio": {
+          "count": 24,
+          "min": 0.025,
+          "p25": 0.10325,
+          "median": 0.1585,
+          "p75": 0.32,
+          "max": 0.783
+        },
+        "valid_frame_ratio": {
+          "count": 24,
+          "min": 0.667,
+          "p25": 1.0,
+          "median": 1.0,
+          "p75": 1.0,
+          "max": 1.0
+        },
+        "locomotion_duration_s": {
+          "count": 24,
+          "min": 2.067,
+          "p25": 7.697,
+          "median": 10.135,
+          "p75": 11.4495,
+          "max": 15.867
+        },
+        "feet_visibility_mean": {
+          "count": 24,
+          "min": 0.921,
+          "p25": 0.992,
+          "median": 1.0,
+          "p75": 1.0,
+          "max": 1.0
+        },
+        "illumination_norm": {
+          "count": 24,
+          "min": 0.55,
+          "p25": 0.552,
+          "median": 0.554,
+          "p75": 0.557,
+          "max": 0.564
+        }
+      },
+      "speed_semantics_comparison": {
+        "legacy_whole_clip": {
+          "count": 24,
+          "min": 0.006,
+          "p25": 0.01375,
+          "median": 0.024,
+          "p75": 0.0355,
+          "max": 0.068
+        },
+        "v14_active_locomotion": {
+          "count": 24,
+          "min": 0.153,
+          "p25": 0.21175,
+          "median": 0.2565,
+          "p75": 0.27625,
+          "max": 0.479
+        }
+      }
+    }
+  },
+  "records": [
+    {
+      "clip_id": "P01-BASE_NORMAL_WALK_L2R-01",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_NORMAL_WALK_L2R",
+      "status": "NO_EVIDENCE",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 1.062,
+        "step_speed_norm_s": 0.403,
+        "step_asymmetry_ratio": 0.056,
+        "valid_frame_ratio": 0.996,
+        "locomotion_duration_s": 12.401,
+        "illumination_norm": 0.544,
+        "feet_visibility_mean": 0.877
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.05,
+        "step_asymmetry_ratio": 0.104
+      },
+      "evidence_types": [],
+      "evidence_severity": {},
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-BASE_NORMAL_WALK_L2R-02",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_NORMAL_WALK_L2R",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 4.603,
+        "step_speed_norm_s": 0.309,
+        "step_asymmetry_ratio": 0.035,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.996,
+        "illumination_norm": 0.546,
+        "feet_visibility_mean": 0.95
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.04,
+        "step_asymmetry_ratio": 0.085
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.598
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-BASE_NORMAL_WALK_R2L-01",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_NORMAL_WALK_R2L",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 2.405,
+        "step_speed_norm_s": 0.341,
+        "step_asymmetry_ratio": 0.017,
+        "valid_frame_ratio": 0.716,
+        "locomotion_duration_s": 10.199,
+        "illumination_norm": 0.547,
+        "feet_visibility_mean": 0.797
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.044,
+        "step_asymmetry_ratio": 0.003
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.502
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-BASE_NORMAL_WALK_R2L-02",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_NORMAL_WALK_R2L",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 3.267,
+        "step_speed_norm_s": 0.316,
+        "step_asymmetry_ratio": 0.112,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 12.136,
+        "illumination_norm": 0.545,
+        "feet_visibility_mean": 0.892
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.037,
+        "step_asymmetry_ratio": 0.067
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.669
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-BASE_SIT_RISE_STABLE-01",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_SIT_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.6,
+        "trunk_sway_angle_deg": 1.47,
+        "step_speed_norm_s": 0.27,
+        "step_asymmetry_ratio": 0.122,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 9.266,
+        "illumination_norm": 0.543,
+        "feet_visibility_mean": 0.991
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.016,
+        "step_asymmetry_ratio": 0.149
+      },
+      "evidence_types": [
+        "sit_to_stand_transition",
+        "rapid_rise",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "sit_to_stand_transition": 0.05,
+        "rapid_rise": 0.6,
+        "posture_recovered": 0.544
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-BASE_SIT_RISE_STABLE-02",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_SIT_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.6,
+        "trunk_sway_angle_deg": 2.287,
+        "step_speed_norm_s": 0.287,
+        "step_asymmetry_ratio": 0.056,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 9.002,
+        "illumination_norm": 0.544,
+        "feet_visibility_mean": 0.994
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.016,
+        "step_asymmetry_ratio": 0.09
+      },
+      "evidence_types": [
+        "sit_to_stand_transition",
+        "rapid_rise",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "sit_to_stand_transition": 0.05,
+        "rapid_rise": 0.6,
+        "posture_recovered": 0.869
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-BASE_WALK_STOP_TURN-01",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_WALK_STOP_TURN",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 2.77,
+        "step_speed_norm_s": 0.326,
+        "step_asymmetry_ratio": 0.022,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.532,
+        "illumination_norm": 0.547,
+        "feet_visibility_mean": 0.718
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.034,
+        "step_asymmetry_ratio": 0.016
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.722
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-BASE_WALK_STOP_TURN-02",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_WALK_STOP_TURN",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 4.436,
+        "step_speed_norm_s": 0.302,
+        "step_asymmetry_ratio": 0.338,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.667,
+        "illumination_norm": 0.543,
+        "feet_visibility_mean": 0.994
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.033,
+        "step_asymmetry_ratio": 0.074
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.713
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_RAPID_RISE_SWAY-01",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_RAPID_RISE_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 5.53,
+        "step_speed_norm_s": 0.205,
+        "step_asymmetry_ratio": 0.516,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 19.665,
+        "illumination_norm": 0.553,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.009,
+        "step_asymmetry_ratio": 0.516
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.369,
+        "posture_recovered": 1.0
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_RAPID_RISE_SWAY-02",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_RAPID_RISE_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 6.726,
+        "step_speed_norm_s": 0.175,
+        "step_asymmetry_ratio": 0.224,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 12.997,
+        "illumination_norm": 0.552,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.016,
+        "step_asymmetry_ratio": 0.265
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.938
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_RAPID_RISE_SWAY-03",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_RAPID_RISE_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 5.246,
+        "step_speed_norm_s": 0.199,
+        "step_asymmetry_ratio": 0.2,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 10.197,
+        "illumination_norm": 0.553,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.016,
+        "step_asymmetry_ratio": 0.359
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.871
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_RAPID_RISE_SWAY-04",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_RAPID_RISE_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 5.571,
+        "step_speed_norm_s": 0.227,
+        "step_asymmetry_ratio": 0.327,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 10.596,
+        "illumination_norm": 0.553,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.017,
+        "step_asymmetry_ratio": 0.353
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.582
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_SLOW_SMALL_STEP_SWAY-01",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_SLOW_SMALL_STEP_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 4.876,
+        "step_speed_norm_s": 0.266,
+        "step_asymmetry_ratio": 0.303,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.269,
+        "illumination_norm": 0.556,
+        "feet_visibility_mean": 0.992
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.034,
+        "step_asymmetry_ratio": 0.19
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.671
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_SLOW_SMALL_STEP_SWAY-02",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_SLOW_SMALL_STEP_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 5.375,
+        "step_speed_norm_s": 0.257,
+        "step_asymmetry_ratio": 0.218,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.731,
+        "illumination_norm": 0.555,
+        "feet_visibility_mean": 0.984
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.036,
+        "step_asymmetry_ratio": 0.127
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.62
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_SLOW_SMALL_STEP_SWAY-03",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_SLOW_SMALL_STEP_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 5.101,
+        "step_speed_norm_s": 0.264,
+        "step_asymmetry_ratio": 0.063,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.529,
+        "illumination_norm": 0.554,
+        "feet_visibility_mean": 0.989
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.037,
+        "step_asymmetry_ratio": 0.045
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.604
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_SLOW_SMALL_STEP_SWAY-04",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_SLOW_SMALL_STEP_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 4.909,
+        "step_speed_norm_s": 0.228,
+        "step_asymmetry_ratio": 0.388,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 12.872,
+        "illumination_norm": 0.558,
+        "feet_visibility_mean": 0.857
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.037,
+        "step_asymmetry_ratio": 0.193
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.084,
+        "posture_recovered": 0.582
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_ASYMMETRIC_STEP-01",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_ASYMMETRIC_STEP",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 4.811,
+        "step_speed_norm_s": 0.283,
+        "step_asymmetry_ratio": 0.463,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 12.8,
+        "illumination_norm": 0.564,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.04,
+        "step_asymmetry_ratio": 0.116
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.251,
+        "posture_recovered": 0.682
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_ASYMMETRIC_STEP-02",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_ASYMMETRIC_STEP",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 3.3,
+        "step_speed_norm_s": 0.275,
+        "step_asymmetry_ratio": 0.263,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.135,
+        "illumination_norm": 0.558,
+        "feet_visibility_mean": 0.987
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.035,
+        "step_asymmetry_ratio": 0.182
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.691
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_ASYMMETRIC_STEP-03",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_ASYMMETRIC_STEP",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 4.727,
+        "step_speed_norm_s": 0.284,
+        "step_asymmetry_ratio": 0.403,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.333,
+        "illumination_norm": 0.555,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.039,
+        "step_asymmetry_ratio": 0.211
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.118,
+        "posture_recovered": 0.607
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-POS_ASYMMETRIC_STEP-04",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_ASYMMETRIC_STEP",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 3.67,
+        "step_speed_norm_s": 0.246,
+        "step_asymmetry_ratio": 0.077,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 13.932,
+        "illumination_norm": 0.559,
+        "feet_visibility_mean": 0.94
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.038,
+        "step_asymmetry_ratio": 0.082
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.684
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_NORMAL_RISE_WALK-01",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_NORMAL_RISE_WALK",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 6.229,
+        "step_speed_norm_s": 0.215,
+        "step_asymmetry_ratio": 0.303,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 15.001,
+        "illumination_norm": 0.554,
+        "feet_visibility_mean": 0.948
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.027,
+        "step_asymmetry_ratio": 0.487
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.838
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_NORMAL_RISE_WALK-02",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_NORMAL_RISE_WALK",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.466,
+        "trunk_sway_angle_deg": 5.55,
+        "step_speed_norm_s": 0.252,
+        "step_asymmetry_ratio": 0.287,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 16.0,
+        "illumination_norm": 0.562,
+        "feet_visibility_mean": 0.963
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.031,
+        "step_asymmetry_ratio": 0.354
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.522
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_NORMAL_RISE_WALK-03",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_NORMAL_RISE_WALK",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.533,
+        "trunk_sway_angle_deg": 3.615,
+        "step_speed_norm_s": 0.265,
+        "step_asymmetry_ratio": 0.241,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 15.332,
+        "illumination_norm": 0.557,
+        "feet_visibility_mean": 0.964
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.031,
+        "step_asymmetry_ratio": 0.358
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.824
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_NORMAL_RISE_WALK-04",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_NORMAL_RISE_WALK",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 2.306,
+        "step_speed_norm_s": 0.264,
+        "step_asymmetry_ratio": 0.29,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 15.331,
+        "illumination_norm": 0.558,
+        "feet_visibility_mean": 0.945
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.031,
+        "step_asymmetry_ratio": 0.385
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.549
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_RAPID_RISE_STABLE-01",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_RAPID_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 1.788,
+        "step_speed_norm_s": 0.351,
+        "step_asymmetry_ratio": 0.282,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 2.532,
+        "illumination_norm": 0.561,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.011,
+        "step_asymmetry_ratio": 0.05
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.798
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_RAPID_RISE_STABLE-02",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_RAPID_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 1.712,
+        "step_speed_norm_s": 0.223,
+        "step_asymmetry_ratio": 0.245,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 4.536,
+        "illumination_norm": 0.559,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.012,
+        "step_asymmetry_ratio": 0.026
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.842
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_RAPID_RISE_STABLE-03",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_RAPID_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 1.132,
+        "step_speed_norm_s": 0.228,
+        "step_asymmetry_ratio": 0.405,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 4.402,
+        "illumination_norm": 0.559,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.012,
+        "step_asymmetry_ratio": 0.064
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.122,
+        "posture_recovered": 0.871
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_RAPID_RISE_STABLE-04",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_RAPID_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 1.182,
+        "step_speed_norm_s": 0.256,
+        "step_asymmetry_ratio": 0.358,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 3.532,
+        "illumination_norm": 0.559,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.012,
+        "step_asymmetry_ratio": 0.208
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.018,
+        "posture_recovered": 0.798
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_BOUNDARY_NORMAL-01",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_BOUNDARY_NORMAL",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 3.46,
+        "step_speed_norm_s": 0.273,
+        "step_asymmetry_ratio": 0.183,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 13.403,
+        "illumination_norm": 0.552,
+        "feet_visibility_mean": 0.995
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.043,
+        "step_asymmetry_ratio": 0.067
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.609
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_BOUNDARY_NORMAL-02",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_BOUNDARY_NORMAL",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 2.6,
+        "step_speed_norm_s": 0.302,
+        "step_asymmetry_ratio": 0.473,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 10.932,
+        "illumination_norm": 0.556,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.041,
+        "step_asymmetry_ratio": 0.256
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.273,
+        "posture_recovered": 0.596
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_BOUNDARY_NORMAL-03",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_BOUNDARY_NORMAL",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 1.983,
+        "step_speed_norm_s": 0.482,
+        "step_asymmetry_ratio": 0.602,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 4.6,
+        "illumination_norm": 0.555,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.025,
+        "step_asymmetry_ratio": 0.545
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.56,
+        "posture_recovered": 0.782
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P01-NEG_BOUNDARY_NORMAL-04",
+      "participant_id": "P01",
+      "dataset_split": "CALIBRATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_BOUNDARY_NORMAL",
+      "status": "LOW_QUALITY",
+      "features": {
+        "trunk_sway_angle_deg": 3.513,
+        "step_speed_norm_s": 0.546,
+        "step_asymmetry_ratio": 0.039,
+        "valid_frame_ratio": 0.531,
+        "locomotion_duration_s": 6.402,
+        "illumination_norm": 0.561,
+        "feet_visibility_mean": 0.977
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.067,
+        "step_asymmetry_ratio": 0.081
+      },
+      "evidence_types": [
+        "assessment_indeterminate"
+      ],
+      "evidence_severity": {
+        "assessment_indeterminate": 0.0
+      },
+      "quality_gate_status": "FAILED",
+      "quality_gate_reasons": [
+        "HUMAN_TRACKING_OR_OCCLUSION"
+      ]
+    },
+    {
+      "clip_id": "P02-BASE_NORMAL_WALK_L2R-01",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_NORMAL_WALK_L2R",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 3.111,
+        "step_speed_norm_s": 0.23,
+        "step_asymmetry_ratio": 0.269,
+        "valid_frame_ratio": 0.895,
+        "locomotion_duration_s": 14.134,
+        "illumination_norm": 0.541,
+        "feet_visibility_mean": 0.899
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.039,
+        "step_asymmetry_ratio": 0.147
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.547
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-BASE_NORMAL_WALK_L2R-02",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_NORMAL_WALK_L2R",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 2.952,
+        "step_speed_norm_s": 0.276,
+        "step_asymmetry_ratio": 0.57,
+        "valid_frame_ratio": 0.861,
+        "locomotion_duration_s": 15.865,
+        "illumination_norm": 0.542,
+        "feet_visibility_mean": 0.846
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.049,
+        "step_asymmetry_ratio": 0.388
+      },
+      "evidence_types": [
+        "gait_instability"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.489
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-BASE_NORMAL_WALK_R2L-01",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_NORMAL_WALK_R2L",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 2.75,
+        "step_speed_norm_s": 0.251,
+        "step_asymmetry_ratio": 0.081,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 12.731,
+        "illumination_norm": 0.544,
+        "feet_visibility_mean": 0.88
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.041,
+        "step_asymmetry_ratio": 0.082
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.536
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-BASE_NORMAL_WALK_R2L-02",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_NORMAL_WALK_R2L",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 3.53,
+        "step_speed_norm_s": 0.225,
+        "step_asymmetry_ratio": 0.014,
+        "valid_frame_ratio": 0.879,
+        "locomotion_duration_s": 14.6,
+        "illumination_norm": 0.546,
+        "feet_visibility_mean": 0.831
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.04,
+        "step_asymmetry_ratio": 0.06
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.549
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-BASE_SIT_RISE_STABLE-01",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_SIT_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 1.333,
+        "trunk_sway_angle_deg": 1.626,
+        "step_speed_norm_s": 0.173,
+        "step_asymmetry_ratio": 0.124,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 10.269,
+        "illumination_norm": 0.544,
+        "feet_visibility_mean": 0.982
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.017,
+        "step_asymmetry_ratio": 0.113
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.691
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-BASE_SIT_RISE_STABLE-02",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_SIT_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.467,
+        "trunk_sway_angle_deg": 2.833,
+        "step_speed_norm_s": 0.21,
+        "step_asymmetry_ratio": 0.009,
+        "valid_frame_ratio": 0.93,
+        "locomotion_duration_s": 9.066,
+        "illumination_norm": 0.545,
+        "feet_visibility_mean": 0.991
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.017,
+        "step_asymmetry_ratio": 0.114
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.731
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-BASE_WALK_STOP_TURN-01",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_WALK_STOP_TURN",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 4.861,
+        "step_speed_norm_s": 0.19,
+        "step_asymmetry_ratio": 0.018,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 14.73,
+        "illumination_norm": 0.542,
+        "feet_visibility_mean": 0.928
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.031,
+        "step_asymmetry_ratio": 0.056
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.598
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-BASE_WALK_STOP_TURN-02",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "BASELINE",
+      "scenario_id": "BASE_WALK_STOP_TURN",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 5.108,
+        "step_speed_norm_s": 0.204,
+        "step_asymmetry_ratio": 0.169,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 14.798,
+        "illumination_norm": 0.542,
+        "feet_visibility_mean": 0.882
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.035,
+        "step_asymmetry_ratio": 0.071
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.591
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_RAPID_RISE_SWAY-01",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_RAPID_RISE_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 9.365,
+        "step_speed_norm_s": 0.153,
+        "step_asymmetry_ratio": 0.566,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.66,
+        "illumination_norm": 0.552,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.006,
+        "step_asymmetry_ratio": 0.764
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.48,
+        "posture_recovered": 1.0
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_RAPID_RISE_SWAY-02",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_RAPID_RISE_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 7.416,
+        "step_speed_norm_s": 0.192,
+        "step_asymmetry_ratio": 0.191,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 9.538,
+        "illumination_norm": 0.558,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.013,
+        "step_asymmetry_ratio": 0.607
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 1.0
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_RAPID_RISE_SWAY-03",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_RAPID_RISE_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 8.502,
+        "step_speed_norm_s": 0.208,
+        "step_asymmetry_ratio": 0.056,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 7.796,
+        "illumination_norm": 0.561,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.014,
+        "step_asymmetry_ratio": 0.528
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.876
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_RAPID_RISE_SWAY-04",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_RAPID_RISE_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 9.162,
+        "step_speed_norm_s": 0.19,
+        "step_asymmetry_ratio": 0.192,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 10.072,
+        "illumination_norm": 0.562,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.014,
+        "step_asymmetry_ratio": 0.52
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.962
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_SLOW_SMALL_STEP_SWAY-01",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_SLOW_SMALL_STEP_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 3.445,
+        "step_speed_norm_s": 0.25,
+        "step_asymmetry_ratio": 0.025,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 10.867,
+        "illumination_norm": 0.554,
+        "feet_visibility_mean": 0.998
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.033,
+        "step_asymmetry_ratio": 0.173
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.631
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_SLOW_SMALL_STEP_SWAY-02",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_SLOW_SMALL_STEP_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 4.034,
+        "step_speed_norm_s": 0.252,
+        "step_asymmetry_ratio": 0.45,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 9.869,
+        "illumination_norm": 0.556,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.033,
+        "step_asymmetry_ratio": 0.311
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.222,
+        "posture_recovered": 0.571
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_SLOW_SMALL_STEP_SWAY-03",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_SLOW_SMALL_STEP_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 5.908,
+        "step_speed_norm_s": 0.277,
+        "step_asymmetry_ratio": 0.106,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 10.199,
+        "illumination_norm": 0.554,
+        "feet_visibility_mean": 0.998
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.035,
+        "step_asymmetry_ratio": 0.409
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.598
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_SLOW_SMALL_STEP_SWAY-04",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_SLOW_SMALL_STEP_SWAY",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 4.141,
+        "step_speed_norm_s": 0.289,
+        "step_asymmetry_ratio": 0.341,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 9.468,
+        "illumination_norm": 0.554,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.037,
+        "step_asymmetry_ratio": 0.2
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.56
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_ASYMMETRIC_STEP-01",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_ASYMMETRIC_STEP",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 2.786,
+        "step_speed_norm_s": 0.276,
+        "step_asymmetry_ratio": 0.068,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.601,
+        "illumination_norm": 0.557,
+        "feet_visibility_mean": 0.995
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.037,
+        "step_asymmetry_ratio": 0.03
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.658
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_ASYMMETRIC_STEP-02",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_ASYMMETRIC_STEP",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 2.955,
+        "step_speed_norm_s": 0.27,
+        "step_asymmetry_ratio": 0.143,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 10.735,
+        "illumination_norm": 0.564,
+        "feet_visibility_mean": 0.996
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.042,
+        "step_asymmetry_ratio": 0.185
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.54
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_ASYMMETRIC_STEP-03",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_ASYMMETRIC_STEP",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 2.517,
+        "step_speed_norm_s": 0.261,
+        "step_asymmetry_ratio": 0.104,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.399,
+        "illumination_norm": 0.557,
+        "feet_visibility_mean": 0.993
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.037,
+        "step_asymmetry_ratio": 0.093
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.611
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-POS_ASYMMETRIC_STEP-04",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "POS_ASYMMETRIC_STEP",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 3.208,
+        "step_speed_norm_s": 0.222,
+        "step_asymmetry_ratio": 0.101,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 15.867,
+        "illumination_norm": 0.561,
+        "feet_visibility_mean": 0.939
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.039,
+        "step_asymmetry_ratio": 0.052
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.709
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_NORMAL_RISE_WALK-01",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_NORMAL_RISE_WALK",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.666,
+        "trunk_sway_angle_deg": 1.61,
+        "step_speed_norm_s": 0.231,
+        "step_asymmetry_ratio": 0.465,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 11.259,
+        "illumination_norm": 0.553,
+        "feet_visibility_mean": 0.988
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.023,
+        "step_asymmetry_ratio": 0.397
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.256,
+        "posture_recovered": 0.831
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_NORMAL_RISE_WALK-02",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_NORMAL_RISE_WALK",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.6,
+        "trunk_sway_angle_deg": 1.65,
+        "step_speed_norm_s": 0.202,
+        "step_asymmetry_ratio": 0.532,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 12.199,
+        "illumination_norm": 0.554,
+        "feet_visibility_mean": 0.989
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.023,
+        "step_asymmetry_ratio": 0.468
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.404,
+        "posture_recovered": 0.8
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_NORMAL_RISE_WALK-03",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_NORMAL_RISE_WALK",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.467,
+        "trunk_sway_angle_deg": 3.294,
+        "step_speed_norm_s": 0.213,
+        "step_asymmetry_ratio": 0.086,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 10.198,
+        "illumination_norm": 0.552,
+        "feet_visibility_mean": 0.948
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.022,
+        "step_asymmetry_ratio": 0.195
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.747
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_NORMAL_RISE_WALK-04",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_NORMAL_RISE_WALK",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.466,
+        "trunk_sway_angle_deg": 1.397,
+        "step_speed_norm_s": 0.206,
+        "step_asymmetry_ratio": 0.174,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 12.265,
+        "illumination_norm": 0.556,
+        "feet_visibility_mean": 0.921
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.024,
+        "step_asymmetry_ratio": 0.217
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.773
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_RAPID_RISE_STABLE-01",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_RAPID_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 0.661,
+        "step_speed_norm_s": 0.353,
+        "step_asymmetry_ratio": 0.176,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 2.067,
+        "illumination_norm": 0.557,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.009,
+        "step_asymmetry_ratio": 0.077
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.822
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_RAPID_RISE_STABLE-02",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_RAPID_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 0.572,
+        "step_speed_norm_s": 0.317,
+        "step_asymmetry_ratio": 0.313,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 2.196,
+        "illumination_norm": 0.551,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.008,
+        "step_asymmetry_ratio": 0.116
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.976
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_RAPID_RISE_STABLE-03",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_RAPID_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 1.233,
+        "step_speed_norm_s": 0.268,
+        "step_asymmetry_ratio": 0.31,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 2.734,
+        "illumination_norm": 0.551,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.009,
+        "step_asymmetry_ratio": 0.073
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.811
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_RAPID_RISE_STABLE-04",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_RAPID_RISE_STABLE",
+      "status": "SUCCESS",
+      "features": {
+        "rise_duration_s": 0.4,
+        "trunk_sway_angle_deg": 0.603,
+        "step_speed_norm_s": 0.265,
+        "step_asymmetry_ratio": 0.134,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 2.931,
+        "illumination_norm": 0.551,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.009,
+        "step_asymmetry_ratio": 0.003
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.833
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_BOUNDARY_NORMAL-01",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_BOUNDARY_NORMAL",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 1.618,
+        "step_speed_norm_s": 0.42,
+        "step_asymmetry_ratio": 0.783,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 3.733,
+        "illumination_norm": 0.553,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.024,
+        "step_asymmetry_ratio": 0.641
+      },
+      "evidence_types": [
+        "gait_instability",
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "gait_instability": 0.962,
+        "posture_recovered": 0.562
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_BOUNDARY_NORMAL-02",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_BOUNDARY_NORMAL",
+      "status": "LOW_QUALITY",
+      "features": {
+        "trunk_sway_angle_deg": 3.161,
+        "step_speed_norm_s": 0.479,
+        "step_asymmetry_ratio": 0.112,
+        "valid_frame_ratio": 0.667,
+        "locomotion_duration_s": 7.4,
+        "illumination_norm": 0.555,
+        "feet_visibility_mean": 0.955
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.068,
+        "step_asymmetry_ratio": 0.202
+      },
+      "evidence_types": [
+        "assessment_indeterminate"
+      ],
+      "evidence_severity": {
+        "assessment_indeterminate": 0.0
+      },
+      "quality_gate_status": "FAILED",
+      "quality_gate_reasons": [
+        "HUMAN_TRACKING_OR_OCCLUSION"
+      ]
+    },
+    {
+      "clip_id": "P02-NEG_BOUNDARY_NORMAL-03",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_BOUNDARY_NORMAL",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 2.401,
+        "step_speed_norm_s": 0.219,
+        "step_asymmetry_ratio": 0.069,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 12.069,
+        "illumination_norm": 0.552,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.029,
+        "step_asymmetry_ratio": 0.116
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.7
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    },
+    {
+      "clip_id": "P02-NEG_BOUNDARY_NORMAL-04",
+      "participant_id": "P02",
+      "dataset_split": "VALIDATION",
+      "record_role": "EVALUATION",
+      "scenario_id": "NEG_BOUNDARY_NORMAL",
+      "status": "SUCCESS",
+      "features": {
+        "trunk_sway_angle_deg": 2.229,
+        "step_speed_norm_s": 0.264,
+        "step_asymmetry_ratio": 0.107,
+        "valid_frame_ratio": 1.0,
+        "locomotion_duration_s": 8.469,
+        "illumination_norm": 0.55,
+        "feet_visibility_mean": 1.0
+      },
+      "legacy_full_clip_metrics": {
+        "step_speed_norm_s": 0.028,
+        "step_asymmetry_ratio": 0.022
+      },
+      "evidence_types": [
+        "posture_recovered"
+      ],
+      "evidence_severity": {
+        "posture_recovered": 0.636
+      },
+      "quality_gate_status": "PASS",
+      "quality_gate_reasons": []
+    }
+  ],
+  "claim_boundary": "Legacy P01/P02 controlled healthy-adult media; not P03, not supplemental TEST, and not clinical validation."
+}

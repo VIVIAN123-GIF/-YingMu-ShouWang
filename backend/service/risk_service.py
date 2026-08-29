@@ -15,12 +15,12 @@ from contracts.v1.decision import (
     MentalDecisionPolicy,
     quality_snapshot,
 )
-from contracts.v1.ruleset import load_ruleset
+from contracts.v1.ruleset import load_ruleset_version
 
 
 ACTIVE_EVENT_STATUSES = ("OPEN", "INTERVENING", "OBSERVING")
 FRAUD_VERIFICATION_WINDOW_SECONDS = 30 * 60
-ruleset = load_ruleset()
+ruleset = load_ruleset_version(RULESET_VERSION)
 policies = {
     "FALL": FallDecisionPolicy(ruleset),
     "MENTAL": MentalDecisionPolicy(ruleset),
@@ -29,7 +29,7 @@ policies = {
 policy = policies["FALL"]  # Backward-compatible import for existing integrations.
 logger = logging.getLogger("backend.risk_service")
 
-REVIEW_RULES = ("R-FALL-08", "R-FALL-09", "R-FALL-10", "R-FALL-11", "R-FALL-12")
+REVIEW_RULES = ("R-FALL-08", "R-FALL-09", "R-FALL-10", "R-FALL-11", "R-FALL-12", "R-FALL-13")
 
 
 async def list_risk_reviews(

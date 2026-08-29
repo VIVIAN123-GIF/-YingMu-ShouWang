@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "supplemental-validation-manifest/1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "experiment_id", "ruleset_version", "participant_id", "labels_locked_before_inference", "records", "claim_boundary"],
+  "properties": {
+    "schema_version": {"const": "supplemental-validation-manifest/1.0"},
+    "status": {"enum": ["AWAITING_CAPTURE_FILES", "CAPTURED", "LOCKED"]},
+    "experiment_id": {"const": "supplemental-validation-v1.4"},
+    "ruleset_version": {"const": "ruleset-v1.4"},
+    "participant_id": {"const": "SV01"},
+    "labels_locked_before_inference": {"const": true},
+    "records": {"type": "array", "minItems": 29, "maxItems": 29, "items": {"$ref": "#/$defs/record"}},
+    "claim_boundary": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "record": {
+      "type": "object",
+      "required": ["clip_id", "participant_id", "scenario_id", "record_role", "target", "expected_assessment", "label_status", "capture_date", "media_relpath", "sha256", "byte_size", "source_mode", "simulated", "authorization_record_id", "camera_position_id", "device_model"],
+      "properties": {
+        "clip_id": {"type": "string", "minLength": 1},
+        "participant_id": {"const": "SV01"},
+        "scenario_id": {"type": "string", "minLength": 1},
+        "record_role": {"enum": ["TEST", "QUALITY", "GOLDEN"]},
+        "target": {"enum": ["IMMEDIATE_ORANGE", "GAIT_TREND", "NEGATIVE_CONTROL", "QUALITY_GATE", "CLOSED_LOOP"]},
+        "expected_assessment": {"type": "string", "minLength": 1},
+        "label_status": {"const": "PREDECLARED"},
+        "capture_date": {"type": "string"},
+        "media_relpath": {"type": "string"},
+        "sha256": {"type": "string"},
+        "byte_size": {"type": ["integer", "null"]},
+        "source_mode": {"const": "RECORDED_REPLAY"},
+        "simulated": {"const": true},
+        "authorization_record_id": {"type": "string", "minLength": 1},
+        "camera_position_id": {"type": "string", "minLength": 1},
+        "device_model": {"const": "EZVIZ_C6C"}
+      }
+    }
+  }
+}

@@ -316,6 +316,18 @@ class FallDecisionPolicy:
                 tuple(item.evidence_id for item in observation_pair),
                 not_matched={"R-FALL-02": "transition-bound multi-family evidence is absent"},
             )
+        if self.ruleset.version in {"ruleset-v1.4", "ruleset-v1.5"}:
+            trend_items = [
+                item for item in usable_recent
+                if item.evidence_type in {"relative_speed_change", "gait_instability"}
+            ]
+            if trend_items:
+                return Decision(
+                    "R-FALL-13", "YELLOW", None, "REVIEW",
+                    "personal gait deviation is a trend observation and cannot create an immediate event",
+                    tuple(item.evidence_id for item in trend_items),
+                    not_matched={"R-FALL-02": "two transition-bound immediate instability families are absent"},
+                )
         speed_items = [*rapid_items, *slow_items]
         if speed_items:
             return Decision(

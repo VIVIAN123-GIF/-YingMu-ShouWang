@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import Evidence, ForewarningSnapshot as SnapshotRow, Observation
+from backend.config import FOREWARNING_RULESET_VERSION
 from backend.service.baseline_service import memory_store
 from backend.service.serialization import aware, dumps, loads
 from contracts.v1.forewarning import (
@@ -19,16 +20,22 @@ from contracts.v1.forewarning import (
     ForewarningHorizon,
     ForewarningSnapshot,
 )
-from contracts.v1.ruleset import load_forewarning_ruleset
+from contracts.v1.ruleset import load_ruleset_version
 
 
-RULESET = load_forewarning_ruleset()
+RULESET = load_ruleset_version(FOREWARNING_RULESET_VERSION)
 HUMAN_TYPES = {
     "rapid_rise", "slow_rise", "trunk_sway", "gait_instability",
     "relative_speed_change", "post_rise_lateral_drift", "support_base_change",
     "compensatory_step", "sit_to_stand_transition", "persistent_instability",
 }
 PRECURSOR_TYPES = HUMAN_TYPES - {"sit_to_stand_transition"}
+INSTANT_TYPES = {
+    evidence_type
+    for evidence_types in RULESET.signal_families.values()
+    for evidence_type in evidence_types
+} | {"persistent_instability"}
+TREND_TYPES = set(RULESET.trend_evidence_types)
 QUALITY_TYPES = {"assessment_indeterminate", "tracking_lost", "camera_occlusion", "quality_gate_failed"}
 ENVIRONMENT_TYPES = {"low_illumination", "low_light"}
 INTERACTION_FEATURES = {
@@ -54,6 +61,15 @@ def _enum_value(value: Any) -> str:
 
 def _clamp(value: float) -> float:
     return min(max(float(value), 0.0), 1.0)
+
+
+def _independent_signal_families(evidences: list[Any], ruleset=RULESET) -> set[str]:
+    return {
+        family
+        for item in evidences
+        for family, evidence_types in ruleset.signal_families.items()
+        if item.evidence_type in evidence_types
+    }
 
 
 def _stable_id(
@@ -292,10 +308,11 @@ async def evaluate_forewarning(
     human = [item for item in usable if _enum_value(item.risk_domain) == "FALL" and item.evidence_type in HUMAN_TYPES]
     instant_human = [item for item in human if aware(item.timestamp) >= instant_start]
     short_human = [item for item in human if aware(item.timestamp) >= short_start]
-    precursors = [item for item in instant_human if item.evidence_type in PRECURSOR_TYPES]
+    active_precursor_types = INSTANT_TYPES if RULESET.version in {"ruleset-v1.4", "ruleset-v1.5"} else PRECURSOR_TYPES
+    precursors = [item for item in instant_human if item.evidence_type in active_precursor_types]
     human_risk = max((float(item.severity) for item in precursors), default=0.0)
-    signal_types = {item.evidence_type for item in precursors}
-    if len(signal_types) >= 2:
+    signal_families = _independent_signal_families(precursors)
+    if len(signal_families) >= int(RULESET.thresholds.get("orange_min_signal_families", 2)):
         human_risk = _clamp(human_risk + 0.12)
 
     instant_usable = [item for item in usable if aware(item.timestamp) >= instant_start]
@@ -357,9 +374,10 @@ async def evaluate_forewarning(
         "interaction_risk": _clamp(interaction_risk),
     }
     instant_index = _clamp(sum(weights[name] * float(value or 0.0) for name, value in components.items()))
-    recent_peak = max((float(item.severity) for item in short_human if item.evidence_type in PRECURSOR_TYPES), default=0.0)
+    recent_peak = max((float(item.severity) for item in short_human if item.evidence_type in active_precursor_types), default=0.0)
     short_index = _clamp(0.7 * instant_index + 0.3 * recent_peak)
-    trend_values = [float(item.severity) for item in human if item.evidence_type in PRECURSOR_TYPES]
+    active_trend_types = TREND_TYPES if RULESET.version in {"ruleset-v1.4", "ruleset-v1.5"} else PRECURSOR_TYPES
+    trend_values = [float(item.severity) for item in human if item.evidence_type in active_trend_types]
     trend_mean = statistics.fmean(trend_values) if trend_values else 0.0
     recurrence = min(len(trend_values) / 4.0, 1.0)
     trend_index = _clamp(0.5 * short_index + 0.3 * trend_mean + 0.2 * recurrence)

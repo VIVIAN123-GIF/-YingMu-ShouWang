@@ -17,6 +17,7 @@ PROFILE = {
     "mobile": "".join(("139", "0000", "0000")),
     "submission_deadline": "2026-09-04",
     "retention_until": "2027-03-31",
+    "online_entry_required": False,
     "online_url": "https://example.github.io/demo/",
     "online_username": "judge",
 }
@@ -198,7 +199,9 @@ def test_packaged_environment_template_covers_live_v13_runtime():
     )
     required = (
         "YINGMU_CAPTURE_MEDIA_MODE=VIDEO",
-        "YINGMU_GAIT_ADAPTER=contracts.v1.gait_adapter:run",
+        "YINGMU_RULESET_VERSION=ruleset-v1.4",
+        "YINGMU_FOREWARNING_RULESET_VERSION=ruleset-v1.4",
+        "YINGMU_GAIT_ADAPTER=contracts.v1.gait_adapter_v14:run",
         "YINGMU_TRAJECTORY_ADAPTER=adapters.trajectory_adapter:run",
         "YINGMU_SCENE_CONFIG_DIR=scene-calibrations",
         "YINGMU_STREAM_BUFFER_ENABLED=false",
@@ -352,6 +355,30 @@ def test_online_entry_gate_requires_all_acceptance_fields(tmp_path):
     payload["mock_only"] = False
     path.write_text(json.dumps(payload), encoding="utf-8")
     assert "mock_only" in " ".join(assemble_submission._validate_online_verification(path, PROFILE))
+
+
+def test_online_entry_is_skipped_when_profile_marks_it_optional(tmp_path):
+    root = tmp_path / "repo"
+    root.mkdir()
+    profile = dict(PROFILE)
+    profile.update({
+        "online_entry_required": False,
+        "online_url": "",
+        "online_username": "",
+    })
+    path = root / assemble_submission.PROFILE
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(profile), encoding="utf-8")
+
+    loaded = assemble_submission.load_profile(path)
+    gates, _ = assemble_submission.evaluate_gates(root, "draft", loaded)
+    online = next(item for item in gates if item["gate"] == "online_entry")
+
+    assert online == {
+        "gate": "online_entry",
+        "status": "SKIPPED_OPTIONAL",
+        "errors": [],
+    }
 
 
 def test_draft_assembly_is_explicitly_incomplete_when_real_evidence_is_missing(tmp_path):

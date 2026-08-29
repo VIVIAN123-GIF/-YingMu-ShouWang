@@ -438,6 +438,12 @@ def test_health_stays_warming_with_only_one_completed_segment(tmp_path, monkeypa
 def test_real_ffmpeg_segments_are_assembled_into_playable_mp4(tmp_path, monkeypatch):
     ffmpeg = shutil.which("ffmpeg")
     assert ffmpeg is not None
+    configured_ffmpeg = Path(ffmpeg)
+    adjacent_ffprobe = configured_ffmpeg.with_name(
+        f"ffprobe{configured_ffmpeg.suffix if configured_ffmpeg.name.lower().startswith('ffmpeg') else ''}"
+    )
+    if not adjacent_ffprobe.is_file():
+        pytest.skip("The configured FFmpeg distribution does not include FFprobe")
     root = resolve_stream_buffer_root(str(tmp_path / "buffer"))
     _, session_dir = create_buffer_session(root)
     pattern = session_dir / "segment-%03d.ts"
@@ -498,6 +504,7 @@ def test_real_ffmpeg_segments_are_assembled_into_playable_mp4(tmp_path, monkeypa
     )
     output = tmp_path / "assembled.mp4"
     monkeypatch.setattr(stream_buffer_service, "YINGMU_FFMPEG_BINARY", ffmpeg)
+    monkeypatch.setattr(snapshot_asset_service, "YINGMU_FFMPEG_BINARY", ffmpeg)
 
     digest, byte_size, duration = stream_buffer_service._assemble_selection_sync(
         selection,

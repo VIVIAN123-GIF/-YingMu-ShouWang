@@ -121,7 +121,7 @@ async def _persist_batches(
     db: AsyncSession,
     task: AlarmProcessingTask,
     batches: list[AdapterBatch],
-) -> tuple[int, int]:
+) -> tuple[int, int, dict[str, object]]:
     observations = [item for batch in batches for item in batch.observations]
     evidences = [item for batch in batches for item in batch.evidences]
     for observation in observations:
@@ -129,13 +129,16 @@ async def _persist_batches(
             db,
             ObservationCreate.model_validate(observation.model_dump(mode="json")),
         )
+    from backend.service.personal_gait_service import relative_speed_evidence
+    personal_evidences, personal_summary = await relative_speed_evidence(db, observations)
+    evidences.extend(personal_evidences)
     for evidence in evidences:
         await create_evidence(
             db,
             EvidenceCreate.model_validate(evidence.model_dump(mode="json")),
             f"algorithm-{task.task_id}-{evidence.evidence_id}",
         )
-    return len(observations), len(evidences)
+    return len(observations), len(evidences), personal_summary
 
 
 async def _persist_resident_responses(
@@ -261,7 +264,7 @@ async def process_algorithm_task(
             else:
                 valid_batches.append(batch)
 
-        observation_count, evidence_count = await _persist_batches(db, task, valid_batches)
+        observation_count, evidence_count, personal_gait = await _persist_batches(db, task, valid_batches)
         forewarning_snapshot_id = None
         if media_type == MediaType.VIDEO:
             from backend.service.forewarning_service import evaluate_forewarning
@@ -305,6 +308,7 @@ async def process_algorithm_task(
             observation_count=observation_count,
             evidence_count=evidence_count,
             forewarning_snapshot_id=forewarning_snapshot_id,
+            personal_gait=personal_gait,
         )
     except (AdapterRegistryError, ValueError, TypeError) as exc:
         task.status = "FAILED"

@@ -6,19 +6,21 @@
 
 | 交付项 | 当前状态 | 完成门禁 |
 |---|---|---|
-| 专项研究报告 | 已写入P03双轨、URFD复核、三人黄金闭环和12小时稳定性结论 | 消融、实机闭环和正式PDF |
+| 专项研究报告 | 已写入P03、URFD、旧三人黄金闭环、12小时稳定性和v1.4正式失败结论 | 实机闭环和正式PDF |
 | 演示视频 | 脚本和镜头清单 | 补拍、旁白、字幕、来源标签和脱敏完成 |
 | Windows程序 | ZIP已构建，本机全栈冒烟和清单复核通过 | 在另一台Windows电脑验收 |
 | 系统/接口/部署文档 | 工作底稿 | 与最终发布包和规则版本一致 |
-| 测试报告 | 已写入P03、URFD、三人黄金闭环和12小时稳定性结论 | 消融、异机Windows验收 |
+| 测试报告 | 已写入P03、URFD、旧三人黄金闭环、12小时稳定性和v1.4 A-D结果 | 异机Windows验收 |
 | 隐私材料 | 模板和边界已建立 | 三人签字及删除日期确认 |
 | 提交门禁 | 草稿包可生成，最终模式会拒绝缺项 | 所有真实证据完成后状态变为READY |
 
-正式文档源稿位于 `docs/`，07/08 号新增源稿位于 `official-docs/`，演示视频材料位于 `video/`。P01/P02全量演练、P03一次性盲测、URFD独立复核、三人黄金闭环和12小时稳定性测试均已完成；稳定性原始材料由现场成员在授权私有目录保管，脱敏摘要已归档至`experiments/three-participant/results/stability-summary.json`。该记录是同一家庭一台固定摄像头的连续分时段工程稳定性验证，不能解释为每段仅一人出镜的隔离实验；最终提交仍需补齐其他外部证据和剩余门禁。
+正式文档源稿位于 `docs/`，07/08号新增源稿位于 `official-docs/`，演示视频材料位于 `video/`。P01/P02全量演练、P03一次性盲测、URFD独立复核、旧三人黄金闭环、12小时稳定性测试和v1.4 A-D正式运行均已完成。v1.4完整A配置的即时ORANGE为0/4、趋势误报为12/12、质量门控为3/4，QG05黄金闭环为`FAIL`；这些结果已原样归档，不能表述为性能通过。最终提交仍需补齐其他外部证据和剩余门禁。
+
+无法补拍后完成的v1.5仅为探索性软件整改。其r2在已知素材上将单窗口趋势误报降至5/12，但持续趋势检出为0/8，即时ORANGE、不对称专项、质量门控和QG05仍未通过；不能将该结果升级为新的正式验证。
 
 ## 本地参赛配置与私有输入
 
-1. 复制 `submission-profile.example.json` 为 `private-input/submission-profile.json`，填写 `school`、`contact_name`、`mobile`、`submission_deadline`、`retention_until`、`online_url` 和 `online_username`。`private-input/` 已被 Git 忽略，手机号不会进入公开源码包。
+1. 复制 `submission-profile.example.json` 为 `private-input/submission-profile.json`，填写 `school`、`contact_name`、`mobile`、`submission_deadline` 和 `retention_until`。在线入口默认可选（`online_entry_required=false`）；只有改为 `true` 时才必须填写 `online_url` 和 `online_username`。`private-input/` 已被 Git 忽略，手机号不会进入公开源码包。
 2. 使用 `scripts/build_participant_consent.py` 生成 P01、P02、P03 授权书；打印签署后，将扫描件命名为 `P01.pdf`、`P02.pdf`、`P03.pdf`，放入 `experiments/three-participant/signed-consent/`。该目录已被 Git 忽略。
 3. 张薇完善平台证据后，将 PDF 放为 `private-input/platform-evidence.pdf`；盖章报名表放为 `private-input/registration-form.pdf`；最终演示视频放为 `private-input/demonstration-video.mp4`。
 4. 公网 Pages 验收通过后，从 Actions 的 `pages-public-verification` 工件下载 `online-entry-verification.json`，放入 `private-input/online-entry-verification.json`。在真实公网测试完成前不得手工标记为 `COMPLETE`。
@@ -36,7 +38,7 @@
 .\.venv\Scripts\python.exe -m scripts.assemble_submission final
 ```
 
-草稿文档位于 `output/submission-work/draft/`，草稿提交包位于 `output/submission/`。正式模式只有在实验、12 小时运行、三份授权扫描件、报名表、演示视频、平台证据、Windows 异机验收和在线入口公网验收全部通过后才会生成；否则只在提交目录外写出拒绝报告。
+草稿文档位于 `output/submission-work/draft/`，草稿提交包位于 `output/submission/`。正式模式只有在实验、12 小时运行、三份授权扫描件、报名表、演示视频、平台证据和Windows异机验收等硬门禁全部通过后才会生成；在线入口在`online_entry_required=false`时显示`SKIPPED_OPTIONAL`且不阻断打包，否则按硬门禁验收。其他缺项只在提交目录外写出拒绝报告。
 
 最终视频需根据 `video/video-verification.template.json` 完成人工复核。另一台 Windows 电脑的验收结果根据 `../packaging/external-windows-acceptance.template.json` 填写。两者都必须引用当前成品，不能提前勾选。
 
