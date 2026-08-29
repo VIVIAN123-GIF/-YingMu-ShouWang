@@ -1,0 +1,218 @@
+{
+  "schema_version": "supplemental-validation-lock/1.0",
+  "status": "LOCKED",
+  "experiment_id": "supplemental-validation-v1.4",
+  "locked_at": "2026-08-29T00:20:31+08:00",
+  "records": 29,
+  "valid_baseline_records": 17,
+  "bindings": {
+    "locked_manifest": {
+      "path": "D:\\OneDrive\\Desktop\\荧目守望\\experiments\\supplemental-validation-v1.4\\results\\formal-20260829-r1-lock\\locked-manifest.json",
+      "sha256": "f087b14d6f24973d00d73c24281e390da13a63859eafa3ec8fb1f2ae523ee20b"
+    },
+    "baseline_manifest": {
+      "path": "D:\\OneDrive\\Desktop\\荧目守望\\experiments\\supplemental-validation-v1.4\\baseline-manifest.json",
+      "sha256": "69654637ebf4b960c63da490be058b3895d56180b16d89cac2b58301ab11a804"
+    },
+    "baseline_results": {
+      "path": "D:\\OneDrive\\Desktop\\荧目守望\\experiments\\supplemental-validation-v1.4\\results\\baseline-d1-d3-v14-r3\\baseline-results.json",
+      "sha256": "0f336bd603361734aaa2b9480fd95347be4d5962ac8b7756b5d87a51ab32d66b"
+    },
+    "ruleset": {
+      "path": "D:\\OneDrive\\Desktop\\荧目守望\\contracts\\v1\\rulesets\\ruleset-v1.4.json",
+      "sha256": "604d2543048dc0e3f3bf1389bc08a25c0b99c848a6e1816a1ebd521556ef99e5"
+    },
+    "model": {
+      "path": "D:\\OneDrive\\Desktop\\荧目守望\\models\\pose_landmarker_heavy.task",
+      "sha256": "64437af838a65d18e5ba7a0d39b465540069bc8aae8308de3e318aad31fcbc7b"
+    },
+    "executor": {
+      "path": "D:\\OneDrive\\Desktop\\荧目守望\\scripts\\supplemental_validation_v14.py",
+      "sha256": "26d95154c50c813dd2a0f8d9e37f242a7aede1bdc8c1a1f1ef75969f21bbf357"
+    },
+    "evaluation_spec": {
+      "path": "D:\\OneDrive\\Desktop\\荧目守望\\experiments\\supplemental-validation-v1.4\\evaluation-spec.v1.json",
+      "sha256": "01db281826ac258ad339b194a6332c83e635b3285de240464cb40bc4a2092d7a"
+    },
+    "visual_review": {
+      "path": "D:\\OneDrive\\Desktop\\荧目守望\\experiments\\supplemental-validation-v1.4\\team-confirmed-visual-review.json",
+      "sha256": "1881aabf4254d9008b9266652d4defb018c6419fca8e62713eb39075d5668f26"
+    }
+  },
+  "media": [
+    {
+      "clip_id": "SV01-POS_RAPID_RISE_SWAY-01",
+      "path": "视频/新正负样本/正样本A/POS-RS-01.mp4",
+      "sha256": "c9343415b41045c6e6118e74919b3b1ab11760c1fb3b22455210fae8306d7915",
+      "bytes": 849395
+    },
+    {
+      "clip_id": "SV01-POS_RAPID_RISE_SWAY-02",
+      "path": "视频/新正负样本/正样本A/POS-RS-02.mp4",
+      "sha256": "90424ac0b704bfbd0038ede71b36db3ff088eee710012eb8893a7454e7e1104c",
+      "bytes": 815818
+    },
+    {
+      "clip_id": "SV01-POS_RAPID_RISE_SWAY-03",
+      "path": "视频/新正负样本/正样本A/POS-RS-03.mp4",
+      "sha256": "f4b6e18fab45ce75d077f4749936a8e32bc45e744a8613370e133d6c549643b4",
+      "bytes": 800780
+    },
+    {
+      "clip_id": "SV01-POS_RAPID_RISE_SWAY-04",
+      "path": "视频/新正负样本/正样本A/POS-RS-04.mp4",
+      "sha256": "f210021f37f50e737e2936207314d2ba4589daf02f8a272cdca81ba15e5929e4",
+      "bytes": 748948
+    },
+    {
+      "clip_id": "SV01-POS_SLOW_SMALL_STEP_SWAY-01",
+      "path": "视频/新正负样本/正样本B/0dfe707659ac6ff78543153d9e8b8052.mp4",
+      "sha256": "3c7f555b5e9fab3da629026c37db51c6b0147e847000fbf3ceddbb76a4dc33d5",
+      "bytes": 1068381
+    },
+    {
+      "clip_id": "SV01-POS_SLOW_SMALL_STEP_SWAY-02",
+      "path": "视频/新正负样本/正样本B/77bf8363e918d3a0cec20be9909eb108.mp4",
+      "sha256": "e33fb61754552dd7a92081fa93b1a4e6c82418ddf6e19cd76c6d0eecffec734a",
+      "bytes": 1106739
+    },
+    {
+      "clip_id": "SV01-POS_SLOW_SMALL_STEP_SWAY-03",
+      "path": "视频/新正负样本/正样本B/c8ca857c626c0473514f5a26e41122fd.mp4",
+      "sha256": "dabc32bafd1d9ce7c367b45f5deb377faf93a0062417a33aaf8bade2ba791eda",
+      "bytes": 991992
+    },
+    {
+      "clip_id": "SV01-POS_SLOW_SMALL_STEP_SWAY-04",
+      "path": "视频/新正负样本/正样本B/fa03b1646fc1dd8ff50029e1e38be0f8.mp4",
+      "sha256": "1e85f895963b96fc8aca05ee0291c9c59ab5231424b74d999772f8ef2e04b526",
+      "bytes": 1231195
+    },
+    {
+      "clip_id": "SV01-POS_ASYMMETRIC_STEP-01",
+      "path": "视频/新正负样本/正样本C/89ad59600192e44e7655802d96e9013b.mp4",
+      "sha256": "e19895a94688fc6bc6538e81f95e6e0363f1c959647e582f28aeac86573a9a4b",
+      "bytes": 1292478
+    },
+    {
+      "clip_id": "SV01-POS_ASYMMETRIC_STEP-02",
+      "path": "视频/新正负样本/正样本C/b1f832ae85ae3e20c51048616ad7d844.mp4",
+      "sha256": "94455e0a4cd600c03e831a2167cbc790fec4b84e0eda17ea1ca419dacf0cead6",
+      "bytes": 1197043
+    },
+    {
+      "clip_id": "SV01-POS_ASYMMETRIC_STEP-03",
+      "path": "视频/新正负样本/正样本C/c743ac4620fedf75ef03a662b598fa31.mp4",
+      "sha256": "c1b57bb6992139fcfbe122476bb669070fd20cfe6af669d196ee0a0a42d65808",
+      "bytes": 1431351
+    },
+    {
+      "clip_id": "SV01-POS_ASYMMETRIC_STEP-04",
+      "path": "视频/新正负样本/正样本C/d928b44b0a49b993e5d1df8a84f75bae.mp4",
+      "sha256": "6d270756beaa9265c74e57d559d66933054732709cb9a95de95db91a8bc24c95",
+      "bytes": 1352172
+    },
+    {
+      "clip_id": "SV01-NEG_NORMAL_RISE_WALK-01",
+      "path": "视频/新正负样本/负样本A/14dff77a673d666ecef21f054b29f749.mp4",
+      "sha256": "fb72b540e9a3bf6c2f1293015a916e88c5ede0db5019478299cb61c30d4a4119",
+      "bytes": 1061335
+    },
+    {
+      "clip_id": "SV01-NEG_NORMAL_RISE_WALK-02",
+      "path": "视频/新正负样本/负样本A/3afbbf0dee32ef81cc9a2eae5aa26dec.mp4",
+      "sha256": "e3b147ab2abeccb010dcf5fae81c41a0539794076dd5709f650b991cf8bbfe68",
+      "bytes": 932639
+    },
+    {
+      "clip_id": "SV01-NEG_NORMAL_RISE_WALK-03",
+      "path": "视频/新正负样本/负样本A/7ebc537d7c06eb8b2c35418e44137140.mp4",
+      "sha256": "cbfbfda2cb51bbd453322d5730caba91452913944f95960a3d7fd45e62c98206",
+      "bytes": 956393
+    },
+    {
+      "clip_id": "SV01-NEG_NORMAL_RISE_WALK-04",
+      "path": "视频/新正负样本/负样本A/f4db8a407f044f8904af618db50643b8.mp4",
+      "sha256": "de0e4a749d8d87beb062c1643958848c88a0852fdf3c7c028d592301cda36dee",
+      "bytes": 1121169
+    },
+    {
+      "clip_id": "SV01-NEG_FAST_RISE_STABLE-01",
+      "path": "视频/新正负样本/负样本B/0c46d23cd833f7ca9a769f72ce4f6b59.mp4",
+      "sha256": "625c7963dcf8be6756336af3ebd124221c19924a5601987542ec39fe0debfdb2",
+      "bytes": 601724
+    },
+    {
+      "clip_id": "SV01-NEG_FAST_RISE_STABLE-02",
+      "path": "视频/新正负样本/负样本B/2ecd9702372cc9a4ce99aa8a92d96c78.mp4",
+      "sha256": "189fdaad28752a7db3adf5f207d0f7dc3547019dbff00545afe1e2a326ffc557",
+      "bytes": 1177161
+    },
+    {
+      "clip_id": "SV01-NEG_FAST_RISE_STABLE-03",
+      "path": "视频/新正负样本/负样本B/548f5275f40e4a0bbd9f14592c3e3a63.mp4",
+      "sha256": "45dd80583ebe391d5bedd571ba131f030d14f94f422e0f4f755f4aa180b5fce7",
+      "bytes": 640319
+    },
+    {
+      "clip_id": "SV01-NEG_FAST_RISE_STABLE-04",
+      "path": "视频/新正负样本/负样本B/8a71de7479226b4af7e3f57ca6683024.mp4",
+      "sha256": "2c61a15ff999aa0be7a094dc97016e253f9e92e53efcb93a17ff50d17fbea36b",
+      "bytes": 552343
+    },
+    {
+      "clip_id": "SV01-NEG_NEAR_THRESHOLD_NORMAL-01",
+      "path": "视频/新正负样本/负样本C/009c2ffd7457f6a2ab1a1faf52dba745.mp4",
+      "sha256": "c236803093ce5a0acdec4e1495fb98392f8ff5d0b0d762791fd15deb07c2dac3",
+      "bytes": 883558
+    },
+    {
+      "clip_id": "SV01-NEG_NEAR_THRESHOLD_NORMAL-02",
+      "path": "视频/新正负样本/负样本C/0d867015822be6f229881a17337b8121.mp4",
+      "sha256": "d5668c70d0a55d20cbdfa1e5a1ff972c19676ccfc91533d24cd9630f625cd6e5",
+      "bytes": 733247
+    },
+    {
+      "clip_id": "SV01-NEG_NEAR_THRESHOLD_NORMAL-03",
+      "path": "视频/新正负样本/负样本C/48a56792c0187fb8c267dc73531dee2e.mp4",
+      "sha256": "0ef1d1f13a13cb2adf86ad11d2f691d475c1f9500b5186ad979d227ca8ec23af",
+      "bytes": 723776
+    },
+    {
+      "clip_id": "SV01-NEG_NEAR_THRESHOLD_NORMAL-04",
+      "path": "视频/新正负样本/负样本C/d76e8379916b73ef03e99f72e2e85670.mp4",
+      "sha256": "86e31adaee577c5bfd02040c6f6ed722c405b72f36f175d4e2baf506626eba17",
+      "bytes": 840996
+    },
+    {
+      "clip_id": "SV01-QUALITY_OCCLUSION-01",
+      "path": "视频/质量降级/QG-01.mp4",
+      "sha256": "4faf64abf4428b053ea5ce78dba6492d72e6893eb73e8463ff560fcd939f82cb",
+      "bytes": 1381997
+    },
+    {
+      "clip_id": "SV01-QUALITY_FEET_OUT-01",
+      "path": "视频/质量降级/QG-02.mp4",
+      "sha256": "b42d187aaa07a51cfcb00321fa96f2f63af01ed81bb425e997cd5b41943e80d8",
+      "bytes": 2855335
+    },
+    {
+      "clip_id": "SV01-QUALITY_LOW_LIGHT-01",
+      "path": "视频/质量降级/QG-03.mp4",
+      "sha256": "c2c90b7bf17f48eb39a09e10323b68d0ae9a57a5a6a14ae02df6f234ae54fabd",
+      "bytes": 2578323
+    },
+    {
+      "clip_id": "SV01-QUALITY_MULTI_PERSON-01",
+      "path": "视频/质量降级/QG-04.mp4",
+      "sha256": "374e15f3e0cc1a21f315ffa832910494a32b87a575ba83f7fe7caf4740c48bc8",
+      "bytes": 1230242
+    },
+    {
+      "clip_id": "SV01-GOLDEN_CONTINUOUS_LOOP-01",
+      "path": "视频/质量降级/QG-05.mp4",
+      "sha256": "d899842b94cbd06e6b9fa8d25581235af8daa3dc13e109ec8a4e360b2f825079",
+      "bytes": 3378656
+    }
+  ]
+}

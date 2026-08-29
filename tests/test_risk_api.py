@@ -10,8 +10,7 @@ import pytest
 from sqlalchemy import func, select
 
 
-TEST_DB = Path("test_risk_api.db")
-os.environ["YINGMU_DB_PATH"] = str(TEST_DB)
+TEST_DB = Path(os.environ["YINGMU_DB_PATH"])
 os.environ["YINGMU_ENV"] = "mock"
 os.environ["YINGMU_CONTROL_TOKEN"] = "test-control-token"
 os.environ["EZVIZ_WEBHOOK_SECRET"] = "test-webhook-secret"
@@ -338,6 +337,7 @@ async def resident_counts(resident_id: str):
 
 
 def setup_module():
+    asyncio.run(engine.dispose())
     TEST_DB.unlink(missing_ok=True)
 
 

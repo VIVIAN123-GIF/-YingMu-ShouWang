@@ -1,0 +1,73 @@
+{
+  "schema_version": "supplemental-v14-rule-change-log/1.0",
+  "ruleset_version": "ruleset-v1.4",
+  "parent_versions": ["ruleset-v1.2", "ruleset-v1.3-min"],
+  "calibration_sources": ["P01"],
+  "validation_sources": ["P02"],
+  "excluded_from_tuning": ["P03", "supplemental-validation-v1.4 TEST/QUALITY/GOLDEN"],
+  "changes": [
+    {
+      "id": "V14-01",
+      "area": "gait_speed",
+      "before": "whole-clip displacement divided by clip duration",
+      "after": "body-scale-normalized displacement divided by active locomotion time",
+      "reason": "remove sitting and static duration from gait speed"
+    },
+    {
+      "id": "V14-02",
+      "area": "personal_baseline",
+      "before": "fixed 1.0 reference could produce relative-speed Evidence",
+      "after": "same resident/device/camera/source personal median plus status-specific MAD noise floor; no Evidence when baseline is insufficient",
+      "reason": "make the claimed personal baseline real and auditable",
+      "parameters": {
+        "relative_deviation_floor": 0.35,
+        "provisional_mad_multiplier": 3.0,
+        "stable_mad_multiplier": 2.5,
+        "effective_threshold": "max(relative_deviation_floor, mad_multiplier * MAD / max(abs(median), epsilon))"
+      }
+    },
+    {
+      "id": "V14-03",
+      "area": "instant_vs_trend",
+      "before": "rise speed and gait observations could enter broad precursor scoring",
+      "after": "ORANGE uses trunk/translation/feet only; speed and gait deviations are trend-only",
+      "reason": "prevent rapid or slow rise from being treated as immediate instability"
+    },
+    {
+      "id": "V14-04",
+      "area": "severity",
+      "before": "threshold crossing could yield near-saturated severity",
+      "after": "severity is normalized excess between threshold and a declared saturation value",
+      "reason": "preserve separation near the decision boundary"
+    },
+    {
+      "id": "V14-05",
+      "area": "quality_gate",
+      "before": "single-pose extraction and environmental risk weighting",
+      "after": "two-pose extraction plus tracking/occlusion, feet-in-frame, low-light and multi-person degradation",
+      "reason": "return indeterminate results for unassessable video instead of risk classification"
+    },
+    {
+      "id": "V14-06",
+      "area": "gait_only_assessment",
+      "before": "indeterminate post-rise geometry discarded a valid standalone walking window",
+      "after": "GAIT_ONLY suppresses immediate post-rise signals while retaining valid gait trend features",
+      "reason": "separate post-rise assessability from gait-window assessability"
+    },
+    {
+      "id": "V14-07",
+      "area": "baseline_admission",
+      "before": "7-day replay-only window",
+      "after": "30-day window, 3-day provisional, 7-day stable, separately grouped compliant replay/live sources and SHA-256 deduplication",
+      "reason": "support auditable real-device baselines without mixing provenance"
+    },
+    {
+      "id": "V14-08",
+      "area": "signal_family_consistency",
+      "before": "forewarning multi-signal bonus counted distinct Evidence types",
+      "after": "state machine and forewarning both count trunk/translation/feet families from ruleset-v1.4",
+      "reason": "two feet Evidence types must not masquerade as two independent instability families"
+    }
+  ],
+  "freeze_policy": "No threshold or label changes after supplemental TEST output is inspected."
+}

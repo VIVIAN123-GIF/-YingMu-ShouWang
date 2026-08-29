@@ -1,0 +1,57 @@
+{
+  "schema_version": "supplemental-v14-evaluation-spec/1.0",
+  "experiment_id": "supplemental-validation-v1.4",
+  "ruleset_version": "ruleset-v1.4",
+  "participant_id": "SV01",
+  "labels_locked_before_inference": true,
+  "baseline": {
+    "status": "PROVISIONAL",
+    "lookback_days": 30,
+    "provisional_target_days": 3,
+    "stable_target_days": 7,
+    "visible_watermark_dates": ["2026-08-17", "2026-08-18", "2026-08-19"],
+    "valid_clips": 17,
+    "excluded_clips": ["D3_WALK_03_left_to_right"]
+  },
+  "endpoints": {
+    "immediate_orange": {
+      "positive_scenarios": ["POS_RAPID_RISE_SWAY"],
+      "negative_population": "all other TEST records",
+      "positive_count": 4,
+      "negative_count": 20
+    },
+    "gait_trend": {
+      "positive_scenarios": ["POS_SLOW_SMALL_STEP_SWAY", "POS_ASYMMETRIC_STEP"],
+      "negative_scenarios": ["NEG_NORMAL_RISE_WALK", "NEG_FAST_RISE_STABLE", "NEG_NEAR_THRESHOLD_NORMAL"],
+      "positive_count": 8,
+      "negative_count": 12,
+      "excluded_scenarios": ["POS_RAPID_RISE_SWAY"]
+    },
+    "quality_gate": {
+      "positive_role": "QUALITY",
+      "negative_role": "TEST",
+      "positive_count": 4,
+      "negative_count": 24,
+      "required_positive_state": "PARTIAL_OR_INSUFFICIENT_NO_ORANGE"
+    }
+  },
+  "metrics": [
+    "tp", "tn", "fp", "fn", "precision", "recall", "f1",
+    "specificity", "false_positive_rate", "wilson_95",
+    "processing_latency_median_ms", "processing_latency_p95_ms", "processing_latency_max_ms"
+  ],
+  "ablation_configs": {
+    "A": "full v1.4",
+    "B": "personal baseline disabled",
+    "C": "short memory only; personal baseline and medium/long memory disabled",
+    "D": "quality and context gates disabled; offline only"
+  },
+  "golden_loop": {
+    "included_in_metrics": false,
+    "expected_sequence": ["ORANGE", "INTERVENING", "OBSERVING", "RESOLVED"],
+    "audio_provenance": "SCRIPTED_AUDIO_PROMPT",
+    "intervention_tool": "mock_voice",
+    "simulated": true
+  },
+  "claim_boundary": "Engineering performance on one healthy adult in controlled recordings; not clinical sensitivity, specificity or population validation."
+}

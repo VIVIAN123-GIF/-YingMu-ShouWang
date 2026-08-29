@@ -1,0 +1,10 @@
+32f0f1f9ca7cc59fe37dd015afffcbfbe17f4173bce58f48a41a1711914ef773  experiments/supplemental-validation-v1.4/results/formal-20260829-r1-lock/lock.json
+f087b14d6f24973d00d73c24281e390da13a63859eafa3ec8fb1f2ae523ee20b  experiments/supplemental-validation-v1.4/results/formal-20260829-r1-lock/locked-manifest.json
+d08c4ebd8959a8686d7995f1f5bf7df8ece1485982960afe047143789e3aeaea  experiments/supplemental-validation-v1.4/results/formal-20260829-r1-lock/SHA256SUMS.txt
+cac3654230d7dc516190576cc77f14109be6d88d37c7a588647d09ca14125420  experiments/supplemental-validation-v1.4/results/formal-20260829-r1-metrics.json
+f19c9a4434a8a420ff56d1b562879eb441f5effe3b0010e64c289b7b415ec838  experiments/supplemental-validation-v1.4/results/formal-20260829-r1-run/A/inference-results.json
+275cc77c60fc78cafd8e1ebbbd847d6d0f9de955a5c874e43317bdf6b4cd327d  experiments/supplemental-validation-v1.4/results/formal-20260829-r1-run/B/inference-results.json
+6288f2fa6694fd4fa364462c70007ce33af442a4fec7592d7cf3adaed160b71a  experiments/supplemental-validation-v1.4/results/formal-20260829-r1-run/C/inference-results.json
+7741dcce1f1ada964a6c2555ed54f0647074cbd32c984f7c6adccd3884811632  experiments/supplemental-validation-v1.4/results/formal-20260829-r1-run/D/inference-results.json
+b37295225fb02844bfe4e4aa9e0aa7645f73d56d2ec57f95f964371bf2cb5859  experiments/supplemental-validation-v1.4/results/formal-20260829-r1-run/golden-loop/golden-loop-results.json
+84cad3077219b954fe28efdc2ab481307b32ea8c80d2f693b7ce91bc2566fd5d  experiments/supplemental-validation-v1.4/results/formal-20260829-r1-run/run-summary.json

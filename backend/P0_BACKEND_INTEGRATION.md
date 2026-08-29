@@ -27,7 +27,9 @@ powershell -ExecutionPolicy Bypass -File scripts\setup_algorithm_runtime.ps1 -Py
 算法入口使用 `package.module:callable` 配置：
 
 ```ini
-YINGMU_GAIT_ADAPTER=contracts.v1.gait_adapter:run
+YINGMU_RULESET_VERSION=ruleset-v1.4
+YINGMU_FOREWARNING_RULESET_VERSION=ruleset-v1.4
+YINGMU_GAIT_ADAPTER=contracts.v1.gait_adapter_v14:run
 YINGMU_GAIT_POSE_MODEL=models/pose_landmarker_heavy.task
 YINGMU_TRAJECTORY_ADAPTER=adapters.trajectory_adapter:run
 YINGMU_LANGUAGE_ADAPTER=adapters.language_adapter:run

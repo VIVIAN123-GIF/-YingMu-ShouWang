@@ -1,0 +1,10 @@
+shot_id,time_start,time_end,content,source_label,performer,required_ui,privacy_check,status,notes
+Y01,00:00,00:25,客厅全景与授权声明,LIVE_DEVICE,志愿者A,项目首页,授权编号无姓名,PENDING,背影或侧影
+Y02,00:25,01:00,C6c安装位置与设备状态,LIVE_DEVICE,无,C6c-pos01/Webhook/抓拍,账号Token已遮挡,PENDING,不得展示序列号凭证
+Y03,01:00,02:30,快速起身后受控轻微摇摆,LIVE_DEVICE,志愿者A,Observation/Evidence/RiskEvent/橙色/分数贡献,安全员在位,PENDING,不得摔倒或强行失衡
+Y04,02:30,03:20,正常起身行走低风险对照,LIVE_DEVICE,志愿者B,绿色状态/对照详情,授权与脱敏完成,PENDING,动作自然不刻意放慢
+Y05,03:20,04:05,多日活动趋势与黄色关注,MOCK,无,趋势/周报/基线,MOCK标签持续显示,PENDING,不可表述为实时数据
+Y06,04:05,04:45,访客停留与诈骗组合核验,MOCK,志愿者A/B,证据组合/身份核验/回落,无真实支付信息,PENDING,身份金额验证码均为虚构
+Y07,04:45,05:35,实验结果与事件追溯,EXPERIMENT_RESULT,无,JSON/报告/事件ID/规则版本,仅显示脱敏字段,PENDING,读数须与最终JSON一致
+Y08,05:35,06:10,隐私审计与离线降级,SOFTWARE,无,授权台账/私有目录/启动页,绝对路径隐藏,PENDING,界面/部署页标签；展示失败日志和降级状态
+Y09,06:10,06:40,绿色回落与项目闭环,LIVE_DEVICE,志愿者A,首页绿色状态,全片隐私复核,PENDING,连续镜头收尾

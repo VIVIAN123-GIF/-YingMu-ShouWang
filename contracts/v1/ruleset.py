@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +12,14 @@ from typing import Any, Iterable
 
 RULESET_PATH = Path(__file__).parent / "rulesets" / "ruleset-v1.2.json"
 FOREWARNING_RULESET_PATH = Path(__file__).parent / "rulesets" / "ruleset-v1.3-min.json"
+V14_RULESET_PATH = Path(__file__).parent / "rulesets" / "ruleset-v1.4.json"
+V15_RULESET_PATH = Path(__file__).parent / "rulesets" / "ruleset-v1.5.json"
+RULESET_PATHS = {
+    "ruleset-v1.2": RULESET_PATH,
+    "ruleset-v1.3-min": FOREWARNING_RULESET_PATH,
+    "ruleset-v1.4": V14_RULESET_PATH,
+    "ruleset-v1.5": V15_RULESET_PATH,
+}
 
 
 @dataclass(frozen=True)
@@ -62,6 +71,9 @@ class Ruleset:
     signal_families: dict[str, tuple[str, ...]]
     rules: tuple[dict[str, str], ...]
     forewarning_weights: dict[str, dict[str, float]] | None = None
+    trend_evidence_types: tuple[str, ...] = ()
+    severity_saturation: dict[str, float] | None = None
+    ablation_configs: dict[str, dict[str, bool]] | None = None
 
     @classmethod
     def load(cls, path: Path = RULESET_PATH) -> "Ruleset":
@@ -84,6 +96,19 @@ class Ruleset:
             forewarning_weights={
                 str(status): {str(name): float(weight) for name, weight in weights.items()}
                 for status, weights in payload.get("forewarning_weights", {}).items()
+            },
+            trend_evidence_types=tuple(
+                str(item) for item in payload.get("trend_evidence_types", ())
+            ),
+            severity_saturation={
+                str(name): float(value)
+                for name, value in payload.get("severity_saturation", {}).items()
+            },
+            ablation_configs={
+                str(config_id): {
+                    str(name): bool(enabled) for name, enabled in config.items()
+                }
+                for config_id, config in payload.get("ablation_configs", {}).items()
             },
         )
 
@@ -137,3 +162,20 @@ def load_ruleset() -> Ruleset:
 
 def load_forewarning_ruleset() -> Ruleset:
     return Ruleset.load(FOREWARNING_RULESET_PATH)
+
+
+def load_ruleset_version(version: str) -> Ruleset:
+    try:
+        path = RULESET_PATHS[version]
+    except KeyError as exc:
+        raise ValueError(f"unsupported ruleset version: {version}") from exc
+    return Ruleset.load(path)
+
+
+def load_active_ruleset() -> Ruleset:
+    return load_ruleset_version(os.getenv("YINGMU_RULESET_VERSION", "ruleset-v1.4"))
+
+
+def load_active_forewarning_ruleset() -> Ruleset:
+    version = os.getenv("YINGMU_FOREWARNING_RULESET_VERSION", "ruleset-v1.4")
+    return load_ruleset_version(version)
