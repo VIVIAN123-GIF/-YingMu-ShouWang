@@ -9,20 +9,26 @@ const props = defineProps({
   score: { type: [Number, String], default: null },
 })
 
-const unknownConfig = Object.freeze({ label: '需人工复核', color: '#6B7280' })
+const unknownConfig = Object.freeze({ label: '需人工复核', color: '#86909C' })
 const config = computed(() => RISK_LEVELS[props.level] || unknownConfig)
 const label = computed(() => config.value.label || '需人工复核')
 const starCount = computed(() => ({ GREEN: 1, YELLOW: 2, ORANGE: 3, RED: 3 }[props.level] || 0))
+const isUnknown = computed(() => !RISK_LEVELS[props.level])
+const showScore = computed(() => !isUnknown.value && props.score !== null)
+const ariaLabel = computed(() => isUnknown.value
+  ? `${label.value}，不可判定`
+  : props.score === null
+    ? `${label.value}，${starCount.value}星`
+    : `${label.value}，风险分数${props.score}，${starCount.value}星`)
 </script>
 
 <template>
-  <span class="risk-badge" :class="[`risk-${level.toLowerCase()}`, { compact }]" :aria-label="score === null ? `${label}，${starCount}星` : `${label}，风险分数${score}，${starCount}星`">
-    <span v-if="score !== null" class="risk-score">{{ score }}</span>
-    <span v-if="starCount" class="risk-stars" aria-hidden="true">
+  <span class="risk-badge" :class="[`risk-${level.toLowerCase()}`, { compact }]" :aria-label="ariaLabel">
+    <span v-if="showScore" class="risk-score">{{ score }}</span>
+    <span v-if="!isUnknown && starCount" class="risk-stars" aria-hidden="true">
       <el-icon v-for="index in starCount" :key="index"><StarFilled /></el-icon>
     </span>
-    <span v-else class="risk-unknown-mark" aria-hidden="true">?</span>
     <span class="risk-level-label">{{ label }}</span>
-    <span class="sr-only">{{ compact ? level : '' }} {{ level === 'YELLOW' ? '建议关注' : '' }} {{ level === 'UNKNOWN' ? '不可判定 人工复核' : '' }}</span>
+    <span class="sr-only">{{ compact ? config.label : '' }} {{ level === 'YELLOW' ? '建议关注' : '' }} {{ level === 'UNKNOWN' ? '不可判定 人工复核' : '' }}</span>
   </span>
 </template>

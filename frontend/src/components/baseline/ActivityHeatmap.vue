@@ -208,7 +208,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.activity-heatmap { width: 100%; }
+.activity-heatmap { width: 100%; padding: 24px; }
 .activity-heatmap > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 .activity-heatmap h2 { margin: 0; color: #1d2129; font-size: 18px; font-weight: 600; }
 .activity-heatmap header p { margin: 6px 0 0; color: #4e5969; font-size: 14px; line-height: 1.5; }

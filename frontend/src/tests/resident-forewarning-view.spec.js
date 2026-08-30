@@ -21,7 +21,7 @@ function mountView() {
       'el-tag': { template: '<span><slot /></span>' }, 'el-avatar': { template: '<span><slot /></span>' },
       'el-segmented': { template: '<div class="segmented-stub" />' }, 'el-date-picker': { template: '<input />' },
       'el-button': { template: '<button><slot /></button>' },
-      'el-table': { props: ['data'], template: '<div class="table-stub">{{ data.length }} rows<slot /></div>' },
+      'el-table': { name: 'ElTableStub', props: ['data'], template: '<div class="table-stub">{{ data.length }} rows<slot /></div>' },
       'el-table-column': { template: '<span />' },
       'el-pagination': { props: ['total'], template: '<div class="pagination-stub">total {{ total }}</div>' },
       'el-form': { template: '<form><slot /></form>' }, 'el-form-item': { template: '<label><slot /></label>' },
@@ -61,6 +61,15 @@ describe('居民预警汇总页面', () => {
     expect(wrapper.find('.chart-stub').exists()).toBe(true)
     expect(wrapper.text()).toContain('2 rows')
     expect(wrapper.find('.pagination-stub').exists()).toBe(false)
+  })
+
+  it('历史记录按发生时间升序排列', async () => {
+    const items = historyOf(2)
+    mocks.getLatestForewarning.mockResolvedValue(items[0])
+    mocks.getForewarningHistory.mockResolvedValue(items)
+    const wrapper = mountView(); await flushPromises()
+    const rows = wrapper.findComponent({ name: 'ElTableStub' }).props('data')
+    expect(rows.map((item) => item.snapshot_id)).toEqual(['history-1', 'history-0'])
   })
 
   it('500条历史使用固定20条当前页和分页布局', async () => {

@@ -1,6 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { setViewMode } from '../services/viewMode'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   getDeviceStatus: vi.fn(), getLatestForewarning: vi.fn(), getDeviceSnapshot: vi.fn(), createDeviceSnapshot: vi.fn(),
@@ -47,20 +46,20 @@ describe('系统设备运维页面', () => {
     mocks.getDeviceSnapshot.mockResolvedValue(structuredClone(snapshot))
     mocks.createDeviceSnapshot.mockResolvedValue(structuredClone(snapshot))
   })
-  afterEach(() => setViewMode('family'))
+  it('统一视图常驻显示停止采集入口，实时来源允许操作', async () => {
+    const wrapper = mountView(); await flushPromises()
+    expect(wrapper.find('[data-testid="stop-collection"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="stop-collection"]').attributes('disabled')).toBeUndefined()
+  })
 
-  it('家属视图隐藏停止采集，评审视图显示入口', async () => {
-    setViewMode('family')
-    const family = mountView(); await flushPromises()
-    expect(family.find('[data-testid="stop-collection"]').exists()).toBe(false)
-    family.unmount()
-    setViewMode('review')
-    const review = mountView(); await flushPromises()
-    expect(review.find('[data-testid="stop-collection"]').exists()).toBe(true)
+  it('回放来源保留停止采集入口但禁止操作', async () => {
+    mocks.getDeviceStatus.mockResolvedValue({ ...device, source_mode: 'RECORDED_REPLAY', simulated: true })
+    const wrapper = mountView(); await flushPromises()
+    expect(wrapper.get('[data-testid="stop-collection"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('回放或降级来源不能执行设备控制')
   })
 
   it('进入页面自动获取快照并允许手动再次抓拍', async () => {
-    setViewMode('review')
     const wrapper = mountView(); await flushPromises()
     await wrapper.get('.snapshot-card button').trigger('click'); await flushPromises()
     expect(mocks.createDeviceSnapshot).toHaveBeenCalledTimes(2)
@@ -75,7 +74,6 @@ describe('系统设备运维页面', () => {
   })
 
   it('停止失败展示后端错误码和请求 ID并清空令牌', async () => {
-    setViewMode('review')
     mocks.stopDeviceCollection.mockRejectedValue(Object.assign(new Error('forbidden'), {
       api: { code: 'CONTROL_FORBIDDEN', message: '无权停止采集', request_id: 'req-control-1' },
     }))

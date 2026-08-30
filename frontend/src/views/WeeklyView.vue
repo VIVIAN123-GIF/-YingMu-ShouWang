@@ -4,9 +4,10 @@ import { ElMessage } from 'element-plus'
 import PageHeader from '../components/common/PageHeader.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
+import StandardNotice from '../components/common/StandardNotice.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { getWeeklyReport, submitFamilyFeedback } from '../services/repository'
-import { feedbackTone, formatDateTime, formatPercent } from '../utils/format'
+import { displayValueLabel, evidenceTypeLabel, feedbackTone, formatDateTime, formatPercent } from '../utils/format'
 
 const loading = ref(true)
 const submitting = ref(false)
@@ -89,7 +90,7 @@ async function submit(kind) {
     }
     const eventId = kind === 'care' ? report.value.care?.event_id : report.value.visitor_case?.event_id
     if (!eventId) {
-      ElMessage.warning('当前 API 未返回可关联的事件，无法提交反馈')
+      ElMessage.warning('当前接口未返回可关联的事件，无法提交反馈')
       return
     }
     const result = await submitFamilyFeedback(eventId, {
@@ -111,7 +112,7 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
 </script>
 
 <template>
-  <div v-loading="loading">
+  <div v-loading="loading" data-testid="weekly-view">
     <PageHeader title="本周值得关注的变化" description="黄色趋势低打扰汇总给家属，不在老人侧即时报警。">
       <SourceBadge v-if="report" :mode="report.source_mode" :simulated="report.simulated" />
     </PageHeader>
@@ -121,13 +122,13 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
     <template v-if="report">
       <section class="weekly-summary" data-testid="weekly-summary">
         <div><RiskBadge :level="report.risk_level" /><h2>{{ report.summary }}</h2><p>报告周期：{{ report.period }} · 生成于 {{ formatDateTime(report.generated_at) }}</p></div>
-        <div class="low-disturbance"><span>低打扰原则</span><strong>本周最多主动汇总一次</strong><p>趋势恶化时可以更新，但不会因单次变化制造焦虑。</p></div>
+        <StandardNotice title="低打扰原则：本周最多主动汇总一次" description="趋势恶化时可以更新，但不会因单次变化制造焦虑。" />
       </section>
 
       <section class="content-card weekly-chart-card">
         <div class="card-heading"><div><span class="section-kicker">个人趋势</span><h2>活动与作息变化</h2></div><span class="non-diagnosis">行为趋势，不是医学诊断</span></div>
         <ChartPanel v-if="report.trend.length" :option="trendOption" :replace="false" draw-animation draw-color="#1677c2,#86909c" :draw-delay="700" height="350px" aria-label="最近七天活动趋势、个人基线和作息偏移图" />
-        <el-empty v-else description="当前 API 未提供周报趋势序列" />
+        <el-empty v-else description="当前接口未提供周报趋势序列" />
       </section>
 
       <section class="weekly-columns">
@@ -139,7 +140,7 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
               <div><strong>{{ item.label }}</strong><p>{{ item.detail }}</p></div>
             </article>
           </div>
-          <el-empty v-else description="本周暂无可展示的趋势 Evidence" />
+          <el-empty v-else description="本周暂无可展示的趋势依据" />
           <div class="recommendation-box">
             <strong>建议动作</strong>
             <ol><li v-for="item in report.recommendations" :key="item">{{ item }}</li></ol>
@@ -149,13 +150,13 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
             <el-radio-group v-model="careChoice" class="stacked-radios" :disabled="report.care.status === 'SUBMITTED'">
               <el-radio v-for="option in report.care.options" :key="option" :label="option" :value="option" border @click="careChoice = option">{{ option }}</el-radio>
             </el-radio-group>
-            <el-alert v-if="!report.care.options.length" title="当前 API 未提供关怀选项" type="info" :closable="false" />
+            <el-alert v-if="!report.care.options.length" title="当前接口未提供关怀选项" type="info" :closable="false" />
           </fieldset>
           <el-button data-testid="care-submit" type="primary" size="large" :loading="submitting" :disabled="report.care.status === 'SUBMITTED' || !report.care.options.length" @click="submit('care')">
             {{ report.care.status === 'SUBMITTED' ? '关怀反馈已记录' : '记录关怀反馈' }}
           </el-button>
           <div v-if="report.care.feedback_record" class="recorded-feedback" :class="`feedback-${feedbackTone(report.care.feedback_record.value)}`" data-testid="care-record">
-            <strong>已记录关怀反馈</strong><span>{{ report.care.feedback_record.value }}</span><small>{{ report.care.feedback_record.recorded_at }} · {{ report.care.feedback_record.operator }} · {{ report.care.feedback_record.saved_in_demo ? '本地演示记录' : '后端记录' }}</small>
+            <strong>已记录关怀反馈</strong><span>{{ report.care.feedback_record.value }}</span><small>{{ report.care.feedback_record.recorded_at }} · {{ displayValueLabel(report.care.feedback_record.operator) }} · {{ report.care.feedback_record.saved_in_demo ? '本地演示记录' : '后端记录' }}</small>
           </div>
         </article>
 
@@ -165,7 +166,7 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
           <div class="visitor-meta"><span><b>{{ report.visitor_case.duration_minutes }}</b> 分钟停留</span><span>{{ report.visitor_case.location }}</span><span>{{ formatDateTime(report.visitor_case.occurred_at) }}</span></div>
           <div class="visitor-evidence">
             <article v-for="item in report.visitor_case.evidence" :key="item.type">
-              <span></span><div><strong>{{ item.label }}</strong><p>{{ item.detail }}</p><code>{{ item.type }}</code></div>
+              <span></span><div><strong>{{ item.label }}</strong><p>{{ item.detail }}</p><code>{{ evidenceTypeLabel(item.type) }}</code></div>
             </article>
           </div>
           <div class="gentle-action"><strong>建议</strong><p>{{ report.visitor_case.recommended_action }}</p></div>
@@ -179,12 +180,12 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
             {{ report.visitor_case.verification_status === 'SUBMITTED' ? '身份核验已记录' : '提交身份核验' }}
           </el-button>
           <div v-if="report.visitor_case.feedback_record" class="recorded-feedback" :class="`feedback-${feedbackTone(report.visitor_case.feedback_record.value)}`" data-testid="identity-record">
-            <strong>已记录身份核验</strong><span>{{ report.visitor_case.feedback_record.value }}</span><small>{{ report.visitor_case.feedback_record.recorded_at }} · {{ report.visitor_case.feedback_record.operator }} · {{ report.visitor_case.feedback_record.saved_in_demo ? '本地演示记录' : '后端记录' }}</small>
+            <strong>已记录身份核验</strong><span>{{ report.visitor_case.feedback_record.value }}</span><small>{{ report.visitor_case.feedback_record.recorded_at }} · {{ displayValueLabel(report.visitor_case.feedback_record.operator) }} · {{ report.visitor_case.feedback_record.saved_in_demo ? '本地演示记录' : '后端记录' }}</small>
           </div>
         </article>
         <article v-else class="content-card visitor-panel api-empty-state" data-testid="visitor-panel-empty">
           <div class="card-heading"><div><span class="section-kicker">访客核验</span><h2>暂无访客事件</h2></div></div>
-          <el-empty description="当前 API 未返回 visitor_case，不使用 Mock 访客数据填充" />
+          <el-empty description="当前接口未返回访客事件，不使用模拟访客数据填充" />
         </article>
       </section>
     </template>

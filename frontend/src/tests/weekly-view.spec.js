@@ -88,9 +88,9 @@ describe('黄色周报与诈骗核验卡', () => {
     const wrapper = mountView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('当前 API 未提供周报趋势序列')
-    expect(wrapper.text()).toContain('当前 API 未提供关怀选项')
-    expect(wrapper.text()).toContain('当前 API 未返回 visitor_case，不使用 Mock 访客数据填充')
+    expect(wrapper.text()).toContain('当前接口未提供周报趋势序列')
+    expect(wrapper.text()).toContain('当前接口未提供关怀选项')
+    expect(wrapper.text()).toContain('当前接口未返回访客事件，不使用模拟访客数据填充')
     expect(wrapper.get('[data-testid="care-submit"]').attributes('disabled')).toBeDefined()
     expect(wrapper.find('[data-testid="visitor-panel"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="visitor-panel-empty"]').exists()).toBe(true)

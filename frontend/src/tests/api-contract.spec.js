@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import events from '../replay-data/events.json'
 import {
-  API_BASE_URL, apiClient, getAsset, getBaseline, getWeeklyReport, interveneEvent, normalizeApiError, runtime, setDataMode, submitFamilyFeedback, submitInterventionResult,
+  API_BASE_URL, apiClient, getAsset, getBaseline, getEvent, getWeeklyReport, interveneEvent, normalizeApiError, runtime, setDataMode, submitFamilyFeedback, submitInterventionResult,
 } from '../services/repository'
 
 describe('前端对接文档请求契约', () => {
@@ -64,6 +64,27 @@ describe('前端对接文档请求契约', () => {
     expect(normalized.message).toContain('request_id: req-001')
   })
 
+  it('事件详情读取对路径中的特殊字符进行编码', async () => {
+    setDataMode('api')
+    const eventId = 'event detail/一'
+    const event = structuredClone(events[0])
+    event.event_id = eventId
+    event.interventions = []
+    const get = vi.spyOn(apiClient, 'get')
+      .mockResolvedValueOnce({ data: event })
+      .mockResolvedValueOnce({ data: [] })
+
+    await getEvent(eventId)
+
+    expect(get).toHaveBeenNthCalledWith(1, '/events/event%20detail%2F%E4%B8%80')
+    expect(get).toHaveBeenNthCalledWith(2, '/events/event%20detail%2F%E4%B8%80/forewarning')
+  })
+
+  it('将网络错误转换为用户可理解的中文', () => {
+    expect(normalizeApiError({ message: 'Network Error' }).message).toBe('网络连接失败')
+    expect(normalizeApiError({ message: 'timeout', code: 'ECONNABORTED' }).message).toBe('请求超时')
+  })
+
   it('干预调用文档指定的 /events/{id}/intervene', async () => {
     setDataMode('api')
     const response = { schema_version: '1.0', result_id: 'result-1', event_id: 'event-fall-intervening',
@@ -104,8 +125,8 @@ describe('前端对接文档请求契约', () => {
   it('家属反馈固定提交 confirm 与 JSON 内容类型', async () => {
     setDataMode('api')
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { result_id: 'feedback-1' } })
-    await submitFamilyFeedback('event-mental-week', { feedback_type: 'care', value: '已联系家属', operator: 'family' })
-    expect(post).toHaveBeenCalledWith('/events/event-mental-week/feedback', expect.objectContaining({
+    await submitFamilyFeedback('event mental/一', { feedback_type: 'care', value: '已联系家属', operator: 'family' })
+    expect(post).toHaveBeenCalledWith('/events/event%20mental%2F%E4%B8%80/feedback', expect.objectContaining({
       feedback_type: 'confirm', value: '已联系家属', operator: 'family',
     }), expect.any(Object))
     expect(post.mock.calls[0][2].headers['Content-Type']).toBe('application/json; charset=utf-8')

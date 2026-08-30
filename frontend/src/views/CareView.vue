@@ -5,7 +5,7 @@ import PageHeader from '../components/common/PageHeader.vue'
 import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import { getWeeklyReport, submitFamilyFeedback } from '../services/repository'
-import { feedbackTone } from '../utils/format'
+import { displayValueLabel, feedbackTone } from '../utils/format'
 
 const loading = ref(true)
 const error = ref('')
@@ -26,7 +26,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-loading="loading">
+  <div v-loading="loading" data-testid="care-view">
     <PageHeader title="家属关怀与身份核验" description="先看变化和建议，再记录一次明确、低打扰的联系结果。"><SourceBadge v-if="report" :mode="report.source_mode" :simulated="report.simulated" /></PageHeader>
     <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon />
     <template v-if="report">
@@ -37,7 +37,7 @@ onMounted(load)
           <fieldset class="feedback-fieldset"><legend>联系后记录结果</legend><el-radio-group v-model="choice" class="stacked-radios" :disabled="submitted"><el-radio v-for="item in report.care.options" :key="item" :label="item" :value="item" border>{{ item }}</el-radio></el-radio-group></fieldset>
           <el-button type="primary" size="large" :disabled="submitted || !report.care.options.length" @click="submit">{{ submitted ? '关怀反馈已记录' : '记录关怀反馈' }}</el-button>
           <div v-if="report.care.feedback_record" class="recorded-feedback" :class="`feedback-${feedbackTone(report.care.feedback_record.value)}`" data-testid="care-record">
-            <strong>已记录关怀反馈</strong><span>{{ report.care.feedback_record.value }}</span><small>{{ report.care.feedback_record.recorded_at }} · {{ report.care.feedback_record.operator }} · 本地演示记录</small>
+            <strong>已记录关怀反馈</strong><span>{{ report.care.feedback_record.value }}</span><small>{{ report.care.feedback_record.recorded_at }} · {{ displayValueLabel(report.care.feedback_record.operator) }} · 本地演示记录</small>
           </div>
         </article>
         <article v-if="report.visitor_case" class="content-card">
@@ -45,7 +45,7 @@ onMounted(load)
           <SourceBadge :mode="report.visitor_case.source_mode" :simulated="report.visitor_case.simulated" /><p>{{ report.visitor_case.recommended_action }}</p>
           <el-button plain @click="$router.push('/weekly')">查看完整核验卡</el-button>
           <div v-if="report.visitor_case.feedback_record" class="recorded-feedback" :class="`feedback-${feedbackTone(report.visitor_case.feedback_record.value)}`" data-testid="identity-record">
-            <strong>已记录身份核验</strong><span>{{ report.visitor_case.feedback_record.value }}</span><small>{{ report.visitor_case.feedback_record.recorded_at }} · {{ report.visitor_case.feedback_record.operator }} · 本地演示记录</small>
+            <strong>已记录身份核验</strong><span>{{ report.visitor_case.feedback_record.value }}</span><small>{{ report.visitor_case.feedback_record.recorded_at }} · {{ displayValueLabel(report.visitor_case.feedback_record.operator) }} · 本地演示记录</small>
           </div>
         </article>
       </section>

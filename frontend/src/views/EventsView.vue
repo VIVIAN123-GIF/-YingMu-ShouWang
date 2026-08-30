@@ -6,8 +6,7 @@ import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import { ALARM_TASK_STATUSES, EVENT_STATUSES, RISK_DOMAINS, RISK_LEVELS, SOURCE_MODES } from '../domain/constants'
 import { getAlarmProcessingTasks, getEvents, getRiskReviews, RESIDENT_ID, runtime } from '../services/repository'
-import { useViewMode } from '../services/viewMode'
-import { domainLabel, evidenceTypeLabel, formatDateTime, formatRiskScore, statusLabel } from '../utils/format'
+import { displayValueLabel, domainLabel, evidenceTypeLabel, formatDateTime, formatRiskScore, statusLabel } from '../utils/format'
 
 const router = useRouter()
 const loading = ref(true)
@@ -19,13 +18,6 @@ const alarmTasks = ref([])
 const alarmLoading = ref(false)
 const alarmError = ref('')
 let alarmTimer = null
-const { isFamily, isReview } = useViewMode()
-
-const familyGroups = computed(() => ([
-  { key: 'action', label: '需要处理', description: '仍在开放或干预中的事件', events: filteredEvents.value.filter((event) => ['OPEN', 'INTERVENING', 'ESCALATED'].includes(event.status)) },
-  { key: 'observing', label: '持续观察', description: '系统仍在确认风险是否回落', events: filteredEvents.value.filter((event) => event.status === 'OBSERVING') },
-  { key: 'closed', label: '已解除', description: '已经回落或完成核验的事件', events: filteredEvents.value.filter((event) => ['RESOLVED', 'FALSE_ALARM'].includes(event.status)) },
-]).filter((group) => group.events.length))
 
 const filteredEvents = computed(() => events.value
   .filter((event) => !filters.value.domain || event.primary_domain === filters.value.domain)
@@ -93,12 +85,12 @@ onBeforeUnmount(stopAlarmPolling)
 <template>
   <div v-loading="loading" data-testid="events-view">
     <PageHeader title="老人活动事件记录" description="跌倒、心理趋势、访客交互和系统状态会按时间顺序记录。">
-      <el-tag size="large" effect="plain">{{ filteredEvents.length }} 条事件</el-tag>
+      <el-tag class="event-count-tag" size="large" effect="plain">{{ filteredEvents.length }} 条事件</el-tag>
     </PageHeader>
 
     <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
 
-    <section v-if="isReview" class="content-card alarm-processing-card" data-testid="risk-reviews">
+    <section class="content-card alarm-processing-card" data-testid="risk-reviews">
       <div class="card-heading">
         <div><span class="section-kicker">规则复核</span><h2>不可判定与黄色观察</h2></div>
         <el-tag size="large" effect="plain">{{ reviews.length }} 条待复核</el-tag>
@@ -113,7 +105,7 @@ onBeforeUnmount(stopAlarmPolling)
       </div>
     </section>
 
-    <section v-if="isReview" class="content-card alarm-processing-card" data-testid="alarm-processing">
+    <section class="content-card alarm-processing-card" data-testid="alarm-processing">
       <div class="card-heading">
         <div><span class="section-kicker">告警处理队列</span><h2>设备告警处理任务</h2></div>
         <el-tag size="large" effect="plain">{{ alarmTasks.length }} 条任务</el-tag>
@@ -123,7 +115,7 @@ onBeforeUnmount(stopAlarmPolling)
         <article v-for="task in alarmTasks" :key="task.task_id" class="alarm-task-row">
           <div><strong>{{ task.alarm_ref }}</strong><span>{{ task.resident_id }} · {{ task.device_ref }}</span></div>
           <div><span>尝试 {{ task.attempt_count }}/{{ task.max_attempts }}</span><span>{{ task.capture_asset_id ? '已取得素材凭证' : '暂无素材凭证' }}</span></div>
-          <el-tag :type="ALARM_TASK_STATUSES[task.status]?.type || 'info'" effect="plain">{{ ALARM_TASK_STATUSES[task.status]?.label || task.status }}</el-tag>
+          <el-tag :type="ALARM_TASK_STATUSES[task.status]?.type || 'info'" effect="plain">{{ ALARM_TASK_STATUSES[task.status]?.label || displayValueLabel(task.status) }}</el-tag>
         </article>
         <el-empty v-if="!alarmTasks.length && !alarmLoading" description="暂无待处理告警任务" />
       </div>
@@ -137,17 +129,7 @@ onBeforeUnmount(stopAlarmPolling)
       <el-button size="large" :disabled="!activeFilterCount" @click="clearFilters">清除筛选<span v-if="activeFilterCount">（{{ activeFilterCount }}）</span></el-button>
     </section>
 
-    <section v-if="isFamily && filteredEvents.length" class="family-event-groups" data-testid="family-event-groups">
-      <section v-for="group in familyGroups" :key="group.key" class="content-card family-event-group">
-        <div class="card-heading"><div><span class="section-kicker">{{ group.description }}</span><h2>{{ group.label }}</h2></div><el-tag effect="plain">{{ group.events.length }} 条</el-tag></div>
-        <button v-for="event in group.events" :key="event.event_id" type="button" class="family-event-row" @click="router.push(`/events/${event.event_id}`)">
-          <div><strong>{{ event.title }}</strong><span>{{ formatDateTime(event.created_at) }} · {{ domainLabel(event.primary_domain) }}</span></div>
-          <RiskBadge :level="event.risk_level" compact />
-          <SourceBadge :mode="event.source_mode" :simulated="event.simulated" />
-        </button>
-      </section>
-    </section>
-    <section v-else-if="isReview && filteredEvents.length" class="unified-timeline" data-testid="unified-timeline">
+    <section v-if="filteredEvents.length" class="unified-timeline" data-testid="unified-timeline">
       <article
         v-for="event in filteredEvents"
         :key="event.event_id"
