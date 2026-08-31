@@ -166,8 +166,7 @@ function onlineLabel(value) {
         </div>
       </section>
       <section v-else class="content-card api-empty-state">
-        <el-empty description="后端当前没有该居民的风险事件" />
-        <p>页面保持接口数据源，不使用固定模拟风险水位填充。</p>
+        <el-empty description="当前暂无风险事件" />
       </section>
 
       <section class="metric-grid" aria-label="今日状态摘要">
@@ -196,7 +195,7 @@ function onlineLabel(value) {
             <el-tag type="success" effect="plain" size="large">已完成观察</el-tag>
           </div>
           <ChartPanel v-if="data.risk_trend.length" :option="chartOption" :replace="false" point-animation point-color="#1677c2" draw-animation draw-color="#ff7d00" :draw-delay="2400" height="320px" aria-label="凌晨风险水位先升高后回落的折线图" />
-          <el-empty v-else description="后端未提供逐点风险趋势，事件状态以时间轴为准" />
+          <el-empty v-else description="暂无风险趋势数据" />
           <div v-if="data.risk_trend.length" class="chart-caption">
             <span
               v-for="(item, index) in data.risk_trend"
@@ -218,7 +217,6 @@ function onlineLabel(value) {
             <div><dt>采集状态</dt><dd>{{ data.device.collection_active ? '运行中' : '已停止' }}</dd></div>
           </dl>
           <SourceBadge :mode="data.device.source_mode" :simulated="data.device.simulated" />
-          <p class="privacy-note">前端仅展示文档约定的设备状态和事件数据。</p>
         </article>
       </section>
 
@@ -299,7 +297,7 @@ function onlineLabel(value) {
             <span class="row-arrow" aria-hidden="true">→</span>
           </button>
         </div>
-        <el-empty v-else description="当前接口中没有最近事件" />
+        <el-empty v-else description="暂无最近事件" />
       </section>
       </div>
     </template>

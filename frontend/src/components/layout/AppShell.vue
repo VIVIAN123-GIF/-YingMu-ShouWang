@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ChatLineRound, CircleCheck, Clock, DataAnalysis, DocumentChecked, House, InfoFilled, Menu, Monitor, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
+import { ChatLineRound, Clock, DataAnalysis, DocumentChecked, House, InfoFilled, Menu, Monitor, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
 import { routes } from '../../router'
 import { DATA_MODES } from '../../domain/constants'
 import { getEvents, runtime, setDataMode } from '../../services/repository'
@@ -72,7 +72,7 @@ async function handleSelect(path) {
     }
     await router.push({ name: 'event-detail', params: { eventId: latestEvent.event_id } })
   } catch {
-    ElMessage.error('风险事件调取失败：后端接口服务不可达')
+    ElMessage.error('风险事件加载失败，请检查网络后重试')
     await router.push({ name: 'event-detail-empty', query: { reason: 'unavailable' } })
   } finally { openingEventDetail.value = false }
 }
@@ -90,16 +90,8 @@ async function handleSelect(path) {
           </button>
         </section>
       </nav>
-      <div v-show="!collapsed" class="guard-status" :class="{ degraded: runtime.degraded }" role="status" aria-live="polite">
-        <span class="guard-status-icon"><el-icon><component :is="runtime.degraded ? Warning : CircleCheck" /></el-icon></span>
-        <span>
-          <strong>{{ runtime.degraded ? '离线回放模式' : '守护服务运行中' }}</strong>
-          <small>{{ runtime.degraded ? '当前不代表实时设备状态' : '风险变化将进入统一事件流' }}</small>
-        </span>
-      </div>
     </aside>
     <div class="workspace">
-      <div v-if="pagesBuild" class="public-demo-banner" role="status"><strong>脱敏评审演示</strong><span>授权回放</span><span>非实时设备</span><span>非老年人实测</span></div>
       <header class="topbar">
         <button class="mobile-menu-button" type="button" aria-label="打开导航" @click="mobileNavigationOpen = true"><el-icon><Menu /></el-icon></button>
         <div class="topbar-context">
@@ -115,7 +107,7 @@ async function handleSelect(path) {
             aria-label="数据连接模式"
             @change="setDataMode"
           />
-          <div v-if="runtime.degraded" class="degraded-chip" role="status"><el-icon><Warning /></el-icon>后端降级</div>
+          <div v-if="runtime.degraded" class="degraded-chip" role="status"><el-icon><Warning /></el-icon>服务降级</div>
         </div>
       </header>
       <Transition name="runtime-peek">

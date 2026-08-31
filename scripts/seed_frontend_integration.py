@@ -4,16 +4,22 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
+import re
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 
-RESIDENT_ID = "resident-mock-001"
+DEFAULT_RESIDENT_ID = "resident-mock-001"
 CN_TZ = timezone(timedelta(hours=8))
 ROOT = Path(__file__).resolve().parents[1]
+
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 
 def _json(path: str) -> Any:
@@ -22,6 +28,17 @@ def _json(path: str) -> Any:
 
 def _naive(value: datetime) -> datetime:
     return value.replace(tzinfo=None)
+
+
+def _scope_for(resident_id: str) -> str:
+    readable = re.sub(r"[^a-z0-9]+", "-", resident_id.lower()).strip("-")[:32]
+    digest = hashlib.sha256(resident_id.encode("utf-8")).hexdigest()[:8]
+    return f"{readable}-{digest}"
+
+
+def _scoped_id(scope: str, kind: str, source_id: str) -> str:
+    source = re.sub(r"[^a-zA-Z0-9-]+", "-", source_id).strip("-")
+    return f"{kind}-fi-{scope}-{source}"[:128]
 
 
 def _upsert(session, model, key: str, payload: dict[str, Any]):
@@ -47,7 +64,7 @@ def _event_times(now: datetime, index: int) -> tuple[datetime, datetime]:
     return _naive(created), _naive(created + timedelta(minutes=35))
 
 
-async def seed(db_path: Path) -> dict[str, Any]:
+async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[str, Any]:
     db_path = db_path.resolve()
     db_path.parent.mkdir(parents=True, exist_ok=True)
     os.environ["YINGMU_DB_PATH"] = str(db_path)
@@ -76,16 +93,31 @@ async def seed(db_path: Path) -> dict[str, Any]:
     await init_tables()
     await init_default_config()
     now = datetime.now(CN_TZ)
-    events = _json("frontend/src/mocks/events.json")
-    observations = _json("frontend/src/mocks/observations.json")
-    forewarnings = _json("frontend/src/mocks/forewarning.json")
+    events = _json("frontend/src/replay-data/events.json")
+    observations = _json("frontend/src/replay-data/observations.json")
+    forewarnings = _json("frontend/src/replay-data/forewarning.json")
+    scope = _scope_for(resident_id)
+    event_ids = {item["event_id"]: _scoped_id(scope, "event", item["event_id"]) for item in events}
+    evidence_id_map = {
+        evidence["evidence_id"]: _scoped_id(scope, "evi", evidence["evidence_id"])
+        for item in events for evidence in item.get("evidences", [])
+    }
+    observation_ids = {
+        item["observation_id"]: _scoped_id(scope, "obs", item["observation_id"])
+        for item in observations
+    }
+    result_ids = {
+        result["result_id"]: _scoped_id(scope, "result", result["result_id"])
+        for item in events for result in item.get("interventions", [])
+    }
+    asset_id = _scoped_id(scope, "asset", "capture")
 
     seeded_event_ids: list[str] = []
     evidence_payloads: dict[str, dict[str, Any]] = {}
     async with AsyncSessionLocal() as db:
         device = {
-            "resident_id": RESIDENT_ID,
-            "device_sn": "MOCK-FRONTEND-C6C",
+            "resident_id": resident_id,
+            "device_sn": _scoped_id(scope, "device", "c6c"),
             "channel_no": 1,
             "device_name": "Frontend integration camera",
             "is_online": True,
@@ -98,17 +130,17 @@ async def seed(db_path: Path) -> dict[str, Any]:
         await _upsert(db, DeviceInfo, "device_sn", device)
 
         asset = {
-            "asset_id": "asset-frontend-integration",
-            "title": "Authorized simulated living-room replay",
+            "asset_id": asset_id,
+            "title": "授权模拟客厅回放",
             "source_mode": "RECORDED_REPLAY",
             "simulated": True,
             "stream_url": None,
             "fallback_url": None,
             "fallback_kind": "unavailable",
             "available": False,
-            "verification_status": "MOCK_ONLY",
+            "verification_status": "VERIFIED_REPLAY",
             "captured_at": _naive(now - timedelta(days=6)),
-            "notice": "Simulated metadata only; no private media is stored.",
+            "notice": "仅为模拟元数据，未存储私有媒体内容。",
             "device_ref": "device-frontend-integration",
             "device_model": "EZVIZ_C6C",
             "camera_position_id": "living-room-main",
@@ -116,26 +148,17 @@ async def seed(db_path: Path) -> dict[str, Any]:
             "authorization_record_id": "authorization-frontend-integration",
             "retention_until": _naive(now + timedelta(days=30)),
         }
-        for asset_id in (
-            "asset-frontend-integration",
-            "asset-fall-authorized",
-            "asset-mock-fall-001",
-        ):
-            await _upsert(db, Asset, "asset_id", {
-                **asset,
-                "asset_id": asset_id,
-                "title": f"Simulated unavailable media ({asset_id})",
-            })
+        await _upsert(db, Asset, "asset_id", asset)
 
         # Keep frontend mock evidence wording while placing all events inside
         # the current weekly-report window.
         for index, item in enumerate(events):
             created_at, updated_at = _event_times(now, index)
-            evidence_ids = []
+            event_evidence_ids = []
             summaries = []
             for ev_index, evidence in enumerate(item.get("evidences", [])):
-                evidence_id = evidence["evidence_id"]
-                evidence_ids.append(evidence_id)
+                evidence_id = evidence_id_map[evidence["evidence_id"]]
+                event_evidence_ids.append(evidence_id)
                 summaries.append({
                     "evidence_id": evidence_id,
                     "evidence_type": evidence["evidence_type"],
@@ -144,7 +167,7 @@ async def seed(db_path: Path) -> dict[str, Any]:
                 payload = {
                     "schema_version": "1.0",
                     "evidence_id": evidence_id,
-                    "resident_id": RESIDENT_ID,
+                    "resident_id": resident_id,
                     "timestamp": created_at + timedelta(minutes=ev_index),
                     "risk_domain": evidence["risk_domain"],
                     "evidence_type": evidence["evidence_type"],
@@ -160,22 +183,25 @@ async def seed(db_path: Path) -> dict[str, Any]:
                     "adapter_version": evidence["adapter_version"],
                     "source_mode": evidence.get("source_mode", "MOCK"),
                     "simulated": True,
-                    "observation_ids": dumps(evidence.get("observation_ids", [])),
+                    "observation_ids": dumps([
+                        observation_ids.get(observation_id, observation_id)
+                        for observation_id in evidence.get("observation_ids", [])
+                    ]),
                 }
                 evidence_payloads[evidence_id] = payload
                 await _upsert(db, Evidence, "evidence_id", payload)
 
             event_payload = {
                 "schema_version": "1.0",
-                "event_id": item["event_id"],
-                "resident_id": RESIDENT_ID,
+                "event_id": event_ids[item["event_id"]],
+                "resident_id": resident_id,
                 "created_at": created_at,
                 "updated_at": updated_at,
                 "primary_domain": item["primary_domain"],
                 "related_domains": dumps(item.get("related_domains", [])),
                 "risk_level": item["risk_level"],
                 "risk_score": item["risk_score"],
-                "evidence_ids": dumps(evidence_ids),
+                "evidence_ids": dumps(event_evidence_ids),
                 "evidence_summary": dumps(summaries),
                 "time_horizon": item["time_horizon"],
                 "recommended_action": item["recommended_action"],
@@ -186,13 +212,13 @@ async def seed(db_path: Path) -> dict[str, Any]:
                 "simulated": True,
             }
             await _upsert(db, RiskEvent, "event_id", event_payload)
-            seeded_event_ids.append(item["event_id"])
+            seeded_event_ids.append(event_ids[item["event_id"]])
 
             for intervention in item.get("interventions", []):
                 result_payload = {
                     "schema_version": "1.0",
-                    "result_id": intervention["result_id"],
-                    "event_id": item["event_id"],
+                    "result_id": result_ids[intervention["result_id"]],
+                    "event_id": event_ids[item["event_id"]],
                     "started_at": created_at + timedelta(minutes=5),
                     "completed_at": created_at + timedelta(minutes=6),
                     "action_type": intervention["action_type"],
@@ -212,8 +238,8 @@ async def seed(db_path: Path) -> dict[str, Any]:
         for index, observation in enumerate(observations):
             payload = {
                 "schema_version": "1.0",
-                "observation_id": observation["observation_id"],
-                "resident_id": RESIDENT_ID,
+                "observation_id": observation_ids[observation["observation_id"]],
+                "resident_id": resident_id,
                 "timestamp": _naive(now - timedelta(minutes=90 - index)),
                 "source": observation["source"],
                 "feature_name": observation["feature_name"],
@@ -223,7 +249,7 @@ async def seed(db_path: Path) -> dict[str, Any]:
                 "confidence": observation["confidence"],
                 "data_quality": observation["data_quality"],
                 "source_mode": observation.get("source_mode", "MOCK"),
-                "asset_id": observation.get("asset_id"),
+                "asset_id": asset_id if observation.get("asset_id") else None,
                 "simulated": True,
                 "extra_metadata": dumps(observation.get("metadata", {})),
                 "device_sn": None,
@@ -240,23 +266,23 @@ async def seed(db_path: Path) -> dict[str, Any]:
             timestamp = _naive(now - timedelta(days=day, hours=15))
             for metric, feature, evidence_type, unit, center in metric_specs:
                 suffix = f"{day}-{metric}"
-                observation_id = f"obs-fi-baseline-{suffix}"
+                observation_id = _scoped_id(scope, "obs", f"baseline-{suffix}")
                 value = round(center + (day - 3) * center * 0.015, 4)
                 await _upsert(db, Observation, "observation_id", {
                     "schema_version": "1.0", "observation_id": observation_id,
-                    "resident_id": RESIDENT_ID, "timestamp": timestamp,
+                    "resident_id": resident_id, "timestamp": timestamp,
                     "source": "pose", "feature_name": feature,
                     "feature_value": dumps(value), "unit": unit,
                     "location": "living_room", "confidence": 0.96,
                     "data_quality": 0.95, "source_mode": "RECORDED_REPLAY",
-                    "asset_id": asset["asset_id"], "simulated": True,
+                    "asset_id": asset_id, "simulated": True,
                     "extra_metadata": dumps({"seed": "frontend-integration"}),
                     "device_sn": None,
                 })
-                evidence_id = f"evi-fi-baseline-{suffix}"
+                evidence_id = _scoped_id(scope, "evi", f"baseline-{suffix}")
                 await _upsert(db, Evidence, "evidence_id", {
                     "schema_version": "1.0", "evidence_id": evidence_id,
-                    "resident_id": RESIDENT_ID, "timestamp": timestamp,
+                    "resident_id": resident_id, "timestamp": timestamp,
                     "risk_domain": "FALL", "evidence_type": evidence_type,
                     "severity": 0.08, "confidence": 0.96, "data_quality": 0.95,
                     "baseline_value": center, "current_value": value,
@@ -269,15 +295,17 @@ async def seed(db_path: Path) -> dict[str, Any]:
                 })
 
         # PRE and POST snapshots make the event-detail warning timeline testable.
-        fall_id = "event-fall-100"
+        fall_event = next((item for item in events if item["event_id"] == "event-fall-100"), events[0])
+        fall_id = event_ids[fall_event["event_id"]]
         fall_evidence_ids = [
-            evidence["evidence_id"] for evidence in events[0].get("evidences", [])
+            evidence_id_map[evidence["evidence_id"]] for evidence in fall_event.get("evidences", [])
         ]
+        fall_result = next(iter(fall_event.get("interventions", [])), None)
         for index, phase in enumerate(("PRE_INTERVENTION", "POST_INTERVENTION")):
             template = forewarnings[index]
-            snapshot_id = f"snapshot-fi-{phase.lower()}"
+            snapshot_id = _scoped_id(scope, "snapshot", phase.lower())
             await _upsert(db, ForewarningSnapshot, "snapshot_id", {
-                "snapshot_id": snapshot_id, "resident_id": RESIDENT_ID,
+                "snapshot_id": snapshot_id, "resident_id": resident_id,
                 "evaluated_at": _naive(now - timedelta(minutes=50 - index * 15)),
                 "phase": phase, "assessment_status": template["assessment_status"],
                 "confidence_level": template["confidence_level"],
@@ -290,15 +318,16 @@ async def seed(db_path: Path) -> dict[str, Any]:
                 "degradation_payload": dumps(template["degradation_reasons"]),
                 "evidence_ids": dumps(fall_evidence_ids),
                 "observation_ids": dumps([]), "scene_config_id": "scene-living-room-v1",
-                "event_id": fall_id, "intervention_result_id": "result-fall-001" if index else None,
+                "event_id": fall_id,
+                "intervention_result_id": result_ids[fall_result["result_id"]] if index and fall_result else None,
                 "recommended_action": template["recommended_action"],
                 "ruleset_version": RULESET_VERSION, "source_mode": "MOCK", "simulated": True,
             })
 
         review_evidence_id = next(iter(evidence_payloads))
         await _upsert(db, RuleTrace, "trace_id", {
-            "trace_id": "trace-fi-review", "event_id": None,
-            "resident_id": RESIDENT_ID, "evidence_id": review_evidence_id,
+            "trace_id": _scoped_id(scope, "trace", "review"), "event_id": None,
+            "resident_id": resident_id, "evidence_id": review_evidence_id,
             "evaluated_at": _naive(now - timedelta(minutes=20)),
             "ruleset_version": RULESET_VERSION, "matched_rule": "R-FALL-08",
             "previous_state": "GREEN", "next_state": "YELLOW",
@@ -307,9 +336,9 @@ async def seed(db_path: Path) -> dict[str, Any]:
             "trace_payload": dumps({"seed": "frontend-integration", "review_required": True}),
         })
 
-        alarm_id = "alarm-fi-processing"
+        alarm_id = _scoped_id(scope, "alarm", "processing")
         await _upsert(db, RiskAlarm, "alarm_msg_id", {
-            "alarm_msg_id": alarm_id, "resident_id": RESIDENT_ID,
+            "alarm_msg_id": alarm_id, "resident_id": resident_id,
             "device_sn": device["device_sn"], "alarm_source": "mock_seed",
             "alarm_type": "motion_detected", "capture_img_path": None,
             "alarm_time": _naive(now - timedelta(minutes=12)),
@@ -317,8 +346,8 @@ async def seed(db_path: Path) -> dict[str, Any]:
         })
         task_time = _naive(now - timedelta(minutes=11))
         await _upsert(db, AlarmProcessingTask, "task_id", {
-            "task_id": "alarm-task-fi-processing", "alarm_msg_id": alarm_id,
-            "resident_id": RESIDENT_ID, "device_sn": device["device_sn"],
+            "task_id": _scoped_id(scope, "task", "processing"), "alarm_msg_id": alarm_id,
+            "resident_id": resident_id, "device_sn": device["device_sn"],
             "status": "SUCCESS", "attempt_count": 1, "max_attempts": 3,
             "capture_asset_id": asset["asset_id"], "capture_completed_at": task_time,
             "algorithm_attempt_count": 1, "algorithm_started_at": task_time,
@@ -347,7 +376,7 @@ async def seed(db_path: Path) -> dict[str, Any]:
 
     await engine.dispose()
     return {
-        "database": str(db_path.resolve()), "resident_id": RESIDENT_ID,
+        "database": str(db_path.resolve()), "resident_id": resident_id,
         "events": len(seeded_event_ids), "baseline_samples": 21,
         "forewarning_snapshots": 2, "alarm_tasks": 1,
         "explanation_jobs_created": explanation_jobs,
@@ -361,8 +390,13 @@ def main() -> int:
         default=os.getenv("YINGMU_DB_PATH", "ezviz_system.db"),
         help="SQLite database used by the API and workers",
     )
+    parser.add_argument(
+        "--resident-id",
+        default=DEFAULT_RESIDENT_ID,
+        help="Resident identifier receiving the isolated integration fixture",
+    )
     args = parser.parse_args()
-    summary = asyncio.run(seed(Path(args.db_path)))
+    summary = asyncio.run(seed(Path(args.db_path), args.resident_id))
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0
 

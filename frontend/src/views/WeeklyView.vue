@@ -8,6 +8,7 @@ import StandardNotice from '../components/common/StandardNotice.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { getWeeklyReport, submitFamilyFeedback } from '../services/repository'
 import { displayValueLabel, evidenceTypeLabel, feedbackTone, formatDateTime, formatPercent } from '../utils/format'
+import { uniqueTextOptions } from '../utils/options'
 
 const loading = ref(true)
 const submitting = ref(false)
@@ -17,6 +18,12 @@ const animatedSleepOffsets = ref([])
 let barAnimationFrame = 0
 const careChoice = ref('')
 const verifyChoice = ref('')
+const careOptions = computed(() => uniqueTextOptions(report.value?.care?.options))
+const verificationOptions = computed(() => uniqueTextOptions(report.value?.visitor_case?.verification_options))
+
+function weeklyEvidenceLabel(item) {
+  return evidenceTypeLabel(item.type || item.evidence_type || item.label)
+}
 
 const trendOption = computed(() => ({
   animation: false,
@@ -90,7 +97,7 @@ async function submit(kind) {
     }
     const eventId = kind === 'care' ? report.value.care?.event_id : report.value.visitor_case?.event_id
     if (!eventId) {
-      ElMessage.warning('当前接口未返回可关联的事件，无法提交反馈')
+      ElMessage.warning('当前暂无可关联事件，暂无法提交反馈')
       return
     }
     const result = await submitFamilyFeedback(eventId, {
@@ -128,7 +135,7 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
       <section class="content-card weekly-chart-card">
         <div class="card-heading"><div><span class="section-kicker">个人趋势</span><h2>活动与作息变化</h2></div><span class="non-diagnosis">行为趋势，不是医学诊断</span></div>
         <ChartPanel v-if="report.trend.length" :option="trendOption" :replace="false" draw-animation draw-color="#1677c2,#86909c" :draw-delay="700" height="350px" aria-label="最近七天活动趋势、个人基线和作息偏移图" />
-        <el-empty v-else description="当前接口未提供周报趋势序列" />
+        <el-empty v-else description="暂无周报趋势数据" />
       </section>
 
       <section class="weekly-columns">
@@ -137,7 +144,7 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
           <div v-if="report.evidence.length" class="weekly-evidence-list">
             <article v-for="item in report.evidence" :key="item.label">
               <span class="evidence-number">{{ formatPercent(item.confidence) }}</span>
-              <div><strong>{{ item.label }}</strong><p>{{ item.detail }}</p></div>
+              <div><strong>{{ weeklyEvidenceLabel(item) }}</strong><p>{{ item.detail }}</p></div>
             </article>
           </div>
           <el-empty v-else description="本周暂无可展示的趋势依据" />
@@ -148,15 +155,15 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
           <fieldset class="feedback-fieldset">
             <legend>完成联系后，请选择反馈</legend>
             <el-radio-group v-model="careChoice" class="stacked-radios" :disabled="report.care.status === 'SUBMITTED'">
-              <el-radio v-for="option in report.care.options" :key="option" :label="option" :value="option" border @click="careChoice = option">{{ option }}</el-radio>
+              <el-radio v-for="option in careOptions" :key="option" :label="option" :value="option" border @click="careChoice = option">{{ option }}</el-radio>
             </el-radio-group>
-            <el-alert v-if="!report.care.options.length" title="当前接口未提供关怀选项" type="info" :closable="false" />
+            <el-alert v-if="!report.care.options.length" title="暂无可选关怀结果" type="info" :closable="false" />
           </fieldset>
-          <el-button data-testid="care-submit" type="primary" size="large" :loading="submitting" :disabled="report.care.status === 'SUBMITTED' || !report.care.options.length" @click="submit('care')">
+          <el-button data-testid="care-submit" type="primary" size="large" :loading="submitting" :disabled="report.care.status === 'SUBMITTED' || !careOptions.length" @click="submit('care')">
             {{ report.care.status === 'SUBMITTED' ? '关怀反馈已记录' : '记录关怀反馈' }}
           </el-button>
           <div v-if="report.care.feedback_record" class="recorded-feedback" :class="`feedback-${feedbackTone(report.care.feedback_record.value)}`" data-testid="care-record">
-            <strong>已记录关怀反馈</strong><span>{{ report.care.feedback_record.value }}</span><small>{{ report.care.feedback_record.recorded_at }} · {{ displayValueLabel(report.care.feedback_record.operator) }} · {{ report.care.feedback_record.saved_in_demo ? '本地演示记录' : '后端记录' }}</small>
+            <strong>已记录关怀反馈</strong><span>{{ report.care.feedback_record.value }}</span><small>{{ report.care.feedback_record.recorded_at }} · {{ displayValueLabel(report.care.feedback_record.operator) }}</small>
           </div>
         </article>
 
@@ -173,19 +180,19 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
           <fieldset class="feedback-fieldset">
             <legend>联系确认后，请选择核验结果</legend>
             <el-radio-group v-model="verifyChoice" class="stacked-radios" :disabled="report.visitor_case.verification_status === 'SUBMITTED'">
-              <el-radio v-for="option in report.visitor_case.verification_options" :key="option" :label="option" :value="option" border @click="verifyChoice = option">{{ option }}</el-radio>
+              <el-radio v-for="option in verificationOptions" :key="option" :label="option" :value="option" border @click="verifyChoice = option">{{ option }}</el-radio>
             </el-radio-group>
           </fieldset>
-          <el-button data-testid="verify-submit" type="primary" size="large" :loading="submitting" :disabled="report.visitor_case.verification_status === 'SUBMITTED' || !report.visitor_case.verification_options.length" @click="submit('verify')">
+          <el-button data-testid="verify-submit" type="primary" size="large" :loading="submitting" :disabled="report.visitor_case.verification_status === 'SUBMITTED' || !verificationOptions.length" @click="submit('verify')">
             {{ report.visitor_case.verification_status === 'SUBMITTED' ? '身份核验已记录' : '提交身份核验' }}
           </el-button>
           <div v-if="report.visitor_case.feedback_record" class="recorded-feedback" :class="`feedback-${feedbackTone(report.visitor_case.feedback_record.value)}`" data-testid="identity-record">
-            <strong>已记录身份核验</strong><span>{{ report.visitor_case.feedback_record.value }}</span><small>{{ report.visitor_case.feedback_record.recorded_at }} · {{ displayValueLabel(report.visitor_case.feedback_record.operator) }} · {{ report.visitor_case.feedback_record.saved_in_demo ? '本地演示记录' : '后端记录' }}</small>
+            <strong>已记录身份核验</strong><span>{{ report.visitor_case.feedback_record.value }}</span><small>{{ report.visitor_case.feedback_record.recorded_at }} · {{ displayValueLabel(report.visitor_case.feedback_record.operator) }}</small>
           </div>
         </article>
         <article v-else class="content-card visitor-panel api-empty-state" data-testid="visitor-panel-empty">
           <div class="card-heading"><div><span class="section-kicker">访客核验</span><h2>暂无访客事件</h2></div></div>
-          <el-empty description="当前接口未返回访客事件，不使用模拟访客数据填充" />
+          <el-empty description="暂无可供核验的访客事件" />
         </article>
       </section>
     </template>

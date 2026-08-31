@@ -6,7 +6,6 @@ import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import ActivityHeatmap from '../components/baseline/ActivityHeatmap.vue'
 import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
-import StandardNotice from '../components/common/StandardNotice.vue'
 import { getBaseline } from '../services/repository'
 import { displayValueLabel, formatDateTime } from '../utils/format'
 
@@ -115,7 +114,7 @@ onBeforeUnmount(() => { if (progressAnimationFrame) cancelAnimationFrame(progres
           <div><dt>规则版本</dt><dd>{{ baseline.ruleset_version }}</dd></div>
           <div><dt>数据来源</dt><dd>{{ displayValueLabel(baseline.source_mode) }}</dd></div>
           <div><dt>设备</dt><dd>{{ baseline.provenance?.device_model || (coverageMode ? '萤石 C6c（授权回放）' : '待授权C6c样本') }}</dd></div>
-          <div><dt>固定机位</dt><dd>{{ baseline.provenance?.camera_position_id || (coverageMode ? 'scene-recorded-demo-v1' : '样本不足') }}</dd></div>
+          <div><dt>固定机位</dt><dd>{{ baseline.provenance?.camera_position_id || (coverageMode ? '固定机位' : '样本不足') }}</dd></div>
           <div v-if="coverageMode"><dt>校准边界</dt><dd>{{ baseline.coverage.resident_calibration_label }}</dd></div>
         </dl>
         </TechnicalDisclosure>
@@ -133,7 +132,7 @@ onBeforeUnmount(() => { if (progressAnimationFrame) cancelAnimationFrame(progres
           <p v-if="item.coverage_note" class="privacy-note">{{ item.coverage_note }}</p>
         </article>
       </section>
-      <el-empty v-else-if="!coverageMode" description="当前接口尚未形成可展示的个人基线" />
+      <el-empty v-else-if="!coverageMode" description="暂无个人基线数据" />
 
       <section v-if="coverageMode" class="content-card coverage-card">
         <div class="card-heading"><div><span class="section-kicker">授权实验覆盖</span><h2>3 名参与者 · 96 段受控片段</h2></div><el-tag type="warning" effect="plain">非居民个人基线</el-tag></div>
@@ -150,22 +149,14 @@ onBeforeUnmount(() => { if (progressAnimationFrame) cancelAnimationFrame(progres
         <article class="content-card">
           <div class="card-heading"><div><span class="section-kicker">多日趋势</span><h2>活动指数与个人基线</h2></div></div>
           <ChartPanel v-if="baseline.trend.length" :option="trendOption" :replace="false" draw-animation draw-color="#1677c2,#86909c" :draw-delay="700" height="330px" aria-label="近七日活动指数与个人基线趋势" />
-          <el-empty v-else description="当前接口未提供活动时序数据" />
+          <el-empty v-else description="暂无活动趋势数据" />
         </article>
         <article class="content-card heatmap-card">
           <ActivityHeatmap v-if="baseline.activity_heatmap?.values?.length" :data="baseline.activity_heatmap" enable-play-animation />
-          <el-empty v-else description="当前接口暂无活动热力图时序数据" />
+          <el-empty v-else description="暂无活动热力图数据" />
         </article>
       </section>
 
-      <StandardNotice
-        :title="coverageMode
-          ? '当前为授权实验覆盖：趋势和热力图可用于离线评审，张建国个人基线仍待同一居民实机样本校准。'
-          : baseline.overall_status === 'INSUFFICIENT'
-            ? '样本不足：需要同一居民、同一台授权C6c、同一机位覆盖3个不同日期，当前不会展示为已建立基线。'
-            : '初步基线：仅用于工程比较；危险、高风险、遮挡和低质量样本均不写入。'"
-        :type="coverageMode || baseline.overall_status !== 'INSUFFICIENT' ? 'success' : 'info'"
-      />
     </template>
   </div>
 </template>

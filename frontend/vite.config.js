@@ -8,6 +8,7 @@ const elementResolver = ElementPlusResolver({ importStyle: process.env.VITEST ? 
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  const apiProxyTarget = env.VITE_DEV_API_PROXY_TARGET || 'http://127.0.0.1:8000'
   return {
   base: env.VITE_BASE_PATH || '/',
   plugins: [
@@ -19,8 +20,8 @@ export default defineConfig(({ mode }) => {
     host: '0.0.0.0',
     port: 5173,
     proxy: {
-      '/api': 'http://127.0.0.1:8000',
-      '/media': 'http://127.0.0.1:8000',
+      '/api': apiProxyTarget,
+      '/media': apiProxyTarget,
     },
   },
   build: {

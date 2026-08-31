@@ -11,5 +11,5 @@
   ],
   "effective_from": "2026-08-26T12:00:00+08:00",
   "supersedes": null,
-  "notes": "Anonymous manual calibration for one authorized fixed-camera replay setup; re-calibrate after camera or furniture movement."
+  "notes": "授权固定机位回放的场景标定；摄像机或家具移动后请重新标定。"
 }

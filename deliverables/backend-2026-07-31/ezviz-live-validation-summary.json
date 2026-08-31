@@ -1,10 +1,25 @@
 {
   "schema_version": "1.0",
   "test_kind": "EZVIZ_LIVE_ACCEPTANCE_SUMMARY",
-  "generated_at": "2026-08-14T18:05:18.161+08:00",
-  "runs": 1,
+  "generated_at": "2026-08-31T15:54:25.971+08:00",
+  "runs": 3,
+  "acceptance_mode": "STREAM_PROBE",
   "token_acquisition_mode": "APP_SECRET",
-  "successful_runs": 0,
+  "successful_runs": 3,
+  "capture_records": 0,
+  "capture_attempts": 0,
+  "capture_successes": 0,
+  "capture_failures": 0,
+  "capture_skipped": 0,
+  "capture_latency_ms": {
+    "minimum": null,
+    "maximum": null,
+    "average": null
+  },
+  "stream_probe_runs": 3,
+  "stream_probe_successes": 3,
+  "stream_unique_recordings": 3,
+  "stream_continuous": true,
   "consistent": true,
   "semantic_signature": [
     {
@@ -17,25 +32,17 @@
       "failure_reason": null
     },
     {
-      "stage": "device_snapshot",
-      "executed": true,
-      "result": "FAILED",
-      "business_code": "20008",
-      "online": null,
-      "source_mode": "MOCK",
-      "failure_reason": "EZVIZ_BUSINESS_ERROR_20008"
-    },
-    {
       "stage": "temporary_playback_address",
-      "executed": false,
-      "result": "SKIPPED",
-      "business_code": null,
+      "executed": true,
+      "result": "SUCCESS",
+      "business_code": "200",
       "online": null,
-      "source_mode": "MOCK",
-      "failure_reason": "SNAPSHOT_NOT_SUCCESSFUL"
+      "source_mode": "LIVE_DEVICE",
+      "failure_reason": null
     }
   ],
   "contains_credentials": false,
   "contains_permanent_public_url": false,
-  "overall_result": "INCOMPLETE"
+  "contains_temporary_url": false,
+  "overall_result": "SUCCESS"
 }

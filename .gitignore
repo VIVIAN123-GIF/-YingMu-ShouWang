@@ -258,3 +258,4 @@ ezviz_system.db
 *.avi
 *.webm
 *.wav
+/视频.zip

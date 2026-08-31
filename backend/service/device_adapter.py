@@ -11,6 +11,7 @@ from backend.config import (
     EZVIZ_DEVICE_SERIAL,
     EZVIZ_DEVICE_VERIFY_CODE,
     EZVIZ_LIVE_PROTOCOL,
+    EZVIZ_LIVE_QUALITY,
     EZVIZ_STATUS_TIMEOUT_SECONDS,
 )
 from backend.service.errors import ServiceError
@@ -140,6 +141,7 @@ class DeviceAdapter:
                 device_serial,
                 EZVIZ_CHANNEL_NO,
                 protocol=EZVIZ_LIVE_PROTOCOL,
+                quality=EZVIZ_LIVE_QUALITY,
                 code=EZVIZ_DEVICE_VERIFY_CODE,
             )
             data = result.get("data", result)
@@ -168,7 +170,13 @@ class DeviceAdapter:
 
     async def live_address(self):
         try:
-            result = await EzvizAPI.get_live_address(self._configured_serial(), EZVIZ_CHANNEL_NO)
+            result = await EzvizAPI.get_live_address(
+                self._configured_serial(),
+                EZVIZ_CHANNEL_NO,
+                protocol=EZVIZ_LIVE_PROTOCOL,
+                quality=EZVIZ_LIVE_QUALITY,
+                code=EZVIZ_DEVICE_VERIFY_CODE,
+            )
         except Exception as exc:
             raise ServiceError(503, "EZVIZ_STREAM_UNAVAILABLE",
                                "Ezviz live stream is temporarily unavailable") from exc

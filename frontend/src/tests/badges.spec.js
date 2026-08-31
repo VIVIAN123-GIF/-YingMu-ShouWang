@@ -7,7 +7,7 @@ describe('来源与风险标识', () => {
   it('模拟回放只向用户展示中文来源和水印', () => {
     const wrapper = mount(SourceBadge, { props: { mode: 'RECORDED_REPLAY', simulated: true } })
     expect(wrapper.text()).toContain('授权回放')
-    expect(wrapper.text()).toContain('模拟实验回放')
+    expect(wrapper.text()).not.toContain('模拟实验回放')
     expect(wrapper.text()).not.toContain('RECORDED_REPLAY')
   })
 

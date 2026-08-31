@@ -1,12 +1,18 @@
 <script setup>
-import { InfoFilled, VideoCamera } from '@element-plus/icons-vue'
+import { computed } from 'vue'
+import { VideoCamera } from '@element-plus/icons-vue'
+import { uniqueTextOptions } from '../../utils/options'
 
-defineProps({
+const props = defineProps({
   events: { type: Array, default: () => [] },
 })
 
 const selectedId = defineModel({ type: String, default: '' })
 const emit = defineEmits(['select'])
+const uniqueEvents = computed(() => {
+  const titles = uniqueTextOptions(props.events.map((event) => event.title))
+  return titles.map((title) => props.events.find((event) => event.title === title))
+})
 </script>
 
 <template>
@@ -18,21 +24,21 @@ const emit = defineEmits(['select'])
       </div>
       <el-select v-model="selectedId" aria-label="选择回放场景" @change="emit('select', $event)">
         <el-option
-          v-for="(event, index) in events"
+          v-for="(event, index) in uniqueEvents"
           :key="event.event_id"
           :label="`${index + 1}. ${event.title}`"
           :value="event.event_id"
         />
       </el-select>
     </div>
-    <p><el-icon><InfoFilled /></el-icon><span>回放不会触发真实干预，也不会改变后端风险状态。</span></p>
   </section>
 </template>
 
 <style scoped>
 .replay-selector {
-  margin-bottom: 16px;
-  padding: 24px;
+  width: 100%;
+  margin: 0 0 16px;
+  padding: 20px 28px;
   text-align: left;
   background: #fff;
   border: 0;
@@ -41,12 +47,11 @@ const emit = defineEmits(['select'])
 }
 
 .replay-selector-head {
-  padding-bottom: 18px;
+  min-height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 28px;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 .replay-selector-title {
@@ -76,8 +81,8 @@ const emit = defineEmits(['select'])
 }
 
 .replay-selector :deep(.el-select) {
-  flex: 0 0 480px;
-  width: 480px;
+  flex: 0 1 520px;
+  width: min(520px, 100%);
   margin: 0;
 }
 

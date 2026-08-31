@@ -179,8 +179,8 @@ onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
       <section class="content-card questionnaire-card">
         <div class="card-heading">
           <div><span class="section-kicker">3分钟初始问卷</span><h2>风险画像与授权偏好</h2></div>
-          <div class="questionnaire-provenance" role="status" :aria-label="`${profile.filledBy}，离线演示档案`">
-            <el-icon><User /></el-icon><strong>{{ profile.filledBy }}</strong><span aria-hidden="true"></span><small>离线演示档案</small>
+          <div class="questionnaire-provenance" role="status" aria-label="家属填写">
+            <el-icon><User /></el-icon><strong>家属填写</strong>
           </div>
         </div>
         <el-form label-position="top" @change="saveProfile">
@@ -191,7 +191,7 @@ onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
             <el-form-item label="隐私区域"><el-input v-model="profile.privacyZones" /></el-form-item><el-form-item label="适老提醒语"><el-input v-model="profile.reminder" /></el-form-item>
           </div>
           <div class="consent-row"><el-checkbox v-model="profile.videoConsent" @change="saveProfile">同意授权视频用于风险复核</el-checkbox><el-checkbox v-model="profile.audioConsent" @change="saveProfile">同意授权音频用于本地关键词分析</el-checkbox></div>
-          <div class="form-actions"><el-button type="primary" @click="saveProfile">保存问卷</el-button><el-button plain @click="resetProfile">恢复预设</el-button><span>答案仅保存在本机，不参与医学诊断或伪造个人基线。</span></div>
+          <div class="form-actions"><el-button type="primary" @click="saveProfile">保存问卷</el-button><el-button plain @click="resetProfile">恢复预设</el-button></div>
         </el-form>
       </section>
       <section class="content-card">
@@ -458,12 +458,12 @@ onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
   align-items: center;
   justify-content: flex-start;
   gap: 12px;
-  border-bottom: 1px solid #e5e6eb;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .latest-forewarning-meta dt {
   flex: 0 0 72px;
-  color: #86909c;
+  color: var(--color-text-secondary);
   font-size: 15px;
   font-weight: 400;
   text-align: left;
@@ -472,20 +472,11 @@ onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
 .latest-forewarning-meta dd {
   min-width: 0;
   margin: 0;
-  color: #4e5969;
+  color: var(--color-text-primary);
   font-size: 15px;
   font-weight: 400;
   text-align: left;
   overflow-wrap: anywhere;
-}
-
-.latest-forewarning-meta > .detail-list > div:nth-child(2) dd {
-  color: #00b42a;
-}
-
-.latest-forewarning-meta > .detail-list > div:nth-child(3) dd {
-  color: #1d2129;
-  font-weight: 600;
 }
 
 .forewarning-recommendation-notice {

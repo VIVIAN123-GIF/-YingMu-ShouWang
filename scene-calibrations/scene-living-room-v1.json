@@ -12,5 +12,5 @@
   ],
   "effective_from": "2026-08-26T09:00:00+08:00",
   "supersedes": null,
-  "notes": "Sanitized fixed-camera example; replace with a locally validated calibration before live use."
+  "notes": "固定机位场景示例，请在正式使用前完成现场校准。"
 }

@@ -18,7 +18,7 @@ function mountView() {
       ChartPanel: { template: '<div class="chart-stub" />' },
       'el-alert': { props: ['title'], template: '<div class="alert-stub">{{ title }}</div>' },
       'el-empty': { props: ['description'], template: '<div class="empty-stub">{{ description }}</div>' },
-      'el-tag': { template: '<span><slot /></span>' }, 'el-avatar': { template: '<span><slot /></span>' },
+      'el-tag': { name: 'ElTag', props: ['type'], template: '<span><slot /></span>' }, 'el-avatar': { template: '<span><slot /></span>' },
       'el-segmented': { template: '<div class="segmented-stub" />' }, 'el-date-picker': { template: '<input />' },
       'el-button': { template: '<button><slot /></button>' },
       'el-table': { name: 'ElTableStub', props: ['data'], template: '<div class="table-stub">{{ data.length }} rows<slot /></div>' },
@@ -61,6 +61,17 @@ describe('居民预警汇总页面', () => {
     expect(wrapper.find('.chart-stub').exists()).toBe(true)
     expect(wrapper.text()).toContain('2 rows')
     expect(wrapper.find('.pagination-stub').exists()).toBe(false)
+  })
+
+  it('renders assessment status and confidence as plain detail values', async () => {
+    const items = historyOf(2)
+    mocks.getLatestForewarning.mockResolvedValue(items[0])
+    mocks.getForewarningHistory.mockResolvedValue(items)
+    const wrapper = mountView(); await flushPromises()
+    expect(wrapper.findAllComponents({ name: 'ElTag' }).map((tag) => tag.text())).not.toContain('完整评估')
+    expect(wrapper.findAllComponents({ name: 'ElTag' }).map((tag) => tag.text())).not.toContain('高')
+    expect(wrapper.find('.latest-forewarning-meta').text()).toContain('完整评估')
+    expect(wrapper.find('.latest-forewarning-meta').text()).toContain('高')
   })
 
   it('历史记录按发生时间升序排列', async () => {

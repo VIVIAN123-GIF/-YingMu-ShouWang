@@ -59,7 +59,7 @@ const syncLabel = computed(() => ({
   polling: '自动同步中',
   retrying: '同步重试中',
   complete: '同步已完成',
-  idle: runtime.mode === 'replay' ? '离线授权回放' : '等待同步',
+  idle: runtime.mode === 'replay' ? '授权回放' : '等待同步',
 }[syncState.value]))
 
 const syncTagType = computed(() => ({
@@ -237,7 +237,7 @@ async function syncAsset(currentEvent, activeSession) {
     const missing = err?.response?.status === 404 || err?.api?.code === 'ASSET_NOT_FOUND'
     assetState.value = missing ? 'missing' : 'failed'
     assetMessage.value = missing
-      ? `后端暂无素材记录（${nextAssetId}）`
+      ? `素材暂不可用（${nextAssetId}）`
       : `素材读取失败（${nextAssetId}）：${err.message}`
   }
 }
@@ -349,7 +349,7 @@ function startEventSession() {
   if (!route.params.eventId) {
     loading.value = false
     error.value = route.query.reason === 'unavailable'
-      ? '风险事件调取失败：后端接口服务不可达，请检查后端服务和网络连接'
+      ? '风险事件加载失败，请检查网络后重试'
       : '风险事件调取失败：当前居民暂无可用事件'
     syncState.value = 'idle'
     return
@@ -392,7 +392,7 @@ async function requestIntervention() {
     if (existingIndex >= 0) interventions.splice(existingIndex, 1, result)
     else interventions.push(result)
     interventionRequested.value = true
-    ElMessage.success('干预请求已由后端受理')
+    ElMessage.success('干预请求已受理')
   } catch (err) {
     ElMessage.error(`干预请求失败：${err.message}`)
   } finally {
@@ -454,7 +454,7 @@ onBeforeUnmount(stopEventSession)
           <h2>{{ event.title }}</h2>
           <p>{{ event.recommended_action }}</p>
           <div class="meta-line">
-            <span>事件 {{ event.event_id }}</span><span>风险等级 {{ displayValueLabel(event.risk_level) }}</span><span>事件状态 {{ statusLabel(event.status) }}</span><span>规则版本 {{ event.ruleset_version }}</span><span>{{ formatDateTime(event.created_at) }}</span>
+            <span>事件编号：{{ event.event_id }}</span><span>风险等级：{{ displayValueLabel(event.risk_level) }}</span><span>事件状态：{{ statusLabel(event.status) }}</span><span>规则版本：{{ event.ruleset_version }}</span><span>{{ formatDateTime(event.created_at) }}</span>
           </div>
         </div>
         <div class="event-score"><span>{{ formatRiskScore(event.risk_score) }}</span><small>风险分数</small></div>
@@ -565,11 +565,11 @@ onBeforeUnmount(stopEventSession)
 
           <TechnicalDisclosure v-if="displayRuleTraces.length" title="规则判断与质量门槛" summary="状态迁移、评分分量、个人基线和查询窗口">
           <article class="content-card" data-testid="rule-trace-panel">
-            <div class="card-heading"><div><span class="section-kicker">规则轨迹</span><h2>后端实际规则判断</h2></div><span>{{ displayRuleTraces.length }} 次评估</span></div>
+            <div class="card-heading"><div><span class="section-kicker">规则轨迹</span><h2>规则判断</h2></div><span>{{ displayRuleTraces.length }} 次评估</span></div>
             <div class="tool-results">
               <article v-for="trace in displayRuleTraces" :key="trace.trace_id">
                 <el-tag effect="dark">{{ trace.matched_rule }}</el-tag>
-                <h3>{{ trace.reason || '后端未返回规则解释' }}</h3>
+                <h3>{{ trace.reason || '暂无规则解释' }}</h3>
                 <dl class="detail-list">
                   <div><dt>状态迁移</dt><dd>{{ displayValueLabel(trace.previous_status || trace.previous_state) }} → {{ displayValueLabel(trace.next_status || trace.next_state) }}</dd></div>
                   <div><dt>实际评分</dt><dd>{{ traceScore(trace) }}</dd></div>
@@ -600,14 +600,14 @@ onBeforeUnmount(stopEventSession)
           </article>
           <article v-else-if="event.rule_traces?.length" class="content-card api-empty-state">
             <div class="card-heading"><div><span class="section-kicker">风险趋势</span><h2>以真实状态迁移为准</h2></div></div>
-            <el-alert title="后端未返回逐点风险分，页面不会根据状态猜测数值；请查看上方规则与动作时间轴。" type="info" show-icon :closable="false" />
+            <el-alert title="暂无逐点风险分，请查看上方规则与动作时间轴。" type="info" show-icon :closable="false" />
           </article>
         </div>
 
         <aside v-if="hasAsideDetailContent" class="event-aside">
           <section v-if="['OPEN', 'INTERVENING'].includes(event.status)" class="content-card intervention-action-card" data-testid="intervention-action-panel">
             <div class="card-heading"><div><span class="section-kicker">处理动作</span><h2>联系与干预</h2></div></div>
-            <p>由后端选择并执行已批准的干预工具，页面不会根据智能体解释自动触发。</p>
+            <p>系统将按已批准的干预流程执行相应操作。</p>
             <el-button
               data-testid="intervention-submit"
               type="warning"
@@ -655,7 +655,7 @@ onBeforeUnmount(stopEventSession)
             >
               {{ residentResponseRecorded ? '坐稳确认已记录' : '我已坐稳' }}
             </el-button>
-            <p v-if="residentResponseRecorded" class="elder-action-note">确认不会直接关闭事件，仍由后端依据和观察期决定风险是否回落。</p>
+            <p v-if="residentResponseRecorded" class="elder-action-note">确认后仍将继续观察事件状态。</p>
           </section>
         </aside>
       </section>

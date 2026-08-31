@@ -46,6 +46,23 @@ const UNIT_LABELS = Object.freeze({
   count: '次',
 })
 
+const LOCATION_LABELS = Object.freeze({
+  living_room: '客厅',
+  bedroom: '卧室',
+  kitchen: '厨房',
+  bathroom: '卫生间',
+  hallway: '走廊',
+})
+
+const ZONE_IDENTIFIER_LABELS = Object.freeze({
+  'fixed-chair-support': '固定座椅支撑区',
+  'visible-floor-safe': '可见地面安全区',
+})
+
+const MEDIA_TITLE_LABELS = Object.freeze({
+  'Authorized simulated living-room replay': '授权模拟客厅回放',
+})
+
 const VALUE_LABELS = Object.freeze({
   VALID: '完整评估',
   PARTIAL: '降级评估',
@@ -84,6 +101,12 @@ const VALUE_LABELS = Object.freeze({
   ezviz_voice: '萤石语音提醒',
   family_console: '家属控制台',
   'authorized-replay-c6c': '授权回放设备',
+  EZVIZ_CLOUD: '萤石云连接',
+  AUTHORIZED: '已授权',
+  UNAUTHORIZED: '未授权',
+  AUTHORIZED_LOCAL_CLIP: '已授权本地片段',
+  VERIFIED_LIVE_CAPTURE: '已验证实时抓拍',
+  SERVER_MANAGED_SNAPSHOT: '服务端管理抓拍',
   system: '系统',
   family: '家属',
 })
@@ -108,6 +131,19 @@ export function formatRiskScore(value) {
 
 export function formatAssetId(value) {
   return value || '暂无可追溯视频'
+}
+
+export function mediaTitleLabel(value) {
+  const title = String(value || '').trim()
+  const unavailableMatch = /^Simulated unavailable media \(([^)]+)\)$/i.exec(title)
+  if (unavailableMatch) return `模拟不可用媒体（${unavailableMatch[1]}）`
+  return MEDIA_TITLE_LABELS[title] || title || '事件画面'
+}
+
+export function mediaNoticeLabel(value) {
+  const notice = String(value || '').trim()
+  if (notice === 'Simulated metadata only; no private media is stored.') return '仅模拟元数据，无实际媒体录像存储'
+  return notice
 }
 
 export function domainLabel(value) {
@@ -137,6 +173,14 @@ export function timeScaleLabel(value) {
 
 export function unitLabel(value) {
   return UNIT_LABELS[value] || value || ''
+}
+
+export function locationLabel(value) {
+  return LOCATION_LABELS[value] || value || '未提供'
+}
+
+export function zoneIdentifierLabel(value) {
+  return ZONE_IDENTIFIER_LABELS[value] || value || '未命名区域'
 }
 
 export function feedbackTone(value) {

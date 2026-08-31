@@ -1,5 +1,5 @@
 from typing import Dict, Any, Optional
-from backend.config import EZVIZ_CAPTURE_TIMEOUT_SECONDS
+from backend.config import EZVIZ_CAPTURE_TIMEOUT_SECONDS, EZVIZ_LIVE_QUALITY
 from backend.utils.ezviz_auth import EzvizAuth
 
 
@@ -45,7 +45,7 @@ class EzvizAPI:
         channel_no: int = 1,
         protocol: int = 2,
         expire_time: int = 3600,
-        quality: int = 2,
+        quality: int = EZVIZ_LIVE_QUALITY,
         code: str = "",
     ) -> Dict[str, Any]:
         """

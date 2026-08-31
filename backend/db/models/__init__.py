@@ -10,6 +10,7 @@ from .system_weekly import SystemConfig, WeeklyStat
 from .rule_trace import RuleTrace
 from .agent_explanation_job import AgentExplanationJob
 from .forewarning_snapshot import ForewarningSnapshot
+from .scene_calibration import SceneCalibrationRecord
 
 __all__ = [
     "DeviceInfo",
@@ -25,6 +26,7 @@ __all__ = [
     "RuleTrace",
     "AgentExplanationJob",
     "ForewarningSnapshot",
+    "SceneCalibrationRecord",
 ]
 from .asset import Asset
 

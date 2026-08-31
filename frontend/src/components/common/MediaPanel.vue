@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import SourceBadge from './SourceBadge.vue'
+import { formatDateTime, mediaNoticeLabel, mediaTitleLabel } from '../../utils/format'
 
 const props = defineProps({
   asset: { type: Object, default: null },
@@ -56,10 +57,10 @@ function handleError() {
   <section class="media-card" aria-label="事件画面" data-testid="media-panel">
     <div class="media-toolbar">
       <div>
-        <strong>{{ asset?.title || '事件画面' }}</strong>
-        <span>{{ asset?.captured_at ? new Date(asset.captured_at).toLocaleString('zh-CN') : '等待授权素材' }}</span>
+        <strong>{{ mediaTitleLabel(asset?.title) }}</strong>
+        <span>{{ asset?.captured_at ? formatDateTime(asset.captured_at) : '等待授权素材' }}</span>
       </div>
-      <SourceBadge :mode="asset?.source_mode || sourceMode" :simulated="asset?.simulated ?? simulated" />
+      <SourceBadge button :mode="asset?.source_mode || sourceMode" :simulated="asset?.simulated ?? simulated" />
     </div>
     <div v-if="activeUrl && !videoError" class="media-video-frame" :data-aspect-ratio="videoAspectRatio || undefined">
       <video
@@ -84,8 +85,8 @@ function handleError() {
       </div>
       <strong>授权事件片段占位</strong>
       <p v-if="videoError">授权片段加载失败，已停止播放并保留事件信息。</p>
-      <p v-else>{{ asset?.notice || '实时画面不可用，页面已切换至授权片段位置。' }}</p>
-      <el-tag type="warning" effect="plain" size="large">待素材核验 · 不伪装为实时视频</el-tag>
+      <p v-else>{{ mediaNoticeLabel(asset?.notice) || '实时画面不可用，页面已切换至授权片段位置。' }}</p>
+      <el-button class="media-placeholder-action" plain>待素材核验 · 不伪装为实时视频</el-button>
     </div>
   </section>
 </template>

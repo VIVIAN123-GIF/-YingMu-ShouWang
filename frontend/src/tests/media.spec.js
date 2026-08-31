@@ -4,6 +4,14 @@ import MediaPanel from '../components/common/MediaPanel.vue'
 import { formatAssetId } from '../utils/format'
 
 describe('授权媒体降级', () => {
+  it('将模拟媒体的英文标题显示为中文', () => {
+    const wrapper = mount(MediaPanel, {
+      props: { asset: { title: 'Simulated unavailable media (asset-fall-authorized)' } },
+    })
+    expect(wrapper.text()).toContain('模拟不可用媒体（asset-fall-authorized）')
+    expect(wrapper.text()).not.toContain('Simulated unavailable media')
+  })
+
   it('没有授权文件时明确显示待核验且不伪装实时画面', () => {
     const wrapper = mount(MediaPanel, {
       props: {

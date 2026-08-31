@@ -120,7 +120,7 @@ describe('风险事件详情导航入口', () => {
 
     expect(router.currentRoute.value.name).toBe('event-detail-empty')
     expect(router.currentRoute.value.query.reason).toBe('unavailable')
-    expect(messageMock.error).toHaveBeenCalledWith('风险事件调取失败：后端接口服务不可达')
+    expect(messageMock.error).toHaveBeenCalledWith('风险事件加载失败，请检查网络后重试')
     expect(messageMock.error.mock.calls[0][0]).not.toContain('private backend detail')
   })
 })

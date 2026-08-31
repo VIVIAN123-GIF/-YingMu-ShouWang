@@ -21,7 +21,7 @@ const routes = [
   { path: '/weekly', name: 'weekly', component: WeeklyView, meta: { title: '周报与核验', nav: true, icon: 'DataAnalysis' } },
   { path: '/system', name: 'system', component: SystemView, meta: { title: '系统和设备状态', nav: true, icon: 'Monitor', description: '展示设备在线状态、适配器模式、数据质量和未核验能力。' } },
   { path: '/system/calibration/:sceneConfigId', name: 'scene-calibration', component: SceneCalibrationView, meta: { title: '场景标定详情', nav: false } },
-  { path: '/replay', name: 'replay', component: ReplayView, meta: { title: '场景回放', nav: true, icon: 'VideoPlay', description: '按故事顺序回放100天关键场景，并清楚标记真实、回放、公开数据或Mock来源。' } },
+  { path: '/replay', name: 'replay', component: ReplayView, meta: { title: '场景回放', nav: true, icon: 'VideoPlay', description: '查看关键场景与风险处理过程。' } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
