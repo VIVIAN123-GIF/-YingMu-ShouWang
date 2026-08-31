@@ -31,7 +31,7 @@ python -m uvicorn backend.main:app --reload
 python -m backend.worker.alarm_worker
 ```
 
-回调接口只会完成验签、去重、告警入库和任务入队，然后立即返回 `messageId`。Worker 会为每条新告警抓取一次平台快照，并在算法适配器接入前将任务标记为 `WAITING_ALGORITHM`；它不会伪造 Observation、Evidence 或 RiskEvent。可通过 `GET /api/v1/alarms/processing` 查看脱敏后的处理状态。
+回调接口完成验签、去重、告警入库和任务入队后立即返回 `messageId`。Worker会为每条新告警抓取一次平台快照、写入私有Asset，并调用`process_algorithm_task`进入算法适配与Observation/Evidence处理；任一阶段均保留明确终态，不伪造Observation、Evidence或RiskEvent。可通过`GET /api/v1/alarms/processing`查看脱敏后的处理状态。
 
 - Swagger：<http://127.0.0.1:8000/docs>
 - 健康检查：<http://127.0.0.1:8000/health>
@@ -107,7 +107,7 @@ python scripts/run_v13_closed_loop_acceptance.py `
 
 正向模式还必须提供 `--recovery-input`、`--recovery-captured-at` 和 `--resolve-at`，并满足恢复观察窗口。
 报告统一标记为 `RECORDED_TIMELINE`；当前自动化只证明正向工程链路可达，真实像素
-`EVENT_RESOLVED` 报告仍需补拍两段已授权风险/恢复素材后生成，不能表述为实时等待或真实老人医学验证。
+P01、P02、P03三段已授权连续黄金录像均已生成`EVENT_RESOLVED`补充复现报告。它们证明授权回放下工程状态链路可达，仍须标记`RECORDED_REPLAY/simulated=true`，不能表述为实时等待、真实设备自动干预或真实老人医学验证。
 
 真实设备三轮验收使用：
 

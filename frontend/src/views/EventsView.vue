@@ -7,6 +7,7 @@ import SourceBadge from '../components/common/SourceBadge.vue'
 import { ALARM_TASK_STATUSES, EVENT_STATUSES, RISK_DOMAINS, RISK_LEVELS, SOURCE_MODES } from '../domain/constants'
 import { getAlarmProcessingTasks, getEvents, getRiskReviews, RESIDENT_ID, runtime } from '../services/repository'
 import { displayValueLabel, domainLabel, evidenceTypeLabel, formatDateTime, formatRiskScore, statusLabel } from '../utils/format'
+import { groupOptionsByLabel, matchesGroupedOption } from '../utils/options'
 
 const router = useRouter()
 const loading = ref(true)
@@ -19,11 +20,14 @@ const alarmLoading = ref(false)
 const alarmError = ref('')
 let alarmTimer = null
 
+const riskLevelOptions = computed(() => groupOptionsByLabel(RISK_LEVELS, (config) => config.label))
+const sourceOptions = computed(() => groupOptionsByLabel(SOURCE_MODES, (config) => config.label))
+
 const filteredEvents = computed(() => events.value
   .filter((event) => !filters.value.domain || event.primary_domain === filters.value.domain)
-  .filter((event) => !filters.value.level || event.risk_level === filters.value.level)
+  .filter((event) => matchesGroupedOption(riskLevelOptions.value, filters.value.level, event.risk_level))
   .filter((event) => !filters.value.status || event.status === filters.value.status)
-  .filter((event) => !filters.value.source || event.source_mode === filters.value.source)
+  .filter((event) => matchesGroupedOption(sourceOptions.value, filters.value.source, event.source_mode))
   .sort((left, right) => new Date(right.created_at) - new Date(left.created_at)))
 
 const activeFilterCount = computed(() => Object.values(filters.value).filter(Boolean).length)
@@ -123,9 +127,9 @@ onBeforeUnmount(stopAlarmPolling)
 
     <section class="content-card timeline-filters" aria-label="时间轴筛选">
       <label><span>风险方向</span><el-select v-model="filters.domain" clearable placeholder="全部方向"><el-option v-for="(label, value) in RISK_DOMAINS" :key="value" :label="label" :value="value" /></el-select></label>
-      <label><span>风险等级</span><el-select v-model="filters.level" clearable placeholder="全部等级"><el-option v-for="(config, value) in RISK_LEVELS" :key="value" :label="config.label" :value="value" /></el-select></label>
+      <label><span>风险等级</span><el-select v-model="filters.level" clearable placeholder="全部等级"><el-option v-for="option in riskLevelOptions" :key="option.value" :label="option.label" :value="option.value" /></el-select></label>
       <label><span>事件状态</span><el-select v-model="filters.status" clearable placeholder="全部状态"><el-option v-for="(label, value) in EVENT_STATUSES" :key="value" :label="label" :value="value" /></el-select></label>
-      <label><span>数据来源</span><el-select v-model="filters.source" clearable placeholder="全部来源"><el-option v-for="(config, value) in SOURCE_MODES" :key="value" :label="config.label" :value="value" /></el-select></label>
+      <label><span>数据来源</span><el-select v-model="filters.source" clearable placeholder="全部来源"><el-option v-for="option in sourceOptions" :key="option.value" :label="option.label" :value="option.value" /></el-select></label>
       <el-button size="large" :disabled="!activeFilterCount" @click="clearFilters">清除筛选<span v-if="activeFilterCount">（{{ activeFilterCount }}）</span></el-button>
     </section>
 

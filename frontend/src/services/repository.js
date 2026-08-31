@@ -159,7 +159,7 @@ export const runtime = reactive({
   mode: DATA_MODES[initialMode] ? initialMode : 'auto',
   activeSource: initialMode === 'replay' ? 'replay_dataset' : 'api',
   degraded: false,
-  message: initialMode === 'replay' ? '当前使用离线授权回放数据集' : '',
+  message: initialMode === 'replay' ? '当前使用授权回放' : '',
   apiBaseUrl: API_BASE_URL,
   lastError: null,
 })
@@ -209,7 +209,7 @@ export function setDataMode(mode) {
   runtime.activeSource = mode === 'replay' ? 'replay_dataset' : 'api'
   runtime.degraded = false
   runtime.lastError = null
-  runtime.message = mode === 'replay' ? '当前使用离线授权回放数据集' : ''
+  runtime.message = mode === 'replay' ? '当前使用授权回放' : ''
   sessionStorage.setItem('yingmu-data-mode', mode)
   recordAudit('data-mode.change', 'SUCCESS', { detail: `mode=${mode}` })
 }
@@ -246,7 +246,7 @@ async function resolveData(operation, apiRequest, replayFactory, validate = (val
     if (runtime.mode === 'auto' && canFallback(error)) {
       runtime.activeSource = 'replay_dataset'
       runtime.degraded = true
-      runtime.message = '后端接口暂不可用，已切换离线授权回放数据集'
+      runtime.message = '服务暂时不可用，已切换至授权回放'
       const result = validate(structuredClone(replayFactory()))
       recordAudit(operation, 'DEGRADED_REPLAY', { detail: error?.message || 'FastAPI unavailable', event_id: result?.event_id, ruleset_version: result?.ruleset_version })
       return result
@@ -384,9 +384,9 @@ export async function getEventExplanation(eventId) {
         request_id: `static-${eventId}`,
         event_id: eventId,
         summary: '基于固定依据的脱敏解释',
-        reasoning_points: ['当前页面仅回放预置证据，不连接后端或外部模型。'],
+        reasoning_points: ['系统已汇总相关证据。'],
         recommended_action_text: '按演示事件中的分级干预流程继续查看。',
-        capability_notice: '授权回放，仅用于赛事评审走查。',
+        capability_notice: '已加载授权媒体内容。',
         generated_by: 'static-demo',
         fallback_used: true,
       },
@@ -515,7 +515,7 @@ export async function getAsset(assetId) {
       available: false,
       verification_status: 'AUTHORIZED_LOCAL_CLIP',
       captured_at: new Date().toISOString(),
-      notice: `固定演示数据仅保留素材标识（${assetId}）`,
+      notice: `素材内容暂不可用（${assetId}）`,
     })
     recordAudit('asset.read', 'REPLAY', { detail: assetId })
     assetRequestCache.set(cacheKey, Promise.resolve(result))
@@ -656,6 +656,12 @@ export async function getSceneCalibration(sceneConfigId) {
   ))), () => validateSceneCalibration(replaySceneCalibration(sceneConfigId)), validateSceneCalibration, sceneFallbackAllowed)
 }
 
+export async function getCurrentSceneCalibration() {
+  return resolveData('scene-calibration.current', async () => validateSceneCalibration(payload(await apiClient.get(
+    '/scene-calibrations/current',
+  ))), () => validateSceneCalibration(replayData.sceneCalibration), validateSceneCalibration, shouldFallback)
+}
+
 function replayForewarningHistory(residentId, { from = null, to = null, limit = 100 } = {}) {
   const fromTimestamp = from ? Date.parse(from) : Number.NEGATIVE_INFINITY
   const toTimestamp = to ? Date.parse(to) : Number.POSITIVE_INFINITY
@@ -766,7 +772,7 @@ export async function submitInterventionResult(event, residentResponse = 'stable
       }
       runtime.activeSource = 'replay_dataset'
       runtime.degraded = true
-      runtime.message = '干预结果接口暂不可用，确认结果仅保存在本次演示中'
+      runtime.message = '服务暂时不可用，请稍后重试'
       recordAudit('intervention-result.write', 'DEGRADED', { event_id: event.event_id, detail: error?.message })
     }
   }
@@ -820,7 +826,7 @@ export async function submitFamilyFeedback(eventId, feedback) {
       }
       runtime.activeSource = 'replay_dataset'
       runtime.degraded = true
-      runtime.message = '反馈接口暂不可用，结果仅保存在本次演示中'
+      runtime.message = '服务暂时不可用，请稍后重试'
       recordAudit('feedback.write', 'DEGRADED', { event_id: eventId, detail: error?.message })
     }
   }

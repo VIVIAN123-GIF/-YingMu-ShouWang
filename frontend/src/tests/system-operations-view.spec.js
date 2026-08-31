@@ -2,14 +2,14 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  getDeviceStatus: vi.fn(), getLatestForewarning: vi.fn(), getDeviceSnapshot: vi.fn(), createDeviceSnapshot: vi.fn(),
+  getDeviceStatus: vi.fn(), getLatestForewarning: vi.fn(), getCurrentSceneCalibration: vi.fn(), getDeviceSnapshot: vi.fn(), createDeviceSnapshot: vi.fn(),
   stopDeviceCollection: vi.fn(), push: vi.fn(),
 }))
 
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: mocks.push }) }))
 vi.mock('../services/repository', () => ({
   clearRecordedFeedback: vi.fn(), getAllRecordedFeedback: () => [],
-  getDeviceStatus: mocks.getDeviceStatus, getLatestForewarning: mocks.getLatestForewarning,
+  getDeviceStatus: mocks.getDeviceStatus, getLatestForewarning: mocks.getLatestForewarning, getCurrentSceneCalibration: mocks.getCurrentSceneCalibration,
   getDeviceSnapshot: mocks.getDeviceSnapshot, createDeviceSnapshot: mocks.createDeviceSnapshot, stopDeviceCollection: mocks.stopDeviceCollection,
   runtime: { mode: 'api', activeSource: 'api' },
 }))
@@ -43,6 +43,7 @@ describe('系统设备运维页面', () => {
     Object.values(mocks).forEach((mock) => mock.mockReset())
     mocks.getDeviceStatus.mockResolvedValue(structuredClone(device))
     mocks.getLatestForewarning.mockResolvedValue(structuredClone(latest))
+    mocks.getCurrentSceneCalibration.mockRejectedValue(new Error('not configured'))
     mocks.getDeviceSnapshot.mockResolvedValue(structuredClone(snapshot))
     mocks.createDeviceSnapshot.mockResolvedValue(structuredClone(snapshot))
   })

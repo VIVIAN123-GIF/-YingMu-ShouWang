@@ -137,12 +137,14 @@ def test_flv_stream_probe_records_valid_private_clip(monkeypatch):
         }
 
     monkeypatch.setattr(validator, "EZVIZ_LIVE_PROTOCOL", 4)
+    monkeypatch.setattr(validator, "EZVIZ_LIVE_QUALITY", 1)
     monkeypatch.setattr(validator, "call_stage", fake_call_stage)
     monkeypatch.setattr(validator, "probe_live_stream", fake_probe)
 
     record = asyncio.run(validator.validate_live_address(stream_probe=True))
 
     assert requested[0]["protocol"] == 4
+    assert requested[0]["quality"] == 1
     assert record["result"] == "SUCCESS"
     assert record["selected_protocol"] == "flv"
     assert record["stream_probe_executed"] is True
@@ -162,6 +164,7 @@ def test_product_video_source_uses_configured_protocol_and_verify_code(monkeypat
     monkeypatch.setattr(device_module, "EZVIZ_DEVICE_SERIAL", "test-device")
     monkeypatch.setattr(device_module, "EZVIZ_CHANNEL_NO", 1)
     monkeypatch.setattr(device_module, "EZVIZ_LIVE_PROTOCOL", 4)
+    monkeypatch.setattr(device_module, "EZVIZ_LIVE_QUALITY", 1)
     monkeypatch.setattr(device_module, "EZVIZ_DEVICE_VERIFY_CODE", "private-code")
     monkeypatch.setattr(device_module.EzvizAPI, "get_live_address", fake_get_live_address)
 
@@ -169,7 +172,7 @@ def test_product_video_source_uses_configured_protocol_and_verify_code(monkeypat
 
     assert captured == {
         "serial": "test-device", "channel": 1,
-        "protocol": 4, "code": "private-code",
+        "protocol": 4, "quality": 1, "code": "private-code",
     }
     assert str(source.temporary_url) == "https://example.test/live.flv"
 

@@ -29,5 +29,5 @@
   ],
   "effective_from": "2026-08-25T00:00:00+08:00",
   "supersedes": null,
-  "notes": "Manual calibration from the authorized fixed C6c-pos01 1280x720 replay view. Recalibrate after any camera or furniture movement. HIGH_RISK is an engineering interaction zone, not an automatically recognized hazard."
+  "notes": "基于授权固定机位 C6c-pos01（1280×720）回放画面完成场景标定。摄像机或家具移动后请重新标定。高风险区用于工程交互评估，不代表自动识别的危险。"
 }

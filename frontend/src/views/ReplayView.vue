@@ -7,6 +7,7 @@ import SourceBadge from '../components/common/SourceBadge.vue'
 import ReplaySelector from '../components/replay/ReplaySelector.vue'
 import { getAsset, getEvent, getEvents } from '../services/repository'
 import { resolveEventAssetId } from '../services/viewModel'
+import { formatDateTime } from '../utils/format'
 
 const loading = ref(true)
 const error = ref('')
@@ -59,14 +60,14 @@ onMounted(load)
       <div v-if="selected" class="replay-stage">
       <MediaPanel v-if="selectedAsset" :asset="selectedAsset" :source-mode="selected?.source_mode" :simulated="selected?.simulated" />
       <el-alert v-else-if="assetState === 'failed'" :title="assetMessage" type="error" :closable="false" show-icon />
-      <section v-if="selected" v-loading="assetState === 'loading'" class="content-card" data-testid="replay-detail">
-        <div class="card-heading">
+      <section v-if="selected" v-loading="assetState === 'loading'" class="content-card" :class="{ 'replay-detail-wide': !selectedAsset }" data-testid="replay-detail">
+        <div class="card-heading replay-detail-heading">
           <div><span class="section-kicker">当前片段</span><h2>{{ selected.title }}</h2></div>
-          <RiskBadge :level="selected.risk_level" />
+          <RiskBadge :level="selected.risk_level" text-only />
         </div>
-        <SourceBadge :mode="selected.source_mode" :simulated="selected.simulated" />
-        <el-timeline v-if="selected.timeline?.length">
-          <el-timeline-item v-for="item in selected.timeline" :key="`${item.time}-${item.title}`" :timestamp="item.time" placement="top">
+        <SourceBadge button class="replay-detail-source" :mode="selected.source_mode" :simulated="selected.simulated" />
+        <el-timeline v-if="selected.timeline?.length" class="replay-detail-timeline">
+          <el-timeline-item v-for="item in selected.timeline" :key="`${item.time}-${item.title}`" :timestamp="formatDateTime(item.time)" placement="top">
             <strong>{{ item.title }}</strong><p>{{ item.detail }}</p>
           </el-timeline-item>
         </el-timeline>

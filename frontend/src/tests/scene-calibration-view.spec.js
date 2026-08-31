@@ -1,6 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import sceneCalibration from '../replay-data/scene-calibration.json'
+import { zoneIdentifierLabel } from '../utils/format'
 
 const mocks = vi.hoisted(() => ({ getSceneCalibration: vi.fn(), getLatestForewarning: vi.fn(), push: vi.fn() }))
 vi.mock('vue-router', () => ({
@@ -21,7 +23,7 @@ function mountView() {
       PageHeader: { template: '<header><slot /></header>' }, SourceBadge: { template: '<span class="source-stub" />' },
       'el-button': { template: '<button><slot /></button>' }, 'el-alert': { props: ['title'], template: '<div class="alert-stub">{{ title }}<slot /></div>' },
       'el-tag': { template: '<span><slot /></span>' }, 'el-icon': { template: '<i><slot /></i>' },
-      'el-table': { props: ['data'], template: '<div class="table-stub">{{ data.length }} rows<slot /></div>' },
+      'el-table': { name: 'ElTable', props: ['data'], emits: ['cell-mouse-enter', 'cell-mouse-leave'], template: '<div class="table-stub">{{ data.length }} rows<slot /></div>' },
       'el-table-column': { template: '<span />' },
     },
   } })
@@ -40,6 +42,18 @@ describe('场景标定详情页', () => {
     expect(wrapper.text()).toContain('recorded-fixed-demo-v1')
     expect(wrapper.findAll('polygon')).toHaveLength(sceneCalibration.zones.length)
     expect(wrapper.text()).toContain('2 rows')
+  })
+
+  it('links canvas and table hover states to the matching zone', async () => {
+    mocks.getSceneCalibration.mockResolvedValue(structuredClone(sceneCalibration))
+    const wrapper = mountView(); await flushPromises()
+    await wrapper.findAll('.calibration-zone')[0].trigger('mouseenter', { clientX: 20, clientY: 20 })
+    expect(wrapper.find('.calibration-canvas-tooltip').text()).toContain(zoneIdentifierLabel(sceneCalibration.zones[0].zone_id))
+    expect(wrapper.findAll('.calibration-zone')[0].classes()).toContain('is-active')
+
+    wrapper.findComponent({ name: 'ElTable' }).vm.$emit('cell-mouse-enter', sceneCalibration.zones[1])
+    await nextTick()
+    expect(wrapper.findAll('.calibration-zone')[1].classes()).toContain('is-active')
   })
 
   it.each([

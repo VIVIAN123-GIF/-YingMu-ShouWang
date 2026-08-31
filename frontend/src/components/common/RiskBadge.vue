@@ -6,6 +6,7 @@ import { RISK_LEVELS } from '../../domain/constants'
 const props = defineProps({
   level: { type: String, default: 'GREEN' },
   compact: Boolean,
+  textOnly: Boolean,
   score: { type: [Number, String], default: null },
 })
 
@@ -17,6 +18,8 @@ const isUnknown = computed(() => !RISK_LEVELS[props.level])
 const showScore = computed(() => !isUnknown.value && props.score !== null)
 const ariaLabel = computed(() => isUnknown.value
   ? `${label.value}，不可判定`
+  : props.textOnly
+    ? label.value
   : props.score === null
     ? `${label.value}，${starCount.value}星`
     : `${label.value}，风险分数${props.score}，${starCount.value}星`)
@@ -24,8 +27,8 @@ const ariaLabel = computed(() => isUnknown.value
 
 <template>
   <span class="risk-badge" :class="[`risk-${level.toLowerCase()}`, { compact }]" :aria-label="ariaLabel">
-    <span v-if="showScore" class="risk-score">{{ score }}</span>
-    <span v-if="!isUnknown && starCount" class="risk-stars" aria-hidden="true">
+    <span v-if="!textOnly && showScore" class="risk-score">{{ score }}</span>
+    <span v-if="!textOnly && !isUnknown && starCount" class="risk-stars" aria-hidden="true">
       <el-icon v-for="index in starCount" :key="index"><StarFilled /></el-icon>
     </span>
     <span class="risk-level-label">{{ label }}</span>

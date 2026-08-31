@@ -37,7 +37,7 @@ export const DELIVERY_STATUSES = Object.freeze({
 export const DATA_MODES = Object.freeze({
   auto: '自动切换',
   api: '实时连接',
-  replay: '离线回放',
+  replay: '授权回放',
 })
 
 export const ALARM_TASK_STATUSES = Object.freeze({

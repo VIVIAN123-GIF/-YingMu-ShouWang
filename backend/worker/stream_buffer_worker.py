@@ -20,6 +20,7 @@ from backend.config import (
 from backend.service.device_adapter import device_adapter
 from backend.service.stream_buffer_service import (
     acquire_stream_buffer_lock,
+    active_session_segments,
     build_buffer_ffmpeg_command,
     buffer_session_stalled,
     cleanup_stream_buffer,
@@ -30,6 +31,7 @@ from backend.service.stream_buffer_service import (
     resolve_stream_buffer_root,
     release_stream_buffer_lock,
     validate_stream_buffer_authorization,
+    warm_coverage_ready,
     write_buffer_status,
 )
 from backend.service.snapshot_asset_service import SnapshotAssetError
@@ -73,7 +75,6 @@ async def run_session(root) -> int:
                 active_session_id=session_id,
             )
             segments = inventory_buffer_segments(root)
-            session_segments = [item for item in segments if item.path.parent == session_dir]
             if buffer_session_stalled(
                 segments,
                 session_dir,
@@ -83,6 +84,7 @@ async def run_session(root) -> int:
                 logger.warning("stream_buffer_session_stalled session_id=%s", session_id)
                 await _stop_process(process)
                 return 75
+            session_segments = active_session_segments(root, segments)
             count = len(session_segments)
             newest_endpoint = session_segments[-1].ended_at if session_segments else datetime.now(timezone.utc)
             warm_coverage = continuous_coverage_before(
@@ -94,7 +96,10 @@ async def run_session(root) -> int:
                 root,
                 status=(
                     "READY"
-                    if warm_coverage >= YINGMU_STREAM_BUFFER_PRE_SECONDS
+                    if warm_coverage_ready(
+                        warm_coverage,
+                        required_seconds=YINGMU_STREAM_BUFFER_PRE_SECONDS,
+                    )
                     else "WARMING"
                 ),
                 session_id=session_id,

@@ -333,6 +333,25 @@ def inventory_buffer_segments(
     return sorted(segments, key=lambda item: (item.started_at, item.path.name))
 
 
+def active_session_segments(root: Path, segments: list[BufferedSegment]) -> list[BufferedSegment]:
+    """Return closed segments from the Worker session named in status.json."""
+    try:
+        status = json.loads((root / STATUS_FILENAME).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return segments
+    session_id = status.get("session_id") if isinstance(status, dict) else None
+    if not isinstance(session_id, str) or not session_id:
+        return segments
+    selected = [item for item in segments if item.path.parent.name == session_id]
+    if status.get("status") in {"STARTING", "WARMING", "READY"} and selected:
+        # FFmpeg closes a segment only when it opens the next one. Its current
+        # output can have an old mtime between write bursts, so settle-time
+        # checks alone cannot prove that the highest-index file is complete.
+        newest = max(selected, key=lambda item: (_segment_index(item) or -1, item.path.name))
+        selected.remove(newest)
+    return selected
+
+
 def buffer_session_stalled(
     segments: list[BufferedSegment],
     session_dir: Path,
@@ -455,6 +474,18 @@ def continuous_coverage_before(
     if selected[0].started_at > start:
         return max(0.0, (newest_end - selected[0].started_at).total_seconds())
     return float(required_seconds)
+
+
+def warm_coverage_ready(
+    coverage_seconds: float,
+    *,
+    required_seconds: int,
+    segment_seconds: int | None = None,
+) -> bool:
+    """Apply the same filesystem timestamp tolerance used by alarm selection."""
+    duration = YINGMU_STREAM_BUFFER_SEGMENT_SECONDS if segment_seconds is None else segment_seconds
+    tolerance = max(0.25, duration * 0.25)
+    return coverage_seconds >= max(0.0, required_seconds - tolerance)
 
 
 def select_alarm_window(
@@ -751,6 +782,7 @@ async def select_alarm_window_with_retry(
     }
     while True:
         segments = await asyncio.to_thread(inventory_buffer_segments, root)
+        segments = active_session_segments(root, segments)
         try:
             return select_alarm_window(segments, alarm_time)
         except StreamBufferError as exc:
@@ -853,19 +885,26 @@ def stream_buffer_health(root: Path | None = None) -> dict:
             error_code = status.get("error_code")
         except (OSError, json.JSONDecodeError):
             worker_status = "STATUS_INVALID"
-    newest_endpoint = segments[-1].ended_at if segments else now
+    # The worker's readiness refers to its current ffmpeg session. Previous
+    # sessions can overlap in the retention window while a worker reconnects.
+    # They must not make the current session look discontinuous.
+    active_segments = active_session_segments(buffer_root, segments)
+    newest_endpoint = active_segments[-1].ended_at if active_segments else now
     coverage = continuous_coverage_before(
-        segments,
+        active_segments,
         newest_endpoint,
         required_seconds=YINGMU_STREAM_BUFFER_PRE_SECONDS,
     )
     newest_age = (
-        max(0.0, (now - segments[-1].ended_at).total_seconds()) if segments else None
+        max(0.0, (now - active_segments[-1].ended_at).total_seconds()) if active_segments else None
     )
     ready = bool(
         worker_status == "READY"
-        and segments
-        and coverage >= YINGMU_STREAM_BUFFER_PRE_SECONDS
+        and active_segments
+        and warm_coverage_ready(
+            coverage,
+            required_seconds=YINGMU_STREAM_BUFFER_PRE_SECONDS,
+        )
         and newest_age is not None
         and newest_age <= YINGMU_STREAM_BUFFER_SEGMENT_SECONDS * 3
     )
@@ -873,7 +912,7 @@ def stream_buffer_health(root: Path | None = None) -> dict:
         "schema_version": "stream-buffer-health/1.0",
         "status": worker_status,
         "ready": ready,
-        "completed_segments": len(segments),
+        "completed_segments": len(active_segments),
         "pre_alarm_coverage_seconds": round(coverage, 3),
         "newest_segment_age_seconds": round(newest_age, 3) if newest_age is not None else None,
         "error_code": error_code,
@@ -890,7 +929,9 @@ def probe_stream_buffer_assembly(root: Path | None = None) -> dict:
         + YINGMU_STREAM_BUFFER_SEGMENT_SECONDS
         + 1
     )
-    segments = inventory_buffer_segments(buffer_root, now=now)
+    segments = active_session_segments(
+        buffer_root, inventory_buffer_segments(buffer_root, now=now)
+    )
     selection = select_alarm_window(segments, alarm_time)
     output_path = buffer_root / WORK_DIRECTORY / f"probe-{uuid4().hex}.mp4"
     try:

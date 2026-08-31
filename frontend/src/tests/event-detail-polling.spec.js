@@ -128,7 +128,7 @@ describe('事件详情 API 自动同步', () => {
     const { wrapper } = await mountView()
 
     expect(wrapper.text()).toContain('正在干预')
-    expect(wrapper.text()).toContain('后端暂无素材记录（asset-poll-1）')
+    expect(wrapper.text()).toContain('素材暂不可用（asset-poll-1）')
     expect(wrapper.get('[data-testid="event-sync-status"]').text()).toBe('自动同步中')
     await vi.advanceTimersByTimeAsync(1500)
     await flushPromises()
@@ -264,7 +264,7 @@ describe('事件详情 API 自动同步', () => {
     expect(submitInterventionResultMock).toHaveBeenCalledWith(current, 'stable')
     expect(wrapper.text()).toContain('坐稳确认已记录')
     expect(wrapper.text()).toContain('正在干预')
-    expect(wrapper.text()).toContain('不会直接关闭事件')
+    expect(wrapper.text()).toContain('确认后仍将继续观察事件状态')
     wrapper.unmount()
   })
 

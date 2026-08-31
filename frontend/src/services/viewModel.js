@@ -72,7 +72,7 @@ function feedbackTimelineItems(records) {
   return asArray(records).map((record) => ({
     time: record.recorded_at,
     title: record.feedback_kind === 'IDENTITY_VERIFICATION' ? '身份信息核验已记录' : '家属关怀反馈已记录',
-    detail: `${record.value} · 操作人：${record.operator === 'system' ? '系统' : '家属'}${record.saved_in_demo ? ' · 本地演示记录' : ''}`,
+    detail: `${record.value} · 操作人：${record.operator === 'system' ? '系统' : '家属'}`,
     status: 'RECORDED',
     kind: 'FAMILY_FEEDBACK',
   }))

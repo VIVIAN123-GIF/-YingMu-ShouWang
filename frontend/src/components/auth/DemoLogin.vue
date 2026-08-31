@@ -57,9 +57,6 @@ async function submit() {
           <el-button native-type="submit" type="primary" size="large" :loading="submitting">进入控制台</el-button>
         </form>
 
-        <div class="demo-login-boundaries" aria-label="访问范围">
-          <span>脱敏演示数据</span><span>授权媒体</span><span>非生产身份认证</span>
-        </div>
         <small>登录仅用于当前控制台会话，站点不保存密码或媒体令牌。</small>
       </div>
     </section>

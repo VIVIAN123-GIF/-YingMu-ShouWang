@@ -22,7 +22,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from backend.config import EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL
+from backend.config import EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL, EZVIZ_LIVE_QUALITY
 from scripts.validate_ezviz_live import business_code, call_stage, device_alias, now_iso
 
 
@@ -95,7 +95,7 @@ async def run_once(run_index: int, warmup_seconds: int) -> dict[str, Any]:
         "channelNo": EZVIZ_CHANNEL_NO,
         "protocol": 2,
         "expireTime": 3600,
-        "quality": 2,
+        "quality": EZVIZ_LIVE_QUALITY,
     }
     body, http_status, latency_ms, _ = await call_stage("/v2/live/address/get", payload)
     code = business_code(body)

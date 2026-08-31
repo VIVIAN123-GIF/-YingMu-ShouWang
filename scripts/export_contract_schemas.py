@@ -195,7 +195,7 @@ def main() -> None:
             ],
             "effective_from": "2026-08-26T09:00:00+08:00",
             "supersedes": None,
-            "notes": "Sanitized fixed-camera calibration example",
+            "notes": "固定机位场景标定示例",
         },
     }
     for name, payload in d1_examples.items():

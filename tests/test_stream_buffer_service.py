@@ -19,6 +19,7 @@ from backend.service import alarm_task_service
 from backend.service import algorithm_task_service
 from backend.service.stream_buffer_service import (
     acquire_stream_buffer_lock,
+    active_session_segments,
     BufferedSegment,
     StreamBufferError,
     buffer_session_stalled,
@@ -431,7 +432,66 @@ def test_health_stays_warming_with_only_one_completed_segment(tmp_path, monkeypa
     health = stream_buffer_health(root)
 
     assert health["ready"] is False
-    assert health["pre_alarm_coverage_seconds"] == 2
+    assert health["pre_alarm_coverage_seconds"] == 0
+    assert health["completed_segments"] == 0
+
+
+def test_health_accepts_subsecond_filesystem_timestamp_jitter(tmp_path, monkeypatch):
+    root = resolve_stream_buffer_root(str(tmp_path / "buffer"))
+    session_id, session_dir = create_buffer_session(root)
+    now = datetime.now(UTC)
+    for index in range(6):
+        path = session_dir / f"segment-{index:09d}.ts"
+        path.write_bytes(b"segment")
+        ended_at = now - timedelta(seconds=11.97375 - index * 1.99475)
+        os.utime(path, (ended_at.timestamp(), ended_at.timestamp()))
+    write_buffer_status(root, status="READY", session_id=session_id, segment_count=5)
+    monkeypatch.setattr(stream_buffer_service, "YINGMU_STREAM_BUFFER_PRE_SECONDS", 10)
+    monkeypatch.setattr(stream_buffer_service, "YINGMU_STREAM_BUFFER_SEGMENT_SECONDS", 2)
+
+    health = stream_buffer_health(root)
+
+    assert health["pre_alarm_coverage_seconds"] == pytest.approx(9.979, abs=0.002)
+    assert health["ready"] is True
+
+
+def test_active_session_excludes_the_open_highest_index_segment(tmp_path):
+    root = resolve_stream_buffer_root(str(tmp_path / "buffer"))
+    session_id, session_dir = create_buffer_session(root)
+    now = datetime.now(UTC)
+    closed = segment(session_dir / "segment-000000010.ts", now - timedelta(seconds=4))
+    active = segment(session_dir / "segment-000000011.ts", now - timedelta(seconds=2))
+    write_buffer_status(root, status="READY", session_id=session_id, segment_count=1)
+
+    selected = active_session_segments(root, [closed, active])
+
+    assert selected == [closed]
+
+
+def test_health_uses_only_the_active_session(tmp_path, monkeypatch):
+    root = resolve_stream_buffer_root(str(tmp_path / "buffer"))
+    active_session_id, active_session = create_buffer_session(root)
+    _, previous_session = create_buffer_session(root)
+    now = datetime.now(UTC)
+    for index in range(6):
+        for session_dir in (active_session, previous_session):
+            path = session_dir / f"segment-{index:09d}.ts"
+            path.write_bytes(b"segment")
+            ended_at = now - timedelta(seconds=11 - index * 2)
+            os.utime(path, (ended_at.timestamp(), ended_at.timestamp()))
+    write_buffer_status(root, status="READY", session_id=active_session_id, segment_count=6)
+    monkeypatch.setattr(stream_buffer_service, "YINGMU_STREAM_BUFFER_PRE_SECONDS", 10)
+    monkeypatch.setattr(stream_buffer_service, "YINGMU_STREAM_BUFFER_SEGMENT_SECONDS", 2)
+
+    health = stream_buffer_health(root)
+
+    assert health["ready"] is True
+    assert health["pre_alarm_coverage_seconds"] == 10
+
+    inventory = inventory_buffer_segments(root)
+    selected = active_session_segments(root, inventory)
+    assert {item.path.parent for item in selected} == {active_session}
+    assert len(selected) == 5
 
 
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="FFmpeg is required")

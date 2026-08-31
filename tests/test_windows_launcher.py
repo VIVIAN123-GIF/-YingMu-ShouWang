@@ -30,6 +30,61 @@ def test_demo_environment_uses_isolated_database(tmp_path, monkeypatch):
     assert values["EZVIZ_WEBHOOK_ALLOW_UNSIGNED_TEST"] == "false"
 
 
+def test_reset_demo_database_removes_only_demo_sqlite_files(tmp_path):
+    database = tmp_path / "demo.db"
+    wal = tmp_path / "demo.db-wal"
+    shm = tmp_path / "demo.db-shm"
+    unrelated = tmp_path / "live.db"
+    for path in (database, wal, shm, unrelated):
+        path.write_text("test", encoding="utf-8")
+
+    launcher.reset_demo_database(tmp_path)
+
+    assert not database.exists()
+    assert not wal.exists()
+    assert not shm.exists()
+    assert unrelated.exists()
+
+
+def test_port_check_rejects_an_active_listener(monkeypatch):
+    class Socket:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return None
+
+        def settimeout(self, _timeout):
+            return None
+
+        def connect_ex(self, _address):
+            return 0
+
+    monkeypatch.setattr(launcher.socket, "socket", lambda *_args: Socket())
+
+    with pytest.raises(RuntimeError, match="port 8000 is already in use"):
+        launcher.assert_port_available("127.0.0.1", 8000)
+
+
+def test_port_check_allows_an_available_listener(monkeypatch):
+    class Socket:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return None
+
+        def settimeout(self, _timeout):
+            return None
+
+        def connect_ex(self, _address):
+            return 1
+
+    monkeypatch.setattr(launcher.socket, "socket", lambda *_args: Socket())
+
+    launcher.assert_port_available("127.0.0.1", 8000)
+
+
 def test_live_environment_rejects_missing_credentials(tmp_path):
     config = tmp_path / ".env.local"
     config.write_text("YINGMU_ENV=live\nEZVIZ_APP_KEY=only-key\n", encoding="utf-8")

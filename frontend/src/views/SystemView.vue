@@ -7,10 +7,9 @@ import PageHeader from '../components/common/PageHeader.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import PrivateImage from '../components/common/PrivateImage.vue'
 import LiveVideoPanel from '../components/common/LiveVideoPanel.vue'
-import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
 import {
   clearRecordedFeedback, getAllRecordedFeedback,
-  createDeviceSnapshot, getDeviceSnapshot, getDeviceStatus, getLatestForewarning,
+  createDeviceSnapshot, getCurrentSceneCalibration, getDeviceSnapshot, getDeviceStatus, getLatestForewarning,
   runtime, stopDeviceCollection,
 } from '../services/repository'
 import { displayValueLabel, feedbackTone, formatDateTime } from '../utils/format'
@@ -20,6 +19,7 @@ const loading = ref(true)
 const error = ref('')
 const device = ref(null)
 const latestForewarning = ref(null)
+const currentCalibration = ref(null)
 const feedbackRecords = ref([])
 const snapshot = ref(null)
 const snapshotLoading = ref(false)
@@ -31,7 +31,7 @@ const stopLoading = ref(false)
 const controlToken = ref('')
 const controlError = ref(null)
 
-const sceneConfigId = computed(() => latestForewarning.value?.scene_config_id || '')
+const sceneConfigId = computed(() => currentCalibration.value?.scene_config_id || latestForewarning.value?.scene_config_id || '')
 const controlAvailable = computed(() => (
   device.value?.collection_active
   && device.value?.source_mode === 'LIVE_DEVICE'
@@ -55,10 +55,13 @@ function apiError(errorValue, fallback) {
 }
 
 async function load() {
-  const [deviceResult, forewarningResult] = await Promise.allSettled([getDeviceStatus(), getLatestForewarning()])
+  const [deviceResult, forewarningResult, calibrationResult] = await Promise.allSettled([
+    getDeviceStatus(), getLatestForewarning(), getCurrentSceneCalibration(),
+  ])
   if (deviceResult.status === 'fulfilled') device.value = deviceResult.value
   else error.value = `无法读取设备状态：${deviceResult.reason.message}`
   if (forewarningResult.status === 'fulfilled') latestForewarning.value = forewarningResult.value
+  if (calibrationResult.status === 'fulfilled') currentCalibration.value = calibrationResult.value
   feedbackRecords.value = getAllRecordedFeedback()
   loading.value = false
   void autoInitializeMedia()
@@ -102,7 +105,7 @@ async function confirmStop() {
 }
 
 function closeStopDialog() { controlToken.value = ''; controlError.value = null }
-function clearFeedback() { clearRecordedFeedback(); feedbackRecords.value = []; ElMessage.success('本地演示记录已清除') }
+function clearFeedback() { clearRecordedFeedback(); feedbackRecords.value = []; ElMessage.success('记录已清除') }
 function openCalibration() { if (sceneConfigId.value) router.push({ name: 'scene-calibration', params: { sceneConfigId: sceneConfigId.value } }) }
 onMounted(load)
 </script>
@@ -123,10 +126,10 @@ onMounted(load)
       <LiveVideoPanel :available="liveAvailable" auto-start />
 
       <div class="system-operations-grid">
-        <section class="content-card snapshot-card" data-testid="device-snapshot">
+        <section class="content-card snapshot-card" :class="{ 'snapshot-card-empty': !snapshot && !snapshotError }" data-testid="device-snapshot">
           <div class="card-heading"><div><span class="section-kicker">设备快照</span><h2>最近一次主动抓拍</h2></div><el-button :loading="snapshotLoading" type="primary" @click="captureSnapshot"><el-icon><Camera /></el-icon>获取快照</el-button></div>
           <el-alert v-if="snapshotError" :title="snapshotError.message" type="error" :closable="false" show-icon>
-            <template #default><span>错误码：{{ snapshotError.code }}</span><span v-if="snapshotError.requestId"> · 请求 ID：{{ snapshotError.requestId }}</span></template>
+            <template #default><span>错误码：{{ snapshotError.code }}</span><span v-if="snapshotError.requestId"> · 请求编号：{{ snapshotError.requestId }}</span></template>
           </el-alert>
           <div v-else-if="snapshot" class="snapshot-result">
             <PrivateImage :asset-id="snapshotAsset?.asset_id" alt="授权主动抓拍" />
@@ -140,40 +143,41 @@ onMounted(load)
           <el-empty v-else description="尚未获取设备快照" :image-size="72" />
         </section>
 
-        <section class="content-card scene-link-card" data-testid="scene-calibration-link">
-          <div class="card-heading"><div><span class="section-kicker">场景配置</span><h2>当前关联标定</h2></div><el-icon class="card-heading-icon"><Location /></el-icon></div>
-          <template v-if="sceneConfigId">
-            <dl class="detail-list compact-detail-list"><div><dt>配置标识</dt><dd>{{ sceneConfigId }}</dd></div><div><dt>关联时间</dt><dd>{{ formatDateTime(latestForewarning.evaluated_at) }}</dd></div></dl>
-            <SourceBadge :mode="latestForewarning.source_mode" :simulated="latestForewarning.simulated" />
-            <el-button plain @click="openCalibration">查看场景标定</el-button>
-          </template>
-          <el-empty v-else description="最新预警未关联场景标定" :image-size="72" />
-        </section>
+        <div class="system-side-stack">
+          <section class="content-card scene-link-card" data-testid="scene-calibration-link">
+            <div class="card-heading"><div><span class="section-kicker">场景配置</span><h2>当前关联标定</h2></div><el-icon class="card-heading-icon"><Location /></el-icon></div>
+            <template v-if="sceneConfigId">
+              <dl class="detail-list compact-detail-list"><div><dt>配置标识</dt><dd>{{ sceneConfigId }}</dd></div><div><dt>生效时间</dt><dd>{{ currentCalibration ? formatDateTime(currentCalibration.effective_from) : formatDateTime(latestForewarning.evaluated_at) }}</dd></div></dl>
+              <SourceBadge v-if="latestForewarning" :mode="latestForewarning.source_mode" :simulated="latestForewarning.simulated" />
+              <el-button plain @click="openCalibration">查看场景标定</el-button>
+            </template>
+            <el-empty v-else description="最新预警未关联场景标定" :image-size="72" />
+          </section>
+
+          <section class="content-card adapter-mode-card" data-testid="adapter-mode">
+            <div class="card-heading"><div><span class="section-kicker">设备接入</span><h2>适配器模式</h2></div></div>
+            <dl class="detail-list compact-detail-list">
+              <div><dt>适配器模式</dt><dd>{{ displayValueLabel(device.adapter_mode) }}</dd></div><div><dt>数据来源</dt><dd>{{ displayValueLabel(device.source_mode) }}</dd></div>
+              <div><dt>采集状态</dt><dd>{{ device.collection_active ? '采集运行中' : '采集已停止' }}</dd></div><div><dt>设备别名</dt><dd>{{ displayValueLabel(device.device_alias) }}</dd></div>
+            </dl>
+            <div class="technical-device-actions">
+              <SourceBadge :mode="device.source_mode" :simulated="device.simulated" />
+              <el-button type="danger" plain :disabled="!controlAvailable" data-testid="stop-collection" @click="stopDialogOpen = true"><el-icon><VideoPause /></el-icon>停止采集</el-button>
+            </div>
+            <el-alert v-if="!controlAvailable && device.collection_active" title="回放或降级来源不能执行设备控制" type="warning" :closable="false" show-icon />
+          </section>
+        </div>
       </div>
 
-      <TechnicalDisclosure title="设备与适配器详情" summary="适配器模式、数据来源、采集状态和设备别名">
-        <section class="content-card">
-          <dl class="detail-list">
-            <div><dt>适配器模式</dt><dd>{{ displayValueLabel(device.adapter_mode) }}</dd></div><div><dt>数据来源</dt><dd>{{ displayValueLabel(device.source_mode) }}</dd></div>
-            <div><dt>采集状态</dt><dd>{{ device.collection_active ? '采集运行中' : '采集已停止' }}</dd></div><div><dt>设备别名</dt><dd>{{ displayValueLabel(device.device_alias) }}</dd></div>
-          </dl>
-          <div class="technical-device-actions">
-            <SourceBadge :mode="device.source_mode" :simulated="device.simulated" />
-            <el-button type="danger" plain :disabled="!controlAvailable" data-testid="stop-collection" @click="stopDialogOpen = true"><el-icon><VideoPause /></el-icon>停止采集</el-button>
-          </div>
-          <el-alert v-if="!controlAvailable && device.collection_active" title="回放或降级来源不能执行设备控制" type="warning" :closable="false" show-icon />
-        </section>
-      </TechnicalDisclosure>
-
       <section class="content-card feedback-audit-card" data-testid="feedback-audit">
-        <div class="card-heading"><div><span class="section-kicker">本地演示记录</span><h2>关怀与身份核验</h2></div><el-tag type="warning" effect="plain">{{ feedbackRecords.length }} 条</el-tag></div>
+        <div class="card-heading"><div><span class="section-kicker">反馈记录</span><h2>关怀与身份核验</h2></div><el-tag type="warning" effect="plain">{{ feedbackRecords.length }} 条</el-tag></div>
         <div v-if="feedbackRecords.length" class="feedback-record-list">
           <article v-for="record in feedbackRecords.slice().reverse()" :key="record.feedback_id" class="recorded-feedback" :class="`feedback-${feedbackTone(record.value)}`">
-            <strong>{{ record.feedback_kind === 'IDENTITY_VERIFICATION' ? '身份信息核验' : '家属关怀反馈' }}</strong><span>{{ record.value }}</span><small>{{ record.recorded_at }} · {{ displayValueLabel(record.operator) }} · {{ record.event_id }} · {{ record.saved_in_demo ? '授权回放本地演示' : '后端记录' }}</small>
+            <strong>{{ record.feedback_kind === 'IDENTITY_VERIFICATION' ? '身份信息核验' : '家属关怀反馈' }}</strong><span>{{ record.value }}</span><small>{{ record.recorded_at }} · {{ displayValueLabel(record.operator) }} · {{ record.event_id }}</small>
           </article>
         </div>
         <el-empty v-else description="尚未记录关怀反馈或身份核验" />
-        <el-button v-if="feedbackRecords.length" plain @click="clearFeedback">清除本地演示记录</el-button>
+        <el-button v-if="feedbackRecords.length" plain @click="clearFeedback">清除记录</el-button>
       </section>
     </template>
 
@@ -183,7 +187,7 @@ onMounted(load)
         <el-form-item label="现场控制令牌"><el-input v-model="controlToken" type="password" show-password autocomplete="off" data-testid="control-token" /></el-form-item>
       </el-form>
       <el-alert v-if="controlError" :title="controlError.message" type="error" :closable="false" show-icon>
-        <template #default><span>错误码：{{ controlError.code }}</span><span v-if="controlError.requestId"> · 请求 ID：{{ controlError.requestId }}</span></template>
+        <template #default><span>错误码：{{ controlError.code }}</span><span v-if="controlError.requestId"> · 请求编号：{{ controlError.requestId }}</span></template>
       </el-alert>
       <template #footer><el-button @click="stopDialogOpen = false">取消</el-button><el-button type="danger" :disabled="!controlToken" :loading="stopLoading" @click="confirmStop">确认停止</el-button></template>
     </el-dialog>

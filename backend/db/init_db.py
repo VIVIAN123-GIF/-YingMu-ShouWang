@@ -15,6 +15,7 @@ from backend.db.models import (
     RuleTrace,
     AgentExplanationJob,
     ForewarningSnapshot,
+    SceneCalibrationRecord,
 )
 from backend.config import ENV_MODE, EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL, EZVIZ_RESIDENT_ID, RULESET_VERSION
 
@@ -60,6 +61,7 @@ SCHEMA_REQUIREMENTS = {
     "risk_event": {"source_mode", "simulated", "recovery_started_at"},
     "intervention_result": {"risk_after", "resolved", "source_mode", "simulated"},
     "rule_trace": {"previous_status", "next_status", "trace_payload"},
+    "scene_calibration": {"scene_config_id", "calibration_payload"},
 }
 
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DATA_MODES, DELIVERY_STATUSES, EVENT_STATUSES, RISK_LEVELS, SOURCE_MODES } from '../domain/constants'
 import { shouldFallback } from '../services/repository'
 import { DataContractError, validateDashboard, validateForewarningSnapshot } from '../domain/validation'
-import { displayValueLabel, evidenceTypeLabel, timeScaleLabel, unitLabel } from '../utils/format'
+import { displayValueLabel, evidenceTypeLabel, locationLabel, mediaTitleLabel, timeScaleLabel, unitLabel, zoneIdentifierLabel } from '../utils/format'
 
 describe('冻结枚举', () => {
   it('保留四级风险、六种事件状态和四种来源', () => {
@@ -30,6 +30,18 @@ describe('用户可见枚举中文化', () => {
 
   it('保留未知固定标识以便追溯', () => {
     expect(displayValueLabel('ruleset-v2')).toBe('ruleset-v2')
+  })
+
+  it('将模拟媒体的用户可见标题转换为中文，保留素材标识', () => {
+    expect(mediaTitleLabel('Simulated unavailable media (asset-fall-authorized)')).toBe('模拟不可用媒体（asset-fall-authorized）')
+  })
+})
+
+describe('Display label localization', () => {
+  it('shows common locations and configured zone identifiers in Chinese', () => {
+    expect(locationLabel('living_room')).toBe('客厅')
+    expect(locationLabel('bedroom')).toBe('卧室')
+    expect(zoneIdentifierLabel('fixed-chair-support')).toBe('固定座椅支撑区')
   })
 })
 

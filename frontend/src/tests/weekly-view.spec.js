@@ -52,12 +52,22 @@ describe('黄色周报与诈骗核验卡', () => {
   })
 
   it('Mock 模式展示黄色趋势、关怀选项和三类诈骗证据，并可分别提交', async () => {
-    getWeeklyReportMock.mockResolvedValue(structuredClone(weeklyMock))
+    const report = structuredClone(weeklyMock)
+    report.evidence = [
+      { label: 'sit_to_stand_transition', detail: '已确认完整坐站转换和可评估窗口', confidence: 0.95 },
+      { label: 'trunk_sway', detail: '起身后躯干出现连续摇晃', confidence: 0.9 },
+      { label: 'post_rise_lateral_drift', detail: '起身后骨盆出现明显横向漂移', confidence: 0.88 },
+    ]
+    getWeeklyReportMock.mockResolvedValue(report)
     const wrapper = mountView()
     await flushPromises()
 
     expect(wrapper.get('[data-testid="weekly-summary"]').text()).toContain('建议家属进行一次温和联系')
     expect(wrapper.get('[data-testid="care-panel"]').text()).toContain('已联系，希望继续关注')
+    expect(wrapper.get('[data-testid="care-panel"]').text()).toContain('老人完成坐下和站起动作')
+    expect(wrapper.get('[data-testid="care-panel"]').text()).toContain('起身后躯干摆动')
+    expect(wrapper.get('[data-testid="care-panel"]').text()).toContain('起身后横向漂移')
+    expect(wrapper.get('[data-testid="care-panel"]').text()).not.toContain('sit_to_stand_transition')
     expect(wrapper.get('[data-testid="visitor-panel"]').findAll('.visitor-evidence article')).toHaveLength(3)
     expect(wrapper.get('[data-testid="visitor-panel"]').text()).toContain('高风险组合词')
 
@@ -88,9 +98,9 @@ describe('黄色周报与诈骗核验卡', () => {
     const wrapper = mountView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('当前接口未提供周报趋势序列')
-    expect(wrapper.text()).toContain('当前接口未提供关怀选项')
-    expect(wrapper.text()).toContain('当前接口未返回访客事件，不使用模拟访客数据填充')
+    expect(wrapper.text()).toContain('暂无周报趋势数据')
+    expect(wrapper.text()).toContain('暂无可选关怀结果')
+    expect(wrapper.text()).toContain('暂无可供核验的访客事件')
     expect(wrapper.get('[data-testid="care-submit"]').attributes('disabled')).toBeDefined()
     expect(wrapper.find('[data-testid="visitor-panel"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="visitor-panel-empty"]').exists()).toBe(true)

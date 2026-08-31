@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "test_kind": "EZVIZ_LIVE_ACCEPTANCE",
+  "generated_at": "2026-08-31T15:57:05.606+08:00",
+  "run_index": 1,
+  "acceptance_mode": "STREAM_PROBE",
+  "token_acquisition_mode": "APP_SECRET",
+  "device_alias": "device-a44c5c0e83",
+  "contains_credentials": false,
+  "contains_permanent_public_url": false,
+  "contains_temporary_url": false,
+  "stages": [
+    {
+      "stage": "device_status",
+      "executed": true,
+      "requested_at": "2026-08-31T15:57:05.606+08:00",
+      "device_alias": "device-a44c5c0e83",
+      "result": "SUCCESS",
+      "api_call_succeeded": true,
+      "http_status": 200,
+      "business_code": "200",
+      "business_message": "Operation succeeded",
+      "latency_ms": 5337,
+      "online": true,
+      "source_mode": "LIVE_DEVICE",
+      "failure_reason": null
+    },
+    {
+      "stage": "temporary_playback_address",
+      "executed": true,
+      "requested_at": "2026-08-31T15:57:10.944+08:00",
+      "device_alias": "device-a44c5c0e83",
+      "result": "SUCCESS",
+      "requested_protocol": "flv",
+      "fallback_attempted": false,
+      "selected_protocol": "flv",
+      "address_attempt": {
+        "protocol": "flv",
+        "http_status": 200,
+        "business_code": "200",
+        "business_message": "操作成功",
+        "latency_ms": 2892
+      },
+      "http_status": 200,
+      "business_code": "200",
+      "business_message": "操作成功",
+      "latency_ms": 2892,
+      "temporary_address_obtained": true,
+      "temporary_address_stored": false,
+      "stream_probe_executed": true,
+      "stream_probe": {
+        "result": "SUCCESS",
+        "duration_seconds": 15.0,
+        "frame_rate": 15.0,
+        "frame_count": 225,
+        "codec_name": "h264",
+        "byte_size": 1694047,
+        "content_sha256": "e123f1fc2bc9419713c78f36b1dd520e4278912e09107b89546a351767d853a1",
+        "media_retained": false,
+        "failure_reason": null
+      },
+      "source_mode": "LIVE_DEVICE",
+      "failure_reason": null
+    }
+  ],
+  "overall_result": "SUCCESS"
+}

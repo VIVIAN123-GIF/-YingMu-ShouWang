@@ -30,7 +30,7 @@ from backend.config import (ENV_MODE, EZVIZ_ACCESS_TOKEN,
                             EZVIZ_APP_SECRET, EZVIZ_BASE_URL,
                             EZVIZ_CAPTURE_TIMEOUT_SECONDS,
                             EZVIZ_CHANNEL_NO, EZVIZ_DEVICE_SERIAL,
-                            EZVIZ_LIVE_PROTOCOL,
+                            EZVIZ_LIVE_PROTOCOL, EZVIZ_LIVE_QUALITY,
                             EZVIZ_DEVICE_VERIFY_CODE,
                             YINGMU_SNAPSHOT_DOWNLOAD_TIMEOUT_SECONDS,
                             YINGMU_SNAPSHOT_MAX_BYTES)
@@ -367,7 +367,7 @@ async def validate_live_address(stream_probe: bool = False) -> dict[str, Any]:
             "channelNo": EZVIZ_CHANNEL_NO,
             "protocol": EZVIZ_LIVE_PROTOCOL,
             "expireTime": 3600,
-            "quality": 2,
+            "quality": EZVIZ_LIVE_QUALITY,
         }
         if EZVIZ_DEVICE_VERIFY_CODE:
             request_payload["code"] = EZVIZ_DEVICE_VERIFY_CODE
@@ -390,7 +390,7 @@ async def validate_live_address(stream_probe: bool = False) -> dict[str, Any]:
                 "deviceSerial": EZVIZ_DEVICE_SERIAL,
                 "channelNo": EZVIZ_CHANNEL_NO,
                 "protocol": 1,
-                "quality": 2,
+                "quality": EZVIZ_LIVE_QUALITY,
                 "code": EZVIZ_DEVICE_VERIFY_CODE,
             }
             body, http_status, fallback_elapsed, message = await call_stage(

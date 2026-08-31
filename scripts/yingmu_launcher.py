@@ -7,6 +7,7 @@ import asyncio
 import json
 import logging
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -53,6 +54,12 @@ def apply_demo_environment(runtime_dir: Path) -> dict[str, str]:
     }
     os.environ.update(values)
     return values
+
+
+def reset_demo_database(runtime_dir: Path) -> None:
+    database = runtime_dir / "demo.db"
+    for path in (database, Path(f"{database}-wal"), Path(f"{database}-shm")):
+        path.unlink(missing_ok=True)
 
 
 def load_live_environment(config_path: Path, runtime_dir: Path) -> dict[str, str]:
@@ -116,6 +123,16 @@ def wait_for_health(base_url: str, processes: list[subprocess.Popen], timeout_se
             pass
         time.sleep(0.25)
     raise TimeoutError(f"health check did not pass within {timeout_seconds:g} seconds")
+
+
+def assert_port_available(host: str, port: int) -> None:
+    probe_host = "127.0.0.1" if host in {"0.0.0.0", "::"} else host
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.settimeout(0.25)
+        if probe.connect_ex((probe_host, port)) == 0:
+            raise RuntimeError(
+                f"port {port} is already in use; stop the existing service or use --port <available-port>"
+            )
 
 
 def _post_checked(requester: Callable, path: str, payload: dict) -> object:
@@ -293,10 +310,12 @@ def _purge_live_stream_buffer(mode: str, environment: dict[str, str]) -> dict[st
 
 def run_stack(mode: str, args: argparse.Namespace) -> int:
     root = application_root()
+    assert_port_available(args.host, args.port)
     runtime_dir = (args.runtime_dir or (root / "runtime")).resolve()
     runtime_dir.mkdir(parents=True, exist_ok=True)
     configure_logging(runtime_dir / "logs" / f"{mode}.log")
     if mode == "demo":
+        reset_demo_database(runtime_dir)
         environment = apply_demo_environment(runtime_dir)
     else:
         environment = load_live_environment((args.config or (root / "config" / ".env.local")).resolve(), runtime_dir)

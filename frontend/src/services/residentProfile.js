@@ -5,7 +5,7 @@ export const defaultResidentProfile = Object.freeze({
   name: '张建国', age: 76, relation: '父亲', location: '杭州 · 家中', living: '独居',
   mobility: '可独立行走', jointIssues: '膝关节偶有不适', fallHistory: '近一年无跌倒记录', dizziness: '偶尔起夜头晕',
   medication: '晚间服用降压药，家属每周核对', sleep: '22:30 入睡，06:30 起床', assistiveDevice: '卫生间设有扶手',
-  noticeLevel: '橙色风险通知家属', emergencyContact: '女儿（仅演示称谓）', privacyZones: '卧室床边、卫生间',
+  noticeLevel: '橙色风险通知家属', emergencyContact: '女儿', privacyZones: '卧室床边、卫生间',
   videoConsent: true, audioConsent: true, reminder: '请先坐稳，再慢慢起身', filledBy: '家属填写',
 })
 
