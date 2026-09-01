@@ -70,6 +70,24 @@ describe('API ViewModel 适配', () => {
     expect(dashboard.device.collection_active).toBe(true)
   })
 
+  it('融合历史中授权回放不会覆盖当前实时风险', () => {
+    const replayEvent = {
+      ...apiEvent, event_id: 'event-replay-newer', title: '较新的回放事件',
+      risk_level: 'ORANGE', risk_score: 0.88, status: 'OPEN', updated_at: '2026-08-02T10:00:00+08:00',
+      source_mode: 'RECORDED_REPLAY', simulated: true, rule_traces: [], interventions: [],
+    }
+    const liveEvent = {
+      ...apiEvent, event_id: 'event-live-current', title: '当前实时事件',
+      risk_level: 'YELLOW', risk_score: 0.42, status: 'OBSERVING', updated_at: '2026-08-01T10:00:00+08:00',
+      source_mode: 'LIVE_DEVICE', simulated: false, rule_traces: [], interventions: [],
+    }
+
+    const dashboard = normalizeDashboard({ residentId: 'resident-api', events: [replayEvent, liveEvent] })
+
+    expect(dashboard.current_risk).toMatchObject({ risk_level: 'YELLOW', risk_score: 0.42, status: 'OBSERVING' })
+    expect(dashboard.recent_events).toHaveLength(2)
+  })
+
   it('规范化设备、空周报与基线状态', () => {
     expect(normalizeDevice({ online: true, device_alias: 'A', adapter_mode: 'EZVIZ_CLOUD', source_mode: 'LIVE_DEVICE', simulated: false, collection_active: true }))
       .toMatchObject({ name: 'A', adapter: 'EZVIZ_CLOUD', collection_active: true })

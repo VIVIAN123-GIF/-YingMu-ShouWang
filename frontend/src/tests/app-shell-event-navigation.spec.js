@@ -44,18 +44,19 @@ async function mountShell(path = '/') {
 
 describe('风险事件详情导航入口', () => {
   beforeEach(() => {
+    runtimeMock.mode = 'api'
     getEventsMock.mockReset()
     messageMock.info.mockReset()
     messageMock.error.mockReset()
   })
 
-  it('顶部直接显示数据连接模式且不显示自动模式', async () => {
+  it('顶部显示只读融合状态且不再提供数据源二选一', async () => {
+    runtimeMock.mode = 'auto'
     const { wrapper } = await mountShell()
-    const modePicker = wrapper.get('.topbar el-segmented-stub')
-    expect(modePicker.exists()).toBe(true)
-    expect(modePicker.attributes('aria-label')).toBe('数据连接模式')
-    expect(wrapper.html()).not.toContain('自动切换')
-    expect(wrapper.html()).toContain('options="[object Object],[object Object]"')
+    const sourceStatus = wrapper.get('.data-source-chip')
+    expect(sourceStatus.attributes('aria-label')).toBe('当前数据视图')
+    expect(sourceStatus.text()).toContain('融合视图')
+    expect(wrapper.find('el-segmented-stub').exists()).toBe(false)
     expect(wrapper.get('.app-shell').attributes('data-view-mode')).toBeUndefined()
   })
 

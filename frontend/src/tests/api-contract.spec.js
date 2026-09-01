@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import events from '../replay-data/events.json'
 import {
-  API_BASE_URL, apiClient, getAsset, getBaseline, getEvent, getWeeklyReport, interveneEvent, normalizeApiError, runtime, setDataMode, submitFamilyFeedback, submitInterventionResult,
+  API_BASE_URL, apiClient, getAsset, getBaseline, getEvent, getEvents, getWeeklyReport, interveneEvent, normalizeApiError, runtime, setDataMode, submitFamilyFeedback, submitInterventionResult,
 } from '../services/repository'
 
 describe('前端对接文档请求契约', () => {
@@ -78,6 +78,34 @@ describe('前端对接文档请求契约', () => {
 
     expect(get).toHaveBeenNthCalledWith(1, '/events/event%20detail%2F%E4%B8%80')
     expect(get).toHaveBeenNthCalledWith(2, '/events/event%20detail%2F%E4%B8%80/forewarning')
+  })
+
+  it('融合模式合并 API 与授权回放，并按 event_id 去重', async () => {
+    setDataMode('auto')
+    const duplicate = { ...structuredClone(events[0]), title: 'API 中的最新版本' }
+    const liveOnly = {
+      ...structuredClone(events.find((event) => !event.interventions?.length) || events[0]),
+      event_id: 'event-live-only', title: '实时新增事件', source_mode: 'LIVE_DEVICE', simulated: false,
+      interventions: [],
+    }
+    vi.spyOn(apiClient, 'get').mockResolvedValue({ data: [duplicate, liveOnly] })
+
+    const result = await getEvents('resident-001')
+
+    expect(result.filter((event) => event.event_id === duplicate.event_id)).toHaveLength(1)
+    expect(result.find((event) => event.event_id === duplicate.event_id).title).toBe('API 中的最新版本')
+    expect(result.some((event) => event.event_id === liveOnly.event_id)).toBe(true)
+    expect(result).toHaveLength(events.length + 1)
+    expect(runtime.activeSource).toBe('combined')
+  })
+
+  it('事件详情降级时不会用其他回放事件顶替未知 ID', async () => {
+    setDataMode('auto')
+    vi.spyOn(apiClient, 'get').mockRejectedValue({ response: { status: 503 }, message: 'service unavailable' })
+
+    await expect(getEvent('event-not-in-replay')).rejects.toMatchObject({
+      api: { code: 'EVENT_NOT_FOUND' }, response: { status: 404 },
+    })
   })
 
   it('将网络错误转换为用户可理解的中文', () => {

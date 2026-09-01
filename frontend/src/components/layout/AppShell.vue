@@ -2,10 +2,9 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ChatLineRound, Clock, DataAnalysis, DocumentChecked, House, InfoFilled, Menu, Monitor, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
+import { ChatLineRound, Clock, Connection, DataAnalysis, DocumentChecked, House, InfoFilled, Menu, Monitor, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
 import { routes } from '../../router'
-import { DATA_MODES } from '../../domain/constants'
-import { getEvents, runtime, setDataMode } from '../../services/repository'
+import { getEvents, runtime } from '../../services/repository'
 
 const route = useRoute()
 const router = useRouter()
@@ -24,10 +23,11 @@ const groupConfig = [
 ]
 const navRoutes = routes.filter((item) => item.meta?.nav)
 const navGroups = groupConfig.map((group) => ({ ...group, items: group.paths.map((path) => navRoutes.find((item) => item.path === path)).filter(Boolean) }))
-const dataModeOptions = Object.entries(DATA_MODES)
-  .filter(([value]) => value !== 'auto')
-  .map(([value, label]) => ({ value, label }))
-const selectedDataMode = computed(() => runtime.mode === 'replay' ? 'replay' : 'api')
+const dataModeLabel = computed(() => {
+  if (pagesBuild || runtime.mode === 'replay') return '授权回放'
+  if (runtime.mode === 'api') return '实时连接'
+  return '融合视图'
+})
 const activePath = computed(() => ['event-detail', 'event-detail-empty'].includes(route.name) ? '/events/:eventId' : route.path)
 const currentPage = computed(() => ({
   title: route.meta?.title || '统一家属端',
@@ -100,25 +100,21 @@ async function handleSelect(path) {
           <div class="resident-identity"><el-avatar :size="36" class="resident-avatar">张</el-avatar><div><strong>张建国</strong><span>76岁 · 杭州家中</span></div></div>
         </div>
         <div class="topbar-actions">
-          <el-segmented
-            :model-value="selectedDataMode"
-            :options="dataModeOptions"
-            :disabled="pagesBuild"
-            aria-label="数据连接模式"
-            @change="setDataMode"
-          />
+          <div class="data-source-chip" role="status" aria-label="当前数据视图">
+            <el-icon><Connection /></el-icon><span>{{ dataModeLabel }}</span>
+          </div>
           <div v-if="runtime.degraded" class="degraded-chip" role="status"><el-icon><Warning /></el-icon>服务降级</div>
         </div>
       </header>
       <Transition name="runtime-peek">
-        <div v-if="runtime.message && runtimeBannerVisible" class="runtime-banner transient-runtime-banner" :class="{ degraded: runtime.degraded }" role="status"><el-icon><InfoFilled /></el-icon><span>{{ runtime.message }}</span><small v-if="runtime.activeSource === 'replay_dataset'">授权回放</small></div>
+        <div v-if="runtime.message && runtimeBannerVisible" class="runtime-banner transient-runtime-banner" :class="{ degraded: runtime.degraded }" role="status"><el-icon><InfoFilled /></el-icon><span>{{ runtime.message }}</span><small v-if="runtime.activeSource === 'replay_dataset'">授权回放</small><small v-else-if="runtime.activeSource === 'combined'">融合数据</small></div>
       </Transition>
       <main
         v-loading="openingEventDetail"
         element-loading-text="正在调取风险事件"
         class="main-content"
         data-testid="event-navigation-loading"
-      ><router-view :key="`${route.fullPath}-${runtime.mode}`" /></main>
+      ><router-view :key="route.fullPath" /></main>
     </div>
 
     <el-drawer v-model="mobileNavigationOpen" title="萤目守望" direction="ltr" size="min(86vw, 340px)" class="mobile-navigation-drawer">

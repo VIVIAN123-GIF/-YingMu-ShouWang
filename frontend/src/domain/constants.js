@@ -35,7 +35,7 @@ export const DELIVERY_STATUSES = Object.freeze({
 })
 
 export const DATA_MODES = Object.freeze({
-  auto: '自动切换',
+  auto: '融合视图',
   api: '实时连接',
   replay: '授权回放',
 })

@@ -51,7 +51,7 @@ onMounted(load)
 
 <template>
   <div v-loading="loading" data-testid="replay-view">
-    <PageHeader title="场景回放" description="按故事顺序查看关键事件；每个片段都明确标记为授权回放，不代表实时设备或老人实测。">
+    <PageHeader title="事件影像回看" description="实时事件与授权片段共用同一索引，每条记录保留独立的数据来源与授权标记。">
       <SourceBadge v-if="selected" :mode="selected.source_mode" :simulated="selected.simulated" />
     </PageHeader>
     <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon />

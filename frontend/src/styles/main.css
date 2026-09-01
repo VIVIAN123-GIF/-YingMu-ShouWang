@@ -85,6 +85,7 @@ p { font-size: 18px; line-height: 1.75; }
 .pages-mode-label { color: var(--brand-dark); font-size: 14px; font-weight: 700; }
 .logout-button { width: 44px; height: 44px; }
 .degraded-chip { min-height: 42px; padding: 0 14px; display: flex; align-items: center; gap: 8px; border-radius: 22px; color: #8c4f14; background: #fff1d6; font-size: 15px; font-weight: 700; }
+.data-source-chip { min-height: 40px; padding: 0 13px; display: flex; align-items: center; gap: 8px; color: #1677c2; background: #f2f8fd; border: 1px solid #bedaff; border-radius: 6px; font-size: 14px; font-weight: 600; white-space: nowrap; }
 .runtime-banner { min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 10px; color: #315e58; background: #ebe7e1; border-bottom: 1px solid #d3cec6; font-size: 15px; }
 .runtime-banner.degraded { color: #814711; background: #fff2dc; border-color: #f2d8ad; }
 .runtime-banner small { margin-left: 10px; opacity: .78; }
