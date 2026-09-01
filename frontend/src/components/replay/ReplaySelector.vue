@@ -1,7 +1,5 @@
 <script setup>
-import { computed } from 'vue'
 import { VideoCamera } from '@element-plus/icons-vue'
-import { uniqueTextOptions } from '../../utils/options'
 
 const props = defineProps({
   events: { type: Array, default: () => [] },
@@ -9,10 +7,6 @@ const props = defineProps({
 
 const selectedId = defineModel({ type: String, default: '' })
 const emit = defineEmits(['select'])
-const uniqueEvents = computed(() => {
-  const titles = uniqueTextOptions(props.events.map((event) => event.title))
-  return titles.map((title) => props.events.find((event) => event.title === title))
-})
 </script>
 
 <template>
@@ -20,11 +14,11 @@ const uniqueEvents = computed(() => {
     <div class="replay-selector-head">
       <div class="replay-selector-title">
         <el-icon><VideoCamera /></el-icon>
-        <h2>100 天关键片段</h2>
+        <h2>关键事件片段</h2>
       </div>
       <el-select v-model="selectedId" aria-label="选择回放场景" @change="emit('select', $event)">
         <el-option
-          v-for="(event, index) in uniqueEvents"
+          v-for="(event, index) in props.events"
           :key="event.event_id"
           :label="`${index + 1}. ${event.title}`"
           :value="event.event_id"

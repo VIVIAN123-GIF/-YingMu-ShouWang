@@ -23,9 +23,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 const RESIDENT_ID = import.meta.env.VITE_RESIDENT_ID || 'resident-001'
 const PAGES_BUILD = import.meta.env.VITE_PAGES_BUILD === 'true'
 const AUTHORIZED_CLIP_URL = import.meta.env.VITE_AUTHORIZED_CLIP_URL?.trim() || ''
-// API is the safe default; offline replay is an explicit, traceable dataset.
-const configuredMode = import.meta.env.VITE_DATA_MODE || 'api'
-const initialMode = PAGES_BUILD ? 'replay' : (sessionStorage.getItem('yingmu-data-mode') || configuredMode)
+// The normal workspace combines API records with the authorized replay index.
+// Explicit api/replay modes remain available for isolated verification builds.
+const configuredMode = import.meta.env.VITE_DATA_MODE || 'auto'
+const initialMode = PAGES_BUILD ? 'replay' : configuredMode
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -90,6 +91,8 @@ const feedbackCache = new Map()
 const interventionResultCache = new Map()
 const assetRequestCache = new Map()
 const submittedFeedbackSession = new Set()
+const eventSessionCache = new Map()
+const resourceHealth = new Map()
 let lastDeviceStatus = null
 const FEEDBACK_STORAGE_KEY = 'yingmu-feedback-records-v1'
 const FEEDBACK_KINDS = new Set(['CARE', 'IDENTITY_VERIFICATION'])
@@ -111,7 +114,7 @@ function writeFeedbackRecords(records) {
 }
 
 function replayContext() {
-  return runtime.mode === 'replay' || runtime.activeSource === 'replay_dataset'
+  return runtime.mode === 'auto' || runtime.mode === 'replay' || runtime.activeSource === 'replay_dataset'
 }
 
 function feedbackRecordId(eventId, feedbackKind, value) {
@@ -214,6 +217,35 @@ export function setDataMode(mode) {
   recordAudit('data-mode.change', 'SUCCESS', { detail: `mode=${mode}` })
 }
 
+function eventTimestamp(event) {
+  const timestamp = Date.parse(event?.created_at || '')
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
+
+function compareEventsNewestFirst(left, right) {
+  const timeDifference = eventTimestamp(right) - eventTimestamp(left)
+  if (timeDifference !== 0) return timeDifference
+  return String(right?.event_id || '').localeCompare(String(left?.event_id || ''))
+}
+
+export function mergeEventCollections(primaryEvents = [], secondaryEvents = []) {
+  const byId = new Map()
+  secondaryEvents.forEach((event) => byId.set(event.event_id, event))
+  primaryEvents.forEach((event) => byId.set(event.event_id, event))
+  return [...byId.values()].sort(compareEventsNewestFirst)
+}
+
+function replayEventById(eventId) {
+  return replayData.events.find((event) => event.event_id === eventId) || null
+}
+
+function eventNotFound(eventId) {
+  const error = new Error(`事件不存在（${eventId}）`)
+  error.api = { code: 'EVENT_NOT_FOUND', message: error.message, request_id: null }
+  error.response = { status: 404 }
+  return error
+}
+
 function payload(response) {
   return response?.data?.data ?? response?.data
 }
@@ -229,6 +261,7 @@ async function resolveData(operation, apiRequest, replayFactory, validate = (val
     runtime.activeSource = 'replay_dataset'
     runtime.degraded = false
     const result = validate(structuredClone(replayFactory()))
+    resourceHealth.set(operation, false)
     recordAudit(operation, 'REPLAY', { detail: 'authorized-replay-dataset', event_id: result?.event_id, ruleset_version: result?.ruleset_version })
     return result
   }
@@ -239,10 +272,12 @@ async function resolveData(operation, apiRequest, replayFactory, validate = (val
     runtime.degraded = false
     runtime.message = ''
     runtime.lastError = null
+    resourceHealth.set(operation, false)
     recordAudit(operation, 'SUCCESS', { detail: 'fastapi', event_id: result?.event_id, ruleset_version: result?.ruleset_version })
     return result
   } catch (error) {
     runtime.lastError = error?.message || '后端接口请求失败'
+    resourceHealth.set(operation, true)
     if (runtime.mode === 'auto' && canFallback(error)) {
       runtime.activeSource = 'replay_dataset'
       runtime.degraded = true
@@ -277,38 +312,89 @@ function replayForewarningFor(eventId) {
 }
 
 export async function getDashboard(residentId = RESIDENT_ID) {
-  return resolveData('dashboard.read', async () => {
-    const [eventsResponse, deviceResponse, baselineResponse] = await Promise.all([
-      apiClient.get('/events', { params: { resident_id: residentId } }),
-      apiClient.get('/device/status'),
-      apiClient.get(`/residents/${encodeURIComponent(residentId)}/baseline`),
-    ])
-    const events = validateEventList(listFrom(payload(eventsResponse)))
-    const baseline = payload(baselineResponse)
-    return normalizeDashboard({ events, device: validateDeviceStatus(payload(deviceResponse)), baseline, residentId })
-  }, () => normalizeDashboard({
-    events: replayData.events,
-    device: validateDeviceStatus(replayData.device),
-    baseline: {
-      ...replayData.baseline,
-      today: {
-        ...replayData.dashboard.today,
-        care_status: getRecordedFeedback().filter((record) => record.feedback_kind === 'CARE').at(-1)?.value
-          || replayData.dashboard.today?.care_status
-          || null,
-      },
-      risk_trend: replayData.dashboard.risk_trend,
-      pre_fall_summary: replayData.dashboard.pre_fall_summary,
+  const [events, device, baseline] = await Promise.all([
+    getEvents(residentId),
+    getDeviceStatus(),
+    getBaseline(residentId),
+  ])
+  const replayFeedback = getRecordedFeedback().filter((record) => record.feedback_kind === 'CARE').at(-1)?.value
+  const dashboardBaseline = {
+    ...baseline,
+    today: {
+      ...(baseline.today || replayData.dashboard.today),
+      care_status: replayFeedback || baseline.today?.care_status || replayData.dashboard.today?.care_status || null,
     },
-    residentId,
-  }), validateDashboard)
+    risk_trend: baseline.risk_trend || replayData.dashboard.risk_trend,
+    pre_fall_summary: baseline.pre_fall_summary || replayData.dashboard.pre_fall_summary,
+  }
+  const result = validateDashboard(normalizeDashboard({ events, device, baseline: dashboardBaseline, residentId }))
+  if (runtime.mode === 'auto') {
+    const partial = ['events.list', 'device.status', 'residents.baseline'].some((operation) => resourceHealth.get(operation))
+    runtime.activeSource = 'combined'
+    runtime.degraded = partial
+    runtime.message = partial
+      ? '部分实时服务暂不可用，已保留可用数据并补充授权回放'
+      : '实时记录与授权回放已汇入同一视图'
+  }
+  recordAudit('dashboard.read', runtime.degraded ? 'PARTIAL' : 'SUCCESS', { detail: runtime.activeSource })
+  return result
 }
 
 export async function getEvents(residentId = RESIDENT_ID) {
-  return resolveData('events.list', async () => {
+  const readApiEvents = async () => {
     const response = await apiClient.get('/events', { params: { resident_id: residentId } })
     return validateEventList(listFrom(payload(response))).map(normalizeEvent)
-  }, () => replayData.events.map(normalizeEvent), validateEventList)
+  }
+  const readReplayEvents = () => validateEventList(structuredClone(replayData.events)).map(normalizeEvent)
+
+  if (runtime.mode === 'replay') {
+    const result = readReplayEvents().sort(compareEventsNewestFirst)
+    eventSessionCache.set(residentId, result)
+    runtime.activeSource = 'replay_dataset'
+    runtime.degraded = false
+    resourceHealth.set('events.list', false)
+    recordAudit('events.list', 'REPLAY', { detail: 'authorized-replay-dataset' })
+    return structuredClone(result)
+  }
+
+  if (runtime.mode === 'api') {
+    const result = (await readApiEvents()).sort(compareEventsNewestFirst)
+    eventSessionCache.set(residentId, result)
+    runtime.activeSource = 'api'
+    runtime.degraded = false
+    runtime.message = ''
+    runtime.lastError = null
+    resourceHealth.set('events.list', false)
+    recordAudit('events.list', 'SUCCESS', { detail: 'fastapi' })
+    return structuredClone(result)
+  }
+
+  try {
+    const apiEvents = await readApiEvents()
+    const result = mergeEventCollections(apiEvents, readReplayEvents())
+    eventSessionCache.set(residentId, result)
+    runtime.activeSource = 'combined'
+    runtime.degraded = false
+    runtime.message = '实时记录与授权回放已汇入同一时间轴'
+    runtime.lastError = null
+    resourceHealth.set('events.list', false)
+    recordAudit('events.list', 'MERGED', { detail: `api=${apiEvents.length}; replay=${replayData.events.length}; merged=${result.length}` })
+    return structuredClone(result)
+  } catch (error) {
+    runtime.lastError = error?.message || '后端接口请求失败'
+    resourceHealth.set('events.list', true)
+    if (!shouldFallback(error)) {
+      recordAudit('events.list', 'FAILED', { detail: error?.message || 'contract/api error' })
+      throw error
+    }
+    const result = mergeEventCollections(eventSessionCache.get(residentId) || [], readReplayEvents())
+    eventSessionCache.set(residentId, result)
+    runtime.activeSource = 'replay_dataset'
+    runtime.degraded = true
+    runtime.message = '实时连接暂不可用，已保留现有记录并继续显示授权回放'
+    recordAudit('events.list', 'DEGRADED_REPLAY', { detail: error?.message || 'FastAPI unavailable' })
+    return structuredClone(result)
+  }
 }
 
 export async function getRiskReviews(residentId = RESIDENT_ID, limit = 20) {
@@ -329,11 +415,15 @@ export async function getEvent(eventId) {
     validateEventViewModel(event)
     const snapshots = listFrom(payload(snapshotResponse)).map((snapshot, index) => validateForewarningSnapshot(snapshot, `forewarning[${index}]`))
     return normalizeEvent({ ...event, forewarning_snapshots: snapshots, feedback_records: getRecordedFeedback(event.event_id) })
-  }, () => normalizeEvent({
-    ...hydrateReplayEvent(replayData.events.find((event) => event.event_id === eventId) || replayData.events[0]),
-    feedback_records: getRecordedFeedback(eventId),
-    forewarning_snapshots: replayForewarningFor(eventId),
-  }), validateEventViewModel)
+  }, () => {
+    const replayEvent = replayEventById(eventId)
+    if (!replayEvent) throw eventNotFound(eventId)
+    return normalizeEvent({
+      ...hydrateReplayEvent(replayEvent),
+      feedback_records: getRecordedFeedback(eventId),
+      forewarning_snapshots: replayForewarningFor(eventId),
+    })
+  }, validateEventViewModel)
 }
 
 export async function getEventForewarning(eventId) {

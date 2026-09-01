@@ -119,7 +119,9 @@ export function normalizeDevice(device = {}) {
 
 export function normalizeDashboard({ events = [], device = {}, baseline = {}, residentId }) {
   const normalizedEvents = asArray(events).map(normalizeEvent)
-  const latest = normalizedEvents[0] || null
+  const latest = normalizedEvents.find((event) => event.source_mode === 'LIVE_DEVICE' && event.simulated === false)
+    || normalizedEvents[0]
+    || null
   return {
     resident: { resident_id: residentId },
     current_risk: latest ? {

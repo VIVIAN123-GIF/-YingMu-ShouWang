@@ -28,7 +28,10 @@ const filteredEvents = computed(() => events.value
   .filter((event) => matchesGroupedOption(riskLevelOptions.value, filters.value.level, event.risk_level))
   .filter((event) => !filters.value.status || event.status === filters.value.status)
   .filter((event) => matchesGroupedOption(sourceOptions.value, filters.value.source, event.source_mode))
-  .sort((left, right) => new Date(right.created_at) - new Date(left.created_at)))
+  .sort((left, right) => {
+    const difference = new Date(right.created_at) - new Date(left.created_at)
+    return difference || String(right.event_id).localeCompare(String(left.event_id))
+  }))
 
 const activeFilterCount = computed(() => Object.values(filters.value).filter(Boolean).length)
 
@@ -36,14 +39,17 @@ function clearFilters() {
   filters.value = { domain: '', level: '', status: '', source: '' }
 }
 
-async function load() {
-  loading.value = true
+async function load(background = false) {
+  if (!background) loading.value = true
   try {
-    ;[events.value, reviews.value] = await Promise.all([getEvents(), getRiskReviews()])
+    const [nextEvents, nextReviews] = await Promise.all([getEvents(), getRiskReviews()])
+    events.value = nextEvents
+    reviews.value = nextReviews
+    error.value = ''
   } catch (err) {
     error.value = `无法读取事件时间轴：${err.message}`
   } finally {
-    loading.value = false
+    if (!background) loading.value = false
   }
 }
 
@@ -59,6 +65,7 @@ function scheduleAlarmPolling() {
   if (runtime.mode === 'replay') return
   alarmTimer = window.setTimeout(() => {
     alarmTimer = null
+    void load(true)
     void loadAlarmTasks()
   }, 5000)
 }
@@ -82,7 +89,7 @@ async function loadAlarmTasks() {
 }
 
 onMounted(() => { void load(); void loadAlarmTasks() })
-watch(() => runtime.mode, () => { void loadAlarmTasks() })
+watch(() => runtime.mode, () => { void load(); void loadAlarmTasks() })
 onBeforeUnmount(stopAlarmPolling)
 </script>
 
