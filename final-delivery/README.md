@@ -7,24 +7,24 @@
 | 交付项 | 当前状态 | 完成门禁 |
 |---|---|---|
 | 专项研究报告 | 已写入P03、URFD、旧三人黄金闭环、累计15小时稳定性、真实平台/Qwen证据和v1.4锁定诊断 | 最终格式复核 |
-| 演示视频 | 脚本和镜头清单 | 补拍、旁白、字幕、来源标签和脱敏完成 |
-| Windows程序 | ZIP已构建，本机全栈冒烟和清单复核通过 | 在另一台Windows电脑验收 |
+| 演示视频 | 脚本和镜头清单 | 奶奶低风险、母亲正常与受控高风险场景补拍，完成旁白、字幕、来源标签和隐私复核 |
+| Windows程序 | 另一台计算机真实设备部署与工程闭环已于2026年9月2日完成 | 最终代码收口后重建并复核成品包 |
 | 报名表 | 已归档盖章PDF至私有提交输入目录，供提交脚本作为06号附件使用 | 与最终提交包一并复核 |
 | 系统/接口/部署文档 | 已按v1.4默认运行、v1.5探索边界和当前API同步 | 与最终发布包复核 |
 | 测试报告 | 已写入数据来源、407项Python回归、生产构建、平台实测、累计15小时稳定性和v1.4 A-D结果 | 异机Windows验收 |
-| 隐私材料 | 模板和边界已建立 | 三人签字及删除日期确认 |
+| 隐私材料 | 五人公网原始肖像授权、素材总说明和安全确认模板已建立 | P01/P02/P03、奶奶、母亲分别签字并确认2027年3月31日到期 |
 | 提交门禁 | 草稿包可生成，最终模式会拒绝缺项 | 所有真实证据完成后状态变为READY |
 
-正式文档源稿位于 `docs/`，07/08号新增源稿位于 `official-docs/`，演示视频材料位于 `video/`。P01/P02全量演练、P03一次性锁定测试、URFD独立复核、旧三人黄金闭环、累计15小时稳定性测试和v1.4 A-D锁定运行均已完成；真实萤石设备状态、Webhook、抓拍、H.264采集、算法调度及Qwen脱敏解释亦有实测证据。v1.4完整A配置中，4段即时正样本均未形成ORANGE工程事件，12段负样本均形成趋势提示，质量门控覆盖3/4类质量样本，QG05只形成一个即时信号族且未进入后续状态序列；这些客观现象和诊断已原样归档，项目统一定位为工程可行性验证阶段。
+正式文档源稿位于`docs/`，07/08号新增源稿位于`official-docs/`，演示视频材料位于`video/`。P01/P02全量演练、P03一次性锁定测试、URFD独立复核、旧三人黄金闭环、累计15小时稳定性测试和v1.4 A-D锁定运行均已完成；2026年9月2日，团队还在另一台实际部署计算机上完成真实设备采集、系统分析、风险分级、干预记录、后续观察和风险回落的工程闭环。该结论依据团队现场操作和复核确认，不补写当前工作区未归档的事件编号或性能数据。v1.4原有客观现象和诊断继续原样保留，项目统一定位为工程可行性验证阶段。
 
 受现实拍摄条件限制，当前无法取得全新独立预锁定视频集。v1.5仅为同源数据集上的探索性软件整改；其r2中负样本单窗口趋势提示由12/12变为5/12，但两窗口持续趋势形成0/8，即时ORANGE形成0/4、不对称目标Evidence形成0/4、质量门控覆盖3/4，QG05仍未进入后续状态序列。该变化倾向尚未经外部独立数据集正式核验，不能升级为新的正式有效性结论。
 
 ## 本地参赛配置与私有输入
 
-1. 复制 `submission-profile.example.json` 为 `private-input/submission-profile.json`，填写 `school`、`contact_name`、`mobile`、`submission_deadline` 和 `retention_until`。在线入口默认可选（`online_entry_required=false`）；只有改为 `true` 时才必须填写 `online_url` 和 `online_username`。`private-input/` 已被 Git 忽略，手机号不会进入公开源码包。
-2. 使用 `scripts/build_participant_consent.py` 生成 P01、P02、P03 授权书；打印签署后，将扫描件命名为 `P01.pdf`、`P02.pdf`、`P03.pdf`，放入 `experiments/three-participant/signed-consent/`。该目录已被 Git 忽略。
+1. 复制`submission-profile.example.json`为`private-input/submission-profile.json`，填写`school`、`contact_name`、`mobile`、`submission_deadline`和`retention_until`。最终提交配置应将在线入口设为启用，并填写`http://49.232.205.215`和演示用户名`YMSW`。`private-input/`已被Git忽略，手机号不会进入公开源码包。
+2. 使用`13-真人素材公开展示授权与安全确认书.md`为P01、P02、P03、奶奶和母亲分别建立签署副本。P01/P02/P03扫描件仍按提交脚本要求命名为`P01.pdf`、`P02.pdf`、`P03.pdf`并放入`experiments/three-participant/signed-consent/`；奶奶和母亲的扫描件存入受控私有目录。所有签字原件均不得进入公开仓库。
 3. 盖章报名表已归档为 `private-input/registration-form.pdf`，由提交脚本作为06号附件读取；平台证据完成后放为 `private-input/platform-evidence.pdf`，最终演示视频放为 `private-input/demonstration-video.mp4`。该目录已被Git忽略，不得复制到公开源码包。
-4. 公网 Pages 验收通过后，从 Actions 的 `pages-public-verification` 工件下载 `online-entry-verification.json`，放入 `private-input/online-entry-verification.json`。在真实公网测试完成前不得手工标记为 `COMPLETE`。
+4. 公网入口使用腾讯云真实部署，不再以GitHub Pages静态站点作为最终入口。提交前复核正确登录、错误密码拒绝、主要页面、真实设备状态、授权视频、移动端布局和敏感信息，并在私有检查记录中注明当前HTTP及共享账号边界。
 
 ## 发布命令
 
@@ -39,26 +39,15 @@
 .\.venv\Scripts\python.exe -m scripts.assemble_submission final
 ```
 
-草稿文档位于 `output/submission-work/draft/`，草稿提交包位于 `output/submission/`。正式模式只有在实验、不少于12小时运行（当前已累计15小时）、三份授权扫描件、报名表、演示视频、平台证据和Windows异机验收等硬门禁全部通过后才会生成；在线入口在`online_entry_required=false`时显示`SKIPPED_OPTIONAL`且不阻断打包，否则按硬门禁验收。其他缺项只在提交目录外写出拒绝报告。
+草稿文档位于`output/submission-work/draft/`，草稿提交包位于`output/submission/`。正式模式只有在实验、不少于12小时运行（当前已累计15小时）、三份旧实验授权扫描件、报名表、演示视频、平台证据和程序包门禁通过后才会生成。奶奶和母亲授权属于新增人工门禁，虽然旧提交脚本不会自动检查，也必须在使用对应素材前完成。现有在线验收JSON仍按旧Pages验证结构设计，不能用其`mock_only`字段代替当前腾讯云真实入口的人工复核。
 
-最终视频需根据 `video/video-verification.template.json` 完成人工复核。另一台 Windows 电脑的验收结果根据 `../packaging/external-windows-acceptance.template.json` 填写。两者都必须引用当前成品，不能提前勾选。
+最终视频需根据`video/video-verification.template.json`完成人工复核。另一台计算机上的真实设备部署和工程闭环已于2026年9月2日完成；最终Windows提交包生成后，仍需使用`../packaging/external-windows-acceptance.template.json`复核该成品自身的哈希、启动、退出和敏感扫描，不能提前勾选。
 
-## GitHub Pages 在线入口
+## 腾讯云在线入口
 
-Pages 固定使用 Mock 数据、Hash 路由和会话级演示登录，不启动后端、数据库、Worker 或萤石接口。该登录只是静态演示门禁，不是生产级认证；公开站点不得存放敏感数据。
+最终在线入口为`http://49.232.205.215`，演示账号为`YMSW / YMSW`。该入口连接真实后端、设备页面、直播、抓拍、现场结果和授权录像，不得再称为Pages静态Mock站点。P01/P02/P03素材固定标记`RECORDED_REPLAY`；奶奶和母亲现场采集标记`LIVE_DEVICE`，受控动作另标“受控模拟动作”。
 
-```powershell
-Set-Location frontend
-npm ci
-npm test
-npm run build:pages
-Set-Location ..
-.\.venv\Scripts\python.exe scripts\validate_pages_build.py --dist frontend\dist
-Set-Location frontend
-npm run test:pages
-```
-
-首次发布前，在 GitHub 仓库 `Settings > Pages > Build and deployment` 中选择 `GitHub Actions`。推送到 `main` 后，工作流会先完成本地测试与隐私扫描，再部署 Pages，最后对实际公网地址复验九个页面、登录、Hash 刷新、移动端布局和无 API 请求。预期地址为 `https://vivian123-gif.github.io/-YingMu-ShouWang/`。
+当前公网登录是赛事演示门禁，不是生产级认证。摄像头只在参与者知情且有人值守时解除遮罩；无人值守、家庭不便或出现未授权人员时必须遮挡。公网原始肖像展示须取得五名参与者分别签署的授权，最迟于2027年3月31日下线。
 
 ## 禁止提交
 
