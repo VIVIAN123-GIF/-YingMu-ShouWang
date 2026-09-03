@@ -1,0 +1,14 @@
+[Unit]
+Description=YingMu ShouWang - Agent Worker
+After=network.target yingmu-api.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/yingmu
+EnvironmentFile=/opt/yingmu/.env
+ExecStart=/opt/yingmu/.venv/bin/python -m backend.worker.agent_worker
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

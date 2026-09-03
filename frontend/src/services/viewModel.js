@@ -21,6 +21,45 @@ function asArray(value) {
   return Array.isArray(value) ? value : []
 }
 
+function replayOptionTitle(event) {
+  const title = typeof event?.title === 'string' ? event.title : ''
+  return title.normalize('NFKC').trim().replace(/\s+/g, ' ')
+}
+
+function replayOptionPriority(event) {
+  const isLive = event?.source_mode === 'LIVE_DEVICE' && event?.simulated === false ? 1 : 0
+  const evidenceCount = Math.max(
+    asArray(event?.evidence_ids).length,
+    asArray(event?.evidence_summary).length,
+    asArray(event?.evidences).length,
+  )
+  const timestamp = Date.parse(event?.updated_at || event?.created_at || '')
+  return [isLive, evidenceCount, Number.isNaN(timestamp) ? 0 : timestamp]
+}
+
+function higherReplayOptionPriority(candidate, current) {
+  const candidatePriority = replayOptionPriority(candidate)
+  const currentPriority = replayOptionPriority(current)
+  for (let index = 0; index < candidatePriority.length; index += 1) {
+    if (candidatePriority[index] !== currentPriority[index]) {
+      return candidatePriority[index] > currentPriority[index]
+    }
+  }
+  return false
+}
+
+export function mergeDuplicateReplayOptions(events = []) {
+  const byTitle = new Map()
+  asArray(events).forEach((event) => {
+    const title = replayOptionTitle(event)
+    // Untitled records cannot be proven equivalent, so retain them by ID.
+    const key = title || `event:${event?.event_id || byTitle.size}`
+    const current = byTitle.get(key)
+    if (!current || higherReplayOptionPriority(event, current)) byTitle.set(key, event)
+  })
+  return [...byTitle.values()]
+}
+
 function traceBelongsToEvent(trace, event) {
   return trace?.event_id === event.event_id
     || (trace?.evidence_id && asArray(event.evidence_ids).includes(trace.evidence_id))
@@ -86,6 +125,16 @@ function observationSeconds(traces) {
   return Number.isFinite(seconds) && seconds >= 0 ? seconds : null
 }
 
+function riskHistoryFrom(event, traces) {
+  const explicitHistory = asArray(event?.risk_history)
+  if (explicitHistory.length) return explicitHistory
+  return traces.flatMap((trace) => {
+    const score = trace?.score_components?.final_score
+    if (!trace?.evaluated_at || typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > 1) return []
+    return [{ time: trace.evaluated_at, score }]
+  })
+}
+
 export function normalizeEvent(event) {
   const traces = asArray(event?.rule_traces).filter((trace) => traceBelongsToEvent(trace, event))
   const baseTimeline = asArray(event?.timeline).length ? event.timeline : timelineFrom(event, traces)
@@ -99,7 +148,7 @@ export function normalizeEvent(event) {
     rule_traces: traces,
     timeline: [...baseTimeline, ...feedbackItems].sort((left, right) => new Date(left.time) - new Date(right.time)),
     feedback_records: asArray(event?.feedback_records),
-    risk_history: asArray(event?.risk_history),
+    risk_history: riskHistoryFrom(event, traces),
     observation_seconds: event?.observation_seconds ?? observationSeconds(traces),
   }
 }
@@ -164,7 +213,7 @@ export function normalizeWeeklyReport(report = {}) {
 export function normalizeBaseline(baseline = {}) {
   const metrics = Object.entries(baseline.baselines || {}).map(([key, value]) => ({
     key,
-    label: METRIC_META[key]?.label || key,
+    label: METRIC_META[key]?.label || '其他趋势指标',
     unit: value?.unit || METRIC_META[key]?.unit || '',
     median: value?.median ?? null,
     mad: value?.mad ?? null,

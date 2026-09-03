@@ -4,7 +4,7 @@ const SCHEMA_VERSION = '1.0'
 const TIME_SCALES = new Set(['SHORT', 'MEDIUM', 'LONG'])
 const TIME_HORIZONS = new Set(['TREND', 'TODAY', 'IMMINENT'])
 const OPERATORS = new Set(['system', 'family', 'staff'])
-const ALARM_TASK_STATUSES = new Set(['PENDING', 'PROCESSING', 'WAITING_ALGORITHM', 'RETRY', 'FAILED'])
+const ALARM_TASK_STATUSES = new Set(['PENDING', 'PROCESSING', 'CAPTURED', 'WAITING_ALGORITHM', 'ALGORITHM_PROCESSING', 'RETRY', 'FAILED', 'SUCCESS', 'COMPLETED', 'NO_EVIDENCE'])
 const AGENT_EXPLANATION_STATUSES = new Set(['NOT_REQUESTED', 'PENDING', 'PROCESSING', 'RETRY', 'SUCCESS', 'FALLBACK', 'FAILED'])
 const SUMMARY_FIELDS = new Set(['evidence_id', 'evidence_type', 'explanation'])
 const PRE_FALL_FACTORS = new Set([
@@ -494,4 +494,46 @@ export function validateForewarningSnapshot(snapshot, label = 'forewarning') {
 export function validateForewarningHistory(snapshots) {
   if (!Array.isArray(snapshots)) fail('居民预警历史必须是数组', 'resident_forewarning')
   return snapshots.map((snapshot, index) => validateForewarningSnapshot(snapshot, `resident_forewarning[${index}]`))
+}
+
+export function validateFieldRun(run, index = 0) {
+  const label = `field_runs[${index}]`
+  const value = assertObject(run, label)
+  if (assertRequired(value, 'schema_version', label) !== 'field-run/1.0') fail(`${label}.schema_version 无效`, `${label}.schema_version`)
+  ;['run_id', 'resident_id', 'device_ref', 'authorization_ref', 'task_status']
+    .forEach((field) => assertString(assertRequired(value, field, label), `${label}.${field}`))
+  assertIsoTime(assertRequired(value, 'captured_at', label), `${label}.captured_at`)
+  if (assertRequired(value, 'source_mode', label) !== 'LIVE_DEVICE' || assertRequired(value, 'simulated', label) !== false) {
+    fail(`${label} 只能包含 LIVE_DEVICE / simulated=false 的真实运行`, label)
+  }
+  ;['risk_level', 'current_risk_level'].forEach((field) => {
+    const level = assertRequired(value, field, label)
+    if (level !== 'UNKNOWN') assertKnown(level, RISK_LEVELS, `${label}.${field}`)
+  })
+  ;['risk_score', 'current_risk_score'].forEach((field) => assertRiskScore(assertRequired(value, field, label), `${label}.${field}`))
+  assertRiskScore(assertRequired(value, 'data_quality', label), `${label}.data_quality`, { nullable: true })
+  const metrics = assertObject(assertRequired(value, 'metrics', label), `${label}.metrics`)
+  ;['rapid_rise', 'trunk_sway'].forEach((field) => {
+    const metric = assertObject(assertRequired(metrics, field, `${label}.metrics`), `${label}.metrics.${field}`)
+    assertBoolean(assertRequired(metric, 'detected', `${label}.metrics.${field}`), `${label}.metrics.${field}.detected`)
+    assertRiskScore(assertRequired(metric, 'data_quality', `${label}.metrics.${field}`), `${label}.metrics.${field}.data_quality`, { nullable: true })
+  })
+  const evidences = assertRequired(value, 'evidences', label)
+  const observations = assertRequired(value, 'observations', label)
+  const snapshots = assertRequired(value, 'forewarning_snapshots', label)
+  const interventions = assertRequired(value, 'interventions', label)
+  if (!Array.isArray(evidences) || !Array.isArray(observations) || !Array.isArray(snapshots) || !Array.isArray(interventions)) {
+    fail(`${label} 的证据、观测、快照和干预必须为数组`, label)
+  }
+  evidences.forEach(validateEvidence)
+  observations.forEach(validateObservation)
+  snapshots.forEach((snapshot, snapshotIndex) => validateForewarningSnapshot(snapshot, `${label}.forewarning_snapshots[${snapshotIndex}]`))
+  interventions.forEach(validateInterventionResult)
+  if (!Array.isArray(assertRequired(value, 'rule_traces', label))) fail(`${label}.rule_traces 必须为数组`, `${label}.rule_traces`)
+  return value
+}
+
+export function validateFieldRuns(runs) {
+  if (!Array.isArray(runs)) fail('现场运行必须是数组', 'field_runs')
+  return runs.map(validateFieldRun)
 }

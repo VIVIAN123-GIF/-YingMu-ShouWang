@@ -41,9 +41,9 @@ describe('固定 JSON 演示闭环', () => {
 
   it('三类受控场景分别关联独立的授权回放素材', () => {
     const byId = new Map(assets.map((asset) => [asset.asset_id, asset]))
-    expect(byId.get('asset-fall-authorized').fallback_url).toBe('/media/fall-risk-replay.mp4')
-    expect(byId.get('asset-mental-week').fallback_url).toBe('/media/activity-route-replay-browser.mp4')
-    expect(byId.get('asset-green-daily').fallback_url).toBe('/media/daily-baseline-replay-browser.mp4')
+    expect(byId.get('asset-fall-authorized').fallback_url).toBe('/media/selected/p01-golden-loop-01.mp4')
+    expect(byId.get('asset-mental-week').fallback_url).toBe('/media/selected/activity-route-a-b-c-01.mp4')
+    expect(byId.get('asset-green-daily').fallback_url).toBe('/media/selected/p03-neg-normal-rise-walk-01.mp4')
     expect([...byId.values()].every((asset) => asset.source_mode === 'RECORDED_REPLAY' && asset.simulated)).toBe(true)
   })
 })

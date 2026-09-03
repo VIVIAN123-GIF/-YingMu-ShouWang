@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { sha256 } from 'js-sha256'
 
 const SESSION_KEY = 'yingmu-demo-authenticated'
 const MEDIA_BFF_ENABLED = import.meta.env.VITE_MEDIA_BFF_ENABLED !== 'false'
@@ -18,9 +19,9 @@ export const demoAuthState = reactive({
 })
 
 export async function sha256Hex(value) {
-  const bytes = new TextEncoder().encode(value)
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes)
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+  // 使用纯 JS 实现的 js-sha256，兼容 HTTP（非安全上下文）环境。
+  // 浏览器原生 crypto.subtle 仅在 HTTPS / localhost 下可用，公网 HTTP IP 下为 null 会抛异常。
+  return sha256(value)
 }
 
 export async function verifyDemoCredentials(username, password, config = demoLoginConfig) {

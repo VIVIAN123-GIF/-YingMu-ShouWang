@@ -8,13 +8,14 @@ import hashlib
 import json
 import os
 import re
+import sqlite3
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 
-DEFAULT_RESIDENT_ID = "resident-mock-001"
+DEFAULT_RESIDENT_ID = "resident-001"
 CN_TZ = timezone(timedelta(hours=8))
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -39,6 +40,26 @@ def _scope_for(resident_id: str) -> str:
 def _scoped_id(scope: str, kind: str, source_id: str) -> str:
     source = re.sub(r"[^a-zA-Z0-9-]+", "-", source_id).strip("-")
     return f"{kind}-fi-{scope}-{source}"[:128]
+
+
+def _backup_database(db_path: Path) -> Path | None:
+    """Create a consistent SQLite backup before any seed mutation."""
+    if not db_path.exists():
+        return None
+    backup_dir = ROOT / "artifacts" / "database-backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(CN_TZ).strftime("%Y%m%d-%H%M%S")
+    backup_path = backup_dir / f"{db_path.stem}-before-frontend-seed-{stamp}.db"
+    with sqlite3.connect(db_path) as source:
+        result = source.execute("PRAGMA integrity_check").fetchone()
+        if not result or result[0] != "ok":
+            raise RuntimeError(f"Source database integrity check failed: {result}")
+        with sqlite3.connect(backup_path) as target:
+            source.backup(target)
+            backup_result = target.execute("PRAGMA integrity_check").fetchone()
+            if not backup_result or backup_result[0] != "ok":
+                raise RuntimeError(f"Backup database integrity check failed: {backup_result}")
+    return backup_path
 
 
 def _upsert(session, model, key: str, payload: dict[str, Any]):
@@ -67,6 +88,7 @@ def _event_times(now: datetime, index: int) -> tuple[datetime, datetime]:
 async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[str, Any]:
     db_path = db_path.resolve()
     db_path.parent.mkdir(parents=True, exist_ok=True)
+    backup_path = _backup_database(db_path)
     os.environ["YINGMU_DB_PATH"] = str(db_path)
     os.environ.setdefault("YINGMU_ENV", "mock")
     os.environ.setdefault("PYTHON_DOTENV_DISABLED", "1")
@@ -88,7 +110,9 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
         RuleTrace,
     )
     from backend.service.agent_explanation_job_service import enqueue_event_explanation
+    from backend.service.agent_fallback import TemplateFallback
     from backend.service.serialization import dumps
+    from contracts.v1.agent import AgentExplanationRequest
 
     await init_tables()
     await init_default_config()
@@ -96,6 +120,8 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
     events = _json("frontend/src/replay-data/events.json")
     observations = _json("frontend/src/replay-data/observations.json")
     forewarnings = _json("frontend/src/replay-data/forewarning.json")
+    selected_media = _json("frontend/src/replay-data/selected-media.json")
+    media_manifest = _json("frontend/media-selection.manifest.json")
     scope = _scope_for(resident_id)
     event_ids = {item["event_id"]: _scoped_id(scope, "event", item["event_id"]) for item in events}
     evidence_id_map = {
@@ -106,11 +132,27 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
         item["observation_id"]: _scoped_id(scope, "obs", item["observation_id"])
         for item in observations
     }
+    evidence_id_map["evi-green-normal"] = _scoped_id(scope, "evi", "evi-green-normal")
+    observation_ids["obs-green-normal"] = _scoped_id(scope, "obs", "obs-green-normal")
     result_ids = {
         result["result_id"]: _scoped_id(scope, "result", result["result_id"])
         for item in events for result in item.get("interventions", [])
     }
-    asset_id = _scoped_id(scope, "asset", "capture")
+    media_by_clip = {item["clip_id"]: item for item in selected_media}
+    event_primary_assets = {
+        event_id: media_by_clip[mapping["primary_clip_id"]]["asset_id"]
+        for event_id, mapping in media_manifest["event_mappings"].items()
+    }
+    event_primary_assets.update({
+        "event-mental-week": "asset-mental-week",
+        "event-fraud-visitor": None,
+    })
+    observation_asset_ids: dict[str, str | None] = {}
+    for item in events:
+        primary_asset_id = event_primary_assets.get(item["event_id"])
+        for evidence in item.get("evidences", []):
+            for observation_id in evidence.get("observation_ids", []):
+                observation_asset_ids.setdefault(observation_id, primary_asset_id)
 
     seeded_event_ids: list[str] = []
     evidence_payloads: dict[str, dict[str, Any]] = {}
@@ -119,36 +161,60 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
             "resident_id": resident_id,
             "device_sn": _scoped_id(scope, "device", "c6c"),
             "channel_no": 1,
-            "device_name": "Frontend integration camera",
+            "device_name": "客厅 C6c 演示设备",
             "is_online": True,
             "rtsp_url": None,
             "flv_url": None,
-            "adapter_mode": "MOCK",
+            "adapter_mode": "RECORDED_REPLAY",
             "stream_max_channel": 2,
             "update_time": _naive(now),
         }
         await _upsert(db, DeviceInfo, "device_sn", device)
 
-        asset = {
-            "asset_id": asset_id,
-            "title": "授权模拟客厅回放",
-            "source_mode": "RECORDED_REPLAY",
-            "simulated": True,
-            "stream_url": None,
-            "fallback_url": None,
-            "fallback_kind": "unavailable",
-            "available": False,
-            "verification_status": "VERIFIED_REPLAY",
-            "captured_at": _naive(now - timedelta(days=6)),
-            "notice": "仅为模拟元数据，未存储私有媒体内容。",
-            "device_ref": "device-frontend-integration",
-            "device_model": "EZVIZ_C6C",
-            "camera_position_id": "living-room-main",
-            "authorization_status": "AUTHORIZED",
-            "authorization_record_id": "authorization-frontend-integration",
-            "retention_until": _naive(now + timedelta(days=30)),
+        browser_media_dir = ROOT / "frontend/public/media/selected"
+        manifest_entries = {
+            item["clip_id"]: item
+            for item in [*media_manifest["entries"], *media_manifest.get("auxiliary_entries", [])]
         }
-        await _upsert(db, Asset, "asset_id", asset)
+        all_assets = [*selected_media, {
+            "asset_id": "asset-mental-week",
+            "clip_id": "activity-route-a-b-c-01",
+            "file": "activity-route-a-b-c-01.mp4",
+            "participant_id": "ROUTE-A-B-C",
+            "scenario": "A-B-C 区域活动轨迹",
+            "purpose": "授权区域活动轨迹工程回放",
+        }]
+        for media in all_assets:
+            media_path = browser_media_dir / media["file"]
+            if not media_path.is_file():
+                raise FileNotFoundError(f"Browser media is missing: {media_path}")
+            content_hash = hashlib.sha256(media_path.read_bytes()).hexdigest()
+            manifest_item = manifest_entries[media["clip_id"]]
+            asset_payload = {
+                "asset_id": media["asset_id"],
+                "title": f"受控工程回放：{media['scenario']}",
+                "source_mode": "RECORDED_REPLAY",
+                "simulated": True,
+                "stream_url": None,
+                "fallback_url": f"/media/selected/{media['file']}",
+                "fallback_kind": "SELECTED_CONTROLLED_CLIP",
+                "available": True,
+                "verification_status": "VERIFIED_REPLAY",
+                "captured_at": _naive(now - timedelta(days=6)),
+                "notice": f"授权受控工程回放，非当前事件原始媒体。{media['purpose']}",
+                "device_ref": "authorized-replay-c6c",
+                "device_model": "EZVIZ_C6C",
+                "camera_position_id": "living-room-main",
+                "authorization_status": "AUTHORIZED",
+                "authorization_record_id": f"authorization-{media['participant_id'].lower()}",
+                "retention_until": _naive(now + timedelta(days=365)),
+                "content_sha256": content_hash,
+                "content_type": "video/mp4",
+                "byte_size": media_path.stat().st_size,
+            }
+            if manifest_item["sha256"].lower() == content_hash:
+                asset_payload["notice"] += " 浏览器副本与源文件哈希一致。"
+            await _upsert(db, Asset, "asset_id", asset_payload)
 
         # Keep frontend mock evidence wording while placing all events inside
         # the current weekly-report window.
@@ -156,7 +222,24 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
             created_at, updated_at = _event_times(now, index)
             event_evidence_ids = []
             summaries = []
-            for ev_index, evidence in enumerate(item.get("evidences", [])):
+            item_evidences = list(item.get("evidences", []))
+            if item["event_id"] == "event-green-daily":
+                item_evidences.append({
+                    "evidence_id": "evi-green-normal",
+                    "observation_ids": ["obs-green-normal"],
+                    "risk_domain": "FALL",
+                    "evidence_type": "normal_baseline_sample",
+                    "severity": 0.05,
+                    "confidence": 0.97,
+                    "data_quality": 0.96,
+                    "baseline_value": 1.0,
+                    "current_value": 1.02,
+                    "baseline_deviation": 0.02,
+                    "time_scale": "SHORT",
+                    "explanation": "正常起身行走与个人稳定基线一致，未形成升级条件。",
+                    "adapter_version": "frontend-integration-seed-v2",
+                })
+            for ev_index, evidence in enumerate(item_evidences):
                 evidence_id = evidence_id_map[evidence["evidence_id"]]
                 event_evidence_ids.append(evidence_id)
                 summaries.append({
@@ -181,7 +264,7 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
                     "location": evidence.get("location") or "living_room",
                     "explanation": evidence["explanation"],
                     "adapter_version": evidence["adapter_version"],
-                    "source_mode": evidence.get("source_mode", "MOCK"),
+                    "source_mode": "RECORDED_REPLAY",
                     "simulated": True,
                     "observation_ids": dumps([
                         observation_ids.get(observation_id, observation_id)
@@ -208,7 +291,7 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
                 "intervention_policy": item["intervention_policy"],
                 "status": item["status"],
                 "ruleset_version": RULESET_VERSION,
-                "source_mode": item.get("source_mode", "MOCK"),
+                "source_mode": "RECORDED_REPLAY",
                 "simulated": True,
             }
             await _upsert(db, RiskEvent, "event_id", event_payload)
@@ -230,12 +313,25 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
                     "resolved": intervention.get("resolved", False),
                     "resolution_reason": intervention.get("resolution_reason"),
                     "operator": intervention.get("operator", "system"),
-                    "source_mode": intervention.get("source_mode", "MOCK"),
+                    "source_mode": "RECORDED_REPLAY",
                     "simulated": True,
                 }
                 await _upsert(db, InterventionResult, "result_id", result_payload)
 
-        for index, observation in enumerate(observations):
+        all_observations = [*observations, {
+            "schema_version": "1.0",
+            "observation_id": "obs-green-normal",
+            "source": "pose",
+            "feature_name": "normal_rise_walk_confirmed",
+            "feature_value": True,
+            "unit": "boolean",
+            "location": "living_room",
+            "confidence": 0.97,
+            "data_quality": 0.96,
+            "metadata": {"scenario": "normal-control"},
+        }]
+        observation_asset_ids["obs-green-normal"] = event_primary_assets["event-green-daily"]
+        for index, observation in enumerate(all_observations):
             payload = {
                 "schema_version": "1.0",
                 "observation_id": observation_ids[observation["observation_id"]],
@@ -248,8 +344,8 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
                 "location": observation.get("location") or "living_room",
                 "confidence": observation["confidence"],
                 "data_quality": observation["data_quality"],
-                "source_mode": observation.get("source_mode", "MOCK"),
-                "asset_id": asset_id if observation.get("asset_id") else None,
+                "source_mode": "RECORDED_REPLAY",
+                "asset_id": observation_asset_ids.get(observation["observation_id"]),
                 "simulated": True,
                 "extra_metadata": dumps(observation.get("metadata", {})),
                 "device_sn": None,
@@ -275,7 +371,7 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
                     "feature_value": dumps(value), "unit": unit,
                     "location": "living_room", "confidence": 0.96,
                     "data_quality": 0.95, "source_mode": "RECORDED_REPLAY",
-                    "asset_id": asset_id, "simulated": True,
+                    "asset_id": event_primary_assets["event-green-daily"], "simulated": True,
                     "extra_metadata": dumps({"seed": "frontend-integration"}),
                     "device_sn": None,
                 })
@@ -321,8 +417,143 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
                 "event_id": fall_id,
                 "intervention_result_id": result_ids[fall_result["result_id"]] if index and fall_result else None,
                 "recommended_action": template["recommended_action"],
-                "ruleset_version": RULESET_VERSION, "source_mode": "MOCK", "simulated": True,
+                "ruleset_version": RULESET_VERSION, "source_mode": "RECORDED_REPLAY", "simulated": True,
             })
+
+        feedback_specs = (
+            ("event-mental-week", "care", "已联系，老人近期状态正常，家属会继续关注作息。"),
+            ("event-fraud-visitor", "identity", "身份已核验，为社区授权上门服务人员，无需继续升级。"),
+        )
+        for original_event_id, suffix, feedback in feedback_specs:
+            started_at = _event_times(now, events.index(next(
+                item for item in events if item["event_id"] == original_event_id
+            )))[1]
+            await _upsert(db, InterventionResult, "result_id", {
+                "schema_version": "1.0",
+                "result_id": _scoped_id(scope, "result", f"family-feedback-{suffix}"),
+                "event_id": event_ids[original_event_id],
+                "started_at": started_at,
+                "completed_at": started_at + timedelta(minutes=1),
+                "action_type": "family_feedback",
+                "tool_name": "family_feedback",
+                "delivery_status": "SUCCESS",
+                "resident_response": None,
+                "family_feedback": feedback,
+                "risk_after": None,
+                "resolved": False,
+                "resolution_reason": "授权演示数据中的结构化家属反馈。",
+                "operator": "family",
+                "source_mode": "RECORDED_REPLAY",
+                "simulated": True,
+            })
+
+        trace_sequences = {
+            "event-fall-intervening": [
+                ("GREEN", None, "ORANGE", "INTERVENING", "R-FALL-03", "多信号不稳定触发橙色干预。"),
+                ("ORANGE", "INTERVENING", "ORANGE", "INTERVENING", "R-FALL-04", "语音干预已下发，等待稳定姿态反馈。"),
+            ],
+            "event-fall-100": [
+                ("GREEN", None, "ORANGE", "INTERVENING", "R-FALL-03", "起身后摇晃与横向漂移共同命中。"),
+                ("ORANGE", "INTERVENING", "ORANGE", "OBSERVING", "R-FALL-05", "干预已送达，进入恢复观察窗口。"),
+                ("ORANGE", "OBSERVING", "GREEN", "RESOLVED", "R-FALL-06", "姿态连续稳定，完成闭环。"),
+            ],
+            "event-mental-week": [
+                ("GREEN", None, "YELLOW", "OBSERVING", "R-MENTAL-02", "活动范围与作息连续偏离个人基线。"),
+            ],
+            "event-fraud-visitor": [
+                ("GREEN", None, "ORANGE", "OPEN", "R-FRAUD-03", "访客、停留时长和高风险词形成多证据组合。"),
+                ("ORANGE", "OPEN", "ORANGE", "RESOLVED", "R-FRAUD-05", "家属完成访客身份核验。"),
+            ],
+            "event-tool-failed": [
+                ("GREEN", None, "ORANGE", "OBSERVING", "R-SYSTEM-02", "实时流不可用，质量门控切换到授权回放。"),
+            ],
+            "event-green-daily": [
+                ("GREEN", None, "GREEN", "RESOLVED", "R-FALL-01", "正常起身行走未达到风险升级阈值。"),
+            ],
+        }
+        for item_index, item in enumerate(events):
+            event_id = event_ids[item["event_id"]]
+            item_evidence_ids = [
+                evidence_id_map[evidence["evidence_id"]]
+                for evidence in item.get("evidences", [])
+            ]
+            if item["event_id"] == "event-green-daily":
+                item_evidence_ids.append(evidence_id_map["evi-green-normal"])
+            event_evidence = [
+                evidence_payloads[evidence_id]
+                for evidence_id in item_evidence_ids
+                if evidence_id in evidence_payloads
+            ]
+            trigger_id = event_evidence[-1]["evidence_id"] if event_evidence else None
+            severity = max((float(row["severity"]) for row in event_evidence), default=0.05)
+            confidence = min((float(row["confidence"]) for row in event_evidence), default=0.95)
+            quality = min((float(row["data_quality"]) for row in event_evidence), default=0.95)
+            context_key = {
+                "MENTAL": "long_term_deviation",
+                "FRAUD": "interaction_risk",
+                "SYSTEM": "quality_penalty",
+            }.get(item["primary_domain"], "night")
+            context_value = 0.12 if item["risk_level"] != "GREEN" else 0.0
+            created_at, _ = _event_times(now, item_index)
+            for step_index, (previous_state, previous_status, next_state, next_status, rule, reason) in enumerate(
+                trace_sequences[item["event_id"]]
+            ):
+                evaluated_at = created_at + timedelta(minutes=step_index * 4)
+                trace_id = _scoped_id(scope, "trace", f"{item['event_id']}-{step_index}")
+                trace_payload = {
+                    "trace_id": trace_id,
+                    "event_id": event_id,
+                    "resident_id": resident_id,
+                    "evidence_id": trigger_id,
+                    "evaluated_at": evaluated_at.replace(tzinfo=CN_TZ).isoformat(),
+                    "ruleset_version": RULESET_VERSION,
+                    "matched_rule": rule,
+                    "previous_state": previous_state,
+                    "next_state": next_state,
+                    "previous_status": previous_status,
+                    "next_status": next_status,
+                    "event_created": step_index == 0,
+                    "reason": reason,
+                    "not_matched": [],
+                    "queried_windows": {"short_seconds": 30, "medium_hours": 24, "long_days": 7},
+                    "thresholds": {"orange_score": 0.65, "recovery_seconds": 15},
+                    "quality_snapshot": {"evidences": [{
+                        "evidence_id": row["evidence_id"],
+                        "confidence": row["confidence"],
+                        "data_quality": row["data_quality"],
+                    } for row in event_evidence]},
+                    "baseline_snapshot": {"overall_status": "STABLE", "provenance": "authorized-demo-history"},
+                    "context_snapshot": {
+                        "policy_version": "context-v1",
+                        "evaluation_domain": item["primary_domain"],
+                        "contributions": {context_key: context_value},
+                        "context_score": context_value,
+                    },
+                    "score_components": {
+                        "severity": round(severity, 3),
+                        "confidence": round(confidence, 3),
+                        "data_quality": round(quality, 3),
+                        "context": context_value,
+                        "final_score": float(item["risk_score"]),
+                    },
+                    "error": None,
+                }
+                await _upsert(db, RuleTrace, "trace_id", {
+                    "trace_id": trace_id,
+                    "event_id": event_id,
+                    "resident_id": resident_id,
+                    "evidence_id": trigger_id,
+                    "evaluated_at": evaluated_at,
+                    "ruleset_version": RULESET_VERSION,
+                    "matched_rule": rule,
+                    "previous_state": previous_state,
+                    "next_state": next_state,
+                    "previous_status": previous_status,
+                    "next_status": next_status,
+                    "event_created": step_index == 0,
+                    "error": None,
+                    "trace_payload": dumps(trace_payload),
+                })
 
         review_evidence_id = next(iter(evidence_payloads))
         await _upsert(db, RuleTrace, "trace_id", {
@@ -349,7 +580,7 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
             "task_id": _scoped_id(scope, "task", "processing"), "alarm_msg_id": alarm_id,
             "resident_id": resident_id, "device_sn": device["device_sn"],
             "status": "SUCCESS", "attempt_count": 1, "max_attempts": 3,
-            "capture_asset_id": asset["asset_id"], "capture_completed_at": task_time,
+            "capture_asset_id": event_primary_assets["event-fall-intervening"], "capture_completed_at": task_time,
             "algorithm_attempt_count": 1, "algorithm_started_at": task_time,
             "algorithm_completed_at": task_time + timedelta(seconds=2),
             "algorithm_summary": dumps({"modules": [{"module": "mock_pose", "status": "SUCCESS", "elapsed_ms": 120, "error_code": None}], "observation_count": 3, "evidence_count": 2}),
@@ -368,18 +599,27 @@ async def seed(db_path: Path, resident_id: str = DEFAULT_RESIDENT_ID) -> dict[st
         await db.commit()
         explanation_jobs = 0
         for event_id in seeded_event_ids:
-            try:
-                _, created = await enqueue_event_explanation(db, event_id)
-                explanation_jobs += int(created)
-            except Exception:
-                await db.rollback()
+            job, _ = await enqueue_event_explanation(db, event_id)
+            request = AgentExplanationRequest.model_validate(json.loads(job.request_payload))
+            response = TemplateFallback().generate(request)
+            job.status = "FALLBACK"
+            job.response_payload = dumps(response.model_dump(mode="json"))
+            job.generated_by = response.generated_by
+            job.fallback_used = True
+            job.attempt_count = 1
+            job.error_code = None
+            job.lease_until = None
+            job.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            explanation_jobs += 1
+            await db.commit()
 
     await engine.dispose()
     return {
-        "database": str(db_path.resolve()), "resident_id": resident_id,
+        "database": str(db_path.resolve()), "backup": str(backup_path) if backup_path else None,
+        "resident_id": resident_id,
         "events": len(seeded_event_ids), "baseline_samples": 21,
-        "forewarning_snapshots": 2, "alarm_tasks": 1,
-        "explanation_jobs_created": explanation_jobs,
+        "forewarning_snapshots": 2, "alarm_tasks": 1, "authorized_assets": len(all_assets),
+        "explanation_jobs_completed": explanation_jobs,
     }
 
 

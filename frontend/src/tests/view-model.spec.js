@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  deriveEventTitle, normalizeBaseline, normalizeDashboard, normalizeDevice, normalizeEvent,
+  deriveEventTitle, mergeDuplicateReplayOptions, normalizeBaseline, normalizeDashboard, normalizeDevice, normalizeEvent,
   normalizeWeeklyReport,
 } from '../services/viewModel'
 
@@ -26,6 +26,16 @@ const apiEvent = {
 }
 
 describe('API ViewModel 适配', () => {
+  it('同标题回放选项优先保留证据更完整且时间更新的事件', () => {
+    const events = mergeDuplicateReplayOptions([
+      { event_id: 'event-old', title: '风险事件', evidence_ids: ['evi-1'], updated_at: '2026-08-01T08:00:00+08:00', source_mode: 'RECORDED_REPLAY', simulated: true },
+      { event_id: 'event-complete', title: '风险事件', evidence_ids: ['evi-1', 'evi-2'], updated_at: '2026-08-01T07:00:00+08:00', source_mode: 'RECORDED_REPLAY', simulated: true },
+      { event_id: 'event-other', title: '正常事件', evidence_ids: [], updated_at: '2026-08-01T09:00:00+08:00', source_mode: 'RECORDED_REPLAY', simulated: true },
+    ])
+
+    expect(events.map((event) => event.event_id)).toEqual(['event-complete', 'event-other'])
+  })
+
   it('用真实摘要生成标题并映射回落时间轴，不伪造风险分', () => {
     const event = normalizeEvent(apiEvent)
     expect(deriveEventTitle(apiEvent)).toBe('起身速度明显快于个人基线')
@@ -36,6 +46,34 @@ describe('API ViewModel 适配', () => {
     expect(event.timeline.at(-1).detail).toContain('家属反馈')
     expect(event.observation_seconds).toBe(61)
     expect(event.risk_history).toEqual([])
+  })
+
+  it('接口未提供风险历史时使用规则轨迹中的真实评估分数', () => {
+    const event = normalizeEvent({
+      ...apiEvent,
+      rule_traces: apiEvent.rule_traces.map((trace, index) => (
+        index < 3
+          ? { ...trace, score_components: { final_score: [0.82, 0.68, 0.31][index] } }
+          : trace
+      )),
+    })
+
+    expect(event.risk_history).toEqual([
+      { time: '2026-07-31T03:07:28+08:00', score: 0.82 },
+      { time: '2026-07-31T03:07:29+08:00', score: 0.68 },
+      { time: '2026-07-31T03:08:30+08:00', score: 0.31 },
+    ])
+  })
+
+  it('接口明确提供风险历史时优先保留接口数据', () => {
+    const riskHistory = [{ time: '03:07:00', score: 0.74 }]
+    const event = normalizeEvent({
+      ...apiEvent,
+      risk_history: riskHistory,
+      rule_traces: apiEvent.rule_traces.map((trace) => ({ ...trace, score_components: { final_score: 0.82 } })),
+    })
+
+    expect(event.risk_history).toEqual(riskHistory)
   })
 
   it('把关怀反馈和身份核验记录追加到事件时间轴', () => {
@@ -98,7 +136,7 @@ describe('API ViewModel 适配', () => {
       custom_metric: { median: 1, mad: 0.1, sample_count: 2, distinct_days: 1, status: 'INSUFFICIENT' },
     } })
     expect(baseline.metrics[0]).toMatchObject({ label: '起身时长', unit: '秒' })
-    expect(baseline.metrics[1]).toMatchObject({ label: 'custom_metric', unit: '' })
+    expect(baseline.metrics[1]).toMatchObject({ label: '其他趋势指标', unit: '' })
     expect(baseline.baseline_progress).toEqual({ observed_days: 3, provisional_target_days: 3, stable_target_days: 7 })
   })
 })

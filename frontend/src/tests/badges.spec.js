@@ -11,6 +11,13 @@ describe('来源与风险标识', () => {
     expect(wrapper.text()).not.toContain('RECORDED_REPLAY')
   })
 
+  it('强调来源仍是状态信息，不渲染成无响应按钮', () => {
+    const wrapper = mount(SourceBadge, { props: { mode: 'RECORDED_REPLAY', simulated: true, button: true } })
+    expect(wrapper.text()).toContain('授权回放')
+    expect(wrapper.find('button').exists()).toBe(false)
+    expect(wrapper.get('[role="status"]').exists()).toBe(true)
+  })
+
   it('黄色风险使用低打扰语义', () => {
     const wrapper = mount(RiskBadge, { props: { level: 'YELLOW' } })
     expect(wrapper.text()).toContain('建议关注')

@@ -5,11 +5,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.database import get_db
 from backend.schemas.baseline import ResidentBaselineResponse
+from backend.schemas.field_run import FieldRunSummary
 from backend.service.baseline_service import memory_store
+from backend.service.field_run_service import list_live_field_runs
 from backend.service.forewarning_service import latest_forewarning, list_forewarning
 from contracts.v1.forewarning import ForewarningSnapshot
 
 router = APIRouter(prefix="/residents", tags=["residents"])
+
+
+@router.get("/{resident_id}/field-runs", response_model=list[FieldRunSummary])
+async def get_field_runs(
+    resident_id: str,
+    limit: int = Query(default=20, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+):
+    return await list_live_field_runs(db, resident_id, limit=limit)
 
 @router.get("/{resident_id}/baseline", response_model=ResidentBaselineResponse)
 async def get_baseline(resident_id: str, as_of: datetime | None = Query(default=None),

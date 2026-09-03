@@ -1,4 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import weeklyMock from '../replay-data/weekly.json'
 
@@ -72,20 +73,43 @@ describe('黄色周报与诈骗核验卡', () => {
     expect(wrapper.get('[data-testid="visitor-panel"]').text()).toContain('高风险组合词')
 
     wrapper.vm.careChoice = weeklyMock.care.options[0]
+    await nextTick()
     await wrapper.get('[data-testid="care-submit"]').trigger('click')
     await flushPromises()
     expect(submitFamilyFeedbackMock).toHaveBeenCalledWith('event-mental-week', {
       feedback_type: 'confirm', feedback_kind: 'CARE', value: weeklyMock.care.options[0], operator: 'family',
     })
-    expect(wrapper.get('[data-testid="care-submit"]').text()).toContain('关怀反馈已记录')
+    expect(wrapper.get('[data-testid="care-submit"]').text()).toContain('更新关怀反馈')
 
     wrapper.vm.verifyChoice = weeklyMock.visitor_case.verification_options[2]
+    await nextTick()
     await wrapper.get('[data-testid="verify-submit"]').trigger('click')
     await flushPromises()
     expect(submitFamilyFeedbackMock).toHaveBeenCalledWith('event-fraud-visitor', {
       feedback_type: 'confirm', feedback_kind: 'IDENTITY_VERIFICATION', value: weeklyMock.visitor_case.verification_options[2], operator: 'family',
     })
-    expect(wrapper.get('[data-testid="verify-submit"]').text()).toContain('身份核验已记录')
+    expect(wrapper.get('[data-testid="verify-submit"]').text()).toContain('更新身份核验')
+  })
+
+  it('已记录的关怀和身份核验仍可重新选择并更新', async () => {
+    const report = structuredClone(weeklyMock)
+    report.care.status = 'SUBMITTED'
+    report.care.feedback_record = { value: report.care.options[0], recorded_at: '2026-09-02T09:00:00+08:00', operator: 'family' }
+    report.visitor_case.verification_status = 'SUBMITTED'
+    report.visitor_case.feedback_record = { value: report.visitor_case.verification_options[0], recorded_at: '2026-09-02T09:00:00+08:00', operator: 'family' }
+    getWeeklyReportMock.mockResolvedValue(report)
+    const wrapper = mountView(); await flushPromises()
+
+    expect(wrapper.vm.careChoice).toBe(report.care.options[0])
+    expect(wrapper.vm.verifyChoice).toBe(report.visitor_case.verification_options[0])
+    expect(wrapper.get('[data-testid="care-submit"]').attributes('disabled')).toBeUndefined()
+    expect(wrapper.get('[data-testid="verify-submit"]').attributes('disabled')).toBeUndefined()
+
+    wrapper.vm.careChoice = report.care.options[1]
+    await nextTick()
+    await wrapper.get('[data-testid="care-submit"]').trigger('click')
+    await flushPromises()
+    expect(submitFamilyFeedbackMock).toHaveBeenCalledWith('event-mental-week', expect.objectContaining({ value: report.care.options[1] }))
   })
 
   it('API 缺少周报扩展数据时展示诚实空状态并禁用提交', async () => {

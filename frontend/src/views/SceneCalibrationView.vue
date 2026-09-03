@@ -5,7 +5,7 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 import PageHeader from '../components/common/PageHeader.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import { getLatestForewarning, getSceneCalibration, runtime } from '../services/repository'
-import { formatDateTime, locationLabel, zoneIdentifierLabel } from '../utils/format'
+import { cameraPositionLabel, errorCodeLabel, formatDateTime, locationLabel, sceneConfigLabel, schemaVersionLabel, zoneIdentifierLabel } from '../utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -94,16 +94,16 @@ onMounted(load)
     </PageHeader>
     <el-button class="back-button" plain @click="router.push({ name: 'system' })"><el-icon><ArrowLeft /></el-icon>返回系统状态</el-button>
     <el-alert v-if="error" :title="error.message" type="error" :closable="false" show-icon class="calibration-error">
-      <template #default><span>错误码：{{ error.code }}</span><span v-if="error.requestId"> · 请求编号：{{ error.requestId }}</span></template>
+      <template #default><span>错误类型：{{ errorCodeLabel(error.code) }}</span><span v-if="error.requestId"> · 请求编号：{{ error.requestId }}</span></template>
     </el-alert>
 
     <template v-if="calibration">
       <section class="calibration-summary-band" data-testid="calibration-summary">
         <dl class="detail-list">
-          <div><dt>契约版本</dt><dd>{{ calibration.schema_version }}</dd></div><div><dt>配置标识</dt><dd>{{ calibration.scene_config_id }}</dd></div>
-          <div><dt>摄像机位置</dt><dd>{{ calibration.camera_position_id }}</dd></div><div><dt>场景位置</dt><dd>{{ locationLabel(calibration.location) }}</dd></div>
+          <div><dt>契约版本</dt><dd>{{ schemaVersionLabel(calibration.schema_version) }}</dd></div><div><dt>配置标识</dt><dd>{{ sceneConfigLabel(calibration.scene_config_id) }}</dd></div>
+          <div><dt>摄像机位置</dt><dd>{{ cameraPositionLabel(calibration.camera_position_id) }}</dd></div><div><dt>场景位置</dt><dd>{{ locationLabel(calibration.location) }}</dd></div>
           <div><dt>画面尺寸</dt><dd>{{ calibration.frame_width }} × {{ calibration.frame_height }}</dd></div><div><dt>生效时间</dt><dd>{{ formatDateTime(calibration.effective_from) }}</dd></div>
-          <div><dt>替代版本</dt><dd>{{ calibration.supersedes || '无' }}</dd></div><div><dt>区域数量</dt><dd>{{ calibration.zones.length }}</dd></div>
+          <div><dt>替代版本</dt><dd>{{ calibration.supersedes ? sceneConfigLabel(calibration.supersedes) : '无' }}</dd></div><div><dt>区域数量</dt><dd>{{ calibration.zones.length }}</dd></div>
         </dl>
       </section>
 

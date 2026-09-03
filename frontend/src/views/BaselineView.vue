@@ -7,7 +7,7 @@ import ChartPanel from '../components/common/ChartPanel.vue'
 import ActivityHeatmap from '../components/baseline/ActivityHeatmap.vue'
 import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
 import { getBaseline } from '../services/repository'
-import { displayValueLabel, formatDateTime } from '../utils/format'
+import { cameraPositionLabel, deviceModelLabel, displayValueLabel, formatDateTime, residentIdentifierLabel, rulesetVersionLabel } from '../utils/format'
 
 const loading = ref(true)
 const error = ref('')
@@ -110,11 +110,11 @@ onBeforeUnmount(() => { if (progressAnimationFrame) cancelAnimationFrame(progres
         </el-progress>
         <TechnicalDisclosure title="基线来源详情" summary="规则版本、设备和固定机位">
         <dl class="detail-list baseline-meta">
-          <div><dt>居民</dt><dd>{{ baseline.resident_id }}</dd></div>
-          <div><dt>规则版本</dt><dd>{{ baseline.ruleset_version }}</dd></div>
+          <div><dt>居民</dt><dd>{{ residentIdentifierLabel(baseline.resident_id) }}</dd></div>
+          <div><dt>规则版本</dt><dd>{{ rulesetVersionLabel(baseline.ruleset_version) }}</dd></div>
           <div><dt>数据来源</dt><dd>{{ displayValueLabel(baseline.source_mode) }}</dd></div>
-          <div><dt>设备</dt><dd>{{ baseline.provenance?.device_model || (coverageMode ? '萤石 C6c（授权回放）' : '待授权C6c样本') }}</dd></div>
-          <div><dt>固定机位</dt><dd>{{ baseline.provenance?.camera_position_id || (coverageMode ? '固定机位' : '样本不足') }}</dd></div>
+          <div><dt>设备</dt><dd>{{ baseline.provenance?.device_model ? deviceModelLabel(baseline.provenance.device_model) : (coverageMode ? '萤石 C6c（授权回放）' : '待授权 C6c 样本') }}</dd></div>
+          <div><dt>固定机位</dt><dd>{{ baseline.provenance?.camera_position_id ? cameraPositionLabel(baseline.provenance.camera_position_id) : (coverageMode ? '固定机位' : '样本不足') }}</dd></div>
           <div v-if="coverageMode"><dt>校准边界</dt><dd>{{ baseline.coverage.resident_calibration_label }}</dd></div>
         </dl>
         </TechnicalDisclosure>
@@ -125,7 +125,7 @@ onBeforeUnmount(() => { if (progressAnimationFrame) cancelAnimationFrame(progres
           <div class="card-heading"><div><h2 class="metric-title-with-help">{{ item.label }}<el-tooltip content="该指标基于当前有效样本计算，用于工程趋势比较，不构成医学结论" placement="top"><el-icon class="metric-help"><QuestionFilled /></el-icon></el-tooltip></h2></div><el-tag :type="statusType(item.status)" size="large">{{ statusLabel(item.status) }}</el-tag></div>
           <div class="baseline-number">{{ metricDisplay(item) }}</div>
           <dl class="detail-list">
-            <div><dt>中位数绝对偏差（MAD）</dt><dd>{{ metricValue(item.mad, item.unit) }}</dd></div>
+            <div><dt>数据离散程度</dt><dd>{{ metricValue(item.mad, item.unit) }}</dd></div>
             <div><dt>{{ coverageMode ? '覆盖片段' : '样本数' }}</dt><dd>{{ item.sample_count }}</dd></div>
             <div><dt>有效天数</dt><dd>{{ item.distinct_days }}</dd></div>
           </dl>

@@ -10,9 +10,9 @@ import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import TechnicalDisclosure from '../components/common/TechnicalDisclosure.vue'
 import { DELIVERY_STATUSES } from '../domain/constants'
-import { getAsset, getEvent, getEventExplanation, interveneEvent, runtime, submitInterventionResult } from '../services/repository'
+import { getAsset, getEvent, getEventExplanation, getSelectedEventMedia, interveneEvent, runtime, submitInterventionResult } from '../services/repository'
 import { resolveEventAssetId } from '../services/viewModel'
-import { displayValueLabel, domainLabel, evidenceTypeLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, statusLabel, timeScaleLabel, unitLabel } from '../utils/format'
+import { adapterVersionLabel, displayValueLabel, domainLabel, eventIdentifierLabel, evidenceIdentifierLabel, evidenceTypeLabel, explanationSourceLabel, formatAssetId, formatDateTime, formatPercent, formatRiskScore, observationIdentifierLabel, resolutionReasonLabel, ruleLabel, rulesetVersionLabel, statusLabel, timeScaleLabel, unitLabel } from '../utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,10 +25,13 @@ const asset = ref(null)
 const assetId = ref(null)
 const assetState = ref('idle')
 const assetMessage = ref('')
+const selectedMedia = ref(null)
+const selectedMediaAssetId = ref(null)
 const syncState = ref('loading')
 const syncWarning = ref('')
 const submittingResidentResponse = ref(false)
 const residentResponseRecorded = ref(false)
+const residentResponseError = ref('')
 const explanation = ref(null)
 const explanationError = ref('')
 const explanationState = ref('loading')
@@ -49,6 +52,17 @@ const EXPLANATION_STATUS_META = Object.freeze({
   SUCCESS: { label: '智能体解释', type: 'success' },
   FALLBACK: { label: '模板降级解释', type: 'warning' },
   FAILED: { label: '解释生成失败', type: 'danger' },
+})
+const FOREWARNING_FACTOR_LABELS = Object.freeze({
+  human_instability: '人体不稳定',
+  human_environment_interaction: '人-环境交互',
+  personal_baseline_deviation: '个人基线偏离',
+  environment_risk: '环境风险',
+  data_quality_downgrade: '数据质量降级',
+  fall_precursor_evidence: '起身后不稳证据',
+  environment_interaction_risk: '人-环境交互风险',
+  multi_scale_accumulation: '多时标累积',
+  normal_fluctuation: '日常波动',
 })
 let pollTimer = null
 let explanationPollTimer = null
@@ -73,7 +87,7 @@ const explanationStatusMeta = computed(() => (
 ))
 
 const explanationGeneratedBy = computed(() => (
-  explanation.value?.explanation?.generated_by || '未提供'
+  explanationSourceLabel(explanation.value?.explanation?.generated_by)
 ))
 
 const explanationFallbackUsed = computed(() => (
@@ -96,7 +110,7 @@ const displayEvidences = computed(() => {
 const riskChartOption = computed(() => ({
   grid: { left: 42, right: 20, top: 28, bottom: 36 },
   tooltip: { trigger: 'axis', valueFormatter: (value) => `${formatRiskScore(value)}` },
-  xAxis: { type: 'category', boundaryGap: false, data: event.value?.risk_history?.map((item) => item.time) || [], axisLabel: { color: '#86909c' } },
+  xAxis: { type: 'category', boundaryGap: false, data: event.value?.risk_history?.map((item) => item.time) || [], axisLabel: { color: '#86909c', formatter: riskHistoryTimeLabel } },
   yAxis: { type: 'value', min: 0, max: 1, splitLine: { lineStyle: { color: '#e5e6eb' } }, axisLabel: { color: '#86909c', formatter: (value) => `${Math.round(value * 100)}` } },
   series: [{
     type: 'line', smooth: true, symbolSize: 8,
@@ -132,6 +146,43 @@ const forewarningDelta = computed(() => {
   if (!preInterventionSnapshot.value || !postInterventionSnapshot.value) return null
   return postInterventionSnapshot.value.instant.engineering_index - preInterventionSnapshot.value.instant.engineering_index
 })
+const dominantFactors = computed(() => (
+  (Array.isArray(preInterventionSnapshot.value?.dominant_factors)
+    ? preInterventionSnapshot.value.dominant_factors
+    : [])
+    .map((item) => (typeof item === 'string' ? { factor: item } : item))
+    .filter((item) => item && item.factor)
+))
+
+const selectedMediaEntries = computed(() => selectedMedia.value?.entries || [])
+const uniqueSelectedMediaEntries = computed(() => {
+  const entriesByScenario = new Map()
+  selectedMediaEntries.value.forEach((clip) => {
+    const key = `${clip.scenario}|${clip.purpose}`
+    const current = entriesByScenario.get(key)
+    if (!current || clip.is_primary) entriesByScenario.set(key, clip)
+  })
+  return [...entriesByScenario.values()]
+})
+const activeSelectedMedia = computed(() => (
+  selectedMediaEntries.value.find((clip) => clip.asset_id === selectedMediaAssetId.value) || null
+))
+const residentResponseRecord = computed(() => (
+  [...(event.value?.interventions || [])].reverse().find((result) => (
+    result.action_type === 'resident_response'
+    && result.resident_response === 'stable'
+    && result.delivery_status === 'SUCCESS'
+  )) || null
+))
+
+function riskHistoryTimeLabel(value) {
+  if (/^\d{1,2}:\d{2}/.test(String(value))) return value
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).format(date)
+}
 
 function assessmentLabel(value) {
   return { VALID: '完整评估', PARTIAL: '降级评估', INSUFFICIENT: '数据不足' }[value] || value
@@ -139,7 +190,7 @@ function assessmentLabel(value) {
 
 function contextText(trace) {
   const entries = Object.entries(trace?.context_snapshot?.contributions || {}).filter(([, value]) => Number(value) > 0)
-  return entries.length ? entries.map(([key, value]) => `${key} +${value}`).join(' · ') : '无附加上下文'
+  return entries.length ? entries.map(([key, value]) => `${FOREWARNING_FACTOR_LABELS[key] || displayValueLabel(key)} +${value}`).join(' · ') : '无附加上下文'
 }
 
 function traceScore(trace) {
@@ -151,7 +202,7 @@ function qualityText(trace) {
   const items = trace?.quality_snapshot?.evidences || []
   if (!items.length) return '无证据质量快照'
   return items.map((item) => (
-    `${item.evidence_type}: 质量${item.data_quality} / 置信${item.confidence} / ${item.usable ? '通过' : '拦截'}`
+    `${evidenceTypeLabel(item.evidence_type)}：质量${item.data_quality} / 置信${item.confidence} / ${item.usable ? '通过' : '拦截'}`
   )).join('；')
 }
 
@@ -212,7 +263,12 @@ function clearExplanationPollTimer() {
 }
 
 async function syncAsset(currentEvent, activeSession) {
-  const nextAssetId = resolveEventAssetId(currentEvent)
+  const nextSelectedMedia = getSelectedEventMedia(currentEvent)
+  selectedMedia.value = nextSelectedMedia
+  if (!nextSelectedMedia?.entries.some((clip) => clip.asset_id === selectedMediaAssetId.value)) {
+    selectedMediaAssetId.value = nextSelectedMedia?.primary_asset_id || null
+  }
+  const nextAssetId = selectedMediaAssetId.value || resolveEventAssetId(currentEvent)
   if (!nextAssetId) {
     asset.value = null
     assetId.value = null
@@ -242,12 +298,34 @@ async function syncAsset(currentEvent, activeSession) {
   }
 }
 
+function selectRelatedMedia(assetId) {
+  if (!event.value || assetId === selectedMediaAssetId.value) return
+  if (!selectedMediaEntries.value.some((clip) => clip.asset_id === assetId)) return
+  selectedMediaAssetId.value = assetId
+  void syncAsset(event.value, sessionId)
+}
+
 function pollingEnabled() {
   return runtime.mode !== 'replay'
 }
 
 function isTerminal(currentEvent) {
   return TERMINAL_STATUSES.has(currentEvent?.status)
+}
+
+function hasRecordedResidentResponse(currentEvent, residentResponse = 'stable') {
+  return (currentEvent?.interventions || []).some((result) => (
+    result.action_type === 'resident_response'
+    && result.resident_response === residentResponse
+    && result.delivery_status === 'SUCCESS'
+  ))
+}
+
+function hasRequestedIntervention(currentEvent) {
+  return (currentEvent?.interventions || []).some((result) => (
+    result.action_type !== 'resident_response'
+    && ['SUCCESS', 'RETRYING'].includes(result.delivery_status)
+  ))
 }
 
 function schedulePoll(activeSession) {
@@ -297,6 +375,8 @@ async function refreshEvent(activeSession, initial = false) {
     const nextEvent = await getEvent(eventId)
     if (activeSession !== sessionId) return
     event.value = nextEvent
+    if (hasRecordedResidentResponse(nextEvent)) residentResponseRecorded.value = true
+    if (hasRequestedIntervention(nextEvent)) interventionRequested.value = true
     forewarningSnapshots.value = nextEvent.forewarning_snapshots || []
     void syncAsset(nextEvent, activeSession)
     error.value = ''
@@ -342,8 +422,11 @@ function startEventSession() {
   assetId.value = null
   assetState.value = 'idle'
   assetMessage.value = ''
+  selectedMedia.value = null
+  selectedMediaAssetId.value = null
   submittingResidentResponse.value = false
   residentResponseRecorded.value = false
+  residentResponseError.value = ''
   submittingIntervention.value = false
   interventionRequested.value = false
   if (!route.params.eventId) {
@@ -366,6 +449,7 @@ function stopEventSession() {
 
 async function confirmResidentStable() {
   if (!event.value || submittingResidentResponse.value || residentResponseRecorded.value) return
+  residentResponseError.value = ''
   submittingResidentResponse.value = true
   try {
     const result = await submitInterventionResult(event.value, 'stable')
@@ -376,7 +460,8 @@ async function confirmResidentStable() {
     residentResponseRecorded.value = true
     ElMessage.success('坐稳确认已记录，系统将继续观察风险是否回落')
   } catch (err) {
-    ElMessage.error(`确认提交失败：${err.message}`)
+    residentResponseError.value = `确认提交失败：${err.message}`
+    ElMessage.error(residentResponseError.value)
   } finally {
     submittingResidentResponse.value = false
   }
@@ -418,7 +503,7 @@ onBeforeUnmount(stopEventSession)
       description="从证据形成、系统动作到观察回落，每一步都有记录。"
     >
       <el-tag :type="syncTagType" size="large" effect="plain" data-testid="event-sync-status">{{ syncLabel }}</el-tag>
-      <el-button size="large" plain @click="router.back()">返回</el-button>
+      <el-button size="large" plain @click="router.push('/events')">返回事件列表</el-button>
     </PageHeader>
 
     <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
@@ -454,16 +539,56 @@ onBeforeUnmount(stopEventSession)
           <h2>{{ event.title }}</h2>
           <p>{{ event.recommended_action }}</p>
           <div class="meta-line">
-            <span>事件编号：{{ event.event_id }}</span><span>风险等级：{{ displayValueLabel(event.risk_level) }}</span><span>事件状态：{{ statusLabel(event.status) }}</span><span>规则版本：{{ event.ruleset_version }}</span><span>{{ formatDateTime(event.created_at) }}</span>
+            <span>事件编号：{{ eventIdentifierLabel(event.event_id) }}</span><span>风险等级：{{ displayValueLabel(event.risk_level) }}</span><span>事件状态：{{ statusLabel(event.status) }}</span><span>规则版本：{{ rulesetVersionLabel(event.ruleset_version) }}</span><span>{{ formatDateTime(event.created_at) }}</span>
           </div>
         </div>
         <div class="event-score"><span>{{ formatRiskScore(event.risk_score) }}</span><small>风险分数</small></div>
       </section>
 
       <MediaPanel v-if="assetState === 'ready'" :asset="asset" :source-mode="event.source_mode" :simulated="event.simulated" />
+      <el-alert v-else-if="assetState === 'loading'" title="正在读取当前事件影像" type="info" show-icon :closable="false" data-testid="asset-status" />
       <el-alert v-else-if="assetState === 'missing'" :title="assetMessage" type="warning" show-icon :closable="false" data-testid="asset-status" />
       <el-alert v-else-if="assetState === 'failed'" :title="assetMessage" type="error" show-icon :closable="false" data-testid="asset-status" />
       <el-alert v-else-if="assetState === 'idle'" title="暂无可追溯视频" type="info" show-icon :closable="false" data-testid="asset-status" />
+
+      <TechnicalDisclosure
+        v-if="selectedMediaEntries.length"
+        title="查看验证对照片段"
+        summary="验证素材，非当前事件原始媒体；同类参与者片段已合并"
+      >
+      <section class="content-card related-media-card" data-testid="related-media-selector">
+        <div class="card-heading">
+          <div>
+            <span class="section-kicker">受控工程对照</span>
+            <h2>验证对照片段</h2>
+          </div>
+          <SourceBadge mode="RECORDED_REPLAY" :simulated="true" />
+        </div>
+        <p class="related-media-notice">切换仅替换播放器及片段说明；不会改动当前事件的风险等级、依据、规则轨迹、干预状态或时间轴。受控工程对照，非当前事件原始媒体。</p>
+        <div class="related-media-options" role="list" aria-label="相关工程对照片段">
+          <button
+            v-for="clip in uniqueSelectedMediaEntries"
+            :key="clip.asset_id"
+            type="button"
+            class="related-media-option"
+            :class="{ 'is-active': clip.asset_id === selectedMediaAssetId }"
+            :aria-pressed="clip.asset_id === selectedMediaAssetId"
+            :disabled="clip.asset_id === selectedMediaAssetId"
+            :data-testid="`related-media-${clip.clip_id}`"
+            @click="selectRelatedMedia(clip.asset_id)"
+          >
+            <strong>{{ clip.is_primary ? '主片 · ' : '' }}{{ clip.scenario }}</strong>
+            <span>{{ clip.purpose }}</span>
+          </button>
+        </div>
+        <div v-if="activeSelectedMedia" class="related-media-meta" data-testid="selected-media-meta">
+          <span>参与者：{{ activeSelectedMedia.participant_id }}</span>
+          <span>场景：{{ activeSelectedMedia.scenario }}</span>
+          <span>用途：{{ activeSelectedMedia.purpose }}</span>
+          <code>文件校验码：{{ activeSelectedMedia.sha256_short }}</code>
+        </div>
+      </section>
+      </TechnicalDisclosure>
 
       <section v-if="preInterventionSnapshot" class="content-card forewarning-closure-card" data-testid="forewarning-closure-panel">
         <div class="card-heading">
@@ -481,7 +606,7 @@ onBeforeUnmount(stopEventSession)
           <article>
             <small>干预后即时指数</small>
             <strong>{{ postInterventionSnapshot ? formatRiskScore(postInterventionSnapshot.instant.engineering_index) : '—' }}</strong>
-            <span>{{ postInterventionSnapshot ? `${assessmentLabel(postInterventionSnapshot.assessment_status)} · 置信 ${postInterventionSnapshot.confidence_level}` : '继续观察中' }}</span>
+            <span>{{ postInterventionSnapshot ? `${assessmentLabel(postInterventionSnapshot.assessment_status)} · 置信 ${displayValueLabel(postInterventionSnapshot.confidence_level)}` : '继续观察中' }}</span>
           </article>
           <article>
             <small>指数变化</small>
@@ -494,6 +619,16 @@ onBeforeUnmount(stopEventSession)
             <span>个人 {{ formatRiskScore(preInterventionSnapshot.components.personal_deviation) }}</span>
             <span>环境 {{ formatRiskScore(preInterventionSnapshot.components.environment_risk) }}</span>
             <span>交互 {{ formatRiskScore(preInterventionSnapshot.components.interaction_risk) }}</span>
+          </article>
+          <article v-if="dominantFactors.length" class="forewarning-factors" data-testid="forewarning-factor-contributions">
+            <small>主导因子贡献</small>
+            <div class="forewarning-factor-list">
+              <div v-for="item in dominantFactors" :key="`${item.factor}-${(item.evidence_ids || []).join('-')}`" class="forewarning-factor-item">
+                <strong>{{ FOREWARNING_FACTOR_LABELS[item.factor] || item.factor }}</strong>
+                <span>贡献 {{ formatPercent(item.contribution) }}</span>
+                <code v-if="item.evidence_ids?.length">关联依据：{{ item.evidence_ids.length }} 条</code>
+              </div>
+            </div>
           </article>
         </div>
         <el-alert
@@ -555,7 +690,7 @@ onBeforeUnmount(stopEventSession)
                 </div>
                 <div class="evidence-trace-summary">
                   <span>{{ (evidence.observation_ids || []).length }} 条原始观测</span>
-                  <span>{{ evidence.adapter_version || '暂无适配器详情' }}</span>
+                  <span>{{ adapterVersionLabel(evidence.adapter_version) }}</span>
                 </div>
                 <SourceBadge v-if="evidence.source_mode" :mode="evidence.source_mode" :simulated="evidence.simulated" />
                 <el-button v-if="evidence.observation_ids?.length" class="trace-button" size="large" plain @click="openTrace(evidence)">查看原始观测</el-button>
@@ -568,7 +703,7 @@ onBeforeUnmount(stopEventSession)
             <div class="card-heading"><div><span class="section-kicker">规则轨迹</span><h2>规则判断</h2></div><span>{{ displayRuleTraces.length }} 次评估</span></div>
             <div class="tool-results">
               <article v-for="trace in displayRuleTraces" :key="trace.trace_id">
-                <el-tag effect="dark">{{ trace.matched_rule }}</el-tag>
+                <el-tag effect="dark">{{ ruleLabel(trace.matched_rule) }}</el-tag>
                 <h3>{{ trace.reason || '暂无规则解释' }}</h3>
                 <dl class="detail-list">
                   <div><dt>状态迁移</dt><dd>{{ displayValueLabel(trace.previous_status || trace.previous_state) }} → {{ displayValueLabel(trace.next_status || trace.next_state) }}</dd></div>
@@ -595,8 +730,8 @@ onBeforeUnmount(stopEventSession)
           </article>
 
           <article v-if="event.risk_history?.length" class="content-card">
-            <div class="card-heading"><div><span class="section-kicker">风险趋势</span><h2>{{ event.status === 'RESOLVED' ? '风险水位已经回落' : '当前仍在干预或观察' }}</h2></div><el-tag :type="event.status === 'RESOLVED' ? 'success' : 'warning'" size="large">{{ event.observation_seconds || 0 }} 秒观察</el-tag></div>
-            <ChartPanel :option="riskChartOption" height="270px" aria-label="风险事件发生后逐步回落的趋势图" />
+            <div class="card-heading"><div><span class="section-kicker">风险趋势 · 规则评估记录</span><h2>{{ event.status === 'RESOLVED' ? '风险水位已经回落' : '当前仍在干预或观察' }}</h2></div><el-tag :type="event.status === 'RESOLVED' ? 'success' : 'warning'" size="large">{{ event.risk_history.length }} 个评估点</el-tag></div>
+            <ChartPanel :option="riskChartOption" height="270px" aria-label="风险事件规则评估分数趋势图" />
           </article>
           <article v-else-if="event.rule_traces?.length" class="content-card api-empty-state">
             <div class="card-heading"><div><span class="section-kicker">风险趋势</span><h2>以真实状态迁移为准</h2></div></div>
@@ -616,7 +751,7 @@ onBeforeUnmount(stopEventSession)
               :disabled="interventionRequested"
               @click="requestIntervention"
             >
-              {{ interventionRequested ? '干预请求已提交（已受理）' : '查看处理建议' }}
+              {{ interventionRequested ? '处理请求已提交' : '提交处理请求' }}
             </el-button>
           </section>
 
@@ -630,11 +765,11 @@ onBeforeUnmount(stopEventSession)
                 <h3>{{ displayValueLabel(result.tool_name) }}</h3>
                 <dl class="detail-list">
                   <div><dt>执行方式</dt><dd>{{ displayValueLabel(result.action_type) }}</dd></div>
-                  <div><dt>老人反馈</dt><dd>{{ result.resident_response || '暂无' }}</dd></div>
+                  <div><dt>老人反馈</dt><dd>{{ result.resident_response ? displayValueLabel(result.resident_response) : '暂无' }}</dd></div>
                   <div v-if="result.family_feedback"><dt>家属反馈</dt><dd>{{ result.family_feedback }}</dd></div>
                   <div><dt>干预后水位</dt><dd>{{ formatRiskScore(result.risk_after) }}</dd></div>
                   <div><dt>是否解除</dt><dd>{{ result.resolved ? '是' : '否' }}</dd></div>
-                  <div><dt>结果</dt><dd>{{ result.resolution_reason || '等待结果' }}</dd></div>
+                  <div><dt>结果</dt><dd>{{ resolutionReasonLabel(result.resolution_reason) }}</dd></div>
                 </dl>
                 <el-alert v-if="result.delivery_status === 'FAILED'" title="工具调用失败已如实保留，未标记为干预成功。" type="error" show-icon :closable="false" />
               </article>
@@ -655,7 +790,17 @@ onBeforeUnmount(stopEventSession)
             >
               {{ residentResponseRecorded ? '坐稳确认已记录' : '我已坐稳' }}
             </el-button>
-            <p v-if="residentResponseRecorded" class="elder-action-note">确认后仍将继续观察事件状态。</p>
+            <el-alert
+              v-if="residentResponseError"
+              :title="residentResponseError"
+              type="error"
+              show-icon
+              :closable="false"
+              class="elder-action-error"
+            />
+            <p v-if="residentResponseRecorded" class="elder-action-note">
+              {{ residentResponseRecord ? `已于 ${formatDateTime(residentResponseRecord.completed_at || residentResponseRecord.started_at)} 记录；` : '' }}确认后仍将继续观察事件状态。
+            </p>
           </section>
         </aside>
       </section>
@@ -666,10 +811,10 @@ onBeforeUnmount(stopEventSession)
           <h2>{{ evidenceTypeLabel(selectedEvidence.evidence_type) }}</h2>
           <p>{{ selectedEvidence.explanation }}</p>
           <dl class="detail-list">
-            <div><dt>依据标识</dt><dd>{{ selectedEvidence.evidence_id }}</dd></div>
+            <div><dt>依据标识</dt><dd>{{ evidenceIdentifierLabel(selectedEvidence.evidence_id) }}</dd></div>
             <div><dt>风险方向</dt><dd>{{ domainLabel(selectedEvidence.risk_domain) }}</dd></div>
             <div><dt>生成时间</dt><dd>{{ formatDateTime(selectedEvidence.timestamp) }}</dd></div>
-            <div><dt>适配器版本</dt><dd>{{ selectedEvidence.adapter_version }}</dd></div>
+            <div><dt>适配器版本</dt><dd>{{ adapterVersionLabel(selectedEvidence.adapter_version) }}</dd></div>
             <div><dt>个人基线</dt><dd>{{ selectedEvidence.baseline_value ?? '—' }}</dd></div>
             <div><dt>当前值</dt><dd>{{ selectedEvidence.current_value ?? '—' }}</dd></div>
             <div><dt>基线偏离</dt><dd>{{ selectedEvidence.baseline_deviation ?? '—' }}</dd></div>
@@ -677,7 +822,7 @@ onBeforeUnmount(stopEventSession)
           <h3>关联活动记录</h3>
           <article v-for="observation in selectedObservations" :key="observation.observation_id" class="observation-card">
             <strong>{{ evidenceTypeLabel(observation.feature_name) }}</strong>
-            <code>{{ observation.observation_id }}</code>
+            <code>{{ observationIdentifierLabel(observation.observation_id) }}</code>
             <p>{{ observation.feature_value }} {{ unitLabel(observation.unit) }} · {{ formatDateTime(observation.timestamp) }}</p>
             <dl class="detail-list compact-list">
               <div><dt>来源</dt><dd>{{ displayValueLabel(observation.source) }}</dd></div>

@@ -14,14 +14,14 @@ const routes = [
   { path: '/', name: 'home', component: HomeView, meta: { title: '首页安全水位', nav: true, icon: 'House' } },
   { path: '/resident', name: 'resident', component: ResidentView, meta: { title: '老人档案与授权', nav: true, icon: 'User', description: '管理老人基本档案、隐私区域、家属授权和适老提醒语音。' } },
   { path: '/baseline', name: 'baseline', component: BaselineView, meta: { title: '个人基线与趋势', nav: true, icon: 'TrendCharts', description: '查看短、中、长期个人基线及活动热力图，异常时段不会写入正常基线。' } },
-  { path: '/events', name: 'events', component: EventsView, meta: { title: '老人活动事件记录', nav: true, icon: 'Clock' } },
+  { path: '/events', name: 'events', component: EventsView, meta: { title: '风险事件与处置', nav: true, icon: 'Clock' } },
   { path: '/events/detail', name: 'event-detail-empty', component: EventDetailView, meta: { title: '风险事件详情', nav: false } },
-  { path: '/events/:eventId', name: 'event-detail', component: EventDetailView, meta: { title: '风险事件详情', nav: true, icon: 'DocumentChecked' } },
+  { path: '/events/:eventId', name: 'event-detail', component: EventDetailView, meta: { title: '风险事件详情', nav: false } },
   { path: '/care', name: 'care', component: CareView, meta: { title: '家属关怀与身份核验', nav: true, icon: 'ChatLineRound', description: '承接家属关怀反馈、自愿筛查入口和访客身份核验结果。' } },
   { path: '/weekly', name: 'weekly', component: WeeklyView, meta: { title: '周报与核验', nav: true, icon: 'DataAnalysis' } },
   { path: '/system', name: 'system', component: SystemView, meta: { title: '系统和设备状态', nav: true, icon: 'Monitor', description: '展示设备在线状态、适配器模式、数据质量和未核验能力。' } },
   { path: '/system/calibration/:sceneConfigId', name: 'scene-calibration', component: SceneCalibrationView, meta: { title: '场景标定详情', nav: false } },
-  { path: '/replay', name: 'replay', component: ReplayView, meta: { title: '事件影像回看', nav: true, icon: 'VideoPlay', description: '查看实时事件与授权片段的统一影像索引。' } },
+  { path: '/replay', name: 'replay', component: ReplayView, meta: { title: '风险验证与回放', nav: true, icon: 'VideoPlay', description: '对照高低风险记录，查看指标读数、风险因子与授权片段。' } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 

@@ -7,7 +7,7 @@ import RiskBadge from '../components/common/RiskBadge.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { getDashboard } from '../services/repository'
-import { displayValueLabel, domainLabel, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
+import { deviceAliasLabel, displayValueLabel, domainLabel, formatDateTime, formatPercent, formatRiskScore, statusLabel } from '../utils/format'
 
 const router = useRouter()
 const loading = ref(true)
@@ -180,7 +180,7 @@ function onlineLabel(value) {
         </article>
         <article class="metric-card card-hover-lift">
           <span class="metric-icon sand"><Monitor /></span>
-          <div><div class="metric-label"><small>设备状态</small><el-tooltip content="摄像设备当前连接与采集状态" placement="top"><el-icon class="metric-help"><QuestionFilled /></el-icon></el-tooltip></div><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ displayValueLabel(data.device.name) }}</span></div>
+          <div><div class="metric-label"><small>设备状态</small><el-tooltip content="摄像设备当前连接与采集状态" placement="top"><el-icon class="metric-help"><QuestionFilled /></el-icon></el-tooltip></div><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ deviceAliasLabel(data.device.name) }}</span></div>
         </article>
         <article class="metric-card card-hover-lift">
           <span class="metric-icon coral"><CircleCheck /></span>
@@ -212,7 +212,7 @@ function onlineLabel(value) {
             <div><strong>{{ onlineLabel(data.device.online) }}</strong><span>{{ data.device.collection_active ? '采集运行中' : '采集已停止' }}</span></div>
           </div>
           <dl class="detail-list">
-            <div><dt>设备别名</dt><dd>{{ displayValueLabel(data.device.device_alias) }}</dd></div>
+            <div><dt>设备别名</dt><dd>{{ deviceAliasLabel(data.device.device_alias) }}</dd></div>
             <div><dt>适配器模式</dt><dd>{{ displayValueLabel(data.device.adapter_mode) }}</dd></div>
             <div><dt>采集状态</dt><dd>{{ data.device.collection_active ? '运行中' : '已停止' }}</dd></div>
           </dl>
@@ -279,7 +279,7 @@ function onlineLabel(value) {
 
       <section class="content-card events-card">
         <div class="card-heading">
-          <div><span class="section-kicker">老人活动事件记录</span><h2>最近需要了解的事情</h2></div>
+          <div><span class="section-kicker">风险事件与处置</span><h2>最近需要了解的事情</h2></div>
           <el-button class="timeline-link" size="large" plain @click="router.push('/events')">查看完整时间轴</el-button>
         </div>
         <div v-if="data.recent_events.length" class="event-list">

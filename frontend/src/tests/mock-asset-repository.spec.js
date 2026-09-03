@@ -37,7 +37,7 @@ describe('Mock 授权视频素材', () => {
     const asset = await getAsset('asset-fall-authorized')
 
     expect(asset).toMatchObject({
-      fallback_url: '/media/fall-risk-replay.mp4',
+      fallback_url: '/media/selected/p01-golden-loop-01.mp4',
       available: true,
       verification_status: 'AUTHORIZED_LOCAL_CLIP',
     })
@@ -51,8 +51,8 @@ describe('Mock 授权视频素材', () => {
       getAsset('asset-green-daily'),
     ])
 
-    expect(activity.fallback_url).toBe('/media/activity-route-replay-browser.mp4')
-    expect(daily.fallback_url).toBe('/media/daily-baseline-replay-browser.mp4')
+    expect(activity.fallback_url).toBe('/media/selected/activity-route-a-b-c-01.mp4')
+    expect(daily.fallback_url).toBe('/media/selected/p03-neg-normal-rise-walk-01.mp4')
     expect(activity.fallback_url).not.toBe(daily.fallback_url)
     expect(activity.source_mode).toBe('RECORDED_REPLAY')
     expect(daily.source_mode).toBe('RECORDED_REPLAY')
@@ -76,7 +76,7 @@ describe('Mock 授权视频素材', () => {
     const { apiClient, getAsset, runtime } = await import('../services/repository')
     vi.spyOn(apiClient, 'get').mockRejectedValue({ response: { status: 500 }, message: 'server error' })
     const asset = await getAsset('asset-green-daily')
-    expect(asset.fallback_url).toBe('/media/daily-baseline-replay-browser.mp4')
+    expect(asset.fallback_url).toBe('/media/selected/p03-neg-normal-rise-walk-01.mp4')
     expect(asset.source_mode).toBe('RECORDED_REPLAY')
     expect(runtime.activeSource).toBe('replay_dataset')
   })

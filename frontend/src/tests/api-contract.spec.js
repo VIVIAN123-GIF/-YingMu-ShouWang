@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import events from '../replay-data/events.json'
 import {
-  API_BASE_URL, apiClient, getAsset, getBaseline, getEvent, getEvents, getWeeklyReport, interveneEvent, normalizeApiError, runtime, setDataMode, submitFamilyFeedback, submitInterventionResult,
+  API_BASE_URL, apiClient, getAsset, getBaseline, getEvent, getEvents, getFieldRuns, getWeeklyReport, interveneEvent, normalizeApiError, runtime, setDataMode, stableInterventionResultId, submitFamilyFeedback, submitInterventionResult,
 } from '../services/repository'
 
 describe('前端对接文档请求契约', () => {
@@ -80,6 +80,21 @@ describe('前端对接文档请求契约', () => {
     expect(get).toHaveBeenNthCalledWith(2, '/events/event%20detail%2F%E4%B8%80/forewarning')
   })
 
+  it('现场运行只从居民真实运行接口读取，且拒绝回放来源混入', async () => {
+    setDataMode('api')
+    const get = vi.spyOn(apiClient, 'get')
+      .mockResolvedValueOnce({ data: [] })
+      .mockResolvedValueOnce({ data: [{
+        schema_version: 'field-run/1.0', run_id: 'replay-run', resident_id: 'resident-001',
+        captured_at: '2026-09-02T10:00:00+08:00', source_mode: 'RECORDED_REPLAY', simulated: true,
+        device_ref: 'device-replay', authorization_ref: 'authorization-replay', task_status: 'COMPLETED',
+      }] })
+
+    await expect(getFieldRuns('resident /一', { limit: 12 })).resolves.toEqual([])
+    expect(get).toHaveBeenNthCalledWith(1, '/residents/resident%20%2F%E4%B8%80/field-runs', { params: { limit: 12 } })
+    await expect(getFieldRuns('resident-001')).rejects.toMatchObject({ name: 'DataContractError' })
+  })
+
   it('融合模式合并 API 与授权回放，并按 event_id 去重', async () => {
     setDataMode('auto')
     const duplicate = { ...structuredClone(events[0]), title: 'API 中的最新版本' }
@@ -148,6 +163,25 @@ describe('前端对接文档请求契约', () => {
       expect.any(Object),
     )
     expect(post.mock.calls[0][2].headers['Content-Type']).toBe('application/json; charset=utf-8')
+  })
+
+  it('事件已有坐稳确认时复用原结果，不发送时间戳不同的重复请求', async () => {
+    setDataMode('api')
+    const current = structuredClone(events.find((event) => event.event_id === 'event-fall-intervening'))
+    current.event_id = 'event-existing-stable-result'
+    current.interventions = [{
+      schema_version: '1.0', result_id: stableInterventionResultId(current.event_id, 'stable'), event_id: current.event_id,
+      started_at: '2026-08-11T15:00:00+08:00', completed_at: '2026-08-11T15:00:00+08:00',
+      action_type: 'resident_response', tool_name: 'family_console', delivery_status: 'SUCCESS',
+      resident_response: 'stable', family_feedback: null, risk_after: null, resolved: false,
+      resolution_reason: null, operator: 'family', source_mode: 'RECORDED_REPLAY', simulated: true,
+    }]
+    const post = vi.spyOn(apiClient, 'post')
+
+    const result = await submitInterventionResult(current, 'stable')
+
+    expect(result).toEqual(current.interventions[0])
+    expect(post).not.toHaveBeenCalled()
   })
 
   it('家属反馈固定提交 confirm 与 JSON 内容类型', async () => {

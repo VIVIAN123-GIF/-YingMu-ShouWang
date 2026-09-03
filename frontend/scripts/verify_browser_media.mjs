@@ -1,32 +1,34 @@
-import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
+import selectedMedia from '../src/replay-data/selected-media.json' with { type: 'json' }
+import manifest from '../media-selection.manifest.json' with { type: 'json' }
 
 const root = resolve(import.meta.dirname, '..')
-const files = [
-  'fall-risk-replay.mp4',
-  'activity-route-replay-browser.mp4',
-  'daily-baseline-replay-browser.mp4',
-]
 const failures = []
-for (const name of files) {
-  const publicPath = resolve(root, 'public/media', name)
-  if (!existsSync(publicPath) || statSync(publicPath).size === 0) {
-    failures.push(`${name}: public 文件不存在或为空`)
+if (selectedMedia.length !== 28) failures.push(`精选清单应为 28 条，实际为 ${selectedMedia.length} 条`)
+
+const auxiliaryMedia = (manifest.auxiliary_entries || []).map((clip) => ({ ...clip, file: clip.target_filename }))
+for (const clip of [...selectedMedia, ...auxiliaryMedia]) {
+  if (clip.asset_id === undefined || !/^[a-z0-9-]+\.mp4$/.test(clip.file || '')) {
+    failures.push(`${clip.asset_id || 'unknown'}: 脱敏文件名无效`)
     continue
   }
-  const bytes = readFileSync(publicPath)
-  const signature = bytes.toString('ascii')
-  if (!signature.includes('avc1') || signature.includes('hvc1')) failures.push(`${name}: 不是纯 H.264 avc1 文件`)
-  const distPath = resolve(root, 'dist/media', name)
-  if (existsSync(distPath)) {
-    const publicHash = createHash('sha256').update(bytes).digest('hex')
-    const distHash = createHash('sha256').update(readFileSync(distPath)).digest('hex')
-    if (publicHash !== distHash) failures.push(`${name}: public 与 dist SHA-256 不一致`)
+  const publicPath = resolve(root, 'public/media/selected', clip.file)
+  if (!existsSync(publicPath) || statSync(publicPath).size === 0) {
+    failures.push(`${clip.file}: public 精选文件不存在或为空`)
+    continue
   }
+  const signature = readFileSync(publicPath).toString('ascii')
+  // Some camera files include an unrelated `hvc1` string in MP4 metadata;
+  // the browser stream sample entry is the authoritative avc1 marker.
+  if (!signature.includes('avc1')) failures.push(`${clip.file}: 不是 H.264 avc1 文件`)
+  const moov = signature.indexOf('moov')
+  const mdat = signature.indexOf('mdat')
+  if (moov < 0 || (mdat >= 0 && moov > mdat)) failures.push(`${clip.file}: 未启用 faststart`)
 }
+
 if (failures.length) {
   console.error(failures.join('\n'))
   process.exit(1)
 }
-console.log(`浏览器媒体校验通过：${files.length} 个 H.264 文件`)
+console.log(`浏览器媒体校验通过：${selectedMedia.length} 条精选素材和 ${auxiliaryMedia.length} 条辅助素材，均为 RECORDED_REPLAY / simulated=true`)

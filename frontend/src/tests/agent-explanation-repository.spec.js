@@ -58,6 +58,18 @@ describe('event explanation repository', () => {
     expect(get).toHaveBeenCalledOnce()
   })
 
+  it('reads indexed replay explanations locally in auto mode without a failing API request', async () => {
+    setDataMode('auto')
+    const get = vi.spyOn(apiClient, 'get')
+
+    const result = await getEventExplanation('event-fall-100')
+
+    expect(result.event_id).toBe('event-fall-100')
+    expect(result.status).toBe('FALLBACK')
+    expect(result.explanation.capability_notice).toBe('授权回放')
+    expect(get).not.toHaveBeenCalled()
+  })
+
   it('drops sensitive extension fields before returning or recording the result', async () => {
     setDataMode('api')
     const response = structuredClone(successResponse)
