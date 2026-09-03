@@ -61,7 +61,7 @@ for (const status of ['SUCCESS', 'FALLBACK']) {
       await page.screenshot({ path: resolve(OUTPUT_DIR, 'pending.png'), fullPage: true })
     }
     await expect(panel.getByTestId('agent-explanation-generated-by')).toHaveText(
-      status === 'SUCCESS' ? 'qwen3.6-flash' : 'template-fallback-v1',
+      status === 'SUCCESS' ? '智能解释模型' : '系统备用解释模板',
     )
     await expect(panel.getByTestId('agent-explanation-fallback-used')).toHaveText(status === 'SUCCESS' ? 'false' : 'true')
     await expect(panel.getByTestId('agent-explanation-created-at')).toHaveText('2026/08/16 09:30:40')

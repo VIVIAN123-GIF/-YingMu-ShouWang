@@ -13,7 +13,7 @@ const config = computed(() => SOURCE_MODES[props.mode] || { label: props.mode, t
 
 <template>
   <span class="source-wrap" :class="{ 'source-wrap-button': button }">
-    <el-button v-if="button" class="source-badge-button" type="primary" plain>{{ config.label }}</el-button>
+    <span v-if="button" class="source-badge-emphasis" role="status">{{ config.label }}</span>
     <el-tag v-else-if="!simulated" class="source-badge" :type="config.tone" effect="plain" size="large">
       {{ config.label }}
     </el-tag>

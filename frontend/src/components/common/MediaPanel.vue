@@ -10,6 +10,10 @@ const props = defineProps({
 })
 
 const playableUrl = computed(() => props.asset?.stream_url || props.asset?.fallback_url)
+const shouldAutoplay = computed(() => (
+  (props.asset?.source_mode || props.sourceMode) === 'RECORDED_REPLAY'
+  && (props.asset?.simulated ?? props.simulated) === true
+))
 const activeUrl = ref('')
 const videoError = ref(false)
 const videoReady = ref(false)
@@ -68,6 +72,8 @@ function handleError() {
         controls
         preload="auto"
         playsinline
+        :autoplay="shouldAutoplay"
+        :muted="shouldAutoplay"
         :style="videoAspectRatio ? { aspectRatio: videoAspectRatio } : undefined"
         :src="activeUrl"
         data-testid="authorized-video"
@@ -86,7 +92,7 @@ function handleError() {
       <strong>授权事件片段占位</strong>
       <p v-if="videoError">授权片段加载失败，已停止播放并保留事件信息。</p>
       <p v-else>{{ mediaNoticeLabel(asset?.notice) || '实时画面不可用，页面已切换至授权片段位置。' }}</p>
-      <el-button class="media-placeholder-action" plain>待素材核验 · 不伪装为实时视频</el-button>
+      <span class="media-placeholder-status" role="status">待素材核验 · 不伪装为实时视频</span>
     </div>
   </section>
 </template>

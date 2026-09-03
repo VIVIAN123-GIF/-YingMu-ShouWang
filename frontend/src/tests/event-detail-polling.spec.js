@@ -2,10 +2,11 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getAssetMock, getEventMock, getEventExplanationMock, interveneEventMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
+const { getAssetMock, getEventMock, getEventExplanationMock, getSelectedEventMediaMock, interveneEventMock, runtimeMock, submitInterventionResultMock } = vi.hoisted(() => ({
   getAssetMock: vi.fn(),
   getEventMock: vi.fn(),
   getEventExplanationMock: vi.fn(),
+  getSelectedEventMediaMock: vi.fn(() => null),
   interveneEventMock: vi.fn(),
   runtimeMock: { mode: 'api' },
   submitInterventionResultMock: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock('../services/repository', () => ({
   getAsset: getAssetMock,
   getEvent: getEventMock,
   getEventExplanation: getEventExplanationMock,
+  getSelectedEventMedia: getSelectedEventMediaMock,
   interveneEvent: interveneEventMock,
   runtime: runtimeMock,
   submitInterventionResult: submitInterventionResultMock,
@@ -99,6 +101,8 @@ describe('事件详情 API 自动同步', () => {
       stream_url: null, fallback_url: null, notice: '暂无文件', captured_at: '2026-07-31T03:07:05+08:00',
     })
     getEventMock.mockReset()
+    getSelectedEventMediaMock.mockReset()
+    getSelectedEventMediaMock.mockReturnValue(null)
     getEventExplanationMock.mockReset()
     getEventExplanationMock.mockResolvedValue({
       event_id: 'event-poll-1', status: 'SUCCESS', request_id: 'agent-event-poll-1',
@@ -227,7 +231,7 @@ describe('事件详情 API 自动同步', () => {
 
     await router.push('/events/event-poll-2')
     await flushPromises()
-    expect(wrapper.text()).toContain('event-poll-2')
+    expect(wrapper.text()).toContain('事件记录 2')
     expect(getEventMock).toHaveBeenCalledTimes(2)
 
     wrapper.unmount()
@@ -264,6 +268,7 @@ describe('事件详情 API 自动同步', () => {
     expect(submitInterventionResultMock).toHaveBeenCalledWith(current, 'stable')
     expect(wrapper.text()).toContain('坐稳确认已记录')
     expect(wrapper.text()).toContain('正在干预')
+    expect(wrapper.text()).toContain('2026/07/31 03:07:10')
     expect(wrapper.text()).toContain('确认后仍将继续观察事件状态')
     wrapper.unmount()
   })
@@ -285,9 +290,127 @@ describe('事件详情 API 自动同步', () => {
 
     expect(interveneEventMock).toHaveBeenCalledWith(current.event_id)
     expect(submitInterventionResultMock).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('干预请求已提交')
-    expect(wrapper.text()).toContain('mock_voice')
+    expect(wrapper.text()).toContain('处理请求已提交')
+    expect(wrapper.text()).toContain('本地语音提醒')
+    expect(wrapper.text()).toContain('已使用备用提醒流程')
     expect(wrapper.text()).toContain('正在干预')
+    wrapper.unmount()
+  })
+
+  it('刷新后从已有干预结果恢复坐稳确认，且不再重复提交', async () => {
+    const current = apiEvent('INTERVENING')
+    current.interventions.push({
+      schema_version: '1.0', result_id: 'result-stable-existing', event_id: current.event_id,
+      started_at: '2026-07-31T03:07:10+08:00', completed_at: '2026-07-31T03:07:10+08:00',
+      action_type: 'resident_response', tool_name: 'family_console', delivery_status: 'SUCCESS',
+      resident_response: 'stable', family_feedback: null, risk_after: null, resolved: false,
+      resolution_reason: null, operator: 'family', source_mode: 'RECORDED_REPLAY', simulated: true,
+    })
+    getEventMock.mockResolvedValueOnce(current)
+    const { wrapper } = await mountView()
+
+    const button = wrapper.get('[data-testid="elder-stable-submit"]')
+    expect(button.text()).toContain('坐稳确认已记录')
+    expect(button.attributes('disabled')).toBeDefined()
+    await button.trigger('click')
+    expect(submitInterventionResultMock).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('刷新后从已有工具结果恢复处理请求状态，且不重复发起干预', async () => {
+    const current = apiEvent('INTERVENING')
+    current.interventions.push({
+      schema_version: '1.0', result_id: 'result-voice-existing', event_id: current.event_id,
+      started_at: '2026-07-31T03:07:08+08:00', completed_at: null,
+      action_type: 'voice', tool_name: 'mock_voice', delivery_status: 'RETRYING', resident_response: null,
+      family_feedback: null, risk_after: null, resolved: false, resolution_reason: null,
+      operator: 'system', source_mode: 'RECORDED_REPLAY', simulated: true,
+    })
+    getEventMock.mockResolvedValueOnce(current)
+    const { wrapper } = await mountView()
+
+    const button = wrapper.get('[data-testid="intervention-submit"]')
+    expect(button.text()).toContain('处理请求已提交')
+    expect(button.attributes('disabled')).toBeDefined()
+    await button.trigger('click')
+    expect(interveneEventMock).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('坐稳确认失败时在按钮下方持续显示错误', async () => {
+    const current = apiEvent('INTERVENING')
+    getEventMock.mockResolvedValueOnce(current)
+    submitInterventionResultMock.mockRejectedValueOnce(new Error('结果 ID 冲突'))
+    const { wrapper } = await mountView()
+
+    await wrapper.get('[data-testid="elder-stable-submit"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('确认提交失败：结果 ID 冲突')
+    expect(wrapper.get('[data-testid="elder-stable-submit"]').text()).toContain('我已坐稳')
+    wrapper.unmount()
+  })
+
+  it('默认加载受控主片，切换相关片段时只更新播放器素材与片段说明', async () => {
+    const current = apiEvent('RESOLVED')
+    getSelectedEventMediaMock.mockReturnValue({
+      primary_asset_id: 'selected-p01-golden-loop-01',
+      entries: [
+        { asset_id: 'selected-p01-golden-loop-01', clip_id: 'p01-golden-loop-01', participant_id: 'P01', scenario: '黄金闭环', purpose: '高风险工程对照', sha256_short: 'abc123', is_primary: true },
+        { asset_id: 'selected-p02-golden-loop-01', clip_id: 'p02-golden-loop-01', participant_id: 'P02', scenario: '黄金闭环', purpose: '高风险工程对照', sha256_short: 'ghi789', is_primary: false },
+        { asset_id: 'selected-qg-01', clip_id: 'qg-01', participant_id: 'QG-01', scenario: '质量门控', purpose: '质量边界对照', sha256_short: 'def456', is_primary: false },
+      ],
+    })
+    getAssetMock.mockImplementation((assetId) => Promise.resolve({
+      asset_id: assetId, title: assetId, source_mode: 'RECORDED_REPLAY', simulated: true,
+      stream_url: null, fallback_url: `/media/selected/${assetId}.mp4`, notice: 'controlled comparison', captured_at: '2026-08-27T09:00:00+08:00',
+    }))
+    getEventMock.mockResolvedValueOnce(current)
+    const { wrapper } = await mountView()
+
+    expect(getAssetMock).toHaveBeenCalledWith('selected-p01-golden-loop-01')
+    expect(wrapper.find('[data-testid="related-media-selector"]').exists()).toBe(false)
+    await wrapper.get('[aria-label="查看验证对照片段"] .technical-disclosure-trigger').trigger('click')
+    expect(wrapper.get('[data-testid="related-media-selector"]').text()).toContain('受控工程对照')
+    expect(wrapper.findAll('.related-media-option')).toHaveLength(2)
+    expect(wrapper.find('[data-testid="related-media-p02-golden-loop-01"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="selected-media-meta"]').text()).toContain('P01')
+    const scoreBefore = wrapper.get('.event-score').text()
+    await wrapper.get('[data-testid="related-media-qg-01"]').trigger('click')
+    await flushPromises()
+    expect(getAssetMock).toHaveBeenCalledWith('selected-qg-01')
+    expect(wrapper.get('[data-testid="selected-media-meta"]').text()).toContain('QG-01')
+    expect(wrapper.get('.event-score').text()).toBe(scoreBefore)
+    expect(wrapper.text()).toContain('不会改动当前事件的风险等级')
+    wrapper.unmount()
+  })
+
+  it('展示前置预警主导因子贡献及其关联依据', async () => {
+    const current = apiEvent('INTERVENING')
+    current.forewarning_snapshots = [{
+      schema_version: 'forewarning-snapshot/1.0', snapshot_id: 'snapshot-factor-1', resident_id: current.resident_id,
+      evaluated_at: '2026-07-31T03:07:05+08:00', phase: 'PRE_INTERVENTION', assessment_status: 'VALID',
+      confidence_level: 'HIGH', baseline_status: 'STABLE',
+      components: { human_risk: 0.82, personal_deviation: 0.61, environment_risk: 0.18, interaction_risk: 0.42 },
+      instant: { window_seconds: 8, engineering_index: 0.78, attention_level: 'ORANGE' },
+      short_30s: { window_seconds: 30, engineering_index: 0.72, attention_level: 'ORANGE' },
+      trend_3min: { window_seconds: 180, engineering_index: 0.64, attention_level: 'YELLOW' },
+      degradation_reasons: [],
+      dominant_factors: [
+        { factor: 'human_instability', contribution: 0.451, evidence_ids: ['evi-1'] },
+        { factor: 'human_environment_interaction', contribution: 0.063, evidence_ids: ['evi-light-1'] },
+      ],
+      recommended_action: '先坐稳', ruleset_version: 'ruleset-v1.3-min', source_mode: 'RECORDED_REPLAY', simulated: true,
+    }]
+    getEventMock.mockResolvedValueOnce(current)
+    const { wrapper } = await mountView()
+
+    const panel = wrapper.get('[data-testid="forewarning-factor-contributions"]')
+    expect(panel.text()).toContain('人体不稳定')
+    expect(panel.text()).toContain('贡献 45%')
+    expect(panel.text()).toContain('关联依据：1 条')
+    expect(panel.text()).toContain('人-环境交互')
+    expect(panel.text()).toContain('贡献 6%')
     wrapper.unmount()
   })
 })

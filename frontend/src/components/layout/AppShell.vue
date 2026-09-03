@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ChatLineRound, Clock, Connection, DataAnalysis, DocumentChecked, House, InfoFilled, Menu, Monitor, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
+import { ChatLineRound, Clock, Connection, DataAnalysis, House, InfoFilled, Menu, Monitor, TrendCharts, User, VideoPlay, Warning } from '@element-plus/icons-vue'
 import { routes } from '../../router'
 import { getEvents, runtime } from '../../services/repository'
 
@@ -14,10 +14,10 @@ const openingEventDetail = ref(false)
 const runtimeBannerVisible = ref(false)
 let runtimeBannerTimer
 const pagesBuild = import.meta.env.VITE_PAGES_BUILD === 'true'
-const iconMap = { ChatLineRound, Clock, DataAnalysis, DocumentChecked, House, Monitor, TrendCharts, User, VideoPlay }
+const iconMap = { ChatLineRound, Clock, DataAnalysis, House, Monitor, TrendCharts, User, VideoPlay }
 const groupConfig = [
   { label: '总览', paths: ['/'] },
-  { label: '风险处置', paths: ['/events', '/events/:eventId', '/replay'] },
+  { label: '风险处置', paths: ['/events', '/replay'] },
   { label: '关怀趋势', paths: ['/baseline', '/care', '/weekly'] },
   { label: '系统与材料', paths: ['/resident', '/system'] },
 ]
@@ -28,7 +28,7 @@ const dataModeLabel = computed(() => {
   if (runtime.mode === 'api') return '实时连接'
   return '融合视图'
 })
-const activePath = computed(() => ['event-detail', 'event-detail-empty'].includes(route.name) ? '/events/:eventId' : route.path)
+const activePath = computed(() => ['event-detail', 'event-detail-empty'].includes(route.name) ? '/events' : route.path)
 const currentPage = computed(() => ({
   title: route.meta?.title || '统一家属端',
   group: groupConfig.find((group) => group.paths.includes(activePath.value))?.label || '萤目守望',
@@ -64,7 +64,9 @@ async function handleSelect(path) {
   openingEventDetail.value = true
   try {
     const events = await getEvents()
-    const latestEvent = events.reduce((latest, event) => (!latest || createdAtTimestamp(event) > createdAtTimestamp(latest) ? event : latest), null)
+    const liveEvents = events.filter((event) => event.source_mode === 'LIVE_DEVICE' && event.simulated === false)
+    const candidates = liveEvents.length ? liveEvents : events
+    const latestEvent = candidates.reduce((latest, event) => (!latest || createdAtTimestamp(event) > createdAtTimestamp(latest) ? event : latest), null)
     if (!latestEvent) {
       ElMessage.error('风险事件调取失败：当前居民暂无可用事件')
       await router.push({ name: 'event-detail-empty', query: { reason: 'empty' } })

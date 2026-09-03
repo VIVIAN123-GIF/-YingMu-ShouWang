@@ -1,13 +1,14 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { QuestionFilled, User } from '@element-plus/icons-vue'
 import PageHeader from '../components/common/PageHeader.vue'
 import SourceBadge from '../components/common/SourceBadge.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
-import { getDashboard, getForewarningHistory, getLatestForewarning } from '../services/repository'
+import LiveRunComparisonCard from '../components/risk/LiveRunComparisonCard.vue'
+import { getDashboard, getFieldRuns, getForewarningHistory, getLatestForewarning } from '../services/repository'
 import { useResidentProfile } from '../services/residentProfile'
-import { displayValueLabel, formatDateTime, formatPercent } from '../utils/format'
+import { displayValueLabel, formatDateTime, formatPercent, residentIdentifierLabel, rulesetVersionLabel } from '../utils/format'
 
 const dashboardLoading = ref(true)
 const dashboardError = ref('')
@@ -18,10 +19,17 @@ const latestForewarning = ref(null)
 const historyLoading = ref(true)
 const historyError = ref('')
 const history = ref([])
+const fieldRuns = ref([])
+const fieldRunsLoading = ref(true)
+const fieldRunsError = ref('')
 const rangeMode = ref('all')
 const customRange = ref([])
 const currentPage = ref(1)
 const pageSize = 20
+const LIVE_POLL_MS = 2000
+let livePollTimer = null
+let livePollInFlight = false
+let livePollingActive = false
 const rangeOptions = [
   { label: '全部', value: 'all' }, { label: '24小时', value: '24h' },
   { label: '7天', value: '7d' }, { label: '30天', value: '30d' }, { label: '自定义', value: 'custom' },
@@ -77,12 +85,37 @@ async function loadDashboard() {
   finally { dashboardLoading.value = false }
 }
 
-async function loadLatest() {
-  latestLoading.value = true
+async function loadLatest(background = false) {
+  if (!background) latestLoading.value = true
   latestError.value = ''
   try { latestForewarning.value = await getLatestForewarning() }
   catch (error) { latestError.value = `无法读取最新预警：${error.message}` }
-  finally { latestLoading.value = false }
+  finally { if (!background) latestLoading.value = false }
+}
+
+async function loadFieldRuns(background = false) {
+  if (!background) fieldRunsLoading.value = true
+  fieldRunsError.value = ''
+  try { fieldRuns.value = await getFieldRuns(undefined, { limit: 20 }) }
+  catch (error) { fieldRunsError.value = `无法读取真实现场运行：${error.message}` }
+  finally { if (!background) fieldRunsLoading.value = false }
+}
+
+function stopLivePolling() {
+  if (livePollTimer !== null) window.clearTimeout(livePollTimer)
+  livePollTimer = null
+}
+
+function scheduleLivePolling() {
+  stopLivePolling()
+  if (!livePollingActive) return
+  livePollTimer = window.setTimeout(async () => {
+    livePollTimer = null
+    if (livePollInFlight) { scheduleLivePolling(); return }
+    livePollInFlight = true
+    try { await Promise.all([loadLatest(true), loadFieldRuns(true)]) }
+    finally { livePollInFlight = false; scheduleLivePolling() }
+  }, LIVE_POLL_MS)
 }
 
 async function loadHistory() {
@@ -97,7 +130,8 @@ async function loadHistory() {
 }
 
 function changeRange(mode) { if (mode !== 'custom') loadHistory() }
-onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
+onMounted(() => { livePollingActive = true; loadDashboard(); loadLatest(); loadFieldRuns(); loadHistory(); scheduleLivePolling() })
+onBeforeUnmount(() => { livePollingActive = false; stopLivePolling() })
 </script>
 
 <template>
@@ -114,7 +148,7 @@ onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
           <div class="card-heading"><div><span class="section-kicker">基本信息</span><h2>{{ profile.name }}</h2></div><el-tag type="success" effect="plain">已完成授权</el-tag></div>
           <div class="resident-profile-grid">
             <el-avatar :size="76">{{ profile.name.slice(0, 1) }}</el-avatar>
-            <dl class="detail-list"><div><dt>关系</dt><dd>{{ profile.relation }}</dd></div><div><dt>年龄</dt><dd>{{ profile.age }} 岁</dd></div><div><dt>居住位置</dt><dd>{{ profile.location }}</dd></div><div><dt>居住情况</dt><dd>{{ profile.living }}</dd></div><div class="display-grid"><dt>居民标识</dt><dd>{{ resident.resident_id || 'resident-001' }}</dd></div></dl>
+            <dl class="detail-list"><div><dt>关系</dt><dd>{{ profile.relation }}</dd></div><div><dt>年龄</dt><dd>{{ profile.age }} 岁</dd></div><div><dt>居住位置</dt><dd>{{ profile.location }}</dd></div><div><dt>居住情况</dt><dd>{{ profile.living }}</dd></div><div class="display-grid"><dt>居民标识</dt><dd>{{ residentIdentifierLabel(resident.resident_id) }}</dd></div></dl>
           </div>
         </section>
       </template>
@@ -136,7 +170,7 @@ onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
           <div><span class="metric-title-with-help">趋势 · {{ latestForewarning.trend_3min.window_seconds / 60 }}分钟<el-tooltip content="反映最近3分钟工程指数的变化趋势" placement="top"><el-icon class="metric-help"><QuestionFilled /></el-icon></el-tooltip></span><strong>{{ formatPercent(latestForewarning.trend_3min.engineering_index) }}</strong><small>{{ displayValueLabel(latestForewarning.trend_3min.attention_level) }}</small></div>
         </div>
         <div class="latest-forewarning-meta">
-          <dl class="detail-list compact-detail-list"><div><dt>评估时间</dt><dd>{{ formatDateTime(latestForewarning.evaluated_at) }}</dd></div><div><dt>评估状态</dt><dd>{{ displayValueLabel(latestForewarning.assessment_status) }}</dd></div><div><dt>置信度</dt><dd>{{ displayValueLabel(latestForewarning.confidence_level) }}</dd></div><div><dt>规则版本</dt><dd>{{ latestForewarning.ruleset_version }}</dd></div></dl>
+          <dl class="detail-list compact-detail-list"><div><dt>评估时间</dt><dd>{{ formatDateTime(latestForewarning.evaluated_at) }}</dd></div><div><dt>评估状态</dt><dd>{{ displayValueLabel(latestForewarning.assessment_status) }}</dd></div><div><dt>置信度</dt><dd>{{ displayValueLabel(latestForewarning.confidence_level) }}</dd></div><div><dt>规则版本</dt><dd>{{ rulesetVersionLabel(latestForewarning.ruleset_version) }}</dd></div></dl>
         </div>
         <aside class="forewarning-recommendation-notice" role="status">
           <span class="notice-status-dot" aria-hidden="true"></span>
@@ -146,6 +180,8 @@ onMounted(() => { loadDashboard(); loadLatest(); loadHistory() })
       <el-empty v-else description="当前居民暂无预警摘要" :image-size="72" />
     </section>
     </div>
+
+    <LiveRunComparisonCard :runs="fieldRuns" :loading="fieldRunsLoading" :error="fieldRunsError" />
 
     <section class="content-card forewarning-history-card" data-testid="forewarning-history">
       <div class="card-heading"><div><span class="section-kicker">预警历史</span><h2>工程指数趋势与记录</h2></div><el-tag type="info" effect="plain">{{ history.length }} 条</el-tag></div>

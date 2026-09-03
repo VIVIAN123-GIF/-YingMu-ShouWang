@@ -8,12 +8,13 @@ import observationsReplay from '../replay-data/observations.json'
 import baselineReplay from '../replay-data/baseline.json'
 import forewarningReplay from '../replay-data/forewarning.json'
 import assetsReplay from '../replay-data/assets.json'
+import selectedMediaReplay from '../replay-data/selected-media.json'
 import explanationsReplay from '../replay-data/explanations.json'
 import deviceSnapshotReplay from '../replay-data/device-snapshot.json'
 import sceneCalibrationReplay from '../replay-data/scene-calibration.json'
 import { DATA_MODES } from '../domain/constants'
 import {
-  validateAgentExplanationJob, validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceControlResult, validateDeviceSnapshot, validateDeviceStatus, validateEventList, validateEventViewModel, validateForewarningHistory, validateForewarningSnapshot, validateInterventionResult, validateRiskReviews, validateSceneCalibration,
+  validateAgentExplanationJob, validateAlarmProcessingTasks, validateAsset, validateDashboard, validateDeviceControlResult, validateDeviceSnapshot, validateDeviceStatus, validateEventList, validateEventViewModel, validateFieldRuns, validateForewarningHistory, validateForewarningSnapshot, validateInterventionResult, validateRiskReviews, validateSceneCalibration,
 } from '../domain/validation'
 import {
   normalizeBaseline, normalizeDashboard, normalizeDevice, normalizeEvent, normalizeWeeklyReport,
@@ -61,17 +62,53 @@ const replayData = {
   observations: structuredClone(observationsReplay),
   baseline: structuredClone(baselineReplay),
   forewarning: structuredClone(forewarningReplay),
-  assets: structuredClone(assetsReplay),
+  assets: [
+    ...structuredClone(assetsReplay),
+    ...structuredClone(selectedMediaReplay).map((clip) => ({
+      ...clip,
+      title: `受控工程对照：${clip.scenario}`,
+      source_mode: 'RECORDED_REPLAY',
+      simulated: true,
+      stream_url: null,
+      fallback_url: `/media/selected/${clip.file}`,
+      fallback_kind: 'SELECTED_CONTROLLED_CLIP',
+      available: true,
+      verification_status: 'SELECTED_LOCAL_CLIP',
+      captured_at: '2026-08-27T09:00:00+08:00',
+      notice: `受控工程对照，非当前事件原始媒体。${clip.purpose}`,
+    })),
+  ],
   explanations: structuredClone(explanationsReplay),
   deviceSnapshot: structuredClone(deviceSnapshotReplay),
   sceneCalibration: structuredClone(sceneCalibrationReplay),
 }
 
 const requiredReplayAssets = Object.freeze({
-  'asset-fall-authorized': '/media/fall-risk-replay.mp4',
-  'asset-mental-week': '/media/activity-route-replay-browser.mp4',
-  'asset-green-daily': '/media/daily-baseline-replay-browser.mp4',
+  'asset-fall-authorized': '/media/selected/p01-golden-loop-01.mp4',
+  'asset-mental-week': '/media/selected/activity-route-a-b-c-01.mp4',
+  'asset-green-daily': '/media/selected/p03-neg-normal-rise-walk-01.mp4',
 })
+
+export function getSelectedEventMedia(event) {
+  // A recorded engineering comparison may only be injected into the explicitly
+  // mapped replay events. Live device events must keep their own private asset.
+  if (!event || event.source_mode !== 'RECORDED_REPLAY' || event.simulated !== true) return null
+  // Seeded replay records receive a database-scoped prefix (for example
+  // `event-fi-<resident>-<run>-event-green-daily`).  Keep that prefix out of
+  // the public media metadata, while still resolving the same explicit mapping.
+  const mappedEventId = [...new Set(selectedMediaReplay.flatMap((clip) => clip.event_ids || []))]
+    .find((eventId) => event.event_id === eventId || event.event_id.endsWith(`-${eventId}`))
+  if (!mappedEventId) return null
+  const entries = selectedMediaReplay
+    .filter((clip) => clip.event_ids?.includes(mappedEventId))
+    .map((clip) => ({ ...clip, source_mode: 'RECORDED_REPLAY', simulated: true }))
+  if (!entries.length) return null
+  const primary = entries.find((clip) => clip.primary_for?.includes(mappedEventId)) || entries[0]
+  return {
+    primary_asset_id: primary.asset_id,
+    entries: entries.map((clip) => ({ ...clip, is_primary: clip.asset_id === primary.asset_id })),
+  }
+}
 
 export function validateReplayAssetManifest() {
   const issues = Object.entries(requiredReplayAssets).flatMap(([assetId, fallbackUrl]) => {
@@ -406,6 +443,17 @@ export async function getRiskReviews(residentId = RESIDENT_ID, limit = 20) {
 
 export async function getEvent(eventId) {
   const encodedEventId = encodeURIComponent(eventId)
+  const replayEvent = replayEventById(eventId)
+  const cachedEvent = [...eventSessionCache.values()].flat().find((event) => event.event_id === eventId)
+  const cachedIsReal = cachedEvent?.source_mode === 'LIVE_DEVICE' && cachedEvent?.simulated === false
+  if (runtime.mode === 'auto' && replayEvent && !cachedIsReal) {
+    recordAudit('event.detail', 'REPLAY_INDEX', { event_id: eventId })
+    return normalizeEvent({
+      ...hydrateReplayEvent(replayEvent),
+      feedback_records: getRecordedFeedback(eventId),
+      forewarning_snapshots: replayForewarningFor(eventId),
+    })
+  }
   return resolveData('event.detail', async () => {
     const [eventResponse, snapshotResponse] = await Promise.all([
       apiClient.get(`/events/${encodedEventId}`),
@@ -416,7 +464,6 @@ export async function getEvent(eventId) {
     const snapshots = listFrom(payload(snapshotResponse)).map((snapshot, index) => validateForewarningSnapshot(snapshot, `forewarning[${index}]`))
     return normalizeEvent({ ...event, forewarning_snapshots: snapshots, feedback_records: getRecordedFeedback(event.event_id) })
   }, () => {
-    const replayEvent = replayEventById(eventId)
     if (!replayEvent) throw eventNotFound(eventId)
     return normalizeEvent({
       ...hydrateReplayEvent(replayEvent),
@@ -450,9 +497,15 @@ export function getReplayExplanation(eventId) {
 }
 
 export async function getEventExplanation(eventId) {
-  if (runtime.mode === 'replay') {
+  const cachedEvent = [...eventSessionCache.values()].flat().find((event) => event.event_id === eventId)
+  const cachedIsReal = cachedEvent?.source_mode === 'LIVE_DEVICE' && cachedEvent?.simulated === false
+  const isIndexedReplay = Boolean(replayData.explanations[eventId]) && !cachedIsReal
+  if (runtime.mode === 'replay' || (runtime.mode === 'auto' && isIndexedReplay)) {
     const result = getReplayExplanation(eventId)
-    recordAudit('event.explanation.read', 'REPLAY', { event_id: eventId, detail: 'authorized-replay-dataset' })
+    recordAudit('event.explanation.read', runtime.mode === 'auto' ? 'REPLAY_INDEX' : 'REPLAY', {
+      event_id: eventId,
+      detail: 'authorized-replay-dataset',
+    })
     return result
   }
   if (PAGES_BUILD) {
@@ -639,9 +692,20 @@ export async function getAsset(assetId) {
 }
 
 export async function getBaseline(residentId = RESIDENT_ID) {
-  return resolveData('residents.baseline', async () => normalizeBaseline(payload(await apiClient.get(
+  const baseline = await resolveData('residents.baseline', async () => normalizeBaseline(payload(await apiClient.get(
     `/residents/${encodeURIComponent(residentId)}/baseline`,
   ))), () => normalizeBaseline(replayData.baseline))
+  const replayBaseline = normalizeBaseline(replayData.baseline)
+  return normalizeBaseline({
+    ...baseline,
+    trend: baseline.trend?.length ? baseline.trend : replayBaseline.trend,
+    activity_heatmap: baseline.activity_heatmap?.values?.length
+      ? baseline.activity_heatmap
+      : replayBaseline.activity_heatmap,
+    visualization_provenance: baseline.trend?.length && baseline.activity_heatmap?.values?.length
+      ? baseline.visualization_provenance || null
+      : 'AUTHORIZED_RECORDED_REPLAY_HISTORY',
+  })
 }
 
 export async function getDeviceStatus() {
@@ -793,6 +857,46 @@ export async function getAlarmProcessingTasks({ residentId = null, limit = 20 } 
   }, () => [], validateAlarmProcessingTasks)
 }
 
+export async function getFieldRuns(residentId = RESIDENT_ID, { limit = 20 } = {}) {
+  if (runtime.mode === 'replay') return []
+  const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 20))
+  const response = await apiClient.get(`/residents/${encodeURIComponent(residentId)}/field-runs`, {
+    params: { limit: safeLimit },
+  })
+  const result = validateFieldRuns(listFrom(payload(response)))
+  recordAudit('resident.field-runs', 'SUCCESS', { detail: `live-runs=${result.length}` })
+  return result
+}
+
+export async function getFeedbackAuditRecords() {
+  const localRecords = getAllRecordedFeedback()
+  if (runtime.mode === 'replay') return localRecords
+  try {
+    const events = await getEvents()
+    const candidates = events.filter((event) => ['MENTAL', 'FRAUD'].includes(event.primary_domain))
+    const details = await Promise.all(candidates.map((event) => getEvent(event.event_id)))
+    const persisted = details.flatMap((event) => (event.interventions || [])
+      .filter((result) => result.action_type === 'family_feedback' && result.family_feedback)
+      .map((result) => ({
+        feedback_id: result.result_id,
+        event_id: event.event_id,
+        feedback_kind: event.primary_domain === 'FRAUD' ? 'IDENTITY_VERIFICATION' : 'CARE',
+        feedback_type: 'confirm',
+        value: result.family_feedback,
+        operator: result.operator || 'family',
+        recorded_at: result.completed_at || result.started_at,
+        source_mode: result.source_mode,
+        simulated: result.simulated,
+        saved_in_demo: false,
+      })))
+    const merged = new Map([...persisted, ...localRecords].map((record) => [record.feedback_id, record]))
+    return [...merged.values()].sort((left, right) => Date.parse(left.recorded_at) - Date.parse(right.recorded_at))
+  } catch (error) {
+    recordAudit('feedback.audit.read', 'DEGRADED_LOCAL', { detail: error?.message || 'API unavailable' })
+    return localRecords
+  }
+}
+
 function stableFeedbackId(eventId, feedback) {
   const source = `${eventId}|${feedback.feedback_kind || 'CARE'}|${feedback.feedback_type || ''}|${feedback.value || ''}`
   let hash = 2166136261
@@ -835,7 +939,30 @@ function interventionResultPayload(event, residentResponse) {
   }
 }
 
+function recordedResidentResponse(event, residentResponse) {
+  const resultId = stableInterventionResultId(event.event_id, residentResponse)
+  return (event.interventions || []).find((result) => (
+    result.result_id === resultId
+    || (
+      result.action_type === 'resident_response'
+      && result.resident_response === residentResponse
+      && result.delivery_status === 'SUCCESS'
+    )
+  )) || null
+}
+
 export async function submitInterventionResult(event, residentResponse = 'stable') {
+  const recordedResult = recordedResidentResponse(event, residentResponse)
+  if (recordedResult) {
+    const result = validateInterventionResult(structuredClone(recordedResult))
+    interventionResultCache.set(result.result_id, result)
+    recordAudit('intervention-result.write', 'IDEMPOTENT_EVENT', {
+      event_id: event.event_id,
+      detail: result.result_id,
+    })
+    return structuredClone(result)
+  }
+
   const requestBody = interventionResultPayload(event, residentResponse)
   const resultId = requestBody.result_id
 

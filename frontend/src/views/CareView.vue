@@ -12,15 +12,20 @@ const loading = ref(true)
 const error = ref('')
 const report = ref(null)
 const choice = ref('')
-const submitted = ref(false)
 const careOptions = computed(() => uniqueTextOptions(report.value?.care?.options))
-async function load() { try { report.value = await getWeeklyReport(); submitted.value = report.value?.care?.status === 'SUBMITTED' } catch (err) { error.value = `无法读取关怀建议：${err.message}` } finally { loading.value = false } }
+const hasRecordedFeedback = computed(() => report.value?.care?.status === 'SUBMITTED')
+async function load() {
+  try {
+    report.value = await getWeeklyReport()
+    const recordedValue = report.value?.care?.feedback_record?.value
+    choice.value = careOptions.value.includes(recordedValue) ? recordedValue : ''
+  } catch (err) { error.value = `无法读取关怀建议：${err.message}` } finally { loading.value = false }
+}
 async function submit() {
   if (!choice.value || !report.value?.care?.event_id) return ElMessage.warning('请选择反馈，且当前事件必须可关联')
   try {
     const result = await submitFamilyFeedback(report.value.care.event_id, { feedback_type: 'confirm', value: choice.value, operator: 'family', feedback_kind: 'CARE' })
     report.value.care = { ...report.value.care, status: 'SUBMITTED', feedback_record: result }
-    submitted.value = true
     ElMessage.success('关怀反馈已记录')
   } catch (err) { ElMessage.error(`记录失败：${err.message}`) }
 }
@@ -36,8 +41,8 @@ onMounted(load)
         <article class="content-card" data-testid="care-workbench">
           <div class="card-heading"><div><span class="section-kicker">当前关怀建议</span><h2>{{ report.summary }}</h2></div><RiskBadge :level="report.risk_level" /></div>
           <p>{{ report.recommendations?.[0] || '本周暂无主动联系建议。' }}</p>
-          <fieldset class="feedback-fieldset"><legend>联系后记录结果</legend><el-radio-group v-model="choice" class="stacked-radios" :disabled="submitted"><el-radio v-for="item in careOptions" :key="item" :label="item" :value="item" border>{{ item }}</el-radio></el-radio-group></fieldset>
-          <el-button type="primary" size="large" :disabled="submitted || !careOptions.length" @click="submit">{{ submitted ? '关怀反馈已记录' : '记录关怀反馈' }}</el-button>
+          <fieldset class="feedback-fieldset"><legend>联系后记录结果</legend><el-radio-group v-model="choice" class="stacked-radios"><el-radio v-for="item in careOptions" :key="item" :label="item" :value="item" border @click="choice = item">{{ item }}</el-radio></el-radio-group></fieldset>
+          <el-button type="primary" size="large" :disabled="!careOptions.length || !choice" @click="submit">{{ hasRecordedFeedback ? '更新关怀反馈' : '记录关怀反馈' }}</el-button>
           <div v-if="report.care.feedback_record" class="recorded-feedback" :class="`feedback-${feedbackTone(report.care.feedback_record.value)}`" data-testid="care-record">
             <strong>已记录关怀反馈</strong><span>{{ report.care.feedback_record.value }}</span><small>{{ report.care.feedback_record.recorded_at }} · {{ displayValueLabel(report.care.feedback_record.operator) }}</small>
           </div>

@@ -43,9 +43,14 @@ export const DATA_MODES = Object.freeze({
 export const ALARM_TASK_STATUSES = Object.freeze({
   PENDING: { label: '已接收设备告警，等待处理', type: 'info' },
   PROCESSING: { label: '正在调用萤石抓图', type: 'primary' },
+  CAPTURED: { label: '现场素材已取得', type: 'primary' },
   WAITING_ALGORITHM: { label: '平台取证完成，等待算法分析', type: 'info' },
+  ALGORITHM_PROCESSING: { label: '算法分析中', type: 'primary' },
   RETRY: { label: '抓图失败，正在重试', type: 'warning' },
-  FAILED: { label: '平台取证失败', type: 'danger' },
+  FAILED: { label: '现场运行失败', type: 'danger' },
+  SUCCESS: { label: '取证与算法分析已完成', type: 'success' },
+  COMPLETED: { label: '算法分析已完成', type: 'success' },
+  NO_EVIDENCE: { label: '分析完成，未形成风险证据', type: 'success' },
 })
 
 /**

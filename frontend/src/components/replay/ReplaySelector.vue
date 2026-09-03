@@ -1,5 +1,7 @@
 <script setup>
+import { computed } from 'vue'
 import { VideoCamera } from '@element-plus/icons-vue'
+import { mergeDuplicateReplayOptions } from '../../services/viewModel'
 
 const props = defineProps({
   events: { type: Array, default: () => [] },
@@ -7,6 +9,7 @@ const props = defineProps({
 
 const selectedId = defineModel({ type: String, default: '' })
 const emit = defineEmits(['select'])
+const visibleEvents = computed(() => mergeDuplicateReplayOptions(props.events))
 </script>
 
 <template>
@@ -14,11 +17,11 @@ const emit = defineEmits(['select'])
     <div class="replay-selector-head">
       <div class="replay-selector-title">
         <el-icon><VideoCamera /></el-icon>
-        <h2>关键事件片段</h2>
+        <h2>高低风险对照记录</h2>
       </div>
       <el-select v-model="selectedId" aria-label="选择回放场景" @change="emit('select', $event)">
         <el-option
-          v-for="(event, index) in props.events"
+          v-for="(event, index) in visibleEvents"
           :key="event.event_id"
           :label="`${index + 1}. ${event.title}`"
           :value="event.event_id"

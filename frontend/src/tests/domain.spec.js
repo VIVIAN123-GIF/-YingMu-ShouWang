@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DATA_MODES, DELIVERY_STATUSES, EVENT_STATUSES, RISK_LEVELS, SOURCE_MODES } from '../domain/constants'
 import { shouldFallback } from '../services/repository'
 import { DataContractError, validateDashboard, validateForewarningSnapshot } from '../domain/validation'
-import { displayValueLabel, evidenceTypeLabel, locationLabel, mediaTitleLabel, timeScaleLabel, unitLabel, zoneIdentifierLabel } from '../utils/format'
+import { deviceAliasLabel, deviceModelLabel, displayValueLabel, evidenceTypeLabel, explanationSourceLabel, locationLabel, mediaTitleLabel, residentIdentifierLabel, rulesetVersionLabel, timeScaleLabel, unitLabel, zoneIdentifierLabel } from '../utils/format'
 
 describe('冻结枚举', () => {
   it('保留四级风险、六种事件状态和四种来源', () => {
@@ -28,12 +28,19 @@ describe('用户可见枚举中文化', () => {
     expect(unitLabel('second')).toBe('秒')
   })
 
-  it('保留未知固定标识以便追溯', () => {
-    expect(displayValueLabel('ruleset-v2')).toBe('ruleset-v2')
+  it('将技术标识转换为用户可理解的中文', () => {
+    expect(displayValueLabel('ruleset-v2')).toBe('风险规则集 2')
+    expect(rulesetVersionLabel('ruleset-v1.3-min')).toBe('风险规则集 1.3（精简版）')
+    expect(residentIdentifierLabel('resident-001')).toBe('居民档案 001')
+    expect(deviceAliasLabel('camera-live-001')).toBe('实时摄像机 001')
+    expect(deviceModelLabel('EZVIZ_C6C')).toBe('萤石 C6c 摄像机')
+    expect(explanationSourceLabel('template-fallback-v1')).toBe('系统备用解释模板')
+    expect(displayValueLabel('sat_down')).toBe('老人已坐稳')
+    expect(displayValueLabel('UNMAPPED_TECHNICAL_VALUE')).toBe('其他信息')
   })
 
   it('将模拟媒体的用户可见标题转换为中文，保留素材标识', () => {
-    expect(mediaTitleLabel('Simulated unavailable media (asset-fall-authorized)')).toBe('模拟不可用媒体（asset-fall-authorized）')
+    expect(mediaTitleLabel('Simulated unavailable media (asset-fall-authorized)')).toBe('模拟媒体暂不可用')
   })
 })
 
@@ -42,6 +49,7 @@ describe('Display label localization', () => {
     expect(locationLabel('living_room')).toBe('客厅')
     expect(locationLabel('bedroom')).toBe('卧室')
     expect(zoneIdentifierLabel('fixed-chair-support')).toBe('固定座椅支撑区')
+    expect(evidenceTypeLabel('normal_baseline_sample')).toBe('日常稳定基线样本')
   })
 })
 

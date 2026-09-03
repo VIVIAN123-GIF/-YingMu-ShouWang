@@ -15,3 +15,15 @@ VITE_AUTHORIZED_CLIP_URL=/media/authorized-fall-clip.mp4
 ```
 
 视频文件默认被 `.gitignore` 排除，不应把未经授权的家庭视频提交到仓库。页面只播放 H.264 兼容副本，原始 HEVC 文件仅作为受控来源保留。页面只有在浏览器成功读取视频首帧后才显示“授权片段已加载”，并始终标记为 `RECORDED_REPLAY / 模拟实验回放`。
+
+## 精选演示片段（仅本地受限发布包）
+
+`selected/` 是事件详情页使用的 28 条受控工程对照片段。先在仓库根目录保留私有 `视频/` 源目录，再执行：
+
+```powershell
+cd frontend
+npm run media:build
+npm run media:verify
+```
+
+选择清单只记录匿名编号、场景、用途、源 SHA-256 与时长；前端不显示源路径或原始文件名。`npm run build:pages` 会主动排除整个 `public/` 目录，因此不会将这些真人视频放入公开 Pages 构建产物。

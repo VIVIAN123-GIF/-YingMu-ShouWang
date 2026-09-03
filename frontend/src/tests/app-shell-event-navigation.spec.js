@@ -62,8 +62,8 @@ describe('风险事件详情导航入口', () => {
 
   it('读取后端事件列表并进入创建时间最新的真实事件', async () => {
     getEventsMock.mockResolvedValue([
-      { event_id: 'event-old', created_at: '2026-08-15T10:00:00+08:00' },
-      { event_id: 'event latest/一', created_at: '2026-08-16T10:00:00+08:00' },
+      { event_id: 'event latest/一', created_at: '2026-08-15T10:00:00+08:00', source_mode: 'LIVE_DEVICE', simulated: false },
+      { event_id: 'event-replay-newer', created_at: '2026-08-16T10:00:00+08:00', source_mode: 'RECORDED_REPLAY', simulated: true },
     ])
     const { router, wrapper } = await mountShell()
 

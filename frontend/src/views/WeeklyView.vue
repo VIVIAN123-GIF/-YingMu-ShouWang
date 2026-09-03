@@ -7,7 +7,7 @@ import SourceBadge from '../components/common/SourceBadge.vue'
 import StandardNotice from '../components/common/StandardNotice.vue'
 import ChartPanel from '../components/common/ChartPanel.vue'
 import { getWeeklyReport, submitFamilyFeedback } from '../services/repository'
-import { displayValueLabel, evidenceTypeLabel, feedbackTone, formatDateTime, formatPercent } from '../utils/format'
+import { displayValueLabel, evidenceTypeLabel, feedbackTone, formatDateTime, formatPercent, locationLabel } from '../utils/format'
 import { uniqueTextOptions } from '../utils/options'
 
 const loading = ref(true)
@@ -70,6 +70,10 @@ async function load() {
   loading.value = true
   try {
     report.value = await getWeeklyReport()
+    const recordedCare = report.value?.care?.feedback_record?.value
+    const recordedVerification = report.value?.visitor_case?.feedback_record?.value
+    careChoice.value = careOptions.value.includes(recordedCare) ? recordedCare : ''
+    verifyChoice.value = verificationOptions.value.includes(recordedVerification) ? recordedVerification : ''
     animateSleepOffsets(report.value?.trend || [])
   } catch (err) {
     error.value = `无法读取周报：${err.message}`
@@ -79,8 +83,6 @@ async function load() {
 }
 
 async function submit(kind) {
-  const currentStatus = kind === 'care' ? report.value?.care?.status : report.value?.visitor_case?.verification_status
-  if (currentStatus === 'SUBMITTED') return
   const value = kind === 'care' ? careChoice.value : verifyChoice.value
   if (!value) {
     ElMessage.warning('请先选择一项反馈')
@@ -154,13 +156,13 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
           </div>
           <fieldset class="feedback-fieldset">
             <legend>完成联系后，请选择反馈</legend>
-            <el-radio-group v-model="careChoice" class="stacked-radios" :disabled="report.care.status === 'SUBMITTED'">
+            <el-radio-group v-model="careChoice" class="stacked-radios">
               <el-radio v-for="option in careOptions" :key="option" :label="option" :value="option" border @click="careChoice = option">{{ option }}</el-radio>
             </el-radio-group>
             <el-alert v-if="!report.care.options.length" title="暂无可选关怀结果" type="info" :closable="false" />
           </fieldset>
-          <el-button data-testid="care-submit" type="primary" size="large" :loading="submitting" :disabled="report.care.status === 'SUBMITTED' || !careOptions.length" @click="submit('care')">
-            {{ report.care.status === 'SUBMITTED' ? '关怀反馈已记录' : '记录关怀反馈' }}
+          <el-button data-testid="care-submit" type="primary" size="large" :loading="submitting" :disabled="!careOptions.length || !careChoice" @click="submit('care')">
+            {{ report.care.status === 'SUBMITTED' ? '更新关怀反馈' : '记录关怀反馈' }}
           </el-button>
           <div v-if="report.care.feedback_record" class="recorded-feedback" :class="`feedback-${feedbackTone(report.care.feedback_record.value)}`" data-testid="care-record">
             <strong>已记录关怀反馈</strong><span>{{ report.care.feedback_record.value }}</span><small>{{ report.care.feedback_record.recorded_at }} · {{ displayValueLabel(report.care.feedback_record.operator) }}</small>
@@ -170,7 +172,7 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
         <article v-if="report.visitor_case" class="content-card visitor-panel" data-testid="visitor-panel">
           <div class="card-heading"><div><span class="section-kicker">访客核验</span><h2>{{ report.visitor_case.visitor_label }}</h2></div><RiskBadge :level="report.visitor_case.risk_level" compact /></div>
           <SourceBadge :mode="report.visitor_case.source_mode" :simulated="report.visitor_case.simulated" />
-          <div class="visitor-meta"><span><b>{{ report.visitor_case.duration_minutes }}</b> 分钟停留</span><span>{{ report.visitor_case.location }}</span><span>{{ formatDateTime(report.visitor_case.occurred_at) }}</span></div>
+          <div class="visitor-meta"><span><b>{{ report.visitor_case.duration_minutes }}</b> 分钟停留</span><span>{{ locationLabel(report.visitor_case.location) }}</span><span>{{ formatDateTime(report.visitor_case.occurred_at) }}</span></div>
           <div class="visitor-evidence">
             <article v-for="item in report.visitor_case.evidence" :key="item.type">
               <span></span><div><strong>{{ item.label }}</strong><p>{{ item.detail }}</p><code>{{ evidenceTypeLabel(item.type) }}</code></div>
@@ -179,12 +181,12 @@ onBeforeUnmount(() => { if (barAnimationFrame) cancelAnimationFrame(barAnimation
           <div class="gentle-action"><strong>建议</strong><p>{{ report.visitor_case.recommended_action }}</p></div>
           <fieldset class="feedback-fieldset">
             <legend>联系确认后，请选择核验结果</legend>
-            <el-radio-group v-model="verifyChoice" class="stacked-radios" :disabled="report.visitor_case.verification_status === 'SUBMITTED'">
+            <el-radio-group v-model="verifyChoice" class="stacked-radios">
               <el-radio v-for="option in verificationOptions" :key="option" :label="option" :value="option" border @click="verifyChoice = option">{{ option }}</el-radio>
             </el-radio-group>
           </fieldset>
-          <el-button data-testid="verify-submit" type="primary" size="large" :loading="submitting" :disabled="report.visitor_case.verification_status === 'SUBMITTED' || !verificationOptions.length" @click="submit('verify')">
-            {{ report.visitor_case.verification_status === 'SUBMITTED' ? '身份核验已记录' : '提交身份核验' }}
+          <el-button data-testid="verify-submit" type="primary" size="large" :loading="submitting" :disabled="!verificationOptions.length || !verifyChoice" @click="submit('verify')">
+            {{ report.visitor_case.verification_status === 'SUBMITTED' ? '更新身份核验' : '提交身份核验' }}
           </el-button>
           <div v-if="report.visitor_case.feedback_record" class="recorded-feedback" :class="`feedback-${feedbackTone(report.visitor_case.feedback_record.value)}`" data-testid="identity-record">
             <strong>已记录身份核验</strong><span>{{ report.visitor_case.feedback_record.value }}</span><small>{{ report.visitor_case.feedback_record.recorded_at }} · {{ displayValueLabel(report.visitor_case.feedback_record.operator) }}</small>

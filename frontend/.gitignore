@@ -8,3 +8,4 @@ playwright-report/
 test-results/
 public/media/*.mp4
 public/media/*.webm
+public/media/selected/

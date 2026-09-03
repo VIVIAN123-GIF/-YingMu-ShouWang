@@ -5,13 +5,13 @@
     "source_mode": "RECORDED_REPLAY",
     "simulated": true,
     "stream_url": null,
-    "fallback_url": "/media/fall-risk-replay.mp4",
+    "fallback_url": "/media/selected/p01-golden-loop-01.mp4",
     "fallback_kind": "AUTHORIZED_CLIP",
     "available": true,
     "verification_status": "AUTHORIZED_LOCAL_CLIP",
     "captured_at": "2026-07-24T03:07:00+08:00",
     "notice": "来自 GAIT 原始视频包的授权受控实验片段；包含快速起身和躯干摇晃候选特征，不代表真实老人跌倒。",
-    "media_kind": "video/mp4", "file_name": "fall-risk-replay.mp4", "expected_aspect_ratio": "metadata",
+    "media_kind": "video/mp4", "file_name": "p01-golden-loop-01.mp4", "expected_aspect_ratio": "metadata",
     "provenance": { "package": "GAIT_原始视频_打包_2026-08-25.zip", "participant": "匿名参与者", "authorization": "受控实验授权", "sha256": "由素材清单核验" }
   },
   {
@@ -20,13 +20,13 @@
     "source_mode": "RECORDED_REPLAY",
     "simulated": true,
     "stream_url": null,
-    "fallback_url": "/media/activity-route-replay-browser.mp4",
+    "fallback_url": "/media/selected/activity-route-a-b-c-01.mp4",
     "fallback_kind": "AUTHORIZED_CLIP",
     "available": true,
     "verification_status": "AUTHORIZED_LOCAL_CLIP",
     "captured_at": "2026-07-23T19:25:00+08:00",
     "notice": "来自轨迹验证视频包的授权受控路线片段，仅用于展示区域活动轨迹。",
-    "media_kind": "video/mp4", "file_name": "activity-route-replay-browser.mp4", "source_file_name": "activity-route-replay.mp4", "source_codec": "hevc", "browser_codec": "h264-avc1", "expected_aspect_ratio": "metadata",
+    "media_kind": "video/mp4", "file_name": "activity-route-a-b-c-01.mp4", "source_file_name": "region_route_A-B-C_01.mp4", "source_codec": "hevc", "browser_codec": "h264-avc1", "expected_aspect_ratio": "metadata",
     "provenance": { "package": "验证视频.zip", "participant": "匿名参与者", "authorization": "受控实验授权", "sha256": "由素材清单核验" }
   },
   {
@@ -35,13 +35,13 @@
     "source_mode": "RECORDED_REPLAY",
     "simulated": true,
     "stream_url": null,
-    "fallback_url": "/media/daily-baseline-replay-browser.mp4",
+    "fallback_url": "/media/selected/p03-neg-normal-rise-walk-01.mp4",
     "fallback_kind": "AUTHORIZED_CLIP",
     "available": true,
     "verification_status": "AUTHORIZED_LOCAL_CLIP",
     "captured_at": "2026-07-20T08:00:00+08:00",
     "notice": "来自三参与者实验 P03 的授权日常基线片段，仅代表受控健康成年人素材。",
-    "media_kind": "video/mp4", "file_name": "daily-baseline-replay-browser.mp4", "source_file_name": "daily-baseline-replay.mp4", "source_codec": "hevc", "browser_codec": "h264-avc1", "expected_aspect_ratio": "metadata",
+    "media_kind": "video/mp4", "file_name": "p03-neg-normal-rise-walk-01.mp4", "source_file_name": "P03-NEG_NORMAL_RISE_WALK-01.mp4", "source_codec": "h264", "browser_codec": "h264-avc1", "expected_aspect_ratio": "metadata",
     "provenance": { "package": "3人96段.zip", "participant": "P03", "authorization": "受控实验授权", "sha256": "由素材清单核验" }
   }
 ]

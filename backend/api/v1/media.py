@@ -31,6 +31,7 @@ from backend.config import (
     YINGMU_LIVE_STREAM_TIMEOUT_SECONDS,
     YINGMU_LIVE_VIEW_ENABLED,
     YINGMU_MEDIA_ACCESS_TOKEN,
+    YINGMU_MEDIA_AUTO_SESSION,
     YINGMU_RETENTION_UNTIL,
 )
 from backend.db.database import get_db
@@ -89,7 +90,14 @@ def _decode_session(cookie: str | None) -> str:
 def require_media_session(
     yingmu_media_session: str | None = Cookie(default=None),
 ) -> str:
-    return _decode_session(yingmu_media_session)
+    try:
+        return _decode_session(yingmu_media_session)
+    except ServiceError:
+        # 演示 / 联调模式：YINGMU_MEDIA_AUTO_SESSION=true 时对任何前端（有无登录页
+        # 均可）自动放行媒体接口，避免"登录页被禁用后无人建立会话"导致直播 / 抓拍 401。
+        if YINGMU_MEDIA_AUTO_SESSION:
+            return "auto-session-demo"
+        raise
 
 
 def _require_live_authorization() -> None:

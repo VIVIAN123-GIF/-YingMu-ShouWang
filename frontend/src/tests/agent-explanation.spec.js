@@ -2,10 +2,11 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const { getAssetMock, getEventMock, getEventExplanationMock, runtimeMock } = vi.hoisted(() => ({
+const { getAssetMock, getEventMock, getEventExplanationMock, getSelectedEventMediaMock, runtimeMock } = vi.hoisted(() => ({
   getAssetMock: vi.fn(),
   getEventMock: vi.fn(),
   getEventExplanationMock: vi.fn(),
+  getSelectedEventMediaMock: vi.fn(() => null),
   runtimeMock: { mode: 'api' },
 }))
 
@@ -13,6 +14,7 @@ vi.mock('../services/repository', () => ({
   getAsset: getAssetMock,
   getEvent: getEventMock,
   getEventExplanation: getEventExplanationMock,
+  getSelectedEventMedia: getSelectedEventMediaMock,
   interveneEvent: vi.fn(),
   runtime: runtimeMock,
   submitInterventionResult: vi.fn(),
@@ -93,7 +95,7 @@ describe('agent explanation frontend contract', () => {
 
     expect(wrapper.get('[data-testid="agent-explanation-content"]').text()).toContain('Fallback summary')
     expect(wrapper.get('[data-testid="agent-explanation-status"]').text()).toBe('模板降级解释')
-    expect(wrapper.get('[data-testid="agent-explanation-generated-by"]').text()).toBe('template-fallback-v1')
+    expect(wrapper.get('[data-testid="agent-explanation-generated-by"]').text()).toBe('系统备用解释模板')
     expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('是')
     expect(wrapper.get('[data-testid="agent-explanation-fallback"]').exists()).toBe(true)
     wrapper.unmount()
@@ -151,7 +153,7 @@ describe('agent explanation frontend contract', () => {
       expect(getEventExplanationMock).toHaveBeenCalledTimes(count)
     }
     expect(wrapper.get('[data-testid="agent-explanation-content"]').text()).toContain('LLM summary')
-    expect(wrapper.get('[data-testid="agent-explanation-generated-by"]').text()).toBe('qwen3.6-flash')
+    expect(wrapper.get('[data-testid="agent-explanation-generated-by"]').text()).toBe('智能解释模型')
     expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('否')
 
     await vi.advanceTimersByTimeAsync(6000)

@@ -11,6 +11,9 @@ export default defineConfig(({ mode }) => {
   const apiProxyTarget = env.VITE_DEV_API_PROXY_TARGET || 'http://127.0.0.1:8000'
   return {
   base: env.VITE_BASE_PATH || '/',
+  // Public/Pages builds are intentionally media-free: selected human video is
+  // available only in the local restricted demonstration package.
+  publicDir: mode === 'pages' ? false : 'public',
   plugins: [
     vue(),
     AutoImport({ resolvers: [elementResolver], dts: false }),
@@ -21,7 +24,9 @@ export default defineConfig(({ mode }) => {
     port: 5173,
     proxy: {
       '/api': apiProxyTarget,
-      '/media': apiProxyTarget,
+      '/media/session': apiProxyTarget,
+      '/media/live': apiProxyTarget,
+      '/media/assets': apiProxyTarget,
     },
   },
   build: {
