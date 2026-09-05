@@ -3,10 +3,11 @@
   "distribution": "LOCAL_RESTRICTED_ONLY",
   "source_mode": "RECORDED_REPLAY",
   "simulated": true,
+  "pixel_source": "AUTHORIZED_REAL_RECORDING",
   "event_mappings": {
-    "event-fall-intervening": {"primary_clip_id":"p01-golden-loop-01","related_group":"fall-high-risk-and-boundary"},
-    "event-fall-100": {"primary_clip_id":"p03-golden-loop-01","related_group":"fall-high-risk-and-boundary"},
-    "event-green-daily": {"primary_clip_id":"p03-neg-normal-rise-walk-01","related_group":"normal-and-gait-engineering-controls"},
+    "event-fall-intervening": {"primary_clip_id":"new-risk-left-take03","related_group":"new-recording-risk-demo"},
+    "event-fall-100": {"primary_clip_id":"new-risk-left-take03","related_group":"new-recording-risk-and-recovery-demo"},
+    "event-green-daily": {"primary_clip_id":"new-normal-control-take02","related_group":"new-recording-normal-demo"},
     "event-tool-failed": {"primary_clip_id":"qg-05","related_group":"quality-gate-boundaries"}
   },
   "entries": [
@@ -37,7 +38,10 @@
     {"asset_id":"selected-negative-b-01","clip_id":"negative-b-01","source_relpath":"视频/新正负样本/负样本B/0c46d23cd833f7ca9a769f72ce4f6b59.mp4","target_filename":"negative-b-01.mp4","participant_id":"NEG-B","scenario_id":"NEGATIVE_SAMPLE","purpose":"负样本工程对照","sha256":"625c7963dcf8be6756336af3ebd124221c19924a5601987542ec39fe0debfdb2","duration_ms":22199},
     {"asset_id":"selected-negative-c-01","clip_id":"negative-c-01","source_relpath":"视频/新正负样本/负样本C/009c2ffd7457f6a2ab1a1faf52dba745.mp4","target_filename":"negative-c-01.mp4","participant_id":"NEG-C","scenario_id":"NEGATIVE_SAMPLE","purpose":"负样本工程对照","sha256":"c236803093ce5a0acdec4e1495fb98392f8ff5d0b0d762791fd15deb07c2dac3","duration_ms":22440},
     {"asset_id":"selected-rapid-rise-only-boundary-01","clip_id":"rapid-rise-only-boundary-01","source_relpath":"视频/快速起身单独样本.mp4","target_filename":"rapid-rise-only-boundary-01.mp4","participant_id":"BOUNDARY-01","scenario_id":"RAPID_RISE_ONLY","purpose":"快速起身单独出现边界样本","sha256":"8f009ec6dbb5f94734eac4a1d804eaf56924b62ca34c5964932d0d7ab681f348","duration_ms":22600},
-    {"asset_id":"selected-recovery-under-15s-boundary-01","clip_id":"recovery-under-15s-boundary-01","source_relpath":"视频/恢复不足 15 秒边界样本.mp4","target_filename":"recovery-under-15s-boundary-01.mp4","participant_id":"BOUNDARY-02","scenario_id":"RECOVERY_UNDER_15S","purpose":"恢复不足 15 秒边界样本","sha256":"b82d7ffd25d2bbba8c6699a3f45bf9648a2b8575ec456961934a8b7e3396380f","duration_ms":21467}
+    {"asset_id":"selected-recovery-under-15s-boundary-01","clip_id":"recovery-under-15s-boundary-01","source_relpath":"视频/恢复不足 15 秒边界样本.mp4","target_filename":"recovery-under-15s-boundary-01.mp4","participant_id":"BOUNDARY-02","scenario_id":"RECOVERY_UNDER_15S","purpose":"恢复不足 15 秒边界样本","sha256":"b82d7ffd25d2bbba8c6699a3f45bf9648a2b8575ec456961934a8b7e3396380f","duration_ms":21467},
+    {"asset_id":"selected-new-normal-control-take02","clip_id":"new-normal-control-take02","source_relpath":"视频/新拍演示素材-20260903/视频2/02_normal_control_take02.mp4","target_filename":"new-normal-control-take02.mp4","participant_id":"NEW-DEMO-01","scenario_id":"NEW_NORMAL_CONTROL","purpose":"新拍授权正常动作对照；算法质量门未通过，不作为绿色实测结论","sha256":"34a7f605450431021fa32fb1009a95d29be1b6e8960c9c9e3484f94e9c905556","duration_ms":42571},
+    {"asset_id":"selected-new-risk-left-take03","clip_id":"new-risk-left-take03","source_relpath":"视频/新拍演示素材-20260903/视频2/03_risk_left_take03.mp4","target_filename":"new-risk-left-take03.mp4","participant_id":"NEW-DEMO-01","scenario_id":"NEW_RISK_CONTROLLED","purpose":"新拍授权受控风险动作；真实算法为YELLOW，橙色闭环指标为演示注入值","sha256":"0c1da1740b96030ff761cb9175fd2ad128aaacacea13a19a3f97adda17387683","duration_ms":35133},
+    {"asset_id":"selected-new-recovery-take01","clip_id":"new-recovery-take01","source_relpath":"视频/新拍演示素材-20260903/视频2/04_recovery_take01.mp4","target_filename":"new-recovery-take01.mp4","participant_id":"NEW-DEMO-01","scenario_id":"NEW_RECOVERY","purpose":"新拍授权恢复片段；真实算法输出posture_recovered/GREEN","sha256":"b82f89cdb1d9f6e5f6ab583e5e175646bd1b2348956d508f2cdb66c697ae95a1","duration_ms":24800}
   ],
   "auxiliary_entries": [
     {"asset_id":"asset-mental-week","clip_id":"activity-route-a-b-c-01","source_relpath":"视频/cym/验证视频/region_route_A-B-C_01.mp4","target_filename":"activity-route-a-b-c-01.mp4","participant_id":"ROUTE-A-B-C","scenario_id":"ACTIVITY_ROUTE","purpose":"授权区域活动轨迹工程回放","sha256":"1368576b4f29ba5f4a6f121cfcdfb9386d738319ed89da7814f9c9afd31fd35f","duration_ms":64666}

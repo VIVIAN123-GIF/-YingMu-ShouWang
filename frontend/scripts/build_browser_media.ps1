@@ -24,7 +24,7 @@ if (-not (Test-Path -LiteralPath $Manifest)) { throw "Missing selected media man
 
 $manifestObject = Get-Content -Raw -Encoding utf8 -LiteralPath $Manifest | ConvertFrom-Json
 $entries = @($manifestObject.entries)
-if ($entries.Count -ne 28) { throw "Expected 28 selected media entries, found $($entries.Count)." }
+if (-not $entries.Count) { throw 'Selected media manifest must contain at least one entry.' }
 if ($manifestObject.source_mode -ne 'RECORDED_REPLAY' -or $manifestObject.simulated -ne $true) { throw 'Selected media manifest must be RECORDED_REPLAY / simulated=true.' }
 $buildEntries = @($entries) + @($manifestObject.auxiliary_entries)
 New-Item -ItemType Directory -Force -Path $targetDir | Out-Null

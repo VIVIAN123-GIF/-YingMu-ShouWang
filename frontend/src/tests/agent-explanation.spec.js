@@ -88,7 +88,7 @@ describe('agent explanation frontend contract', () => {
 
   it('renders SUCCESS and FALLBACK explanations', async () => {
     runtimeMock.mode = 'api'
-    getEventMock.mockResolvedValue(eventFixture())
+    getEventMock.mockResolvedValue({ ...eventFixture(), source_mode: 'LIVE_DEVICE', simulated: false })
     getAssetMock.mockResolvedValue(null)
     getEventExplanationMock.mockResolvedValue(explanationFixture('FALLBACK'))
     const wrapper = await mountView()
@@ -98,6 +98,25 @@ describe('agent explanation frontend contract', () => {
     expect(wrapper.get('[data-testid="agent-explanation-generated-by"]').text()).toBe('系统备用解释模板')
     expect(wrapper.get('[data-testid="agent-explanation-fallback-used"]').text()).toBe('是')
     expect(wrapper.get('[data-testid="agent-explanation-fallback"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('授权回放解释隐藏模板降级状态并使用回放来源名称', async () => {
+    runtimeMock.mode = 'replay'
+    getEventMock.mockResolvedValue(eventFixture())
+    getAssetMock.mockResolvedValue(null)
+    const response = explanationFixture('FALLBACK')
+    response.generated_by = 'replay-explanation-v1'
+    response.explanation.generated_by = 'replay-explanation-v1'
+    getEventExplanationMock.mockResolvedValue(response)
+    const wrapper = await mountView()
+
+    expect(wrapper.get('[data-testid="agent-explanation-generated-by"]').text()).toBe('授权回放解释')
+    expect(wrapper.find('[data-testid="agent-explanation-status"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="agent-explanation-fallback-used"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="agent-explanation-fallback"]').exists()).toBe(false)
+    expect(wrapper.find('.agent-capability-notice').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('萤石服务端语音尚未验证')
     wrapper.unmount()
   })
 

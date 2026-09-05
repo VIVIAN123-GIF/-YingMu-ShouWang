@@ -2,7 +2,9 @@
 
 固定 JSON 模式使用以下三个本地授权片段：
 
-- `fall-risk-replay.mp4`：GAIT 受控实验中的快速起身与躯干摇晃片段。
+- `new-risk-left-take03.mp4`：2026-09-03 新拍受控风险动作。真实算法为 YELLOW；ORANGE 闭环指标为显式模拟数据。
+- `new-normal-control-take02.mp4`：2026-09-03 新拍正常动作对照。原片未通过算法质量门；绿色页面读数为显式模拟数据。
+- `new-recovery-take01.mp4`：2026-09-03 新拍恢复状态。真实算法输出 `posture_recovered / GREEN`。
 - `activity-route-replay.mp4`：轨迹验证中的 A-B-C 区域路线原始授权片段（HEVC 源文件）。
 - `activity-route-replay-browser.mp4`：同一片段的 H.264 浏览器兼容播放副本。
 - `daily-baseline-replay.mp4`：三参与者实验 P03 的日常基线原始授权片段（HEVC 源文件）。

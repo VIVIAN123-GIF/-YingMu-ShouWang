@@ -335,7 +335,7 @@ export function deviceModelLabel(value) {
 export function explanationSourceLabel(value) {
   const text = String(value || '')
   if (/^template-fallback/i.test(text)) return '系统备用解释模板'
-  if (/^replay-explanation/i.test(text)) return '授权回放解释模板'
+  if (/^replay-explanation/i.test(text)) return '授权回放解释'
   if (/^qwen/i.test(text)) return '智能解释模型'
   return text ? '智能解释服务' : '未提供'
 }
@@ -356,7 +356,7 @@ export function deviceAliasLabel(value) {
   const liveMatch = /^camera-live(?:-(\d+))?$/i.exec(alias)
   if (liveMatch) return `实时摄像机${liveMatch[1] ? ` ${liveMatch[1]}` : ''}`
   const replayMatch = /^camera-(?:mock|replay)(?:-(\d+))?$/i.exec(alias)
-  if (replayMatch) return `演示摄像机${replayMatch[1] ? ` ${replayMatch[1]}` : ''}`
+  if (replayMatch) return `回放摄像机${replayMatch[1] ? ` ${replayMatch[1]}` : ''}`
   return displayValueLabel(value)
 }
 

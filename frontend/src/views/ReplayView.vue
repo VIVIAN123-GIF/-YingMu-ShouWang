@@ -32,7 +32,10 @@ const FACTOR_LABELS = Object.freeze({
 })
 const selectable = computed(() => mergeDuplicateReplayOptions(
   events.value.filter((event) => event.primary_domain !== 'SYSTEM'),
-).sort((left, right) => new Date(left.created_at) - new Date(right.created_at)))
+).sort((left, right) => {
+  const orderDelta = (left.demo_order ?? 100) - (right.demo_order ?? 100)
+  return orderDelta || new Date(left.created_at) - new Date(right.created_at)
+}))
 const factorContributions = computed(() => {
   const snapshots = selected.value?.forewarning_snapshots || []
   const snapshot = snapshots.find((item) => item?.phase === 'PRE_INTERVENTION' && item?.dominant_factors?.length)

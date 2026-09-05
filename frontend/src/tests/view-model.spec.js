@@ -48,6 +48,25 @@ describe('API ViewModel 适配', () => {
     expect(event.risk_history).toEqual([])
   })
 
+  it('数据库前缀的授权回放事件沿用简洁场景标题', () => {
+    const normalEvent = {
+      event_id: 'event-fi-resident-001-run-event-green-daily',
+      source_mode: 'RECORDED_REPLAY',
+      simulated: true,
+      evidence_summary: [{ explanation: '旧的长说明文字' }],
+    }
+    const riskEvent = {
+      event_id: 'event-fi-resident-001-run-event-fall-100',
+      source_mode: 'RECORDED_REPLAY',
+      simulated: true,
+      evidence_summary: [{ explanation: '旧的长说明文字' }],
+    }
+    expect(deriveEventTitle(normalEvent)).toBe('正常动作对照')
+    expect(deriveEventTitle(riskEvent)).toBe('受控风险动作')
+    expect(normalizeEvent(normalEvent).demo_order).toBe(1)
+    expect(normalizeEvent(riskEvent).demo_order).toBe(2)
+  })
+
   it('接口未提供风险历史时使用规则轨迹中的真实评估分数', () => {
     const event = normalizeEvent({
       ...apiEvent,
@@ -124,6 +143,38 @@ describe('API ViewModel 适配', () => {
 
     expect(dashboard.current_risk).toMatchObject({ risk_level: 'YELLOW', risk_score: 0.42, status: 'OBSERVING' })
     expect(dashboard.recent_events).toHaveLength(2)
+  })
+
+  it('已解决事件使用最后一次规则评估作为首页当前状态，同时保留事件峰值', () => {
+    const resolvedEvent = {
+      ...apiEvent,
+      risk_level: 'ORANGE',
+      risk_score: 0.78,
+      status: 'RESOLVED',
+      updated_at: '2026-09-03T17:40:00+08:00',
+      source_mode: 'RECORDED_REPLAY',
+      simulated: true,
+      rule_traces: [
+        {
+          event_id: 'event-api-001', evaluated_at: '2026-09-03T17:05:02+08:00',
+          next_state: 'ORANGE', next_status: 'INTERVENING', score_components: { final_score: 0.78 },
+        },
+        {
+          event_id: 'event-api-001', evaluated_at: '2026-09-03T17:06:30+08:00',
+          next_state: 'GREEN', next_status: 'RESOLVED', score_components: { final_score: 0.18 },
+        },
+      ],
+    }
+
+    const dashboard = normalizeDashboard({ residentId: 'resident-api', events: [resolvedEvent] })
+
+    expect(dashboard.current_risk).toMatchObject({
+      risk_level: 'GREEN', risk_score: 0.18, status: 'RESOLVED',
+      event_risk_level: 'ORANGE', event_risk_score: 0.78,
+      summary: '风险水位已经回落，观察已完成。',
+      recommended_action: '当前状态平稳，继续日常关注即可。',
+      updated_at: '2026-09-03T17:06:30+08:00',
+    })
   })
 
   it('规范化设备、空周报与基线状态', () => {

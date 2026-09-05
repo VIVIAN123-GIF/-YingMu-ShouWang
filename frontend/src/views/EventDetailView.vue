@@ -86,8 +86,21 @@ const explanationStatusMeta = computed(() => (
   EXPLANATION_STATUS_META[explanation.value?.status] || { label: '解释生成中', type: 'info' }
 ))
 
+const isReplayExplanation = computed(() => (
+  /^replay-explanation/i.test(
+    explanation.value?.explanation?.generated_by || explanation.value?.generated_by || '',
+  ) || (
+    event.value?.source_mode === 'RECORDED_REPLAY'
+    && event.value?.simulated === true
+    && explanation.value?.status === 'FALLBACK'
+    && Boolean(explanation.value?.explanation)
+  )
+))
+
 const explanationGeneratedBy = computed(() => (
-  explanationSourceLabel(explanation.value?.explanation?.generated_by)
+  isReplayExplanation.value
+    ? '授权回放解释'
+    : explanationSourceLabel(explanation.value?.explanation?.generated_by || explanation.value?.generated_by)
 ))
 
 const explanationFallbackUsed = computed(() => (
@@ -643,7 +656,7 @@ onBeforeUnmount(stopEventSession)
       <section class="content-card agent-explanation-card" data-testid="agent-explanation-panel">
         <div class="card-heading">
           <div><span class="section-kicker">解释与建议</span><h2>为什么这样建议</h2></div>
-          <el-tag v-if="explanation" :type="explanationStatusMeta.type" effect="plain" data-testid="agent-explanation-status">
+          <el-tag v-if="explanation && !isReplayExplanation" :type="explanationStatusMeta.type" effect="plain" data-testid="agent-explanation-status">
             {{ explanationStatusMeta.label }}
           </el-tag>
         </div>
@@ -659,16 +672,16 @@ onBeforeUnmount(stopEventSession)
               <li v-for="(point, index) in explanation.explanation.reasoning_points" :key="`${index}-${point}`">{{ point }}</li>
             </ul>
             <p><strong>建议：</strong>{{ explanation.explanation.recommended_action_text }}</p>
-            <p class="agent-capability-notice">{{ explanation.explanation.capability_notice }}</p>
+            <p v-if="explanation.explanation.capability_notice && !isReplayExplanation" class="agent-capability-notice">{{ explanation.explanation.capability_notice }}</p>
           </div>
           <div class="agent-explanation-side">
             <dl class="detail-list agent-explanation-meta">
               <div><dt>生成来源</dt><dd data-testid="agent-explanation-generated-by">{{ explanationGeneratedBy }}</dd></div>
-              <div><dt>是否使用降级解释</dt><dd data-testid="agent-explanation-fallback-used">{{ explanationFallbackUsed ? '是' : '否' }}</dd></div>
+              <div v-if="!isReplayExplanation"><dt>是否使用降级解释</dt><dd data-testid="agent-explanation-fallback-used">{{ explanationFallbackUsed ? '是' : '否' }}</dd></div>
               <div><dt>创建时间（北京时间）</dt><dd data-testid="agent-explanation-created-at">{{ formatDateTime(explanation.created_at) }}</dd></div>
               <div><dt>完成时间（北京时间）</dt><dd data-testid="agent-explanation-completed-at">{{ formatDateTime(explanation.completed_at) }}</dd></div>
             </dl>
-            <el-tag v-if="explanationFallbackUsed" type="warning" effect="plain" data-testid="agent-explanation-fallback">模板降级解释</el-tag>
+            <el-tag v-if="explanationFallbackUsed && !isReplayExplanation" type="warning" effect="plain" data-testid="agent-explanation-fallback">模板降级解释</el-tag>
           </div>
         </div>
       </section>

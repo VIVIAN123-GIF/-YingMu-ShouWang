@@ -5,7 +5,9 @@ import manifest from '../media-selection.manifest.json' with { type: 'json' }
 
 const root = resolve(import.meta.dirname, '..')
 const failures = []
-if (selectedMedia.length !== 28) failures.push(`精选清单应为 28 条，实际为 ${selectedMedia.length} 条`)
+if (selectedMedia.length !== manifest.entries.length) {
+  failures.push(`精选清单与构建清单数量不一致：页面 ${selectedMedia.length} 条，构建 ${manifest.entries.length} 条`)
+}
 
 const auxiliaryMedia = (manifest.auxiliary_entries || []).map((clip) => ({ ...clip, file: clip.target_filename }))
 for (const clip of [...selectedMedia, ...auxiliaryMedia]) {

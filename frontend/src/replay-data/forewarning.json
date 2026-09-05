@@ -3,66 +3,69 @@
     "schema_version": "forewarning-snapshot/1.0",
     "snapshot_id": "forewarning-replay-pre-001",
     "resident_id": "resident-001",
-    "evaluated_at": "2026-07-24T03:07:08+08:00",
+    "evaluated_at": "2026-09-03T17:05:08+08:00",
     "phase": "PRE_INTERVENTION",
     "assessment_status": "VALID",
     "confidence_level": "HIGH",
     "baseline_status": "STABLE",
     "components": {
-      "human_risk": 0.82,
-      "personal_deviation": 0.61,
-      "environment_risk": 0.18,
-      "interaction_risk": 0.42
+      "human_risk": 0.78,
+      "personal_deviation": 0.34,
+      "environment_risk": 0.08,
+      "interaction_risk": 0.26
     },
     "instant": { "window_seconds": 8, "engineering_index": 0.78, "attention_level": "ORANGE" },
-    "short_30s": { "window_seconds": 30, "engineering_index": 0.72, "attention_level": "ORANGE" },
-    "trend_3min": { "window_seconds": 180, "engineering_index": 0.64, "attention_level": "YELLOW" },
+    "short_30s": { "window_seconds": 30, "engineering_index": 0.69, "attention_level": "ORANGE" },
+    "trend_3min": { "window_seconds": 180, "engineering_index": 0.41, "attention_level": "YELLOW" },
     "dominant_factors": [
-      { "factor": "human_instability", "contribution": 0.451, "evidence_ids": ["evi-fall-trunk-sway"] },
-      { "factor": "human_environment_interaction", "contribution": 0.063, "evidence_ids": ["evi-fall-low-light"] }
+      { "factor": "human_instability", "contribution": 0.552, "evidence_ids": ["evi-trunk-sway", "evi-lateral-drift"] },
+      { "factor": "personal_baseline_deviation", "contribution": 0.102, "evidence_ids": ["evi-transition"] },
+      { "factor": "human_environment_interaction", "contribution": 0.066, "evidence_ids": ["evi-lateral-drift"] }
     ],
     "degradation_reasons": [],
-    "evidence_ids": ["evi-fall-rapid-rise", "evi-fall-trunk-sway", "evi-fall-low-light"],
-    "observation_ids": ["obs-fall-rise", "obs-fall-sway", "obs-fall-light"],
+    "evidence_ids": ["evi-transition", "evi-trunk-sway", "evi-lateral-drift"],
+    "observation_ids": ["obs-transition", "obs-trunk-sway", "obs-lateral-drift"],
     "scene_config_id": "scene-replay-living-room",
     "event_id": "event-fall-100",
     "intervention_result_id": null,
-    "recommended_action": "执行低打扰提醒并进入恢复观察。",
+    "recommended_action": "请先保持稳定，原地休息，不要继续移动。",
     "ruleset_version": "ruleset-v1.3-min",
     "source_mode": "RECORDED_REPLAY",
-    "simulated": true
+    "simulated": true,
+    "pixel_source": "AUTHORIZED_REAL_RECORDING"
   },
   {
     "schema_version": "forewarning-snapshot/1.0",
     "snapshot_id": "forewarning-replay-post-001",
     "resident_id": "resident-001",
-    "evaluated_at": "2026-07-24T03:08:30+08:00",
+    "evaluated_at": "2026-09-03T17:06:30+08:00",
     "phase": "POST_INTERVENTION",
     "assessment_status": "VALID",
     "confidence_level": "HIGH",
     "baseline_status": "STABLE",
     "components": {
-      "human_risk": 0.18,
-      "personal_deviation": 0.22,
-      "environment_risk": 0.18,
+      "human_risk": 0.12,
+      "personal_deviation": 0.18,
+      "environment_risk": 0.08,
       "interaction_risk": 0.0
     },
-    "instant": { "window_seconds": 8, "engineering_index": 0.24, "attention_level": "GREEN" },
-    "short_30s": { "window_seconds": 30, "engineering_index": 0.31, "attention_level": "GREEN" },
-    "trend_3min": { "window_seconds": 180, "engineering_index": 0.42, "attention_level": "YELLOW" },
+    "instant": { "window_seconds": 8, "engineering_index": 0.18, "attention_level": "GREEN" },
+    "short_30s": { "window_seconds": 30, "engineering_index": 0.26, "attention_level": "GREEN" },
+    "trend_3min": { "window_seconds": 180, "engineering_index": 0.37, "attention_level": "GREEN" },
     "dominant_factors": [
-      { "factor": "personal_baseline_deviation", "contribution": 0.044, "evidence_ids": [] }
+      { "factor": "personal_baseline_deviation", "contribution": 0.032, "evidence_ids": [] }
     ],
     "degradation_reasons": [],
-    "evidence_ids": ["evi-fall-posture-recovered"],
-    "observation_ids": ["obs-fall-recovered"],
+    "evidence_ids": ["evi-recovered"],
+    "observation_ids": ["obs-posture-recovered", "obs-stable-trunk-angle"],
     "scene_config_id": "scene-replay-living-room",
     "event_id": "event-fall-100",
-    "intervention_result_id": "result-fall-voice-001",
+    "intervention_result_id": "result-fall-001",
     "recommended_action": "继续完成观察期，确认无新风险证据。",
     "ruleset_version": "ruleset-v1.3-min",
     "source_mode": "RECORDED_REPLAY",
-    "simulated": true
+    "simulated": true,
+    "pixel_source": "AUTHORIZED_REAL_RECORDING"
   }
 ]
 
