@@ -99,7 +99,7 @@ async function handleSelect(path) {
         <div class="topbar-context">
           <div class="page-context"><span>{{ currentPage.group }}</span><strong>{{ currentPage.title }}</strong></div>
           <div class="context-divider" aria-hidden="true"></div>
-          <div class="resident-identity"><el-avatar :size="36" class="resident-avatar">张</el-avatar><div><strong>张建国</strong><span>76岁 · 杭州家中</span></div></div>
+          <div class="resident-identity"><el-avatar :size="36" class="resident-avatar">张</el-avatar><div><strong>张建国</strong><span>60岁 · 杭州家中</span></div></div>
         </div>
         <div class="topbar-actions">
           <div class="data-source-chip" role="status" aria-label="当前数据视图">

@@ -25,6 +25,11 @@ const riskWaterLevel = computed(() => {
   const score = Number(data.value?.current_risk?.risk_score)
   return Math.round((Number.isFinite(score) ? Math.min(1, Math.max(0, score)) : 0) * 100)
 })
+const currentStatusLabel = computed(() => (
+  data.value?.current_risk?.status === 'RESOLVED'
+    ? '已解除'
+    : statusLabel(data.value?.current_risk?.status)
+))
 
 function animateRiskWaterLevel() {
   animatedRiskWaterLevel.value = 0
@@ -162,7 +167,11 @@ function onlineLabel(value) {
           <span class="last-update">更新于 {{ formatDateTime(data.current_risk.updated_at) }}</span>
         </div>
         <div class="today-status" :class="{ 'status-intervening': data.current_risk.status === 'INTERVENING' }">
-          <div><span>当前事件状态</span><strong>{{ statusLabel(data.current_risk.status) }}</strong></div>
+          <div>
+            <span>当前事件状态</span>
+            <strong>{{ currentStatusLabel }}</strong>
+            <small v-if="data.current_risk.status === 'RESOLVED'">已完成观察</small>
+          </div>
         </div>
       </section>
       <section v-else class="content-card api-empty-state">

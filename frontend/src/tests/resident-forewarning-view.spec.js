@@ -2,10 +2,10 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import forewarning from '../replay-data/forewarning.json'
 
-const mocks = vi.hoisted(() => ({ getDashboard: vi.fn(), getLatestForewarning: vi.fn(), getForewarningHistory: vi.fn(), getFieldRuns: vi.fn() }))
+const mocks = vi.hoisted(() => ({ getDashboard: vi.fn(), getLatestForewarning: vi.fn(), getForewarningHistory: vi.fn() }))
 vi.mock('../services/repository', () => ({
   getDashboard: mocks.getDashboard, getLatestForewarning: mocks.getLatestForewarning,
-  getForewarningHistory: mocks.getForewarningHistory, getFieldRuns: mocks.getFieldRuns,
+  getForewarningHistory: mocks.getForewarningHistory,
 }))
 
 import ResidentView from '../views/ResidentView.vue'
@@ -42,23 +42,20 @@ describe('居民预警汇总页面', () => {
   beforeEach(() => {
     Object.values(mocks).forEach((mock) => mock.mockReset())
     mocks.getDashboard.mockResolvedValue({ resident: { resident_id: 'resident-001' }, device: { source_mode: 'RECORDED_REPLAY', simulated: true } })
-    mocks.getFieldRuns.mockResolvedValue([])
   })
   afterEach(() => { vi.useRealTimers() })
 
-  it('每 2000ms 刷新最新预警与真实运行对照，并在卸载后停止', async () => {
+  it('每 2000ms 刷新最新预警，并在卸载后停止', async () => {
     vi.useFakeTimers()
     mocks.getLatestForewarning.mockResolvedValue(null)
     mocks.getForewarningHistory.mockResolvedValue([])
     const wrapper = mountView(); await flushPromises()
     expect(mocks.getLatestForewarning).toHaveBeenCalledTimes(1)
-    expect(mocks.getFieldRuns).toHaveBeenCalledTimes(1)
     await vi.advanceTimersByTimeAsync(2000); await flushPromises()
     expect(mocks.getLatestForewarning).toHaveBeenCalledTimes(2)
-    expect(mocks.getFieldRuns).toHaveBeenCalledTimes(2)
     wrapper.unmount()
     await vi.advanceTimersByTimeAsync(4000)
-    expect(mocks.getFieldRuns).toHaveBeenCalledTimes(2)
+    expect(mocks.getLatestForewarning).toHaveBeenCalledTimes(2)
   })
 
   it('最新预警和历史均为空时展示独立空状态', async () => {

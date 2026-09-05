@@ -21,7 +21,7 @@
     { "label": "上下文", "detail": "暂未登记旅行、生病等可解释情况", "confidence": 0.8 }
   ],
   "recommendations": [
-    "选择白天方便的时间联系父亲，了解近期作息和外出安排。",
+    "选择白天方便的时间联系母亲，了解近期作息和外出安排。",
     "如本人愿意，可使用简短筛查或咨询专业人员。",
     "后续继续观察趋势，单日活动增加不作为立即回落依据。"
   ],
@@ -45,7 +45,7 @@
       { "type": "unusual_dwell_time", "label": "停留时间偏长", "detail": "停留25分钟，超过日常短时来访范围" },
       { "type": "fraud_keyword", "label": "高风险组合词", "detail": "授权转写中出现“免费服务”“银行卡”等组合词" }
     ],
-    "recommended_action": "建议先联系父亲确认访客身份和来访目的。",
+    "recommended_action": "建议先联系母亲确认访客身份和来访目的。",
     "verification_status": "PENDING",
     "verification_options": ["身份已确认，无需继续关注", "身份不明确，继续联系", "存在财产风险，转人工处理"]
   }

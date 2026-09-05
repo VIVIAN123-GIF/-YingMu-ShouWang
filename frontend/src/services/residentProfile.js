@@ -2,7 +2,7 @@ import { reactive } from 'vue'
 
 export const RESIDENT_PROFILE_KEY = 'yingmu-resident-profile-v1'
 export const defaultResidentProfile = Object.freeze({
-  name: '张建国', age: 76, relation: '父亲', location: '杭州 · 家中', living: '独居',
+  name: '张建国', age: 60, relation: '母亲', location: '杭州 · 家中', living: '独居',
   mobility: '可独立行走', jointIssues: '膝关节偶有不适', fallHistory: '近一年无跌倒记录', dizziness: '偶尔起夜头晕',
   medication: '晚间服用降压药，家属每周核对', sleep: '22:30 入睡，06:30 起床', assistiveDevice: '卫生间设有扶手',
   noticeLevel: '橙色风险通知家属', emergencyContact: '女儿', privacyZones: '卧室床边、卫生间',
@@ -10,7 +10,14 @@ export const defaultResidentProfile = Object.freeze({
 })
 
 function readProfile() {
-  try { return { ...defaultResidentProfile, ...JSON.parse(localStorage.getItem(RESIDENT_PROFILE_KEY) || '{}') } }
+  try {
+    const storedProfile = JSON.parse(localStorage.getItem(RESIDENT_PROFILE_KEY) || '{}')
+    if (storedProfile.age === 76 && storedProfile.relation === '父亲') {
+      storedProfile.age = 60
+      storedProfile.relation = '母亲'
+    }
+    return { ...defaultResidentProfile, ...storedProfile }
+  }
   catch { return { ...defaultResidentProfile } }
 }
 

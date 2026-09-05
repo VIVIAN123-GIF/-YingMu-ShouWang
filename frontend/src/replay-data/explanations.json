@@ -1,8 +1,8 @@
 {
   "event-fall-intervening":{"summary":"坐站转换后出现多项不稳定信号","reasoning_points":["已确认完整坐站转换和可评估窗口","起身后躯干连续摇晃","起身后骨盆出现横向漂移"],"recommended_action_text":"先坐稳并扶住身边固定物，继续观察恢复情况。"},
-  "event-fall-100":{"summary":"起身后稳定性需要重点关注","reasoning_points":["回放证据显示坐站转换已完成","躯干与骨盆稳定性指标出现偏离","当前场景来自授权回放数据"],"recommended_action_text":"起身后先停留片刻，确认站稳后再移动。"},
+  "event-fall-100":{"summary":"受控动作已形成一条模拟风险闭环","reasoning_points":["真实算法检测到完整坐站转换、19.827度躯干摆角和2次方向反转","横向漂移0.38及ORANGE分级为录屏走查模拟注入值","授权恢复片段真实形成posture_recovered/GREEN，后续观察与解除为模拟状态迁移"],"recommended_action_text":"请先保持稳定，原地休息，不要继续移动。"},
   "event-mental-week":{"summary":"近期活动与作息较个人基线偏低","reasoning_points":["活动范围连续多天低于个人合理范围","近几天作息时间较个人基线推迟","证据来自授权周度回放"],"recommended_action_text":"结合近况联系家属确认日常活动与作息。"},
   "event-fraud-visitor":{"summary":"访客与交流内容存在额外核验风险","reasoning_points":["访客未出现在授权名单中","访客停留时长超过日常访客范围","转写出现高风险组合词"],"recommended_action_text":"通过已知联系方式向家属核实。"},
   "event-tool-failed":{"summary":"实时设备接口不可用，已切换授权片段","reasoning_points":["实时设备接口返回不可用状态","系统已切换到授权回放片段","当前解释不代表实时设备状态"],"recommended_action_text":"通过家属电话确认当前状态。"},
-  "event-green-daily":{"summary":"当前回放显示日常状态平稳","reasoning_points":["未发现需要升级处理的风险证据","风险评分处于绿色范围","数据来源为授权回放"],"recommended_action_text":"无需额外操作，按日常计划继续观察。"}
+  "event-green-daily":{"summary":"正常动作作为授权回放对照","reasoning_points":["录像完整保留坐姿、起身与站立过程","原片算法质量门未通过，页面绿色读数仅用于对照走查","数据来源为授权人员真实摄像头录像"],"recommended_action_text":"本条为授权回放对照，无需执行真实处置。"}
 }

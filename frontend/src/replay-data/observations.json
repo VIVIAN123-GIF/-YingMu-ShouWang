@@ -14,7 +14,7 @@
     "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-fall-authorized",
     "simulated": true,
-    "metadata": {"model_version": "mediapipe-pose-heavy"}
+    "metadata": {"model_version": "gait-adapter-v1.2", "pixel_source": "AUTHORIZED_REAL_RECORDING", "value_origin": "MEASURED"}
   },
   {
     "schema_version": "1.0",
@@ -23,15 +23,15 @@
     "timestamp": "2026-07-24T03:07:06+08:00",
     "source": "gait_adapter",
     "feature_name": "post_rise_pelvis_lateral_excursion_norm",
-    "feature_value": 0.48,
+    "feature_value": 0.38,
     "unit": "body_scale",
     "location": "bedroom",
-    "confidence": 0.91,
-    "data_quality": 0.89,
+    "confidence": 0.86,
+    "data_quality": 0.9,
     "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-fall-authorized",
     "simulated": true,
-    "metadata": {"model_version": "mediapipe-pose-heavy"}
+    "metadata": {"model_version": "demo-overlay-v1", "pixel_source": "AUTHORIZED_REAL_RECORDING", "value_origin": "SIMULATED_FOR_WALKTHROUGH", "measured_value": 0.054}
   },
   {
     "schema_version": "1.0",
@@ -40,7 +40,7 @@
     "timestamp": "2026-07-24T03:07:01+08:00",
     "source": "pose",
     "feature_name": "sit_to_stand_duration",
-    "feature_value": 1.2,
+    "feature_value": 0.734,
     "unit": "second",
     "location": "bedroom",
     "confidence": 0.92,
@@ -49,7 +49,9 @@
     "asset_id": "asset-fall-authorized",
     "simulated": true,
     "metadata": {
-      "model_version": "mediapipe-v1"
+      "model_version": "gait-adapter-v1.2",
+      "pixel_source": "AUTHORIZED_REAL_RECORDING",
+      "value_origin": "MEASURED"
     }
   },
   {
@@ -58,17 +60,20 @@
     "resident_id": "resident-001",
     "timestamp": "2026-07-24T03:07:05+08:00",
     "source": "pose",
-    "feature_name": "trunk_sway_ratio",
-    "feature_value": 0.46,
-    "unit": "ratio",
+    "feature_name": "trunk_sway_angle_deg",
+    "feature_value": 19.827,
+    "unit": "degree",
     "location": "bedroom",
-    "confidence": 0.9,
-    "data_quality": 0.88,
+    "confidence": 0.91,
+    "data_quality": 0.9,
     "source_mode": "RECORDED_REPLAY",
     "asset_id": "asset-fall-authorized",
     "simulated": true,
     "metadata": {
-      "model_version": "mediapipe-v1"
+      "model_version": "gait-adapter-v1.2",
+      "pixel_source": "AUTHORIZED_REAL_RECORDING",
+      "value_origin": "MEASURED",
+      "post_rise_sway_reversal_count": 2
     }
   },
   {
@@ -84,7 +89,7 @@
     "confidence": 0.95,
     "data_quality": 0.91,
     "source_mode": "RECORDED_REPLAY",
-    "asset_id": "asset-fall-authorized",
+    "asset_id": "selected-new-recovery-take01",
     "simulated": true,
     "metadata": {
       "sensor": "camera_estimate"
@@ -106,7 +111,9 @@
     "asset_id": "asset-fall-authorized",
     "simulated": true,
     "metadata": {
-      "model_version": "mediapipe-v1"
+      "model_version": "gait-adapter-v1.2",
+      "pixel_source": "AUTHORIZED_REAL_RECORDING",
+      "value_origin": "MEASURED"
     }
   },
   {
@@ -116,16 +123,18 @@
     "timestamp": "2026-07-24T03:07:29+08:00",
     "source": "pose",
     "feature_name": "stable_trunk_angle_deg",
-    "feature_value": 3.6,
+    "feature_value": 0.327,
     "unit": "degree",
     "location": "bedroom",
     "confidence": 0.94,
-    "data_quality": 0.9,
+    "data_quality": 1.0,
     "source_mode": "RECORDED_REPLAY",
-    "asset_id": "asset-fall-authorized",
+    "asset_id": "selected-new-recovery-take01",
     "simulated": true,
     "metadata": {
-      "model_version": "mediapipe-v1"
+      "model_version": "gait-adapter-v1.2",
+      "pixel_source": "AUTHORIZED_REAL_RECORDING",
+      "value_origin": "MEASURED"
     }
   },
   {

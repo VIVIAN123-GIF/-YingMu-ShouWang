@@ -74,7 +74,7 @@ const replayData = {
       fallback_kind: 'SELECTED_CONTROLLED_CLIP',
       available: true,
       verification_status: 'SELECTED_LOCAL_CLIP',
-      captured_at: '2026-08-27T09:00:00+08:00',
+      captured_at: clip.captured_at || '2026-08-27T09:00:00+08:00',
       notice: `受控工程对照，非当前事件原始媒体。${clip.purpose}`,
     })),
   ],
@@ -84,9 +84,9 @@ const replayData = {
 }
 
 const requiredReplayAssets = Object.freeze({
-  'asset-fall-authorized': '/media/selected/p01-golden-loop-01.mp4',
+  'asset-fall-authorized': '/media/selected/new-risk-left-take03.mp4',
   'asset-mental-week': '/media/selected/activity-route-a-b-c-01.mp4',
-  'asset-green-daily': '/media/selected/p03-neg-normal-rise-walk-01.mp4',
+  'asset-green-daily': '/media/selected/new-normal-control-take02.mp4',
 })
 
 export function getSelectedEventMedia(event) {
@@ -528,7 +528,7 @@ export async function getEventExplanation(eventId) {
         event_id: eventId,
         summary: '基于固定依据的脱敏解释',
         reasoning_points: ['系统已汇总相关证据。'],
-        recommended_action_text: '按演示事件中的分级干预流程继续查看。',
+        recommended_action_text: '按模拟事件中的分级干预流程继续查看。',
         capability_notice: '已加载授权媒体内容。',
         generated_by: 'static-demo',
         fallback_used: true,

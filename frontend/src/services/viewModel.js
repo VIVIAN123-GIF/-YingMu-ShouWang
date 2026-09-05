@@ -7,6 +7,11 @@ const DOMAIN_TITLES = Object.freeze({
   SYSTEM: '系统状态事件',
 })
 
+const REPLAY_EVENT_PRESENTATION = Object.freeze({
+  'event-green-daily': { title: '正常动作对照', order: 1 },
+  'event-fall-100': { title: '受控风险动作', order: 2 },
+})
+
 const METRIC_META = Object.freeze({
   rise_duration: { label: '起身时长', unit: '秒' },
   trunk_sway: { label: '躯干摇晃', unit: '度' },
@@ -19,6 +24,12 @@ const METRIC_META = Object.freeze({
 
 function asArray(value) {
   return Array.isArray(value) ? value : []
+}
+
+function replayEventPresentation(event) {
+  if (event?.source_mode !== 'RECORDED_REPLAY' || event?.simulated !== true) return null
+  return Object.entries(REPLAY_EVENT_PRESENTATION)
+    .find(([eventId]) => event?.event_id === eventId || event?.event_id?.endsWith(`-${eventId}`))?.[1] || null
 }
 
 function replayOptionTitle(event) {
@@ -67,6 +78,8 @@ function traceBelongsToEvent(trace, event) {
 
 export function deriveEventTitle(event) {
   if (event?.title) return event.title
+  const presentation = replayEventPresentation(event)
+  if (presentation) return presentation.title
   const explanation = asArray(event?.evidence_summary).find((item) => item?.explanation)?.explanation
   return explanation || DOMAIN_TITLES[event?.primary_domain] || '风险事件'
 }
@@ -142,6 +155,7 @@ export function normalizeEvent(event) {
   return {
     ...event,
     title: deriveEventTitle(event),
+    demo_order: event?.demo_order ?? replayEventPresentation(event)?.order,
     evidences: asArray(event?.evidences),
     observations: asArray(event?.observations),
     interventions: asArray(event?.interventions),
@@ -166,6 +180,33 @@ export function normalizeDevice(device = {}) {
   }
 }
 
+function currentRiskFromEvent(event) {
+  if (!event) return null
+
+  const terminalTrace = [...asArray(event.rule_traces)]
+    .filter((trace) => trace?.next_status === event.status)
+    .sort((left, right) => new Date(left.evaluated_at || 0) - new Date(right.evaluated_at || 0))
+    .at(-1)
+  const terminalScore = terminalTrace?.score_components?.final_score
+  const hasTerminalScore = typeof terminalScore === 'number' && Number.isFinite(terminalScore)
+  const resolved = event.status === 'RESOLVED'
+
+  return {
+    risk_level: terminalTrace?.next_state || event.risk_level,
+    risk_score: hasTerminalScore ? terminalScore : event.risk_score,
+    status: event.status,
+    summary: resolved
+      ? '风险水位已经回落，观察已完成。'
+      : event.evidence_summary?.[0]?.explanation || event.title,
+    recommended_action: resolved
+      ? '当前状态平稳，继续日常关注即可。'
+      : event.recommended_action,
+    updated_at: terminalTrace?.evaluated_at || event.updated_at,
+    event_risk_level: event.risk_level,
+    event_risk_score: event.risk_score,
+  }
+}
+
 export function normalizeDashboard({ events = [], device = {}, baseline = {}, residentId }) {
   const normalizedEvents = asArray(events).map(normalizeEvent)
   const latest = normalizedEvents.find((event) => event.source_mode === 'LIVE_DEVICE' && event.simulated === false)
@@ -173,14 +214,7 @@ export function normalizeDashboard({ events = [], device = {}, baseline = {}, re
     || null
   return {
     resident: { resident_id: residentId },
-    current_risk: latest ? {
-      risk_level: latest.risk_level,
-      risk_score: latest.risk_score,
-      status: latest.status,
-      summary: latest.evidence_summary?.[0]?.explanation || latest.title,
-      recommended_action: latest.recommended_action,
-      updated_at: latest.updated_at,
-    } : null,
+    current_risk: currentRiskFromEvent(latest),
     today: {
       activity_minutes: baseline?.today?.activity_minutes ?? null,
       room_transitions: baseline?.today?.room_transitions ?? null,

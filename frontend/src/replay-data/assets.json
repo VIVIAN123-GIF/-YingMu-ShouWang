@@ -1,18 +1,18 @@
 ﻿[
   {
     "asset_id": "asset-fall-authorized",
-    "title": "模拟场景回放：第100天凌晨授权事件片段",
+    "title": "授权回放：受控风险动作",
     "source_mode": "RECORDED_REPLAY",
     "simulated": true,
     "stream_url": null,
-    "fallback_url": "/media/selected/p01-golden-loop-01.mp4",
+    "fallback_url": "/media/selected/new-risk-left-take03.mp4",
     "fallback_kind": "AUTHORIZED_CLIP",
     "available": true,
     "verification_status": "AUTHORIZED_LOCAL_CLIP",
-    "captured_at": "2026-07-24T03:07:00+08:00",
-    "notice": "来自 GAIT 原始视频包的授权受控实验片段；包含快速起身和躯干摇晃候选特征，不代表真实老人跌倒。",
-    "media_kind": "video/mp4", "file_name": "p01-golden-loop-01.mp4", "expected_aspect_ratio": "metadata",
-    "provenance": { "package": "GAIT_原始视频_打包_2026-08-25.zip", "participant": "匿名参与者", "authorization": "受控实验授权", "sha256": "由素材清单核验" }
+    "captured_at": "2026-09-03T17:00:00+08:00",
+    "notice": "授权人员受控动作录像；真实算法结果为 YELLOW，页面中的 ORANGE 闭环、横移读数和贡献值为录屏走查模拟数据，不代表实时识别或真实老人风险结论。",
+    "media_kind": "video/mp4", "file_name": "new-risk-left-take03.mp4", "source_file_name": "03_risk_left_take03.mp4", "source_codec": "hevc", "browser_codec": "h264-avc1", "expected_aspect_ratio": "metadata", "pixel_source": "AUTHORIZED_REAL_RECORDING",
+    "provenance": { "package": "视频2.zip", "participant": "NEW-DEMO-01", "authorization": "受控实验授权", "sha256": "0c1da1740b96030ff761cb9175fd2ad128aaacacea13a19a3f97adda17387683" }
   },
   {
     "asset_id": "asset-mental-week",
@@ -31,18 +31,18 @@
   },
   {
     "asset_id": "asset-green-daily",
-    "title": "三参与者实验回放：P03 日常基线",
+    "title": "授权回放：正常动作对照",
     "source_mode": "RECORDED_REPLAY",
     "simulated": true,
     "stream_url": null,
-    "fallback_url": "/media/selected/p03-neg-normal-rise-walk-01.mp4",
+    "fallback_url": "/media/selected/new-normal-control-take02.mp4",
     "fallback_kind": "AUTHORIZED_CLIP",
     "available": true,
     "verification_status": "AUTHORIZED_LOCAL_CLIP",
-    "captured_at": "2026-07-20T08:00:00+08:00",
-    "notice": "来自三参与者实验 P03 的授权日常基线片段，仅代表受控健康成年人素材。",
-    "media_kind": "video/mp4", "file_name": "p03-neg-normal-rise-walk-01.mp4", "source_file_name": "P03-NEG_NORMAL_RISE_WALK-01.mp4", "source_codec": "h264", "browser_codec": "h264-avc1", "expected_aspect_ratio": "metadata",
-    "provenance": { "package": "3人96段.zip", "participant": "P03", "authorization": "受控实验授权", "sha256": "由素材清单核验" }
+    "captured_at": "2026-09-03T16:58:00+08:00",
+    "notice": "授权人员正常动作录像；原片算法质量门未通过，页面中的绿色分数为录屏走查模拟数据。",
+    "media_kind": "video/mp4", "file_name": "new-normal-control-take02.mp4", "source_file_name": "02_normal_control_take02.mp4", "source_codec": "hevc", "browser_codec": "h264-avc1", "expected_aspect_ratio": "metadata", "pixel_source": "AUTHORIZED_REAL_RECORDING",
+    "provenance": { "package": "视频2.zip", "participant": "NEW-DEMO-01", "authorization": "受控实验授权", "sha256": "34a7f605450431021fa32fb1009a95d29be1b6e8960c9c9e3484f94e9c905556" }
   }
 ]
 
